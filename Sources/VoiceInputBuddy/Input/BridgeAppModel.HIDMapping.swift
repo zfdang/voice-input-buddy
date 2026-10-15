@@ -394,8 +394,9 @@ extension BridgeAppModel {
             }
             let existingProfileID = profileID
                 ?? self.settings.profileID(forHIDFingerprint: fingerprint)
-            let resolvedProfileID = existingProfileID
+            guard let resolvedProfileID = existingProfileID
                 ?? self.settings.registerHIDRemote(fingerprint: fingerprint, model: monitor.reportedModel)
+            else { return nil }
             let isNewBinding = existingProfileID == nil
             if isNewBinding {
                 monitor.assignProfileID(resolvedProfileID)

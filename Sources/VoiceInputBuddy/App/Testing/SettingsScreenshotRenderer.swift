@@ -90,7 +90,7 @@ enum SettingsScreenshotRenderer {
             )
             settings.updateRemoteProfileModel(xiaomiID, model: .rc003)
             settings.bindHIDFingerprint("settings-screenshot-xiaomi", to: xiaomiID)
-            let appleID = settings.registerHIDRemote(fingerprint: "settings-screenshot-apple-remote")
+            let appleID = settings.registerAppleSiriRemote(fingerprint: "settings-screenshot-apple-remote")
             settings.updateRemoteProfileModel(appleID, model: .appleSiriRemoteA2854)
             let chromecastID = settings.registerChromecastRemote()
             settings.selectRemoteProfile(appleID)

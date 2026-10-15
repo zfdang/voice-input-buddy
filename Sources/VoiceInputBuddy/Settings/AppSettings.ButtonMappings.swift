@@ -254,7 +254,7 @@ extension AppSettings {
     }
 
     @discardableResult
-    func registerHIDRemote(fingerprint: String, model: XiaomiRemoteModel = .unknown) -> UUID {
+    func registerHIDRemote(fingerprint: String, model: XiaomiRemoteModel = .unknown) -> UUID? {
         if let existing = remoteDeviceProfiles.first(where: { $0.hidFingerprint == fingerprint }) {
             return existing.id
         }
@@ -272,13 +272,17 @@ extension AppSettings {
             remoteDeviceProfiles.append(profile)
             return profile.id
         }
-        let selectedUnboundIndex = remoteDeviceProfiles.firstIndex(where: {
-            $0.id == selectedRemoteProfileID && $0.hidFingerprint == nil &&
-                ($0.model == model || model == .unknown && !$0.model.isChromecastRemote)
-        })
-        if let index = selectedUnboundIndex ?? remoteDeviceProfiles.firstIndex(where: {
-            $0.hidFingerprint == nil && ($0.model == model || model == .unknown && !$0.model.isChromecastRemote)
-        }) {
+        let candidates = remoteDeviceProfiles.indices.filter {
+            let profile = remoteDeviceProfiles[$0]
+            return profile.hidFingerprint == nil &&
+                (profile.model == model || model == .unknown &&
+                    [XiaomiRemoteModel.rc001, .rc003, .unknown].contains(profile.model))
+        }
+        guard candidates.count <= 1 else {
+            AppLogger.shared.write("REMOTE HID binding_deferred reason=ambiguous_bluetooth_profiles")
+            return nil
+        }
+        if let index = candidates.first {
             let defaultMappings = RemoteDeviceMappings(
                 buttonBindings: Self.defaultBindings,
                 buttonShortcuts: [:],

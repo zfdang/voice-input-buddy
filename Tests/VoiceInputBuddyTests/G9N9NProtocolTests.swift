@@ -190,7 +190,7 @@ struct G9N9NProtocolTests {
         let settings = AppSettings(defaults: defaults)
         let xiaomi = settings.registerBluetoothRemote(identifier: UUID(), model: .rc003)
         settings.selectRemoteProfile(xiaomi)
-        let google = settings.registerHIDRemote(fingerprint: "g9n9n", model: .chromecastVoiceRemote)
+        let google = try #require(settings.registerHIDRemote(fingerprint: "g9n9n", model: .chromecastVoiceRemote))
         #expect(google != xiaomi)
         let bluetooth = UUID()
         #expect(settings.registerBluetoothRemote(identifier: bluetooth, model: .chromecastVoiceRemote) == google)
