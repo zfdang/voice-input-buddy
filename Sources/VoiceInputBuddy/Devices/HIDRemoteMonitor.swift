@@ -246,17 +246,20 @@ final class HIDRemoteMonitor {
 
         let manager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
         let context = Unmanaged.passUnretained(self).toOpaque()
-        IOHIDManagerRegisterDeviceMatchingCallback(manager, hidDeviceMatched, context)
-        IOHIDManagerRegisterDeviceRemovalCallback(manager, hidDeviceRemoved, context)
-        IOHIDManagerRegisterInputReportCallback(manager, hidInputReport, context)
-        // Matching immediately enumerates already-connected devices. An unopened
-        // manager does not forward callbacks registered after that enumeration
-        // to existing devices, so install callbacks before setting the matches.
-        IOHIDManagerSetDeviceMatchingMultiple(manager, matches as CFArray)
-        IOHIDManagerScheduleWithRunLoop(
-            manager,
-            CFRunLoopGetMain(),
-            CFRunLoopMode.commonModes.rawValue
+        Self.initializeManager(
+            registerCallbacks: {
+                IOHIDManagerRegisterDeviceMatchingCallback(manager, hidDeviceMatched, context)
+                IOHIDManagerRegisterDeviceRemovalCallback(manager, hidDeviceRemoved, context)
+                IOHIDManagerRegisterInputReportCallback(manager, hidInputReport, context)
+            },
+            matchDevices: { IOHIDManagerSetDeviceMatchingMultiple(manager, matches as CFArray) },
+            schedule: {
+                IOHIDManagerScheduleWithRunLoop(
+                    manager,
+                    CFRunLoopGetMain(),
+                    CFRunLoopMode.commonModes.rawValue
+                )
+            }
         )
 
         // Scheduling/matching discovers devices without opening every interface.
@@ -265,6 +268,20 @@ final class HIDRemoteMonitor {
         startPermissionMonitor()
         updateStatus(LocalizedMessage("button_mapping.status.waiting_for_device"))
         AppLogger.shared.write("HID START mode=adaptive")
+    }
+
+    /// Keep native startup and its regression test on the same initialization path.
+    static func initializeManager(
+        registerCallbacks: () -> Void,
+        matchDevices: () -> Void,
+        schedule: () -> Void
+    ) {
+        // Matching immediately enumerates already-connected devices. An unopened
+        // manager does not forward callbacks registered after that enumeration
+        // to existing devices, so install callbacks before setting the matches.
+        registerCallbacks()
+        matchDevices()
+        schedule()
     }
 
     deinit { stop() }
