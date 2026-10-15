@@ -381,7 +381,12 @@ extension KeyboardInjector {
                 abs(targetFrame.y - candidateFrame.y) +
                 abs(targetFrame.width - candidateFrame.width) +
                 abs(targetFrame.height - candidateFrame.height)
-            score += max(0, 120 - Int(distance * 120))
+            // Geometry contributes at most 120 points. Distant or overflowing
+            // coordinates contribute nothing; never convert an unbounded Double
+            // from imported metadata or AX geometry to Int.
+            if distance.isFinite, distance < 1 {
+                score += 120 - Int(distance * 120)
+            }
         }
 
         guard strongMatches > 0 else { return nil }
