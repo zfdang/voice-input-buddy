@@ -208,6 +208,11 @@ extension AppSettings {
         buttonRapidPressEnabled = importedRapidPressEnabled
         if configuration.customApplicationProfiles != nil {
             customApplicationProfiles = importedApplicationProfiles
+            // Recorded targets must be tested on this Mac before automatic input.
+            let pending = importedApplicationProfiles
+                .filter { $0.focusStrategy == .recordedAccessibility }
+                .map { $0.id.uuidString }
+            defaults.set(pending.sorted(), forKey: "portableTransferPendingApplications")
         }
         applicationLanguage = configuration.applicationLanguage
         if let appIconIdentifier = configuration.appIconIdentifier {
