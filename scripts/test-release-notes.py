@@ -52,7 +52,31 @@ class ReleaseNotesTests(unittest.TestCase):
         self.assertNotIn('internal transport', summary)
         self.assertNotIn('initial repository', summary)
         self.assertIn('/pull/2', markdown)
-        self.assertIn('## 新增', markdown)
+        self.assertIn('- [新增] add G9N9N support', markdown)
+
+    def test_one_list_preserves_commit_order_across_interleaved_types(self):
+        changes = [
+            ('fix: first correction', '[修复] first correction'),
+            ('feat: new feature', '[新增] new feature'),
+            ('docs: usage guide', '[文档] usage guide'),
+            ('fix: second correction', '[修复] second correction'),
+            ('perf: faster startup', '[改进] faster startup'),
+            ('test: protocol coverage', '[构建与测试] protocol coverage'),
+            ('plain commit title', '[其他变化] plain commit title'),
+        ]
+        for message, _ in changes:
+            self.commit(message)
+        markdown, summary = self.render([self.release()])
+        for output in [markdown, summary]:
+            lines = output.splitlines()
+            bullets = [line for line in lines if line.startswith('- ')]
+            self.assertEqual(len(bullets), len(changes))
+            for line, (_, expected) in zip(bullets, changes):
+                self.assertTrue(line.startswith('- ' + expected + ' ('), line)
+            self.assertFalse(any(line.startswith('#') for line in lines))
+        self.assertIn('[查看完整变化]', markdown)
+        self.assertNotIn('安装与签名', markdown)
+        self.assertNotIn('对应源码与依赖', markdown)
 
     def test_nearest_published_release_wins_over_api_order_and_unpublished_tags(self):
         self.commit('fix: old issue')

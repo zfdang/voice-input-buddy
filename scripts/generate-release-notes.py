@@ -8,9 +8,12 @@ import subprocess
 
 TAG = re.compile(r'v\d{2}-\d{2}-\d{2}\.\d{3}\Z')
 CONVENTIONAL = re.compile(r'^(feat|fix|perf|refactor|style|docs|test|build|ci|chore|revert)(?:\([^)]*\))?(!)?:\s*(.+)$')
-GROUPS = [('新增', {'feat'}), ('修复', {'fix', 'revert'}),
-          ('改进', {'perf', 'refactor', 'style'}), ('文档', {'docs'}),
-          ('构建与测试', {'build', 'ci', 'test', 'chore'}), ('其他变化', {'other'})]
+TYPE_LABELS = {
+    'feat': '新增', 'fix': '修复', 'revert': '修复',
+    'perf': '改进', 'refactor': '改进', 'style': '改进', 'docs': '文档',
+    'build': '构建与测试', 'ci': '构建与测试', 'test': '构建与测试',
+    'chore': '构建与测试', 'other': '其他变化',
+}
 
 
 def git(*args):
@@ -68,16 +71,12 @@ def generate(commit, releases, repository):
         escaped = re.sub(r'([\\`*_\[\]<>])', r'\\\1', description)
         entries.append((kind, description, escaped, reference, url))
     markdown, summary = [], []
-    for heading, kinds in GROUPS:
-        group = [e for e in entries if e[0] in kinds]
-        if group:
-            markdown += [f'## {heading}', '']
-            summary.append(heading)
-            for _, text, escaped, reference, url in group:
-                markdown.append(f'- {escaped} ([{reference}]({url}))')
-                summary.append(f'- {text} ({reference})')
-            markdown.append('')
-            summary.append('')
+    # Keep the oldest-to-newest commit order from git log, regardless of type.
+    for kind, text, escaped, reference, url in entries:
+        label = TYPE_LABELS[kind]
+        markdown.append(f'- [{label}] {escaped} ([{reference}]({url}))')
+        summary.append(f'- [{label}] {text} ({reference})')
+    markdown.append('')
     if not entries:
         markdown = ['此版本没有新的提交变化。', '']
         summary = ['此版本没有新的提交变化。']
@@ -85,8 +84,7 @@ def generate(commit, releases, repository):
         markdown.append(f'[查看完整变化](https://github.com/{repository}/compare/{previous}...{head})')
     else:
         markdown.append('首次发布，以上为当前版本的全部提交变化。')
-    markdown += ['', f'[安装与签名说明](https://github.com/{repository}/blob/{head}/docs/releases.md) · '
-                  f'[对应源码与依赖](https://github.com/{repository}/blob/{head}/docs/source-code.md)', '']
+    markdown.append('')
     return '\n'.join(markdown), '\n'.join(summary).strip() + '\n'
 
 
