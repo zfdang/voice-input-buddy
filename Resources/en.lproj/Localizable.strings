@@ -1150,6 +1150,13 @@
 
 "onboarding.voice_tool.voicecursor.title" = "VoiceCursor";
 "onboarding.voice_tool.voicecursor.detail" = "Use VoiceCursor with the virtual microphone and your configured voice shortcut.";
+"onboarding.voice_tool.macos_dictation.title" = "macOS Dictation";
+"onboarding.voice_tool.macos_dictation.detail" = "Use the built-in Dictation. You do not need a third-party app.";
+"onboarding.voice_tool.guide.enable_dictation" = "Turn on macOS Dictation";
+"onboarding.voice_tool.guide.enable_dictation.detail" = "Open System Settings → Keyboard → Dictation. Turn on Dictation, and add the languages that you speak in Languages.";
+"onboarding.voice_tool.guide.configure_dictation" = "Set the Dictation shortcut to Press 🌐 Twice";
+"onboarding.voice_tool.guide.configure_dictation.detail" = "In Dictation → Shortcut, choose Press 🌐 Twice. When you hold the remote, Voice Input Buddy presses Fn twice to start Dictation. When you release the remote and the audio is sent, it presses Fn once to stop Dictation.";
+"onboarding.voice_tool.guide.dictation_microphone" = "For macOS Dictation, choose the microphone in System Settings → Keyboard → Dictation → Microphone source.";
 
 "onboarding.step.welcome" = "Welcome";
 "onboarding.step.remoteAvailability" = "Your device";

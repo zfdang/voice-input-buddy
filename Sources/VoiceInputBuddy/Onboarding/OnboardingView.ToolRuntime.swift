@@ -127,6 +127,7 @@ extension OnboardingView {
         case .bageshuo: return "waveform.and.mic"
         case .typeless: return "waveform.badge.mic"
         case .voicecursor: return "mic.badge.plus"
+        case .macosDictation: return "mic.fill"
         case .other: return "ellipsis.circle.fill"
         case .unselected: return "circle"
         }

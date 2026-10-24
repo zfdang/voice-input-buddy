@@ -1147,6 +1147,13 @@
 
 "onboarding.voice_tool.voicecursor.title" = "VoiceCursor";
 "onboarding.voice_tool.voicecursor.detail" = "通过虚拟麦克风与配置的语音快捷键连接 VoiceCursor。";
+"onboarding.voice_tool.macos_dictation.title" = "macOS 听写";
+"onboarding.voice_tool.macos_dictation.detail" = "使用系统自带的听写，无需安装第三方工具。";
+"onboarding.voice_tool.guide.enable_dictation" = "打开 macOS 听写";
+"onboarding.voice_tool.guide.enable_dictation.detail" = "打开“系统设置 → 键盘 → 听写”，打开听写，并在“语言”中加入你要说的语言。";
+"onboarding.voice_tool.guide.configure_dictation" = "把听写快捷键设为按两下 🌐 键";
+"onboarding.voice_tool.guide.configure_dictation.detail" = "在“听写”的“快捷键”中选择“按两下 🌐 键”。按住遥控器时，语音搭子连按两次 Fn 开始听写；松开遥控器并送完音频后，再按一次 Fn 结束听写。";
+"onboarding.voice_tool.guide.dictation_microphone" = "macOS 听写的麦克风在“系统设置 → 键盘 → 听写 → 麦克风来源”中选择。";
 
 "onboarding.step.welcome" = "欢迎";
 "onboarding.step.remoteAvailability" = "准备设备";

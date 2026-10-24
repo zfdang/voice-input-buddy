@@ -62,6 +62,7 @@ Bluetooth pairing alone does not establish compatibility: the remote must use a 
 | NetEase Bageshuo | Dedicated setup entry with voice shortcut and microphone configuration |
 | Typeless | Configure its voice shortcut and start/stop behavior |
 | VoiceCursor | Separate entry using the virtual microphone and a custom voice shortcut |
+| macOS Dictation | Built in, no third-party app; set the shortcut to Press 🌐 Twice. Holding the remote presses Fn twice to start, and releasing it presses Fn once to stop |
 | Other voice-input tools | Configure a custom shortcut under Other Tools |
 
 The tool must accept the virtual microphone and expose a usable voice shortcut. Versions and settings vary: verify the actual behavior with the guide. A configuration entry does not mean every version has been tested.

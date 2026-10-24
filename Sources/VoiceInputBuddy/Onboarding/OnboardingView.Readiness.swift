@@ -76,7 +76,7 @@ extension OnboardingView {
         switch settings.onboardingVoiceTool {
         case .unselected:
             return false
-        case .voicecursor, .other:
+        case .voicecursor, .macosDictation, .other:
             return true
         case .weixin, .doubao, .bageshuo, .typeless:
             return voiceToolAvailability[settings.onboardingVoiceTool] == .available

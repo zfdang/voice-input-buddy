@@ -7,6 +7,7 @@ enum OnboardingVoiceTool: String, CaseIterable, Codable, Identifiable {
     case bageshuo
     case typeless
     case voicecursor
+    case macosDictation = "macos_dictation"
     case other
 
     var id: String { rawValue }
@@ -25,7 +26,7 @@ enum OnboardingVoiceTool: String, CaseIterable, Codable, Identifiable {
             return "com.bytedance.inputmethod.doubaoime.pinyin"
         case .weixin:
             return "com.tencent.inputmethod.wetype.pinyin"
-        case .unselected, .bageshuo, .typeless, .voicecursor, .other:
+        case .unselected, .bageshuo, .typeless, .voicecursor, .macosDictation, .other:
             return nil
         }
     }
@@ -36,13 +37,19 @@ enum OnboardingVoiceTool: String, CaseIterable, Codable, Identifiable {
             return "com.bageshuo"
         case .typeless:
             return "now.typeless.desktop"
-        case .unselected, .doubao, .weixin, .voicecursor, .other:
+        case .unselected, .doubao, .weixin, .voicecursor, .macosDictation, .other:
             return nil
         }
     }
 
     var requiresFunctionKeySetup: Bool {
         preferredInputSourceID != nil
+    }
+
+    /// Fn taps that start one voice session. macOS Dictation uses "Press 🌐 Twice"
+    /// to start and one Fn press to stop.
+    var functionKeyStartTapCount: Int {
+        self == .macosDictation ? 2 : 1
     }
 }
 
@@ -92,6 +99,15 @@ struct VoiceToolAdapterProfile: Equatable {
                 recommendedMode: .toggle,
                 installationProbe: .applicationBundle,
                 evidenceState: .verified
+            )
+        case .macosDictation:
+            return Self(
+                tool: tool,
+                supportedModes: [.toggle],
+                defaultShortcutByMode: [.toggle: .function],
+                recommendedMode: .toggle,
+                installationProbe: .none,
+                evidenceState: .pending
             )
         case .voicecursor, .other:
             return Self(

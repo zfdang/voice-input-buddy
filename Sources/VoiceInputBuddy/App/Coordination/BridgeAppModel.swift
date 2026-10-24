@@ -96,6 +96,9 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
         }
     )
     lazy var voiceFnTapSession = VoiceFnTapSessionController(
+        startTapCount: { [weak self] in
+            self?.settings.onboardingVoiceTool.functionKeyStartTapCount ?? 1
+        },
         destinationReadiness: { [weak self] completion in
             self?.voiceInputDestinationCoordinator.waitUntilReady(completion: completion) ?? .immediate
         },
