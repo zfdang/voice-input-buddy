@@ -33,10 +33,16 @@ extension BridgeAppModel {
 
     func voiceAudioDeliveryDiagnosticSnapshot() -> VoiceAudioDeliveryDiagnostic {
         var diagnostic = voiceSession.voiceAudioDeliveryDiagnostic
-        diagnostic.outputAtObservation = audio.output.diagnosticSnapshot(
+        diagnostic.observeOutput(audio.output.diagnosticSnapshot(
             deliveryGeneration: diagnostic.generation
-        )
+        ))
         return diagnostic
+    }
+
+    func preserveCompletedVoiceAudioDelivery() {
+        let diagnostic = voiceAudioDeliveryDiagnosticSnapshot()
+        guard diagnostic.result == .deliveredToSelectedDevice else { return }
+        voiceSession.voiceAudioDeliveryDiagnostic = diagnostic
     }
 
     func recordVoiceAudioReceipt(

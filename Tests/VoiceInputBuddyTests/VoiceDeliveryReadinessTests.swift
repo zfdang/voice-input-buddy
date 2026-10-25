@@ -55,6 +55,45 @@ struct VoiceDeliveryReadinessTests {
         #expect(terminal(value, final: true) == .audioDeliveryFailed)
     }
 
+    @Test func completedDeliverySurvivesIdleTeardownUntilTranscriptArrives() {
+        var value = attempt()
+        value.outputAtObservation.pendingBuffers = 0
+        value.outputAtObservation.pendingSamples = 0
+        value.outputAtObservation.counters.playedSamples = value.receivedSamples
+        let delivered = value.outputAtObservation
+        #expect(value.result == .deliveredToSelectedDevice)
+        value.observeOutput(VirtualAudioOutputDiagnosticSnapshot(counters: delivered.counters))
+        #expect(value.outputAtObservation == delivered)
+        #expect(terminal(value, final: true) == .passed)
+    }
+
+    @Test(arguments: ["pending", "interrupted", "wrong_route"])
+    func idleTeardownCannotConvertUnverifiedDeliveryToSuccess(failure: String) {
+        var value = attempt()
+        if failure == "interrupted" { value.outputAtObservation.counters.interruptedSamples = 240 }
+        if failure == "wrong_route" { value.outputAtObservation.boundToSelectedDevice = false }
+        value.observeOutput(VirtualAudioOutputDiagnosticSnapshot(counters: value.outputAtObservation.counters))
+        #expect(value.result != .deliveredToSelectedDevice)
+        #expect(terminal(value, final: true) == .audioDeliveryFailed)
+    }
+
+    @Test @MainActor func completedModelSnapshotDoesNotLeakIntoTheNextVoiceSession() throws {
+        let name = "completed-delivery-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let model = BridgeAppModel(settings: AppSettings(defaults: defaults))
+        var value = attempt()
+        value.outputAtObservation.pendingBuffers = 0
+        value.outputAtObservation.pendingSamples = 0
+        value.outputAtObservation.counters.playedSamples = value.receivedSamples
+        model.voiceSession.voiceAudioDeliveryDiagnostic = value
+        model.preserveCompletedVoiceAudioDelivery()
+        #expect(model.voiceAudioDeliveryDiagnosticSnapshot().result == .deliveredToSelectedDevice)
+        model.beginVoiceSessionIfNeeded()
+        #expect(model.voiceAudioDeliveryDiagnosticSnapshot().result == .receiving)
+        #expect(model.voiceAudioDeliveryDiagnosticSnapshot().receivedSamples == 0)
+    }
+
     private func terminal(_ value: VoiceAudioDeliveryDiagnostic, final: Bool) -> FirstUseVoiceAttemptResult {
         FirstUseVoiceAttemptPolicy.terminalResultAfterSession(manualInputObserved: false,
             samplesReceived: true, transcriptionAppeared: true, triggerReady: true,

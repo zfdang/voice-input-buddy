@@ -28,6 +28,7 @@ enum AppConfigurationError: Error {
 struct VoiceKeyConfigurationState: Equatable {
     let mode: VoiceKeyMode
     let fnTapModeEnabled: Bool
+    let tool: OnboardingVoiceTool
 }
 
 struct OnboardingVoiceConfigurationSnapshot: Codable {
@@ -58,6 +59,7 @@ struct PersonalizedConfiguration: Codable {
     let openMainWindowAtLaunch: Bool?
     let checksForPreReleaseUpdates: Bool?
     let experimentalContinuousRecordingEnabled: Bool?
+    var voiceTool: OnboardingVoiceTool? = nil
     let voiceFnTapModeEnabled: Bool?
     let voiceKeyMode: VoiceKeyMode?
     let continuousRecordingPowerBindingBackup: ConfiguredButtonAction?

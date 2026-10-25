@@ -27,7 +27,9 @@ extension OnboardingView {
                     Image(systemName: "info.circle.fill")
                         .font(.system(size: 13))
                         .foregroundStyle(Color.accentColor)
-                    Text(verbatim: localization.text("onboarding.voice_test.fn_tap_explanation"))
+                    Text(verbatim: settings.onboardingVoiceTool == .macosDictation
+                        ? localization.text("onboarding.voice_tool.dictation_fn_tap_explanation")
+                        : localization.text("onboarding.voice_test.fn_tap_explanation"))
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -202,6 +204,8 @@ extension OnboardingView {
                 )
             } else if settings.onboardingVoiceTool == .voicecursor {
                 onboardingGuideScreenshot(resourceName: "voicecursor-setting-mic")
+            } else if settings.onboardingVoiceTool == .macosDictation {
+                onboardingGuideScreenshot(resourceName: "macos-dictation-microphone")
             }
 
         }

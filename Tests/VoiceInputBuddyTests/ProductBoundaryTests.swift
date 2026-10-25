@@ -171,7 +171,7 @@ struct ProductBoundaryTests {
 
     @Test func integrationCatalogIncludesUninstalledToolsInConsistentOrder() {
         #expect(OnboardingVoiceToolVisibilityPolicy.tools == [
-            .weixin, .doubao, .bageshuo, .typeless, .voicecursor, .other,
+            .weixin, .doubao, .bageshuo, .typeless, .voicecursor, .macosDictation, .other,
         ])
     }
 

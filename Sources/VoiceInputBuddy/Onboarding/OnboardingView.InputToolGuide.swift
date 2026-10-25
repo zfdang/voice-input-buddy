@@ -401,6 +401,31 @@ extension OnboardingView {
                     content: .screenshot("voicecursor-setting-fn")
                 ),
             ]
+        case .macosDictation:
+            // Dictation needs 🌐 assigned to it, so the generic "release system Fn"
+            // step does not apply.
+            return [
+                OnboardingInputMethodGuideStep(
+                    id: 1,
+                    titleKey: "onboarding.voice_tool.guide.enable_dictation",
+                    content: .screenshot("macos-dictation-enable")
+                ),
+                OnboardingInputMethodGuideStep(
+                    id: 2,
+                    titleKey: "onboarding.voice_tool.guide.configure_dictation",
+                    content: .screenshot("macos-dictation-shortcut")
+                ),
+                OnboardingInputMethodGuideStep(
+                    id: 3,
+                    titleKey: "onboarding.voice_tool.guide.select_microphone",
+                    content: .microphoneIntegration
+                ),
+                OnboardingInputMethodGuideStep(
+                    id: 4,
+                    titleKey: "onboarding.voice_tool.guide.release_wechat_fn",
+                    content: .screenshot("weixin-app-shortcuts")
+                ),
+            ]
         case .other:
             toolSteps = [
                 OnboardingInputMethodGuideStep(

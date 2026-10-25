@@ -71,7 +71,7 @@ for name in sorted(names):
     files.append(light)
     dark = image_path(name, 'dark')
     # New local captures are light only; the view falls back to that real capture.
-    if dark is not None or name not in {'doubao-input-microphone', 'weixin-input-microphone', 'voicecursor-setting-fn', 'voicecursor-setting-mic'}:
+    if dark is not None or name not in {'doubao-input-microphone', 'weixin-input-microphone', 'voicecursor-setting-fn', 'voicecursor-setting-mic', 'macos-dictation-enable', 'macos-dictation-shortcut', 'macos-dictation-microphone'}:
         assert dark is not None, f'Missing dark screenshot: {name}'
         files.append(dark)
 # Product catalog resources are required even while adapters remain planned.

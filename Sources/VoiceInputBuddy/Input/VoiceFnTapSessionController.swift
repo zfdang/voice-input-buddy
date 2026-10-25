@@ -34,6 +34,10 @@ final class VoiceFnTapSessionController {
     private var drainTimeout: TimeInterval { max(2, pendingPlaybackDuration() + 1.5) }
     private let startDelay: TimeInterval
     private let tapDuration: TimeInterval
+    /// Time between the key-down edges of consecutive start taps.
+    private let startTapInterval: TimeInterval
+    private var startTapGap: TimeInterval { max(0, startTapInterval - tapDuration) }
+    private let startTapCount: () -> Int
     private let maximumPreRollSampleCount: Int
     private let schedule: Scheduler
     private let destinationReadiness: DestinationReadiness
@@ -55,6 +59,8 @@ final class VoiceFnTapSessionController {
     private var pendingVoice: PendingVoice?
     private var scheduledTasks: [ScheduledOperation] = []
     private var functionKeyIsPressed = false
+    /// Once the first start tap is sent, the rest of the start sequence must follow.
+    private var startSequenceBegan = false
     private var keyReleaseRetryTask: ScheduledOperation?
     private var nextKeyReleaseRetryDelay: TimeInterval = 1
     private var idleCompletions: [(Bool) -> Void] = []
@@ -65,12 +71,14 @@ final class VoiceFnTapSessionController {
     private var drainOperationID: UInt64?
     private var drainStartedAtUptime: TimeInterval?
 
-    /// Allow drain fallback, both taps, and the full bounded key-release retry budget.
+    /// Allow drain fallback, all taps, and the full bounded key-release retry budget.
     var terminationTimeout: TimeInterval {
         let retries = (0..<(maximumKeyReleaseAttempts - 1)).reduce(0.0) {
             $0 + min(30, pow(2, Double($1)))
         }
-        return max(10, drainTimeout + 2 * tapDuration + startDelay + retries + 1)
+        let startTaps = Double(max(1, startTapCount()))
+        let startPulses = startTaps * tapDuration + (startTaps - 1) * startTapGap
+        return max(10, drainTimeout + startPulses + tapDuration + startDelay + retries + 1)
     }
 
     /// Key-release recovery alone must not keep the audio device running.
@@ -85,6 +93,8 @@ final class VoiceFnTapSessionController {
     init(
         startDelay: TimeInterval = 0.15,
         tapDuration: TimeInterval = 0.12,
+        startTapInterval: TimeInterval = 0.15,
+        startTapCount: @escaping () -> Int = { 1 },
         maximumPreRollSampleCount: Int = VoicePlaybackQueueCapacity.maximumPreRollSamples,
         schedule: @escaping Scheduler = ScheduledOperation.mainQueue,
         destinationReadiness: @escaping DestinationReadiness = { _ in .immediate },
@@ -100,6 +110,8 @@ final class VoiceFnTapSessionController {
     ) {
         self.startDelay = startDelay
         self.tapDuration = tapDuration
+        self.startTapInterval = startTapInterval
+        self.startTapCount = startTapCount
         self.maximumPreRollSampleCount = maximumPreRollSampleCount
         self.schedule = schedule
         self.destinationReadiness = destinationReadiness
@@ -167,6 +179,14 @@ final class VoiceFnTapSessionController {
             logger("VOICE FN TAP start rejected reason=suspended")
             return false
         }
+        if case .starting = phase, remoteEnded {
+            // The released session still owns its remaining start pulses. Keep
+            // a new physical press separate, even while one of those pulses is down.
+            if pendingVoice == nil {
+                pendingVoice = PendingVoice()
+            }
+            return true
+        }
         guard !functionKeyIsPressed else {
             logger("VOICE FN TAP start rejected reason=key_held")
             return false
@@ -217,7 +237,7 @@ final class VoiceFnTapSessionController {
         switch phase {
         case let .starting(sessionGeneration):
             remoteEnded = true
-            if !functionKeyIsPressed {
+            if !functionKeyIsPressed && !startSequenceBegan {
                 // A released button must not start dictation after the start
                 // delay or destination wait finally completes.
                 cancelSessionAwaitingDestination(generation: sessionGeneration)
@@ -245,8 +265,8 @@ final class VoiceFnTapSessionController {
         let needsStopTap: Bool
         switch phase {
         case .active, .draining: needsStopTap = true
-        case .starting where functionKeyIsPressed:
-            // Finish the start pulse before issuing a full-duration stop pulse.
+        case .starting where functionKeyIsPressed || startSequenceBegan:
+            // Finish the start pulses before issuing a full-duration stop pulse.
             remoteEnded = true
             preRoll.removeAll()
             return
@@ -323,6 +343,13 @@ final class VoiceFnTapSessionController {
 
     private func beginStartTap(generation sessionGeneration: UInt64) {
         guard phase == .starting(sessionGeneration), generation == sessionGeneration else { return }
+        startSequenceBegan = true
+        performStartTaps(remaining: max(1, startTapCount()), generation: sessionGeneration)
+    }
+
+    /// Tools such as macOS Dictation start on a double press but stop on one press.
+    private func performStartTaps(remaining: Int, generation sessionGeneration: UInt64) {
+        guard phase == .starting(sessionGeneration), generation == sessionGeneration else { return }
         performFunctionKeyTap(generation: sessionGeneration) { [weak self] success in
             guard let self,
                   self.phase == .starting(sessionGeneration),
@@ -332,6 +359,13 @@ final class VoiceFnTapSessionController {
                 self.fail(.startTapFailed)
                 return
             }
+            if remaining > 1 {
+                self.scheduledTasks.append(self.schedule(self.startTapGap) { [weak self] in
+                    self?.performStartTaps(remaining: remaining - 1, generation: sessionGeneration)
+                })
+                return
+            }
+            self.startSequenceBegan = false
             self.phase = .active(sessionGeneration)
             if !self.preRoll.isEmpty {
                 self.enqueuePreRollAudio(self.preRoll)
@@ -444,8 +478,8 @@ final class VoiceFnTapSessionController {
             releaseFunctionKeyIfNeeded()
             runIdleCompletions()
         case .starting:
-            if functionKeyIsPressed {
-                // Keep the start tap's scheduled release, then drain and stop normally.
+            if functionKeyIsPressed || startSequenceBegan {
+                // Keep the start taps' scheduled work, then drain and stop normally.
                 remoteEnded = true
                 preRoll.removeAll()
             } else {
@@ -486,6 +520,7 @@ final class VoiceFnTapSessionController {
 
     private func resetSessionState() {
         phase = .idle
+        startSequenceBegan = false
         preRoll.removeAll(keepingCapacity: false)
         remoteEnded = false
         drainOperationID = nil

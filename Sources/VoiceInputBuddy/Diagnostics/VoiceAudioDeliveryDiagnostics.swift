@@ -97,6 +97,13 @@ struct VoiceAudioDeliveryDiagnostic: Equatable {
     var result: VoiceAudioDeliveryResult {
         VoiceAudioDeliveryPolicy.result(for: self)
     }
+
+    mutating func observeOutput(_ snapshot: VirtualAudioOutputDiagnosticSnapshot) {
+        // A fully delivered, ended session is historical evidence. Normal idle
+        // teardown must not replace its verified route with an absent engine.
+        guard result != .deliveredToSelectedDevice else { return }
+        outputAtObservation = snapshot
+    }
 }
 
 enum VoiceAudioDeliveryPolicy {

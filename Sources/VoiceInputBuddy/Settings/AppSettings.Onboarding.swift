@@ -327,6 +327,27 @@ extension AppSettings {
             defaults.removeObject(forKey: Keys.onboardingTrialSnapshot)
             return
         }
+        if defaults.integer(forKey: Keys.onboardingCompletedVersion) < currentOnboardingVersion,
+           defaults.string(forKey: Keys.onboardingStep) == OnboardingStep.voiceTest.rawValue,
+           let bindingData = defaults.data(forKey: Keys.onboardingStagedVoiceBinding),
+           let binding = try? JSONDecoder().decode(VoiceToolUserBinding.self, from: bindingData),
+           binding.validationState == .staged,
+           defaults.string(forKey: Keys.onboardingVoiceTool) == binding.tool.rawValue,
+           let source = defaults.string(forKey: Keys.onboardingControlSource)
+               .flatMap(OnboardingControlSource.init(rawValue:)),
+           let plan = OnboardingVoicePairingPlan.resolve(
+               tool: binding.tool, controlSource: source, userBinding: binding
+           ) {
+            // The wizard resumes directly at voice testing after relaunch. Its
+            // staged trigger must resume too; retain the snapshot for cancellation.
+            defaults.set(plan.binding.shortcut.rawValue, forKey: Keys.voiceKeyMode)
+            defaults.set(plan.fnTapModeEnabled, forKey: Keys.voiceFnTapModeEnabled)
+            if let mode = plan.chromecastVoiceMode {
+                defaults.set(mode.rawValue, forKey: Keys.chromecastVoiceMode)
+            }
+            AppLogger.shared.write("ONBOARDING BINDING restored reason=resuming_voice_test")
+            return
+        }
         defaults.set(snapshot.voiceKeyMode.rawValue, forKey: Keys.voiceKeyMode)
         defaults.set(
             snapshot.voiceFnTapModeEnabled && snapshot.voiceKeyMode == .function,

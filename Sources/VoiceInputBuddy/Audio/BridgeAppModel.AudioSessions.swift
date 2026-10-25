@@ -121,6 +121,7 @@ extension BridgeAppModel {
                 )
                 return
             }
+            self.preserveCompletedVoiceAudioDelivery()
             self.audio.output.stop()
             self.isAudioOutputReady = false
             self.testToneStatus = LocalizedMessage("audio.output.none_or_unavailable")

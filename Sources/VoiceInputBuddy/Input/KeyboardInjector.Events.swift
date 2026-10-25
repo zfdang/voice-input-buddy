@@ -64,7 +64,11 @@ extension KeyboardInjector {
               let event = CGEvent(keyboardEventSource: source, virtualKey: code, keyDown: isDown)
         else { return nil }
         event.type = keyEventType(code: code, isDown: isDown)
-        event.flags = flags.union(hardwareFlags())
+        // Posting Fn down can make the HID snapshot retain Fn. Re-inheriting
+        // that bit on key-up turns every tap into a continuous hold.
+        let inheritedFlags = code == VoiceKeyMode.function.keyCode
+            ? hardwareFlags().subtracting(.maskSecondaryFn) : hardwareFlags()
+        event.flags = flags.union(inheritedFlags)
         event.setIntegerValueField(.eventSourceUserData, value: marker)
         return event
     }
@@ -73,6 +77,10 @@ extension KeyboardInjector {
                                           flags: CGEventFlags, marker: Int64) -> Bool {
         guard let event = makeMarkedKeyEvent(code: code, isDown: isDown, flags: flags, marker: marker)
         else { return false }
+        AppLogger.shared.write(
+            "VOICE KEY EVENT key_code=\(code) edge=\(isDown ? "down" : "up") " +
+                "modifier_flags=\(event.flags.rawValue) result=submitted target_response=unknown"
+        )
         event.post(tap: .cghidEventTap)
         return true
     }

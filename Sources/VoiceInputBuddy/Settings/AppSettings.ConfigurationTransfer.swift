@@ -40,6 +40,7 @@ extension AppSettings {
             openMainWindowAtLaunch: openMainWindowAtLaunch,
             checksForPreReleaseUpdates: checksForPreReleaseUpdates,
             experimentalContinuousRecordingEnabled: experimentalContinuousRecordingEnabled,
+            voiceTool: onboardingVoiceTool,
             voiceFnTapModeEnabled: voiceFnTapModeEnabled,
             voiceKeyMode: voiceKeyMode,
             continuousRecordingPowerBindingBackup: continuousRecordingPowerBindingBackup
@@ -68,7 +69,8 @@ extension AppSettings {
     var voiceKeyConfigurationState: VoiceKeyConfigurationState {
         VoiceKeyConfigurationState(
             mode: voiceKeyMode,
-            fnTapModeEnabled: voiceFnTapModeEnabled && voiceKeyMode == .function
+            fnTapModeEnabled: voiceFnTapModeEnabled && voiceKeyMode == .function,
+            tool: onboardingVoiceTool
         )
     }
 
@@ -78,7 +80,8 @@ extension AppSettings {
         let fnTapModeEnabled = (configuration.voiceFnTapModeEnabled ?? false) && mode == .function
         return VoiceKeyConfigurationState(
             mode: mode,
-            fnTapModeEnabled: fnTapModeEnabled
+            fnTapModeEnabled: fnTapModeEnabled,
+            tool: configuration.voiceTool ?? onboardingVoiceTool
         )
     }
 
@@ -97,7 +100,8 @@ extension AppSettings {
             importedMode == .function
         let importedVoiceKeyConfiguration = VoiceKeyConfigurationState(
             mode: importedMode,
-            fnTapModeEnabled: importedFnTapModeEnabled
+            fnTapModeEnabled: importedFnTapModeEnabled,
+            tool: configuration.voiceTool ?? onboardingVoiceTool
         )
 
         let importedApplicationProfiles = (configuration.customApplicationProfiles ?? [])
@@ -240,6 +244,7 @@ extension AppSettings {
         if let checksForPreReleaseUpdates = configuration.checksForPreReleaseUpdates {
             self.checksForPreReleaseUpdates = checksForPreReleaseUpdates
         }
+        setOnboardingVoiceTool(importedVoiceKeyConfiguration.tool)
         voiceKeyMode = importedVoiceKeyConfiguration.mode
         voiceFnTapModeEnabled = importedVoiceKeyConfiguration.fnTapModeEnabled && voiceKeyMode == .function
         applyContinuousRecordingExperimentState(

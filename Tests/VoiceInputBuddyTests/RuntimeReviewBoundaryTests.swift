@@ -63,6 +63,25 @@ struct RuntimeReviewBoundaryTests {
         #expect(up.getIntegerValueField(.eventSourceStateID) == down.getIntegerValueField(.eventSourceStateID))
     }
 
+    @Test func functionKeyTapsReleaseEvenWhenHIDStillReportsThePostedFnFlag() throws {
+        let inherited: CGEventFlags = [.maskSecondaryFn, .maskShift]
+        var edges: [Bool] = []
+        for _ in 0..<3 { // Double start followed by a single stop.
+            for down in [true, false] {
+                let event = try #require(KeyboardInjector.makeMarkedKeyEvent(
+                    code: VoiceKeyMode.function.keyCode, isDown: down,
+                    flags: down ? .maskSecondaryFn : [],
+                    marker: KeyboardInjector.orderedVoiceEventMarker,
+                    hardwareFlags: { inherited }
+                ))
+                #expect(event.type == .flagsChanged)
+                #expect(event.flags.contains(.maskShift))
+                edges.append(event.flags.contains(.maskSecondaryFn))
+            }
+        }
+        #expect(edges == [true, false, true, false, true, false])
+    }
+
     @Test func progressRefreshesWriteTimeoutWhileRepeatedPumpsDoNot() throws {
         let clock = ControlledTestScheduler()
         var budget = 0

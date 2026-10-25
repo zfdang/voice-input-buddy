@@ -1150,6 +1150,14 @@
 
 "onboarding.voice_tool.voicecursor.title" = "VoiceCursor";
 "onboarding.voice_tool.voicecursor.detail" = "Use VoiceCursor with the virtual microphone and your configured voice shortcut.";
+"onboarding.voice_tool.macos_dictation.title" = "macOS Dictation";
+"onboarding.voice_tool.macos_dictation.detail" = "Use the built-in Dictation. You do not need a third-party app.";
+"onboarding.voice_tool.dictation_fn_tap_explanation" = "Hold the remote's voice key to talk and release when done. Voice Input Buddy sends two Fn taps to start macOS Dictation, then waits for the remaining audio to finish before sending one Fn tap to stop it. Fn Tap conversion is enabled automatically.";
+"onboarding.voice_tool.guide.enable_dictation" = "Turn on macOS Dictation";
+"onboarding.voice_tool.guide.screenshot.macos_dictation_enable" = "Open System Settings → Keyboard → Dictation. Turn on Dictation and confirm the system privacy prompt. Add the languages you speak and wait for any language downloads to finish.";
+"onboarding.voice_tool.guide.configure_dictation" = "Set the Dictation shortcut to Press 🌐 Twice";
+"onboarding.voice_tool.guide.screenshot.macos_dictation_shortcut" = "In Dictation → Shortcut, choose Press 🌐 Twice. Holding the remote sends two Fn taps to start Dictation; releasing it sends one Fn tap after the audio finishes to stop Dictation. Keep the system 🌐 key assigned to Dictation.";
+"onboarding.voice_tool.guide.screenshot.macos_dictation_microphone" = "In System Settings → Keyboard → Dictation → Microphone source, select Voice Input Buddy Mic explicitly, rather than Automatic. The highlighted setting belongs to Dictation, not the system's default microphone.";
 
 "onboarding.step.welcome" = "Welcome";
 "onboarding.step.remoteAvailability" = "Your device";
