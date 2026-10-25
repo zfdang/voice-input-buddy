@@ -71,4 +71,27 @@ struct ApplicationTerminationTests {
         #expect(replies == 1)
     }
 
+    @Test func terminationRequestedFromRunLoopCompletesCleanly() async {
+        let coordinator = ApplicationTerminationCoordinator()
+        var replied = false
+        await withCheckedContinuation { continuation in
+            RunLoop.main.perform {
+                MainActor.assumeIsolated {
+                    coordinator.request(
+                        begin: { complete in
+                            DispatchQueue.main.async {
+                                complete()
+                            }
+                        },
+                        reply: {
+                            replied = true
+                            continuation.resume()
+                        }
+                    )
+                }
+            }
+        }
+        #expect(replied)
+        #expect(coordinator.isTerminating)
+    }
 }

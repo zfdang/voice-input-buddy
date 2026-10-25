@@ -416,7 +416,9 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
                 queue: .main
             )
             source.setEventHandler {
-                NSApp.terminate(nil)
+                RunLoop.main.perform {
+                    NSApp.terminate(nil)
+                }
             }
             source.resume()
             terminationSignalSources.append(source)

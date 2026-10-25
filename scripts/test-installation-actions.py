@@ -113,6 +113,30 @@ class InstallationActionsTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn(b'signature is invalid', result.stderr)
 
+    def test_user_uninstaller_force_kills_app_when_graceful_quit_times_out(self):
+        staging = self.root / 'uninstall-force'
+        staging.mkdir()
+        shutil.copy2(self.library, staging / self.library.name)
+        source = (SCRIPTS / 'uninstaller/uninstall-user.sh').read_text()
+        source = source.replace("app='/Applications/Voice Input Buddy.app'", f"app='{self.root / 'missing.app'}'")
+        state_file = staging / 'pkill_calls'
+        pkill_body = f'#!/bin/bash\necho "$@" >> "{state_file}"\nexit 0\n'
+        pgrep_body = f'#!/bin/bash\nif grep -q -- "-9" "{state_file}" 2>/dev/null; then\n    exit 1\nfi\nexit 0\n'
+        for original, name, body in [('/usr/bin/id', 'id', 'echo 501\n'),
+                                     ('/usr/bin/pkill', 'pkill', pkill_body),
+                                     ('/usr/bin/pgrep', 'pgrep', pgrep_body)]:
+            tool = staging / name
+            tool.write_text(body)
+            tool.chmod(0o755)
+            source = source.replace(original, str(tool))
+        source = source.replace('/bin/sleep 0.1', '/bin/sleep 0.001')
+        script = staging / 'uninstall-user.sh'
+        script.write_text(source)
+        result = subprocess.run(['bash', str(script), 'prepare'], capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = state_file.read_text().splitlines()
+        self.assertTrue(any('-9' in call for call in calls), f"Expected -9 in pkill calls: {calls}")
+
     def test_cleanup_rejects_missing_relative_root_and_symlink_homes(self):
         link = self.root / 'linked-home'
         link.symlink_to(self.root, target_is_directory=True)
