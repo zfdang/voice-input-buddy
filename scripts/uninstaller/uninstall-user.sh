@@ -10,6 +10,13 @@ prepare)
         /bin/sleep 0.1
     done
     if /usr/bin/pgrep -u "$(/usr/bin/id -u)" -x VoiceInputBuddy >/dev/null; then
+        /usr/bin/pkill -9 -u "$(/usr/bin/id -u)" -x VoiceInputBuddy || true
+        for attempt in {1..20}; do
+            /usr/bin/pgrep -u "$(/usr/bin/id -u)" -x VoiceInputBuddy >/dev/null || break
+            /bin/sleep 0.1
+        done
+    fi
+    if /usr/bin/pgrep -u "$(/usr/bin/id -u)" -x VoiceInputBuddy >/dev/null; then
         echo 'Quit Voice Input Buddy before uninstalling.' >&2; exit 1
     fi
     app='/Applications/Voice Input Buddy.app'
