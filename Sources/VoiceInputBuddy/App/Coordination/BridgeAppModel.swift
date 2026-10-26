@@ -148,6 +148,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     var pendingVoiceKeyActivationOwner: VoiceKeyLatch.Owner?
     var pendingVoiceKeyActivationCompletion: ((Bool) -> Void)?
     var pendingVoiceToolMappingRefresh = false
+    weak var longRecordingBridge: BluetoothRemoteBridge?
     var longRecordingRequested = false
     var longRecordingGeneration: UInt64 = 0
     var longRecordingOpenTimer: DispatchSourceTimer?

@@ -12,7 +12,9 @@ extension BridgeAppModel {
             return true
         }
         guard isConnected,
-              !voiceSession.isActive
+              !voiceSession.isActive,
+              longRecordingCloseTimer == nil,
+              let bridge = selectedBluetoothBridge
         else {
             AppLogger.shared.write(
                 "LONG RECORDING rejected connected=\(isConnected) audio_ready=\(isAudioOutputReady) " +
@@ -22,6 +24,7 @@ extension BridgeAppModel {
         }
         longRecordingGeneration &+= 1
         let generation = longRecordingGeneration
+        longRecordingBridge = bridge
         longRecordingRequested = true
         if !audio.output.isReadyForTestTone {
             ensureVirtualAudioOutputReady(reason: "long_recording_start") { [weak self] ready in
@@ -41,8 +44,8 @@ extension BridgeAppModel {
             finishLongRecording(reason: "audio_not_ready")
             return false
         }
-        guard let selectedBluetoothBridge,
-              selectedBluetoothBridge.requestMicrophoneOpen()
+        guard let bridge = longRecordingBridge,
+              bridge.requestMicrophoneOpen()
         else {
             finishLongRecording(reason: "open_rejected")
             return false
@@ -73,9 +76,13 @@ extension BridgeAppModel {
         longRecordingRequested = false
         longRecordingGeneration &+= 1
         cancelLongRecordingTimers()
-        let closeWritten = selectedBluetoothBridge?.requestMicrophoneClose() ?? false
-        if voiceSession.isActive {
+        let bridge = longRecordingBridge
+        let closeWritten = bridge?.requestMicrophoneClose() ?? false
+        if voiceSession.isActive,
+           BluetoothVoiceDeviceOwnershipPolicy.matches(bridge?.deviceIdentifier, active: voiceSession.activeDeviceIdentifier) {
             scheduleLongRecordingCloseTimeout(generation: longRecordingGeneration)
+        } else {
+            longRecordingBridge = nil
         }
         releaseVirtualAudioOutputIfUnused(reason: "long_recording_stopped")
         AppLogger.shared.write(
@@ -91,17 +98,20 @@ extension BridgeAppModel {
             guard let self,
                   self.longRecordingGeneration == generation,
                   !self.longRecordingRequested,
-                  self.voiceSession.isActive
+                  self.voiceSession.isActive,
+                  let bridge = self.longRecordingBridge,
+                  BluetoothVoiceDeviceOwnershipPolicy.matches(bridge.deviceIdentifier, active: self.voiceSession.activeDeviceIdentifier)
             else { return }
             self.longRecordingCloseTimer = nil
             AppLogger.shared.write("LONG RECORDING close_timeout reconnecting=true")
-            self.selectedBluetoothBridge?.reconnectNow()
+            bridge.reconnectNow()
         }
         longRecordingCloseTimer = timer
         timer.resume()
     }
 
     func finishLongRecording(reason: String) {
+        longRecordingBridge = nil
         longRecordingRequested = false
         longRecordingGeneration &+= 1
         cancelLongRecordingTimers()

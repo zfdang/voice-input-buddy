@@ -18,6 +18,11 @@ extension BridgeAppModel {
 
     func bluetoothBridgeDidStartVoice(_ bridge: BluetoothRemoteBridge) {
         guard let identifier = bridge.deviceIdentifier else { return }
+        if longRecordingRequested, longRecordingBridge !== bridge {
+            _ = bridge.requestMicrophoneClose()
+            AppLogger.shared.write("ATVV STREAM rejected_busy reason=long_recording_owner")
+            return
+        }
         guard canAcceptNewVoiceSession(from: .bluetooth) else {
             _ = bridge.requestMicrophoneClose()
             AppLogger.shared.write("ATVV STREAM rejected_busy reason=other_voice_source")
@@ -128,7 +133,7 @@ extension BridgeAppModel {
             )
 
             cancelVirtualAudioReleaseIfPending(trigger: "bluetooth_voice_start")
-            if longRecordingRequested {
+            if longRecordingRequested, longRecordingBridge === bridge {
                 longRecordingOpenTimer?.cancel()
                 longRecordingOpenTimer = nil
                 AppLogger.shared.write("LONG RECORDING started")
@@ -267,12 +272,12 @@ extension BridgeAppModel {
         voiceSession.end()
         releaseVoiceKeyIfNeeded(owner: .bluetooth, forceSoftware: true)
         voiceSession.commandAudio.cancel()
-        if longRecordingRequested {
-            finishLongRecording(reason: "remote_stop")
-        } else if longRecordingCloseTimer != nil {
-            longRecordingCloseTimer?.cancel()
-            longRecordingCloseTimer = nil
-            AppLogger.shared.write("LONG RECORDING close_confirmed")
+        if longRecordingBridge === bridge {
+            if longRecordingRequested {
+                finishLongRecording(reason: "remote_stop")
+            } else if longRecordingCloseTimer != nil {
+                finishLongRecording(reason: "close_confirmed")
+            }
         }
         let handledByFnTapMode = voiceFnTapSession.stopVoice()
         let traceID = voiceSession.activeBluetoothVoiceTraceID ?? 0
@@ -559,7 +564,7 @@ extension BridgeAppModel {
                 releaseVoiceKeyIfNeeded(owner: .bluetooth, forceSoftware: true)
                 endVoiceSessionIfNeeded(flushAudio: false)
             }
-            if longRecordingRequested {
+            if longRecordingBridge === bridge {
                 finishLongRecording(reason: "bluetooth_not_ready")
             }
         }
