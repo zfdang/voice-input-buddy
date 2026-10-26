@@ -61,8 +61,10 @@ extension BridgeAppModel {
             voiceKeyModeRequested: requestedVoiceKeyMode
         )
         if settings.selectedRemoteProfile?.model.isChromecastRemote == true {
-            // G9N9N voice sessions are ATVV-driven; there is no native Xiaomi Fn key to remap.
-            let googlePowerKeySuppressed = applyVoiceFunctionMapping(neutralizeVoiceKey: false)
+            // G9N9N has no native Fn, but connected Xiaomi services still need
+            // the global software-trigger policy while this card is selected.
+            let googlePowerKeySuppressed = applyVoiceFunctionMapping(
+                neutralizeVoiceKey: shouldNeutralizeNativeVoiceKey)
             voiceFnTapSession.setEnabled(requestedFnTapMode && KeyboardInjector.isAccessibilityTrusted)
             startHIDMonitors(powerKeySuppressed: googlePowerKeySuppressed)
             refreshVoiceKeyCompatibilityWarning()

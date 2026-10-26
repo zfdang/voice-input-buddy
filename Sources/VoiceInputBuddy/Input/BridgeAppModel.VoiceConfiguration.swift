@@ -27,6 +27,12 @@ extension BridgeAppModel {
             preferredInputSourceID: settings.onboardingVoiceTool.preferredInputSourceID
         )
     }
+    /// Native Xiaomi services remain present when the selected card is a
+    /// G9N9N. Their mapping follows the global trigger, not the selected family.
+    var shouldNeutralizeNativeVoiceKey: Bool {
+        settings.voiceKeyMode != .function || settings.voiceFnTapModeEnabled || requiresOrderedVoiceFn
+    }
+
     func setExperimentalContinuousRecordingEnabled(_ enabled: Bool) {
         if !enabled {
             stopLongRecording(reason: "feature_disabled")
@@ -132,7 +138,8 @@ extension BridgeAppModel {
         if settings.selectedRemoteProfile?.model.isChromecastRemote == true {
             settings.voiceFnTapModeEnabled = true
             voiceFnTapSession.setEnabled(true)
-            startHIDMonitors(powerKeySuppressed: applyVoiceFunctionMapping(neutralizeVoiceKey: false))
+            startHIDMonitors(powerKeySuppressed: applyVoiceFunctionMapping(
+                neutralizeVoiceKey: shouldNeutralizeNativeVoiceKey))
             return
         }
 
