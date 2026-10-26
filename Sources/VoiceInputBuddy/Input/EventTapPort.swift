@@ -18,7 +18,7 @@ final class EventTapRecovery {
 
     func recover(type: CGEventType, isCurrent: @escaping () -> Bool,
                  permissionsGranted: @escaping () -> Bool,
-                 enable: @escaping () -> Void, stop: @escaping () -> Void) {
+                 enable: @escaping () -> Bool, stop: @escaping () -> Void) {
         let time = now()
         if let lastAttempt, time - lastAttempt > 30 { attempts = 0 }
         lastAttempt = time
@@ -27,7 +27,13 @@ final class EventTapRecovery {
         let exhausted = attempts > 5
         EventTapPort.deferRecovery(type: type,
             dispatch: { self.dispatch(delay, $0) }, isCurrent: isCurrent,
-            permissionsGranted: { !exhausted && permissionsGranted() }, enable: enable, stop: stop)
+            permissionsGranted: { !exhausted && permissionsGranted() }, enable: {
+                guard !enable() else { return }
+                // A failed enable need not produce another WindowServer callback.
+                // Keep the same port/generation guard and bounded retry budget.
+                self.recover(type: type, isCurrent: isCurrent,
+                    permissionsGranted: permissionsGranted, enable: enable, stop: stop)
+            }, stop: stop)
     }
 }
 

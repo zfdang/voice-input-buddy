@@ -65,6 +65,7 @@ final class KeyboardEventSuppressor {
     var isRunning: Bool {
         tapReady && eventTap.map { CGEvent.tapIsEnabled(tap: $0) } == true
     }
+    /// Terminal recovery failure, delivered outside the WindowServer callback.
     var onSystemDisabled: (() -> Void)?
 
     @discardableResult
@@ -180,8 +181,9 @@ final class KeyboardEventSuppressor {
 
     func handle(type: CGEventType, event: CGEvent) -> Bool {
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            // Gate non-seized HID injection immediately. Leave the port and
+            // monitors alive while recovery runs outside this system callback.
             tapReady = false
-            onSystemDisabled?()
             tapRecoveryGeneration += 1
             let generation = tapRecoveryGeneration
             if let port = eventTap {
@@ -192,11 +194,14 @@ final class KeyboardEventSuppressor {
                     permissionsGranted: { [weak self] in self?.permissionsGranted() == true },
                     enable: { [weak self] in
                         CGEvent.tapEnable(tap: port, enable: true)
-                        self?.tapReady = CGEvent.tapIsEnabled(tap: port)
+                        let enabled = CGEvent.tapIsEnabled(tap: port)
+                        self?.tapReady = enabled
+                        return enabled
                     },
                     stop: { [weak self] in
                         self?.stop()
-                        AppLogger.shared.write("HID FILTER stopped reason=system_disabled_or_permission_revoked")
+                        self?.onSystemDisabled?()
+                        AppLogger.shared.write("HID FILTER stopped reason=recovery_exhausted_or_permission_revoked")
                     })
             }
             return false

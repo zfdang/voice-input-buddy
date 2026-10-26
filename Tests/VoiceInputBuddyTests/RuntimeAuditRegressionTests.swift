@@ -8,13 +8,13 @@ import Testing
 @Suite("Runtime audit regressions")
 @MainActor
 struct RuntimeAuditRegressionTests {
-    @Test func disabledNativeFilterNotifiesItsOwnerImmediately() throws {
+    @Test func disabledNativeFilterDefersTerminalOwnerNotification() throws {
         let filter = KeyboardEventSuppressor()
         var notifications = 0
         filter.onSystemDisabled = { notifications += 1 }
         let event = try #require(CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: true))
         #expect(!filter.handle(type: .tapDisabledByTimeout, event: event))
-        #expect(notifications == 1)
+        #expect(notifications == 0)
         #expect(!filter.isRunning)
     }
 
@@ -173,7 +173,7 @@ struct RuntimeAuditRegressionTests {
         let recovery = EventTapRecovery(now: { time }, dispatch: { deferred.append(($0, $1)) })
         for _ in 0..<6 {
             recovery.recover(type: .tapDisabledByTimeout, isCurrent: { current },
-                permissionsGranted: { true }, enable: { enables += 1 }, stop: { stops += 1 })
+                permissionsGranted: { true }, enable: { enables += 1; return true }, stop: { stops += 1 })
             time += deferred.last!.0
             deferred.last!.1()
         }
@@ -181,7 +181,7 @@ struct RuntimeAuditRegressionTests {
         #expect(enables == 5 && stops == 1)
         time += 31
         recovery.recover(type: .tapDisabledByTimeout, isCurrent: { current },
-            permissionsGranted: { true }, enable: { enables += 1 }, stop: { stops += 1 })
+            permissionsGranted: { true }, enable: { enables += 1; return true }, stop: { stops += 1 })
         #expect(deferred.last?.0 == 0.5)
         current = false
         deferred.last!.1()
