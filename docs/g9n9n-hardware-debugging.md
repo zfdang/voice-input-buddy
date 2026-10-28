@@ -1,4 +1,70 @@
-# G9N9N 首次真机调试记录
+# G9N9N 真机调试记录
+
+## 2026-10-28：普通按键独立排查
+
+本轮样机的系统身份为 Google Inc.、VID/PID `18D1:9450`、DIS 型号 `A0`、固件 `26.7`，与下文 10 月 19 日的 A3 / 26.0 样机分开记录。主机为 macOS 15.8.1（24H32），已安装 App 为 26.10.26 / 497。
+
+**当前确认：单键及松开事件没有到达公开 IOHID 回调；双键组合可以到达。尚未抓到 HID 转交之前的蓝牙原始包，不能将“固件发送短包”写成已证实根因。**
+
+### 测试方法和实际结果
+
+先检查 App 日志：输入监控和辅助功能均已授权。既有 Google HID 报告均为两个有效索引的 3 字节报告，后续缺少松开，触发八秒 missing-release 兜底。操作者明确确认这些报告来自按要求进行的双键操作，不能算单键通过。
+
+独立诊断程序起初打开失败，错误为 `kIOReturnExclusiveAccess`；这时 App 持有独占连接，该次无输入不计为测试结果。退出 App 后，独立程序打开成功、匹配设备成功、输入监控授权正常，使用非独占模式同时记录原始 report 和 element value 回调。不运行 App 的解析、映射、按键注入或缺失松开定时器。
+
+| 轮次 | 操作者确认完成的操作 | 独立接口结果 |
+| --- | --- | --- |
+| 第一轮 | 静置；上键单独短按三次，间隔两秒；按住返回再按上，保持一秒；先松上，两秒后松返回；全松后等十秒 | 仅在组合时收到一次 `01 03 0B`（上＋返回），无单键及松开 report；同时收到上和返回的 element 按下值 |
+| 第二轮 | 上键单独保持三秒后松开；等待五秒；上＋返回同时保持三秒后全松开；等待五秒 | 再次只收到组合 `01 03 0B`，无单键及松开 report；并行每 200 ms 主动读取 input report，观察到的读取均为成功但长度为零 |
+
+组合 report 时间分别为 UTC `05:20:24`、`05:22:36`（新加坡时间 13:20:24、13:22:36）。第二次相同组合没有新的 element value 边沿，不能据此声称组合没有到达；原始 report 回调确实再次到达。丢失松开时，系统保留旧的 element 状态，也会影响后续相同值是否产生边沿。
+
+本轮测试结束后停止独立观测及轮询，重新启动原安装路径的 Voice Input Buddy。未替换已安装 App、签名、权限或驱动。
+
+### 描述符及结论边界
+
+系统公开的 report 1 描述符与项目 `indexedConsumerDescriptor` 完全一致：两个 8 位数组索引，加 report ID，共 3 字节；`MaxInputReportSize=3`。索引 `03` 对应上键，`0B` 对应返回键，组合解析正确。
+
+- Apple [IOHIDElementPrivate::processReport 源码](https://github.com/apple-oss-distributions/IOHIDFamily/blob/main/IOHIDFamily/IOHIDElementPrivate.cpp) 对非变长元素检查实际 bit 数是否小于描述符 report 大小；短包可能在这里失去元素／原始报告回调。这与观测相符，但公开源码不等于本机完整二进制调用链的测量。
+- 注册表 `IOReportLegend` 中的 **IOHIDDevice Input Report Errors** 是统计通道的名称。Apple [IOHIDDevice::createReporters 源码](https://github.com/apple-oss-distributions/IOHIDFamily/blob/main/IOHIDFamily/IOHIDDevice.cpp) 在设备初始化时建立该栏目；栏目存在不是错误计数增加的证据。本轮没有读取到实际错误计数。
+- 系统日志确实曾标记 `HIDBadBehavior`，同一次重连也短暂出现 `HIDGoodBehavior`。标签不能独立证明报文长度、具体错误原因或永久黑名单。
+- 未获取到丢失报告的实际字节，不能声称单键一定发送 2 字节、松开一定发送 1～2 字节，也不能排除 macOS 蓝牙层转换问题、样机固件行为或连接问题。
+- 此次 ATVV 协商日志为 `version=256 codec=2 frame=160`。用户确认语音可用；本轮未重新验收音质、丢包率、长会话或休眠重连，不能泛化为全部通过。
+
+### 公开蓝牙接口与下一步
+
+退出 App 期间，独立 CoreBluetooth 程序通过已连接的 ATVV 服务找到唯一 Chromecast 候选并连接，分别调用 `discoverServices(nil)` 和明确请求 `1812`。两次均成功，但可见服务中没有 HID `1812`；可见 UUID 为：
+
+```text
+180A, 180F, 1813
+AB5E0001-5A21-4F05-BC7D-AF01F617B664
+F000BBC0-0451-4000-B000-000000000000
+6C6F6701-5A21-4F05-BC7D-AF01F617B664
+D343BFC0-5A21-4F05-BC7D-AF01F617B664
+```
+
+不能依靠此次公开 CoreBluetooth 服务发现绕过 HID 接收路径；主动 IOHID 读取也未获得可用按键状态。下一步使用 Apple [PacketLogger](https://developer.apple.com/bluetooth/) 取得本机蓝牙 HCI/ATT 报文，核对同一 HID report 特征的单键、组合、部分松开及全松开通知。GATT 通知通常不包含 IOHID 回调中的 report ID，比较长度时必须依据 Report Reference 对齐，不能把两层字节数直接混用。没有完整特征对应关系、按键操作和原始通知时，继续保留根因未确认的状态。
+
+PacketLogger 随 Apple Additional Tools for Xcode 分发，下载需要 Apple 账户登录；本机未找到已安装的工具。按 Apple [Bluetooth for macOS 的说明](https://developer.apple.com/feedback-assistant/profiles-and-logs/?name=bluetooth) 准备日志环境。原始抓包只在本地分析，公开记录只保留必要的脱敏协议字段，不提交设备地址、序列号或其他蓝牙设备的流量。
+
+### 可复用的诊断入口
+
+先退出 Voice Input Buddy，确保设备已连接；在已获输入监控／蓝牙权限的终端运行：
+
+```sh
+# 默认 300 秒，可指定 0～3600 秒之间的正数；只匹配 18D1:9450。
+swift scripts/diagnose-g9n9n-hid.swift 60
+# 可选：每 200 ms 主动读取 input report；这只是诊断，不是产品轮询方案。
+swift scripts/diagnose-g9n9n-hid.swift 60 --poll
+# 只发现服务；不订阅、不写特征、不接收音频。
+swift scripts/diagnose-g9n9n-services.swift
+```
+
+无权限、独占打开失败、无匹配设备或服务发现未完成，都不能作为设备不发送的证据。HID 工具日志只包含目标 VID/PID 的描述符、有限长度按键报告、元素值及计数，不打印设备地址、序列号或音频。测试后退出工具并重新打开原安装 App。
+
+验证：`swift build --disable-keychain` 成功；默认 Command Line Tools 的 `swift test --disable-keychain` 因缺少 `Testing` 模块失败，切换完整 Xcode 后执行 `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --disable-keychain`，569 个测试、97 个套件通过。两项工具另行编译检查并在本机执行；这些验证不代表普通单键已修复。
+
+## 2026-10-19：首次真机调试
 
 日期：2026-10-19。样机以 Chromecast Remote 连接 macOS；这是一台样机的结果，不代表所有 G9N9N 或第三方兼容款。
 
