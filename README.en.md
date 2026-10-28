@@ -38,7 +38,7 @@ Download `Voice_Input_Buddy_*.pkg` from [Releases](https://github.com/zfdang/voi
 
 On the Devices page, remove an unused remote and its saved app settings. Its macOS Bluetooth pairing remains; choosing Add Device may rediscover previously removed remotes.
 
-Configure control buttons for supported devices under **Buttons**. To check the setup again, use **Run Setup Guide Again** at the top of Settings. G9N9N currently has partial voice support and **does not support control-button mapping**. For its initial OK check, press OK + Up together; in the later button test, also press Back + Up together to reach three distinct buttons and continue voice setup. Release both after each pair. After setup, OK + any direction offers an experimental Enter action when mapping is enabled and the app has exclusive device access; all four directions were tested on the A0 / firmware 26.7 unit. See [G9N9N voice support and button-mapping limitations](docs/g9n9n-compatibility.md) (Chinese).
+Configure control buttons for supported devices under **Buttons**. To check the setup again, use **Run Setup Guide Again** at the top of Settings. G9N9N **does not support single-button mapping** due to non-compliant key reports (voice input works normally). Use two-button pairs (OK + Up, Back + Up) to pass setup checks; after setup, OK + any direction sends Enter when mapping is enabled and the device is seized. See [G9N9N voice support and button-mapping limitations](docs/g9n9n-compatibility.md) (Chinese).
 
 Driver installation requires administrator authorization and briefly interrupts audio. Current installers are not Apple-notarized and may be blocked by macOS. See [installation and release notes](docs/releases.md).
 
@@ -47,7 +47,7 @@ Driver installation requires administrator authorization and briefly interrupts 
 | Device | Status |
 | --- | --- |
 | Xiaomi Bluetooth Remote 2 / 2 Pro | RC001 = 2; RC003 = 2 Pro. Both have ATVV and button adapters. 2 Pro buttons tested locally and audio confirmed by the user; complete Remote 2 audio acceptance is pending |
-| Google Chromecast Voice Remote (G9N9N) | **Partial support: voice button and microphone tested working; control-button mapping is unsupported.** The A0 / firmware 26.7 unit sends single-key and release reports shorter than its descriptor requires. The experimental two-key Enter action was tested in all four directions on that unit; other units require separate validation. See the [standalone test report](docs/g9n9n-compatibility.md) (Chinese) |
+| Google Chromecast Voice Remote (G9N9N) | **Partial support: voice input works normally; single-button mapping is unsupported.** Single-key reports are dropped by macOS due to non-compliant lengths; OK + direction sends Enter. See the [standalone test report](docs/g9n9n-compatibility.md) (Chinese) |
 | Google TV Streamer Voice Remote (GY3LE) | Planned; adapter implementation and hardware validation pending |
 | Apple Siri Remote | Planned; adapter implementation and hardware validation pending |
 
