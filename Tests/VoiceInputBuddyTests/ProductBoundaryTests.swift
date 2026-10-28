@@ -280,7 +280,11 @@ struct ProductBoundaryTests {
             #expect(!OnboardingFlowPolicy.canContinue(from: .remote, voiceTool: .doubao,
                 selectedDevice: device, capabilities: .init(bluetoothGranted: true,
                     inputMonitoringGranted: true, accessibilityGranted: true)))
-            #expect(view.physicalRemotePairingKeys.thirdStep == "onboarding.remote.chromecast_pairing.third")
+            #expect(view.usesG9N9NButtonTestWorkaround == (device == .chromecastG9N9N))
+            #expect(view.physicalRemotePairingKeys.thirdStep == (device == .chromecastG9N9N
+                ? "onboarding.remote.g9n9n_pairing.third" : "onboarding.remote.chromecast_pairing.third"))
+            #expect(view.controlsDetailKey == (device == .chromecastG9N9N
+                ? "onboarding.controls.g9n9n.detail" : "onboarding.controls.chromecast.detail"))
         }
         #expect(RemoteSetupDevice.googleStreamerGY3LE.canStartSetup)
         #expect(OnboardingRemotePhotoKind.resolve(source: .chromecastRemote,

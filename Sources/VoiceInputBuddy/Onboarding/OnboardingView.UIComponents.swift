@@ -50,7 +50,9 @@ extension OnboardingView {
         case .controls:
             sidePanel(titleKey: "onboarding.side.controls") {
                 sideCheck("onboarding.side.three_buttons", isComplete: testedControlButtons.count >= 3)
-                sideCheck("onboarding.side.mapping_enabled", isComplete: settings.customMappingEnabled)
+                sideCheck(usesG9N9NButtonTestWorkaround
+                    ? "onboarding.side.g9n9n_test_enabled" : "onboarding.side.mapping_enabled",
+                    isComplete: settings.customMappingEnabled)
             }
         default:
             EmptyView()

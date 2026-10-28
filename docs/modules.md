@@ -11,7 +11,7 @@
 | VoiceInputBuddyTests | 协议、生命周期与产品边界测试 |
 | Sparkle | 第三方 macOS 更新框架 |
 
-当前连接适配提供小米 RC001／RC003 和 Google G9N9N；G9N9N 的 macOS 真机验收仍待完成。GY3LE 可进入连接向导，但没有型号专用协议适配；Siri Remote 可在设备目录中选择，不能继续连接。内部兼容类型不代表对应功能已启用；私有扩展包不参与构建。
+当前连接适配提供小米 RC001／RC003 和 Google G9N9N；G9N9N 当前仅部分支持语音功能，普通按键映射不支持，见 [独立测试报告](g9n9n-compatibility.md)。GY3LE 可进入连接向导，但没有型号专用协议适配；Siri Remote 可在设备目录中选择，不能继续连接。内部兼容类型不代表对应功能已启用；私有扩展包不参与构建。
 
 ## 驱动
 
@@ -32,3 +32,5 @@ VoiceInputBuddyMic.driver 基于固定版本 BlackHole 源码构建，使用独�
 ## G9N9N public adapter
 
 `G9N9NProtocol.swift` identifies candidates, parses report 2 Consumer Control usages and descriptor-verified report 1 button indices, checks ATVV capabilities, and distinguishes pairing errors. `BluetoothRemoteBridge` now also hosts G9N9N via explicit opt-in, requiring DIS PnP identity 18D1:9450 and ATVV v1.0 / 16 kHz before readiness; DIS model strings are informational. Audio uses the existing ADPCM decoder and virtual microphone output; driver sources and signing are unchanged. The retired no-op Chromecast package facade has been removed.
+
+Parser implementation is not a support claim: the tested A0 / firmware 26.7 unit sends short single-key and release notifications that never reach public HID callbacks. G9N9N currently has partial voice support; control-button mapping is unsupported.

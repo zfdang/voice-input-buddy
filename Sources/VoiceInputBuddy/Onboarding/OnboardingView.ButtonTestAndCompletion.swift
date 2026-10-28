@@ -4,12 +4,18 @@ import CoreBluetooth
 import SwiftUI
 
 extension OnboardingView {
+    var usesG9N9NButtonTestWorkaround: Bool {
+        settings.onboardingControlSource == .chromecastRemote &&
+            (settings.onboardingDevice ?? .chromecastG9N9N) == .chromecastG9N9N
+    }
+
     var controlsContent: some View {
         VStack(alignment: .leading, spacing: 16) {
             onboardingTitle("onboarding.controls.title")
             Text(verbatim: localization.text(controlsDetailKey))
                 .font(.system(size: 14))
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
             if shouldShowSecureInputWarning {
                 secureInputWarningCard
@@ -72,7 +78,9 @@ extension OnboardingView {
                 }
                 Text(verbatim: localization.text(
                     testedControlButtons.count >= 3
-                        ? "onboarding.controls.ready"
+                        ? usesG9N9NButtonTestWorkaround
+                            ? "onboarding.controls.g9n9n.ready"
+                            : "onboarding.controls.ready"
                         : "onboarding.controls.waiting"
                 ))
                 .font(.system(size: 13, weight: .medium))
@@ -88,7 +96,9 @@ extension OnboardingView {
         secondStep: String,
         thirdStep: String?
     ) {
-        Self.physicalRemotePairingKeys(for: settings.onboardingControlSource)
+        let keys = Self.physicalRemotePairingKeys(for: settings.onboardingControlSource)
+        return (keys.title, keys.firstStep, keys.secondStep,
+            usesG9N9NButtonTestWorkaround ? "onboarding.remote.g9n9n_pairing.third" : keys.thirdStep)
     }
 
     static func physicalRemotePairingKeys(
@@ -119,8 +129,10 @@ extension OnboardingView {
         }
     }
 
-    private var controlsDetailKey: String {
-        Self.controlsDetailKey(for: settings.onboardingControlSource)
+    var controlsDetailKey: String {
+        usesG9N9NButtonTestWorkaround
+            ? "onboarding.controls.g9n9n.detail"
+            : Self.controlsDetailKey(for: settings.onboardingControlSource)
     }
 
     static func controlsDetailKey(for source: OnboardingControlSource) -> String {
@@ -192,7 +204,9 @@ extension OnboardingView {
                 if settings.onboardingPurpose != .addDevice {
                     featureLine("mic.fill", "onboarding.complete.voice")
                 }
-                if settings.onboardingPurpose != .integration {
+                if usesG9N9NButtonTestWorkaround {
+                    featureLine("mic.fill", "onboarding.complete.g9n9n.voice_only")
+                } else if settings.onboardingPurpose != .integration {
                     featureLine("button.programmable", "onboarding.complete.controls")
                 }
                 featureLine("gearshape", "onboarding.complete.settings")
@@ -264,6 +278,13 @@ extension OnboardingView {
     }
 
     private func recoveryDetailKey(for failure: FirstUseFailureReason) -> String {
+        if usesG9N9NButtonTestWorkaround {
+            switch failure {
+            case .remoteButtonNotReady: return "onboarding.remote.g9n9n.button_waiting_detail"
+            case .controlsNotConfirmed: return "onboarding.controls.g9n9n.detail"
+            default: break
+            }
+        }
         guard failure == .remoteNotFound else {
             return "onboarding.recovery.\(failure.rawValue).detail"
         }
