@@ -658,11 +658,18 @@ final class HIDRemoteMonitor {
         // the original buttons, including a down with no corresponding up.
         if currentReportIsGoogle, reportID == 1,
            G9N9NProtocol.usesIndexedConsumerLayout(currentReportDescriptor),
-           G9N9NProtocol.isEnterChord(usages), !backOnlyMode,
+           usages.count > 1, !backOnlyMode,
            !OnboardingControlValidationPolicy.suppressConfiguredActions(
                at: settings.onboardingStep, source: settings.onboardingControlSource
            ) {
-            processG9N9NEnterChord()
+            if G9N9NProtocol.isEnterChord(usages) {
+                processG9N9NEnterChord()
+            } else {
+                // Unsupported pairs cannot safely enter the held-button pipeline:
+                // their missing release reports otherwise cause eight seconds of repeats.
+                resetInputState()
+                diagnosticLogger("HID G9N9N chord ignored reason=unsupported_pair")
+            }
             return
         }
         if backOnlyMode {

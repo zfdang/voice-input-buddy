@@ -67,4 +67,25 @@ struct G9N9NEnterChordTests {
         #expect(!G9N9NProtocol.isEnterChord([RemoteButton.up.hidUsage, RemoteButton.down.hidUsage]))
         #expect(!G9N9NProtocol.isEnterChord([ok, RemoteButton.up.hidUsage, RemoteButton.down.hidUsage]))
     }
+
+    @Test @MainActor func unsupportedDirectionPairsDoNotStartHeldActions() throws {
+        let name = "g9n9n-other-pair-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let settings = AppSettings(defaults: defaults)
+        settings.customMappingEnabled = true
+        settings.onboardingStep = .complete
+        var actions: [ButtonAction] = []
+        let monitor = HIDRemoteMonitor(settings: settings, profileID: UUID(),
+            runtimePermissions: { true }, actionPerformer: { _, _, configured in
+                actions.append(configured.action); return true
+            }, diagnosticLogger: { _ in })
+        monitor.connectSimulatedDevice(fingerprint: "google", profileID: UUID())
+        defer { monitor.disconnectSimulatedDevice() }
+        let descriptor = G9N9NProtocol.indexedConsumerDescriptor
+        monitor.handleSimulatedGoogleReport(reportID: 1, data: Data([1, 7, 4]), descriptor: descriptor)
+        monitor.handleSimulatedGoogleReport(reportID: 1, data: Data([1, 5, 4]), descriptor: descriptor)
+        monitor.handleSimulatedGoogleReport(reportID: 1, data: Data([1, 6, 5]), descriptor: descriptor)
+        #expect(actions == [.returnKey])
+    }
 }
