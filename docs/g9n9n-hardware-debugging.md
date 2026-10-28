@@ -45,7 +45,21 @@ D343BFC0-5A21-4F05-BC7D-AF01F617B664
 
 不能依靠此次公开 CoreBluetooth 服务发现绕过 HID 接收路径；主动 IOHID 读取也未获得可用按键状态。下一步使用 Apple [PacketLogger](https://developer.apple.com/bluetooth/) 取得本机蓝牙 HCI/ATT 报文，核对同一 HID report 特征的单键、组合、部分松开及全松开通知。GATT 通知通常不包含 IOHID 回调中的 report ID，比较长度时必须依据 Report Reference 对齐，不能把两层字节数直接混用。没有完整特征对应关系、按键操作和原始通知时，继续保留根因未确认的状态。
 
-PacketLogger 随 Apple Additional Tools for Xcode 分发，下载需要 Apple 账户登录；本机未找到已安装的工具。按 Apple [Bluetooth for macOS 的说明](https://developer.apple.com/feedback-assistant/profiles-and-logs/?name=bluetooth) 准备日志环境。原始抓包只在本地分析，公开记录只保留必要的脱敏协议字段，不提交设备地址、序列号或其他蓝牙设备的流量。
+PacketLogger 随 Apple Additional Tools for Xcode 分发，下载需要 Apple 账户登录；排查开始时本机未找到已安装的工具。按 Apple [Bluetooth for macOS 的说明](https://developer.apple.com/feedback-assistant/profiles-and-logs/?name=bluetooth) 准备日志环境。原始抓包只在本地分析，公开记录只保留必要的脱敏协议字段，不提交设备地址、序列号或其他蓝牙设备的流量。
+
+#### PacketLogger 准备进度（2026-10-28）
+
+- 操作者从 Apple 官网下载并挂载 Additional Tools for Xcode 16.3。包内 PacketLogger 版本为 `2024.03.18`，最低系统版本为 macOS 14；签名严格验证通过。已复制至 `~/Applications/PacketLogger.app`，无需改动项目 App 或驱动。
+- 首次打开的 PacketLogger 运行于磁盘映像启动产生的 App Translocation 路径。窗口虽显示 Live，但没有 HCI/ACL 数据。系统日志明确记录 `PacketLogger authenticated`、`Starting Live Logging`，随后报 **Bluetooth Profile Required**；该次不是有效的设备抓包。已点击 Stop，只有停止连接产生的 Note。
+- 从 Apple 官方 Profiles and Logs 页下载说明及 `Bluetooth_macOS.mobileconfig`。系统安装预览显示 AppleCare Profile Signing Certificate；内容为三项蓝牙／固件诊断日志设置，包含 private-data logging，不是证书信任设置。
+- 已向操作者说明该描述文件会开启全机详细蓝牙日志、可能包含其他设备标识及部分通信内容，操作者明确选择安装并自行重启。系统设置随后确认 **Bluetooth Logging for macOS / 3 settings** 已安装（标识 `com.apple.bluetooth.logging`）。Apple 官方说明要求安装后重启；当前等待手动重启，尚未获得原始包证据。
+
+重启后续测顺序：
+
+1. 从 `~/Applications/PacketLogger.app` 打开工具，新建本机 trace；先确认实际出现 HCI/ACL 数据，不能把 Live 标签当作采集成功。
+2. 停止项目 App 的独占 HID 连接及语音会话，确认目标遥控器连接，尽可能只筛选该设备；测试只按普通键，不按语音键。
+3. 记录单独上键、上＋返回、先松一键及全部松开的准确阶段，对照 ATT 通知的 handle、Report Reference、实际 payload 长度和公开 IOHID 回调。若数据被隐藏或无法确定特征归属，应保留证据边界。
+4. 原始 trace 保存到仓库外的本地诊断目录。测试结束后停止抓包、恢复原 App，并移除本次安装的 Bluetooth Logging for macOS 描述文件，核对恢复结果。Apple 说明该描述文件三天后自动失效，但不依赖自动失效代替测试后的移除。
 
 ### 可复用的诊断入口
 
