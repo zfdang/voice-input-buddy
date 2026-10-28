@@ -656,8 +656,8 @@ final class HIDRemoteMonitor {
         // Treat each complete chord report as a tap, never as a held key.
         // Require exclusive ownership: otherwise the system may also deliver
         // the original buttons, including a down with no corresponding up.
-        if currentReportIsGoogle, reportID == 1,
-           G9N9NProtocol.usesIndexedConsumerLayout(currentReportDescriptor),
+        if G9N9NProtocol.usesChordWorkaround(isGoogleProtocol: currentReportIsGoogle,
+                                            reportID: reportID, descriptor: currentReportDescriptor),
            usages.count > 1, !backOnlyMode,
            !OnboardingControlValidationPolicy.suppressConfiguredActions(
                at: settings.onboardingStep, source: settings.onboardingControlSource

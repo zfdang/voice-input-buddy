@@ -68,6 +68,15 @@ struct G9N9NEnterChordTests {
         #expect(!G9N9NProtocol.isEnterChord([ok, RemoteButton.up.hidUsage, RemoteButton.down.hidUsage]))
     }
 
+    @Test func workaroundRequiresGoogleProtocolAndTheIndexedReportLayout() {
+        let descriptor = G9N9NProtocol.indexedConsumerDescriptor
+        #expect(G9N9NProtocol.usesChordWorkaround(isGoogleProtocol: true, reportID: 1, descriptor: descriptor))
+        #expect(!G9N9NProtocol.usesChordWorkaround(isGoogleProtocol: false, reportID: 1, descriptor: descriptor))
+        #expect(!G9N9NProtocol.usesChordWorkaround(isGoogleProtocol: true, reportID: 2, descriptor: descriptor))
+        #expect(!G9N9NProtocol.usesChordWorkaround(isGoogleProtocol: true, reportID: 1, descriptor: nil))
+        #expect(!G9N9NProtocol.usesChordWorkaround(isGoogleProtocol: true, reportID: 1, descriptor: Data([0])))
+    }
+
     @Test @MainActor func unsupportedDirectionPairsDoNotStartHeldActions() throws {
         let name = "g9n9n-other-pair-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: name))
@@ -87,5 +96,36 @@ struct G9N9NEnterChordTests {
         monitor.handleSimulatedGoogleReport(reportID: 1, data: Data([1, 5, 4]), descriptor: descriptor)
         monitor.handleSimulatedGoogleReport(reportID: 1, data: Data([1, 6, 5]), descriptor: descriptor)
         #expect(actions == [.returnKey])
+    }
+
+    @Test @MainActor func otherReportLayoutsKeepTheirConfiguredActions() throws {
+        let name = "g9n9n-isolation-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let settings = AppSettings(defaults: defaults)
+        settings.customMappingEnabled = true
+        settings.onboardingStep = .complete
+        settings.setAction(.escape, for: .ok)
+        settings.setAction(.deleteBackward, for: .up)
+        var actions: [ButtonAction] = []
+        let profile = UUID()
+        let monitor = HIDRemoteMonitor(settings: settings, profileID: profile,
+            runtimePermissions: { true }, actionPerformer: { _, _, configured in
+                actions.append(configured.action); return true
+            }, diagnosticLogger: { _ in })
+        monitor.connectSimulatedDevice(fingerprint: "other", profileID: profile)
+        defer { monitor.disconnectSimulatedDevice() }
+        monitor.handleSimulatedGoogleReport(reportID: 2, data: Data([0x41, 0, 0x42, 0]))
+        monitor.handleSimulatedGoogleReport(reportID: 2, data: Data([0, 0]))
+        #expect(Set(actions) == [.escape, .deleteBackward])
+        monitor.disconnectSimulatedDevice()
+        actions.removeAll()
+        monitor.connectSimulatedDevice(fingerprint: "xiaomi", profileID: profile)
+        let ok = RemoteButton.ok.hidUsage, up = RemoteButton.up.hidUsage
+        monitor.handleSimulatedReport(reportID: 1, data: Data([
+            UInt8(ok & 0xff), UInt8(ok >> 8), UInt8(up & 0xff), UInt8(up >> 8)
+        ]))
+        monitor.handleSimulatedReport(reportID: 1, data: Data([0, 0]))
+        #expect(Set(actions) == [.escape, .deleteBackward])
     }
 }
