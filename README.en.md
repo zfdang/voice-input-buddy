@@ -36,7 +36,7 @@ Download `Voice_Input_Buddy_*.pkg` from [Releases](https://github.com/zfdang/voi
 4. Configure the tool's voice shortcut under **Integration**, then test it with the guide.
 5. Focus a text field, press the voice button to speak, and release to finish. Adjust the trigger behavior for tools that use separate start/stop taps.
 
-Configure control buttons for supported devices under **Buttons**. To check the setup again, use **Run Setup Guide Again** at the top of Settings. G9N9N currently has partial voice support and **does not support control-button mapping**; its full first-use setup may still be blocked by the guide's control-button test. See [G9N9N voice support and button-mapping limitations](docs/g9n9n-compatibility.md) (Chinese).
+Configure control buttons for supported devices under **Buttons**. To check the setup again, use **Run Setup Guide Again** at the top of Settings. G9N9N currently has partial voice support and **does not support control-button mapping**. For its initial OK check, press OK + Up together; in the later button test, also press Back + Up together to reach three distinct buttons and continue voice setup. Release both after each pair. This method is only for setup checks. See [G9N9N voice support and button-mapping limitations](docs/g9n9n-compatibility.md) (Chinese).
 
 Driver installation requires administrator authorization and briefly interrupts audio. Current installers are not Apple-notarized and may be blocked by macOS. See [installation and release notes](docs/releases.md).
 

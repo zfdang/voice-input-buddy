@@ -223,7 +223,7 @@ layouts, protocols or codecs still require additional evidence/adapters.
 Power and input-source keys can use infrared and are excluded from the public
 Bluetooth mapping canvas until supported reports are captured.
 
-These parser paths do not establish usable button mapping. Raw Bluetooth capture of the A0 / firmware 26.7 unit shows one-byte single-key and release values where its descriptor requires two slots; only the full two-byte combination reaches public IOHID callbacks. G9N9N control-button mapping is currently unsupported; its separately transported voice path has been tested working. Existing mapping screens and the onboarding button test have not been changed into a voice-only flow.
+These parser paths do not establish usable button mapping. Raw Bluetooth capture of the A0 / firmware 26.7 unit shows one-byte single-key and release values where its descriptor requires two slots; only the full two-byte combination reaches public IOHID callbacks. G9N9N control-button mapping is currently unsupported; its separately transported voice path has been tested working. Onboarding now explains OK + Up for the initial check and OK + Up followed by Back + Up for three distinct controls. These combinations only satisfy setup report checks; they do not establish usable button mapping. Existing permission, audio, and voice validation gates remain required.
 
 Further hardware acceptance remains necessary: test an original unit and each replacement
 separately for pairing, microphone samples, stop/tail, long sessions, HID/GATT
