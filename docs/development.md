@@ -140,7 +140,7 @@ Apple Siri Remote. `RemoteSetupDevice` defines this scope; it does not grant
 connection support. All four entries can be selected. Continue advances Xiaomi and both Google choices to
 connection setup; Siri remains on the device page with an unsupported notice.
 The GY3LE setup entry does not admit it through the G9N9N adapter. G9N9N connection
-validation remains mandatory; its public adapter is implemented with hardware acceptance pending. The
+validation remains mandatory. G9N9N currently has partial voice support; control-button mapping is unsupported following the A0 / firmware 26.7 hardware investigation. See the [standalone report](g9n9n-compatibility.md). The
 validated Xiaomi admission catalog remains separate, so a planned Google model
 cannot accidentally connect through the Xiaomi bridge. Third-party replacement
 remotes need individual validation.
@@ -223,7 +223,9 @@ layouts, protocols or codecs still require additional evidence/adapters.
 Power and input-source keys can use infrared and are excluded from the public
 Bluetooth mapping canvas until supported reports are captured.
 
-Hardware acceptance is pending: test an original unit and each replacement
+These parser paths do not establish usable button mapping. Raw Bluetooth capture of the A0 / firmware 26.7 unit shows one-byte single-key and release values where its descriptor requires two slots; only the full two-byte combination reaches public IOHID callbacks. G9N9N control-button mapping is currently unsupported; its separately transported voice path has been tested working. Existing mapping screens and the onboarding button test have not been changed into a voice-only flow.
+
+Further hardware acceptance remains necessary: test an original unit and each replacement
 separately for pairing, microphone samples, stop/tail, long sessions, HID/GATT
 coexistence, sleep/wake and reconnect. Automated tests cannot establish these.
 
