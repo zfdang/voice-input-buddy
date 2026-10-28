@@ -312,14 +312,14 @@ extension BridgeAppModel {
         activeRemoteButtons = []
     }
 
-    private func startHIDDiscoveryIfNeeded(allowBackOnly: Bool = false) {
+    func startHIDDiscoveryIfNeeded(allowBackOnly: Bool = false) {
         guard (settings.customMappingEnabled || allowBackOnly), discoveryHIDMonitor == nil else { return }
         let monitor = makeHIDMonitor(
             profileID: nil,
             targetFingerprint: nil,
             excludedFingerprints: { [weak self] in
                 guard let self else { return [] }
-                return Set(self.hidMonitors.keys)
+                return Set(self.hidMonitors.keys).union(self.settings.forgottenHIDFingerprints)
             }
         )
         discoveryHIDMonitor = monitor
@@ -397,6 +397,7 @@ extension BridgeAppModel {
             guard let self, let monitor else {
                 return profileID.map { ($0, true) }
             }
+            guard !self.settings.forgottenHIDFingerprints.contains(fingerprint) else { return nil }
             let existingProfileID = profileID
                 ?? self.settings.profileID(forHIDFingerprint: fingerprint)
             guard let resolvedProfileID = existingProfileID

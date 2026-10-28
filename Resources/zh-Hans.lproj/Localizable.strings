@@ -397,7 +397,7 @@
 "button_mapping.google.subtitle" = "查看 G9N9N 双键 Enter 和兼容设备的按键设置";
 "button_mapping.google.enter.title" = "OK＋方向键 → Enter（固定）";
 "button_mapping.google.enter.detail" = "G9N9N 或使用相同报告格式的兼容遥控器：开启上方“自定义按键”，同时短按 OK 和任意方向键，然后全部松开，即可发送 Enter。应用需要独占连接设备；此组合固定为 Enter，不受下方单键设置影响。";
-"button_mapping.google.enter.limit" = "G9N9N 的普通单键及松开报告无法可靠接收，下方单键、双击和长按设置不适用于该样机。其他兼容设备的按键能力取决于其报告格式，需自行测试。长按双键可能重复输入。";
+"button_mapping.google.enter.limit" = "G9N9N 单独按普通键时应用收不到，松开也无法可靠检测；下方单键、双击和长按设置对这支设备不可用。只有 OK＋方向键组合被特殊处理为 Enter，其他双键组合不会执行映射。兼容设备需分别测试；长按双键可能重复输入。";
 "button_mapping.toggle.enabled" = "自定义按键";
 "button_mapping.permission_prompt.title" = "需要开启按键权限";
 "button_mapping.permission_prompt.message" = "自定义按键需要“输入监控”和“辅助功能”权限，请前往权限页面完成设置。";
@@ -1316,6 +1316,9 @@
 "connection.device.frame_bytes" = "%@ 字节";
 "onboarding.remote.chromecast_pairing.third" = "在 Mac 的蓝牙列表中选择遥控器并连接。连接后按一个普通按键，确认电脑收到输入。重新配对时，可先在蓝牙设置中忽略设备。";
 
+"remote.remove.action" = "删除设备";
+"remote.remove.confirm_title" = "删除此设备？";
+"remote.remove.confirm_detail" = "将删除“%@”及其在语音搭子中的按键设置和增益，并停止自动连接。不会删除 macOS 蓝牙配对；使用“添加设备”时，之前删除的设备可能再次被发现。";
 "remote.rebind.title" = "重新绑定遥控器";
 "remote.rebind.help" = "请先在 macOS 蓝牙设置中重新配对遥控器，再在下方选择它的新连接条目。原档案的按键映射和增益会保留，选中的替代条目会合并到此档案。";
 "remote.rebind.empty" = "暂无可用的同型号已连接遥控器。";

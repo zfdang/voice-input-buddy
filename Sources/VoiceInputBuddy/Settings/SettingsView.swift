@@ -23,6 +23,8 @@ struct SettingsView: View {
     let permissionOverrides: SystemPermissionOverrides?
 
     @State var remoteRebindingProfile: RemoteDeviceProfile?
+    @State var remoteRemovalProfile: RemoteDeviceProfile?
+    @State var isRemoteRemovalPresented = false
     @State var selectedSection: SettingsSection
     @State var selectedRemoteButton: RemoteButton = .ok
     @State private var selectedSiriRemoteControlID = "select"

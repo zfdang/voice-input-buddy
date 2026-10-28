@@ -397,7 +397,7 @@
 "button_mapping.google.subtitle" = "View G9N9N two-button Enter and compatible device settings";
 "button_mapping.google.enter.title" = "OK + direction → Enter (fixed)";
 "button_mapping.google.enter.detail" = "For G9N9N or a compatible remote using the same report layout, enable Custom Buttons above, briefly press OK and any direction together, then release both to send Enter. The app needs exclusive access to the device. This fixed combination is not changed by the individual button settings below.";
-"button_mapping.google.enter.limit" = "Single-button and release reports are not reliably received from the tested G9N9N; the single, double, and hold settings below do not work on that unit. Other compatible remotes depend on their report layout and require separate testing. Holding the combination may repeat input.";
+"button_mapping.google.enter.limit" = "On the tested G9N9N, individual button presses are not received and releases cannot be reliably detected. The single, double, and hold settings below do not work on this device. Only OK + direction is specially mapped to Enter; other two-button combinations do not run mappings. Compatible devices require separate testing. Holding the combination may repeat input.";
 "button_mapping.toggle.enabled" = "Custom Buttons";
 "button_mapping.permission_prompt.title" = "Button Permissions Required";
 "button_mapping.permission_prompt.message" = "Custom button controls require Input Monitoring and Accessibility. Open the Permissions page to finish setup.";
@@ -1315,6 +1315,9 @@
 "connection.device.frame_bytes" = "%@ bytes";
 "onboarding.remote.chromecast_pairing.third" = "Select the remote in your Mac’s Bluetooth list and connect. Then press a button other than Voice to check input. When pairing again, forget the device in Bluetooth settings first if needed.";
 
+"remote.remove.action" = "Remove Device";
+"remote.remove.confirm_title" = "Remove this device?";
+"remote.remove.confirm_detail" = "Remove %@ and its saved button settings and gain from Voice Input Buddy, and stop automatically connecting to it. macOS Bluetooth pairing is not removed. Choosing Add Device may rediscover previously removed remotes.";
 "remote.rebind.title" = "Rebind remote";
 "remote.rebind.help" = "Pair the remote in macOS Bluetooth settings first. Select its new connected entry below. The original button mappings and gain will be preserved, and the selected replacement entry will be combined with this profile.";
 "remote.rebind.empty" = "No compatible connected replacement is available.";
