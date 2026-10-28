@@ -39,7 +39,7 @@ extension BridgeAppModel {
             allowsG9N9N: true,
             excludedIdentifiers: { [weak self] in
                 guard let self else { return [] }
-                return Set(self.connections.bridges.keys)
+                return Set(self.connections.bridges.keys).union(self.settings.forgottenBluetoothIdentifiers)
             }
         )
         observeRemoteHIDIdentity(bridge)
@@ -58,6 +58,7 @@ extension BridgeAppModel {
             )
             return nil
         }
+        guard !settings.forgottenBluetoothIdentifiers.contains(identifier) else { return nil }
         guard bridge.bindVerifiedIdentity(identifier) else {
             AppLogger.shared.write(
                 "REMOTE PROFILE phase=completed result=rejected reason=identity_mismatch"
@@ -115,6 +116,43 @@ extension BridgeAppModel {
     func selectRemoteProfile(_ profileID: UUID) {
         settings.selectRemoteProfile(profileID)
         refreshBluetoothPresentation()
+    }
+
+    @discardableResult
+    func removeRemoteDevice(_ profileID: UUID) -> Bool {
+        guard !isVoiceConfigurationBusy,
+              let profile = settings.remoteDeviceProfiles.first(where: { $0.id == profileID }),
+              settings.removeRemoteProfile(profileID) else { return false }
+        if let identifier = profile.bluetoothIdentifier {
+            if let bridge = connections.bridges.removeValue(forKey: identifier) {
+                bridge.stop()
+                connections.states.removeValue(forKey: ObjectIdentifier(bridge))
+            }
+            if let discovery = connections.discoveryBridge, discovery.deviceIdentifier == identifier {
+                connections.discoveryBridge = nil
+                discovery.stop()
+                connections.states.removeValue(forKey: ObjectIdentifier(discovery))
+                startBluetoothDiscoveryIfNeeded()
+            }
+            remoteDeviceInformation.removeValue(forKey: identifier)
+            pendingRemoteBatteryLevels.removeValue(forKey: identifier)
+            pendingRemotePowerStates.removeValue(forKey: identifier)
+            pendingRemoteModels.removeValue(forKey: identifier)
+        }
+        if let fingerprint = profile.hidFingerprint {
+            hidMonitors.removeValue(forKey: fingerprint)?.stop()
+            if discoveryHIDMonitor?.deviceFingerprint == fingerprint {
+                discoveryHIDMonitor?.stop()
+                discoveryHIDMonitor = nil
+                startHIDDiscoveryIfNeeded(allowBackOnly: !settings.customMappingEnabled)
+            }
+        }
+        remoteBatteryLevels.removeValue(forKey: profileID)
+        remotePowerStates.removeValue(forKey: profileID)
+        remoteSystemDeviceNames.removeValue(forKey: profileID)
+        refreshBluetoothPresentation()
+        AppLogger.shared.write("REMOTE PROFILE phase=completed result=removed")
+        return true
     }
 
     var onboardingRemoteProfiles: [RemoteDeviceProfile] {

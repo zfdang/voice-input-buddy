@@ -2,6 +2,51 @@ import Combine
 import Foundation
 
 extension AppSettings {
+    // A forgotten remote must not immediately be recreated by background discovery.
+    var forgottenBluetoothIdentifiers: Set<UUID> {
+        Set((defaults.stringArray(forKey: "forgottenRemoteBluetoothIdentifiers") ?? []).compactMap(UUID.init(uuidString:)))
+    }
+
+    var forgottenHIDFingerprints: Set<String> {
+        Set(defaults.stringArray(forKey: "forgottenRemoteHIDFingerprints") ?? [])
+    }
+
+    func allowForgottenRemotesForSetup() {
+        defaults.removeObject(forKey: "forgottenRemoteBluetoothIdentifiers")
+        defaults.removeObject(forKey: "forgottenRemoteHIDFingerprints")
+    }
+
+    @discardableResult
+    func removeRemoteProfile(_ profileID: UUID) -> Bool {
+        guard let profile = remoteDeviceProfiles.first(where: { $0.id == profileID }) else { return false }
+        if let identifier = profile.bluetoothIdentifier {
+            defaults.set(forgottenBluetoothIdentifiers.union([identifier]).map(\.uuidString),
+                         forKey: "forgottenRemoteBluetoothIdentifiers")
+        }
+        if let fingerprint = profile.hidFingerprint {
+            defaults.set(Array(forgottenHIDFingerprints.union([fingerprint])),
+                         forKey: "forgottenRemoteHIDFingerprints")
+        }
+        if selectedRemoteProfileID == profileID {
+            if let replacement = remoteDeviceProfiles.first(where: { $0.id != profileID }) {
+                selectRemoteProfile(replacement.id)
+            } else {
+                selectedRemoteProfileID = nil
+                isLoadingRemoteProfile = true
+                gainDB = 10
+                buttonBindings = Self.defaultBindings
+                buttonShortcuts = [:]
+                buttonApplicationProfileIDs = [:]
+                secondaryButtonBindings = [:]
+                buttonRapidPressEnabled = [:]
+                isLoadingRemoteProfile = false
+            }
+        }
+        unifiedBaseBindings.removeAll { $0.remoteProfileID == profileID }
+        remoteDeviceProfiles.removeAll { $0.id == profileID }
+        return true
+    }
+
     func action(for button: RemoteButton) -> ButtonAction {
         configuredAction(for: button, trigger: .singleClick).action
     }

@@ -39,6 +39,19 @@ extension SettingsView {
         .sheet(item: $remoteRebindingProfile) { profile in
             RemoteRebindingPicker(model: model, profile: profile).environmentObject(localization)
         }
+        .confirmationDialog(localization.text("remote.remove.confirm_title"),
+                            isPresented: $isRemoteRemovalPresented,
+                            presenting: remoteRemovalProfile) { profile in
+            Button(localization.text("remote.remove.action"), role: .destructive) {
+                _ = model.removeRemoteDevice(profile.id)
+                remoteRemovalProfile = nil
+            }
+            Button(localization.text("common.action.cancel"), role: .cancel) {
+                remoteRemovalProfile = nil
+            }
+        } message: { profile in
+            Text(LocalizedMessage("remote.remove.confirm_detail", arguments: [remoteModelName(profile)]).text(using: localization))
+        }
         .onAppear {
             model.refreshVoiceKeyCompatibilityWarning()
         }
@@ -86,6 +99,14 @@ extension SettingsView {
                             model.reconnect()
                         }.compatibilityButtonStyle(.standard).disabled(model.isStreaming)
                     }
+                    Button(role: .destructive) {
+                        remoteRemovalProfile = profile
+                        isRemoteRemovalPresented = true
+                    } label: {
+                        Label(localization.text("remote.remove.action"), systemImage: "trash")
+                    }
+                    .compatibilityButtonStyle(.standard)
+                    .disabled(model.isVoiceConfigurationBusy)
                 }.frame(width: 230)
                 Divider()
                 VStack(alignment: .leading, spacing: 14) {

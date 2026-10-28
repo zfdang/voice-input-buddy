@@ -1316,6 +1316,9 @@
 "connection.device.frame_bytes" = "%@ 字节";
 "onboarding.remote.chromecast_pairing.third" = "在 Mac 的蓝牙列表中选择遥控器并连接。连接后按一个普通按键，确认电脑收到输入。重新配对时，可先在蓝牙设置中忽略设备。";
 
+"remote.remove.action" = "删除设备";
+"remote.remove.confirm_title" = "删除此设备？";
+"remote.remove.confirm_detail" = "将删除“%@”及其在语音搭子中的按键设置和增益，并停止自动连接。不会删除 macOS 蓝牙配对；使用“添加设备”时，之前删除的设备可能再次被发现。";
 "remote.rebind.title" = "重新绑定遥控器";
 "remote.rebind.help" = "请先在 macOS 蓝牙设置中重新配对遥控器，再在下方选择它的新连接条目。原档案的按键映射和增益会保留，选中的替代条目会合并到此档案。";
 "remote.rebind.empty" = "暂无可用的同型号已连接遥控器。";
