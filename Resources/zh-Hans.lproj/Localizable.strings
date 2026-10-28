@@ -833,7 +833,7 @@
 "onboarding.remote.searching_detail" = "保持遥控器靠近 Mac；首次连接按上方步骤操作，已配对时按任意键唤醒。";
 "onboarding.remote.button_waiting" = "等待控制按键";
 "onboarding.remote.button_waiting_detail" = "请短按圆盘中间的确定键或任意方向键，不要按麦克风/语音键。";
-"onboarding.remote.g9n9n.button_waiting_detail" = "G9N9N 请同时按下 OK（确定）＋上方向键，收到输入后全部松开，不要按语音键。普通按键映射仍不受支持，之后可继续使用语音键和麦克风；OK＋方向键的实验性 Enter 功能尚待真机验收。";
+"onboarding.remote.g9n9n.button_waiting_detail" = "G9N9N 请同时按下 OK（确定）＋上方向键，收到输入后全部松开，不要按语音键。普通按键映射仍不受支持，之后可继续使用语音键和麦克风；OK＋方向键的实验性 Enter 功能已在 G9N9N 样机上测试。";
 "onboarding.remote.g9n9n.button_detail" = "已收到 G9N9N 的测试报告，可以继续语音设置。双键验证通过不代表普通按键映射可用。";
 "onboarding.remote.g9n9n_pairing.third" = "在 Mac 蓝牙列表中连接遥控器，然后同时按下 OK（确定）＋上方向键，完成初始按键验证。";
 "onboarding.remote.button_received" = "已收到控制按键";
@@ -901,10 +901,10 @@
 "onboarding.controls.xiaomi.detail" = "在小米遥控器上连续按下三个不同的普通按键，例如方向、确定、返回、主页或音量。";
 "onboarding.controls.siri.detail" = "在苹果遥控器上连续按下三个不同的普通按键，例如方向、中心、返回、TV、播放或音量。";
 "onboarding.controls.chromecast.detail" = "在 Chromecast 遥控器上连续按下三个不同的普通按键，例如方向、确定、返回、主页、静音或音量。";
-"onboarding.controls.g9n9n.detail" = "G9N9N 可用双键完成本步骤：先同时按 OK（确定）＋上，再同时按返回＋上，每组结束后全部松开。累计收到三个不同按键即可继续。普通按键映射仍不受支持；语音键和麦克风可继续使用，OK＋方向键的实验性 Enter 功能尚待真机验收。";
+"onboarding.controls.g9n9n.detail" = "G9N9N 可用双键完成本步骤：先同时按 OK（确定）＋上，再同时按返回＋上，每组结束后全部松开。累计收到三个不同按键即可继续。普通按键映射仍不受支持；语音键和麦克风可继续使用，OK＋方向键的实验性 Enter 功能已在 G9N9N 样机上测试。";
 "onboarding.controls.g9n9n.ready" = "已收到测试报告，可以继续语音设置";
 "onboarding.side.g9n9n_test_enabled" = "按键测试已开启";
-"onboarding.complete.g9n9n.voice_only" = "G9N9N 可用于语音输入；普通按键映射不受支持，OK＋方向键可实验性发送 Enter（尚待真机验收）";
+"onboarding.complete.g9n9n.voice_only" = "G9N9N 可用于语音输入；普通按键映射不受支持，OK＋方向键可实验性发送 Enter（已在 G9N9N 样机上测试）";
 "onboarding.controls.apple_companion.detail" = "在 iPhone 或 Apple Watch 遥控器中点按三个不同的普通控制，例如方向、确定、返回或音量。";
 "onboarding.controls.web_remote.detail" = "在 Voice Input Buddy 中点按三个不同的普通控制，例如方向、确定、返回或音量。";
 "onboarding.controls.mobile_slot" = "第 %@ 个不同控制";
