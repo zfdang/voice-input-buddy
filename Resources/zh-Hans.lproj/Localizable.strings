@@ -394,6 +394,10 @@
 "audio.compatibility.help_plain" = "如果常用的语音工具收不到声音，可选择随安装包提供的兼容麦克风；已有音频设备不会被替换。";
 "button_mapping.page.title" = "按键映射";
 "button_mapping.page.subtitle" = "点击按键进行设置";
+"button_mapping.google.subtitle" = "查看 G9N9N 双键 Enter 和兼容设备的按键设置";
+"button_mapping.google.enter.title" = "OK＋方向键 → Enter（固定）";
+"button_mapping.google.enter.detail" = "G9N9N 或使用相同报告格式的兼容遥控器：开启上方“自定义按键”，同时短按 OK 和任意方向键，然后全部松开，即可发送 Enter。应用需要独占连接设备；此组合固定为 Enter，不受下方单键设置影响。";
+"button_mapping.google.enter.limit" = "G9N9N 的普通单键及松开报告无法可靠接收，下方单键、双击和长按设置不适用于该样机。其他兼容设备的按键能力取决于其报告格式，需自行测试。长按双键可能重复输入。";
 "button_mapping.toggle.enabled" = "自定义按键";
 "button_mapping.permission_prompt.title" = "需要开启按键权限";
 "button_mapping.permission_prompt.message" = "自定义按键需要“输入监控”和“辅助功能”权限，请前往权限页面完成设置。";
@@ -904,7 +908,7 @@
 "onboarding.controls.g9n9n.detail" = "G9N9N 可用双键完成本步骤：先同时按 OK（确定）＋上，再同时按返回＋上，每组结束后全部松开。累计收到三个不同按键即可继续。普通按键映射仍不受支持；语音键和麦克风可继续使用，OK＋方向键的实验性 Enter 功能已在 G9N9N 样机上测试。";
 "onboarding.controls.g9n9n.ready" = "已收到测试报告，可以继续语音设置";
 "onboarding.side.g9n9n_test_enabled" = "按键测试已开启";
-"onboarding.complete.g9n9n.voice_only" = "G9N9N 可用于语音输入；普通按键映射不受支持，OK＋方向键可实验性发送 Enter（已在 G9N9N 样机上测试）";
+"onboarding.complete.g9n9n.voice_only" = "G9N9N 可用于语音输入。完成设置后，在按键映射中开启自定义按键，同时短按 OK＋任意方向键可发送 Enter；普通单键映射不受支持。";
 "onboarding.controls.apple_companion.detail" = "在 iPhone 或 Apple Watch 遥控器中点按三个不同的普通控制，例如方向、确定、返回或音量。";
 "onboarding.controls.web_remote.detail" = "在 Voice Input Buddy 中点按三个不同的普通控制，例如方向、确定、返回或音量。";
 "onboarding.controls.mobile_slot" = "第 %@ 个不同控制";

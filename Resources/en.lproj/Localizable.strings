@@ -394,6 +394,10 @@
 "audio.compatibility.help_plain" = "If your voice typing app receives no audio, select the compatible microphone included with the installer. Existing audio devices are not replaced.";
 "button_mapping.page.title" = "Button Mapping";
 "button_mapping.page.subtitle" = "Click a button to change its settings";
+"button_mapping.google.subtitle" = "View G9N9N two-button Enter and compatible device settings";
+"button_mapping.google.enter.title" = "OK + direction → Enter (fixed)";
+"button_mapping.google.enter.detail" = "For G9N9N or a compatible remote using the same report layout, enable Custom Buttons above, briefly press OK and any direction together, then release both to send Enter. The app needs exclusive access to the device. This fixed combination is not changed by the individual button settings below.";
+"button_mapping.google.enter.limit" = "Single-button and release reports are not reliably received from the tested G9N9N; the single, double, and hold settings below do not work on that unit. Other compatible remotes depend on their report layout and require separate testing. Holding the combination may repeat input.";
 "button_mapping.toggle.enabled" = "Custom Buttons";
 "button_mapping.permission_prompt.title" = "Button Permissions Required";
 "button_mapping.permission_prompt.message" = "Custom button controls require Input Monitoring and Accessibility. Open the Permissions page to finish setup.";
@@ -907,7 +911,7 @@
 "onboarding.controls.g9n9n.detail" = "For G9N9N, use two-button combinations for this step: press OK + Up together, release both, then press Back + Up together and release both. Three distinct detected buttons let you continue. Control-button mapping remains unsupported. Voice input remains available; experimental OK + direction Enter has been tested on a G9N9N unit.";
 "onboarding.controls.g9n9n.ready" = "Test reports received; continue with voice setup";
 "onboarding.side.g9n9n_test_enabled" = "Button test enabled";
-"onboarding.complete.g9n9n.voice_only" = "G9N9N supports voice input; control-button mapping is unsupported. Experimental OK + direction Enter has been tested on a G9N9N unit.";
+"onboarding.complete.g9n9n.voice_only" = "G9N9N supports voice input. After setup, enable Custom Buttons in Buttons and briefly press OK + any direction to send Enter. Single-button mapping is unsupported.";
 "onboarding.controls.apple_companion.detail" = "Tap three different control buttons in the iPhone or Apple Watch remote, such as an arrow, OK, Back, or volume.";
 "onboarding.controls.web_remote.detail" = "Tap three different control buttons in Voice Input Buddy, such as an arrow, OK, Back, or volume.";
 "onboarding.controls.mobile_slot" = "Control %@";

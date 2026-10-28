@@ -37,7 +37,8 @@ extension SettingsView {
                 PageHeader(title: localization.text("button_mapping.page.title"))
                 mappingHeaderToggle
             }
-            Text(localization.text("button_mapping.page.subtitle"))
+            Text(localization.text(settings.selectedRemoteProfile?.model.isChromecastRemote == true
+                ? "button_mapping.google.subtitle" : "button_mapping.page.subtitle"))
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -47,6 +48,7 @@ extension SettingsView {
     var mappingPage: some View {
         hardwareMappingPage {
             if settings.selectedRemoteProfile?.model.isChromecastRemote == true {
+                googleChordInformation
                 Text(localization.text("google.remote.ir_controls"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -75,6 +77,24 @@ extension SettingsView {
                 )
             }
         }
+    }
+
+    private var googleChordInformation: some View {
+        GlassPanel {
+            VStack(alignment: .leading, spacing: 8) {
+                Label(localization.text("button_mapping.google.enter.title"), systemImage: "return")
+                    .font(.system(size: 15, weight: .semibold))
+                Text(localization.text("button_mapping.google.enter.detail"))
+                    .font(.system(size: 13))
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(localization.text("button_mapping.google.enter.limit"))
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityIdentifier("button-mapping.google-enter-info")
     }
 
     private func hardwareMappingPage<HardwareCanvas: View>(
