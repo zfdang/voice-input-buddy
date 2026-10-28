@@ -47,6 +47,15 @@ enum G9N9NProtocol {
         descriptor?.starts(with: indexedConsumerDescriptor) ?? false
     }
 
+    static func usesChordWorkaround(isGoogleProtocol: Bool, reportID: UInt32, descriptor: Data?) -> Bool {
+        isGoogleProtocol && reportID == 1 && usesIndexedConsumerLayout(descriptor)
+    }
+
+    static func isEnterChord(_ usages: Set<UInt16>) -> Bool {
+        guard usages.count == 2, usages.contains(RemoteButton.ok.hidUsage) else { return false }
+        return [RemoteButton.up, .down, .left, .right].contains { usages.contains($0.hidUsage) }
+    }
+
     /// Known Consumer Control layouts, with or without their report-ID byte.
     /// Malformed or unrelated reports are ignored; unknown usages in a valid
     /// Consumer Control snapshot do not discard known key edges.
