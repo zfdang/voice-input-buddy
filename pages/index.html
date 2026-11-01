@@ -48,7 +48,7 @@
             <div class="window-dots"><i></i><i></i><i></i></div>
             <span class="window-title">设备连接 · Voice Input Buddy</span>
           </div>
-          <img src="assets/screenshots/connection-zh.png" alt="Voice Input Buddy 正式版设备连接界面：已连接的小米遥控器、电量、麦克风增益与设备信息" width="1020" height="772" loading="eager">
+          <img src="assets/screenshots/connection-zh.png" alt="Voice Input Buddy 设备连接界面：已连接的小米遥控器、电量、麦克风增益与设备信息" width="1020" height="772" loading="eager">
         </div>
       </div>
       <button class="stage-nav stage-next" type="button" aria-label="下一张界面截图">›</button>
@@ -90,8 +90,8 @@
   <p class="eyebrow">TROUBLESHOOTING · 常见问题</p>
   <h2 class="section-title" id="troubleshooting-title">语音正常，按键却没反应？</h2>
   <div class="troubleshooting-card"><h3>先检查 Karabiner-Elements 等按键工具的设备占用。</h3>
-    <p>这类工具可能独占遥控器，导致语音搭子收不到按键。典型表现是普通按键无法执行已配置的动作，而蓝牙连接或语音仍然正常。默认映射中，TV 键切换应用、电源键退格、返回键发送 Escape。</p>
-    <ol><li>在 Karabiner-Elements 中打开 <strong>Devices（设备）</strong>，找到你的遥控器，例如“小米蓝牙语音遥控器”。</li><li>关闭<strong>这只遥控器</strong>的 <strong>Modify events</strong>，把它交给语音搭子处理。其他键盘的设置可以保留。</li><li>重新连接遥控器，或重启语音搭子，再到“按键映射”检查连接状态，测试 TV 键、电源键与返回键。</li></ol>
+    <p>这类工具可能独占遥控器，导致语音搭子收不到按键。典型表现是普通按键无法执行已配置的动作，而蓝牙连接或语音仍然正常。默认映射中，主页键切换应用、TV 键播放／暂停、电源键退格、返回键发送 Escape。</p>
+    <ol><li>在 Karabiner-Elements 中打开 <strong>Devices（设备）</strong>，找到你的遥控器，例如“小米蓝牙语音遥控器”。</li><li>关闭<strong>这只遥控器</strong>的 <strong>Modify events</strong>，把它交给语音搭子处理。其他键盘的设置可以保留。</li><li>重新连接遥控器，或重启语音搭子，再到“按键映射”检查连接状态，测试主页键、TV 键、电源键与返回键。</li></ol>
     <p>若仍提示“设备被其他输入工具占用”，可重启 Karabiner-Elements 后再试；同时检查语音搭子的输入监控与辅助功能权限。</p>
     <a class="text-link" href="https://karabiner-elements.pqrs.org/docs/manual/configuration/configure-devices/">Karabiner 官方设备设置说明 ↗</a>
   </div>

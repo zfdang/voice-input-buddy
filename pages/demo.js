@@ -39,7 +39,7 @@ button.addEventListener('blur', stop);
         badge: '多设备管理',
         windowTitle: '设备连接 · Voice Input Buddy',
         src: 'assets/screenshots/connection-zh.png',
-        alt: 'Voice Input Buddy 正式版设备连接界面：已连接的小米遥控器、电量、麦克风增益与设备信息',
+        alt: 'Voice Input Buddy 设备连接界面：已连接的小米遥控器、电量、麦克风增益与设备信息',
         desc: '管理所有已配对的蓝牙遥控器（如小米遥控器、Google G9N9N），实时查看连接状态与电池电量；支持单独调节并保存每台遥控器的麦克风输入增益（0 dB 至 24 dB）。'
       },
       {
@@ -48,7 +48,7 @@ button.addEventListener('blur', stop);
         windowTitle: '按键映射 · Voice Input Buddy',
         src: 'assets/screenshots/mapping-zh.png',
         alt: 'Voice Input Buddy 按键映射设置界面：可视化遥控器按键映射，支持单击、双击、长按与自定义快捷键',
-        desc: '中央显示遥控器按键示意图，支持为电源键、确定键、方向键、返回键、主页键、菜单键与 TV 键分别指定单击、双击和长按动作，可绑定系统操作、自定义快捷键或常用语。'
+        desc: '中央显示遥控器按键示意图，支持为电源键、确定键、方向键、返回键、主页键、菜单键与 TV 键分别指定单击、双击和长按动作，可绑定系统操作、自定义快捷键或常用语。图中为小米遥控器默认映射：主页键切换应用、TV 键播放／暂停、菜单键打开上下文菜单。'
       },
       {
         title: '常用语编辑',
@@ -79,7 +79,7 @@ button.addEventListener('blur', stop);
         badge: '版本与更新',
         windowTitle: '设置与更新 · Voice Input Buddy',
         src: 'assets/screenshots/about-zh.png',
-        alt: 'Voice Input Buddy 正式版设置界面：应用版本、更新检查、配置导入导出与图标和语言偏好',
+        alt: 'Voice Input Buddy 设置界面：应用版本、更新检查、配置导入导出与图标和语言偏好',
         desc: '查看当前版本和更新状态，导入或导出配置，设置 Dock 与菜单栏图标、启动行为和应用语言。'
       }
     ],
@@ -150,7 +150,7 @@ button.addEventListener('blur', stop);
         badge: 'Multi-device',
         windowTitle: 'Devices · Voice Input Buddy',
         src: 'assets/screenshots/connection-en.png',
-        alt: 'Voice Input Buddy installed release: connected Xiaomi remote, battery level, microphone gain, and device information',
+        alt: 'Voice Input Buddy Devices interface: connected Xiaomi remote, battery level, microphone gain, and device information',
         desc: 'Manage connected Bluetooth remotes (Xiaomi, Google G9N9N), check live battery percentages and charging states, and adjust individual microphone gain (0 dB to 24 dB).'
       },
       {
@@ -159,7 +159,7 @@ button.addEventListener('blur', stop);
         windowTitle: 'Button Mapping · Voice Input Buddy',
         src: 'assets/screenshots/mapping-en.png',
         alt: 'Voice Input Buddy Button Mapping interface: visual remote layout mapping single, double, and long press shortcuts',
-        desc: 'The central remote diagram shows each physical button, supporting single-press, double-press, and long-press shortcuts for Power, OK, Navigation, Back, Home, Menu, and TV keys.'
+        desc: 'The central remote diagram shows each physical button, supporting single-press, double-press, and long-press shortcuts for Power, OK, Navigation, Back, Home, Menu, and TV keys. The Xiaomi defaults shown here use Home to switch apps, TV to play or pause media, and Menu to open the context menu.'
       },
       {
         title: 'Common Phrases',
@@ -190,7 +190,7 @@ button.addEventListener('blur', stop);
         badge: 'Version & Updates',
         windowTitle: 'Settings & Updates · Voice Input Buddy',
         src: 'assets/screenshots/about-en.png',
-        alt: 'Voice Input Buddy installed release settings: version, update checks, configuration import/export, icon and language preferences',
+        alt: 'Voice Input Buddy Settings interface: version, update checks, configuration import/export, icon and language preferences',
         desc: 'Check the current version and update status, import or export configuration, and manage Dock and menu bar icons, launch behavior, and app language.'
       }
     ],
