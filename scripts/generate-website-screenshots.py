@@ -30,11 +30,10 @@ ONBOARDING_STEPS = [
 ]
 
 def ensure_binary() -> Path:
-    if not APP_PATH.exists():
-        print("Debug app bundle not found; building with CONFIGURATION=debug...")
-        env = os.environ.copy()
-        env["CONFIGURATION"] = "debug"
-        subprocess.run(["scripts/build-app.sh"], cwd=ROOT, env=env, check=True)
+    print("Building current sources with CONFIGURATION=debug...")
+    env = os.environ.copy()
+    env["CONFIGURATION"] = "debug"
+    subprocess.run(["scripts/build-app.sh"], cwd=ROOT, env=env, check=True)
     return APP_PATH
 
 def render_settings(bin_path: Path, language: str, output_tmp: Path):
