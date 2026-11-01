@@ -40,7 +40,7 @@ button.addEventListener('blur', stop);
         windowTitle: '设备连接 · Voice Input Buddy',
         src: 'assets/screenshots/connection-zh.png',
         alt: 'Voice Input Buddy 设备连接界面：已连接的小米遥控器、电量、麦克风增益与设备信息',
-        desc: '管理所有已配对的蓝牙遥控器（如小米遥控器、Google G9N9N），实时查看连接状态与电池电量；支持单独调节并保存每台遥控器的麦克风输入增益（0 dB 至 24 dB）。'
+        desc: '查看已添加遥控器的连接状态、电量和设备信息，为每台设备单独调整麦克风增益（0–24 dB）。'
       },
       {
         title: '按键映射',
@@ -48,7 +48,7 @@ button.addEventListener('blur', stop);
         windowTitle: '按键映射 · Voice Input Buddy',
         src: 'assets/screenshots/mapping-zh.png',
         alt: 'Voice Input Buddy 按键映射设置界面：可视化遥控器按键映射，支持单击、双击、长按与自定义快捷键',
-        desc: '中央显示遥控器按键示意图，支持为电源键、确定键、方向键、返回键、主页键、菜单键与 TV 键分别指定单击、双击和长按动作，可绑定系统操作、自定义快捷键或常用语。图中为小米遥控器默认映射：主页键切换应用、TV 键播放／暂停、菜单键打开上下文菜单。'
+        desc: '点击遥控器按键，设置单击、双击或长按动作。小米默认映射：主页键切换应用、TV 键播放／暂停、菜单键打开上下文菜单。'
       },
       {
         title: '常用语编辑',
@@ -56,23 +56,23 @@ button.addEventListener('blur', stop);
         windowTitle: '常用语调整 · Voice Input Buddy',
         src: 'assets/screenshots/phrases-zh.png',
         alt: 'Voice Input Buddy 常用语调整界面：遥控器五键分配、常用语库与短语编辑管理',
-        desc: '按键映射内置常用语面板管理，可为圆盘方向键与 OK 键自定义短语列表，支持中英文短语编辑、词库导入导出与五键灵活分配，高频语句一键即发。'
+        desc: '编辑常用语列表，为方向键和确定键分配短语。在常用语面板中用遥控器选择要输入的内容。'
       },
       {
         title: '输入法集成',
         badge: '语音工具',
         windowTitle: '输入法与语音工具集成 · Voice Input Buddy',
         src: 'assets/screenshots/integration-zh.png',
-        alt: 'Voice Input Buddy 输入法与语音工具集成界面：微信输入法、豆包输入法、网易叭哥说、Typeless、VoiceCursor 等配置入口',
-        desc: '提供微信输入法、豆包输入法、网易叭哥说、Typeless、VoiceCursor 及其他自定义工具的专用配置向导入口，并可自由选择语音触发按键（Fn、Command、Option 等）与长按/点按模式。'
+        alt: 'Voice Input Buddy 输入法与语音工具集成界面：微信输入法、豆包输入法、网易叭哥说、Typeless、VoiceCursor、macOS 听写等配置入口',
+        desc: '查看当前输入工具和麦克风状态，打开对应的设置向导。也可调整语音触发键及 Fn 点按设置。'
       },
       {
-        title: '权限与驱动',
+        title: '权限与环境',
         badge: '环境检测',
         windowTitle: '权限与环境 · Voice Input Buddy',
         src: 'assets/screenshots/permissions-zh.png',
         alt: 'Voice Input Buddy 权限与环境界面：蓝牙、输入监控、辅助功能权限与虚拟麦克风驱动状态',
-        desc: '集中核对蓝牙、输入监控与辅助功能三项系统授权，自动监控 Voice Input Buddy Mic 虚拟麦克风驱动的加载状态，并附带直观的驱动安装与重启引导。'
+        desc: '检查蓝牙、输入监控和辅助功能权限，以及 Voice Input Buddy Mic 驱动状态。缺少权限或驱动时，按页面提示处理。'
       },
       {
         title: '设置与更新',
@@ -80,7 +80,7 @@ button.addEventListener('blur', stop);
         windowTitle: '设置与更新 · Voice Input Buddy',
         src: 'assets/screenshots/about-zh.png',
         alt: 'Voice Input Buddy 设置界面：应用版本、更新检查、配置导入导出与图标和语言偏好',
-        desc: '查看当前版本和更新状态，导入或导出配置，设置 Dock 与菜单栏图标、启动行为和应用语言。'
+        desc: '查看版本、检查更新、导入或导出配置，调整图标、启动行为和界面语言。'
       }
     ],
     wizard: [
@@ -89,16 +89,16 @@ button.addEventListener('blur', stop);
         badge: '向导 · 环境检测',
         windowTitle: '系统权限 · 首次使用向导',
         src: 'assets/screenshots/wizard-permissions-zh.png',
-        alt: '首次使用向导：系统权限检查，一键引导开启蓝牙、输入监控与辅助功能权限',
-        desc: '首次打开应用时，向导逐项引导授权蓝牙、输入监控和辅助功能，确保遥控器正常通信与按键发送；左下角可随时切换中文或英文。'
+        alt: '首次使用向导：蓝牙、输入监控与辅助功能权限检查',
+        desc: '按提示授予蓝牙、输入监控和辅助功能权限。左下角可切换中文或英文。'
       },
       {
         title: '第 2 步 · 设备类型',
         badge: '向导 · 设备准备',
         windowTitle: '设备类型 · 首次使用向导',
         src: 'assets/screenshots/wizard-source-zh.png',
-        alt: '首次使用向导：选择小米、Chromecast G9N9N、Google Streamer GY3LE 或 Apple Siri Remote',
-        desc: '选择要配置的遥控器：小米蓝牙遥控器 2 / 2 Pro、Chromecast G9N9N、Google TV Streamer GY3LE 或 Apple Siri Remote。右侧显示所选设备外观。'
+        alt: '首次使用向导：遥控器型号列表与小米遥控器示意图',
+        desc: '选择遥控器型号，查看右侧的设备示意图。各型号的适配进度见下方“兼容范围”。'
       },
       {
         title: '第 3 步 · 连接遥控器',
@@ -106,7 +106,7 @@ button.addEventListener('blur', stop);
         windowTitle: '连接遥控器 · 首次使用向导',
         src: 'assets/screenshots/wizard-remote-zh.png',
         alt: '首次使用向导：连接遥控器步骤，图解配对按键与实时连接检测',
-        desc: '按所选遥控器的提示完成蓝牙配对。检测到匹配设备后自动选中，再按一个普通按键确认 Mac 能收到输入。'
+        desc: '按提示完成蓝牙配对。只有一台匹配设备时会自动选中，再按普通按键确认连接。'
       },
       {
         title: '第 4 步 · 按键测试',
@@ -114,31 +114,31 @@ button.addEventListener('blur', stop);
         windowTitle: '按键测试 · 首次使用向导',
         src: 'assets/screenshots/wizard-controls-zh.png',
         alt: '首次使用向导：普通按键测试清单与实时检测状态',
-        desc: '依次按下三个不同的普通按键，例如方向键和确定键。检查清单实时标记收到的按键，通过后再继续。'
+        desc: '按三个不同的普通按键，确认向导收到输入。G9N9N 请按向导提示使用双键组合。'
       },
       {
         title: '第 5 步 · 驱动检测',
-        badge: '向导 · 声卡检查',
+        badge: '向导 · 驱动检查',
         windowTitle: '驱动检查 · 首次使用向导',
         src: 'assets/screenshots/wizard-driver-zh.png',
         alt: '首次使用向导：虚拟麦克风驱动检测，自动配置 Voice Input Buddy Mic',
-        desc: '自动检测驱动并配置 Voice Input Buddy Mic；检查通过后，手动点击“继续”进入下一步。'
+        desc: '检查虚拟麦克风驱动和音频输出。两项均就绪后，点击“继续”。'
       },
       {
         title: '第 6 步 · 输入工具',
-        badge: '向导 · 工具匹配',
+        badge: '向导 · 工具设置',
         windowTitle: '输入工具 · 首次使用向导',
         src: 'assets/screenshots/wizard-tool-zh.png',
         alt: '首次使用向导：输入工具选择与设置指引，包含微信输入法、豆包等操作步骤',
-        desc: '选择你喜爱的输入法或听写工具，向导右侧分步骤提供截屏指引：从输入法麦克风选择到语音快捷键设置，轻松完成对接。'
+        desc: '选择输入法或听写工具，按右侧步骤设置麦克风和语音快捷键。'
       },
       {
-        title: '第 7 步 · 试说与校准',
-        badge: '向导 · 录音测试',
+        title: '第 7 步 · 语音测试',
+        badge: '向导 · 语音测试',
         windowTitle: '语音测试 · 首次使用向导',
         src: 'assets/screenshots/wizard-test-zh.png',
-        alt: '首次使用向导：语音测试与麦克风增益，按住说话实时显示识别文字与音量增益',
-        desc: '按住遥控器语音键说一句话，松开后核对声音和文字是否收到；可在此调整麦克风增益。截图展示等待试说状态。'
+        alt: '首次使用向导：语音测试输入框、麦克风增益与检测状态',
+        desc: '按住语音键说一句话，松开后检查输入工具返回的文字。需要时调整麦克风增益。图中为等待试说的状态。'
       }
     ]
   };
@@ -151,7 +151,7 @@ button.addEventListener('blur', stop);
         windowTitle: 'Devices · Voice Input Buddy',
         src: 'assets/screenshots/connection-en.png',
         alt: 'Voice Input Buddy Devices interface: connected Xiaomi remote, battery level, microphone gain, and device information',
-        desc: 'Manage connected Bluetooth remotes (Xiaomi, Google G9N9N), check live battery percentages and charging states, and adjust individual microphone gain (0 dB to 24 dB).'
+        desc: 'Check connection status, battery level, and device details for added remotes. Adjust microphone gain for each device (0–24 dB).'
       },
       {
         title: 'Button Mapping',
@@ -159,7 +159,7 @@ button.addEventListener('blur', stop);
         windowTitle: 'Button Mapping · Voice Input Buddy',
         src: 'assets/screenshots/mapping-en.png',
         alt: 'Voice Input Buddy Button Mapping interface: visual remote layout mapping single, double, and long press shortcuts',
-        desc: 'The central remote diagram shows each physical button, supporting single-press, double-press, and long-press shortcuts for Power, OK, Navigation, Back, Home, Menu, and TV keys. The Xiaomi defaults shown here use Home to switch apps, TV to play or pause media, and Menu to open the context menu.'
+        desc: 'Click a remote button to configure its single, double, or long press action. Xiaomi defaults: Home switches apps, TV plays or pauses media, and Menu opens the context menu.'
       },
       {
         title: 'Common Phrases',
@@ -167,23 +167,23 @@ button.addEventListener('blur', stop);
         windowTitle: 'Common Phrases · Voice Input Buddy',
         src: 'assets/screenshots/phrases-en.png',
         alt: 'Voice Input Buddy Common Phrases interface: 5-way directional pad assignment and custom phrase library editor',
-        desc: 'Edit common phrase libraries inside button mapping. Assign custom phrases to directional buttons and OK button for instant text insertion, with backup import/export.'
+        desc: 'Edit phrase lists and assign phrases to the arrows and OK button. Use the remote to choose text from the phrase panel.'
       },
       {
         title: 'Voice Tools',
         badge: 'Integrations',
         windowTitle: 'Voice Tools Integration · Voice Input Buddy',
         src: 'assets/screenshots/integration-en.png',
-        alt: 'Voice Input Buddy Voice Tools interface: setup guides for WeType, Doubao, NetEase Bageshuo, Typeless, VoiceCursor, and custom shortcuts',
-        desc: 'Guided setup for WeType, Doubao, NetEase Bageshuo, Typeless, VoiceCursor, and custom tools, with flexible trigger key options (Fn/Globe, Command, Option).'
+        alt: 'Voice Input Buddy Voice Tools interface: setup guides for WeType, Doubao, NetEase Bageshuo, Typeless, VoiceCursor, macOS Dictation, and other tools',
+        desc: 'Check the selected input tool and microphone status, then open its setup guide. Adjust the voice trigger key and Fn tap settings here too.'
       },
       {
-        title: 'Permissions & Driver',
+        title: 'Permissions & Environment',
         badge: 'System Environment',
-        windowTitle: 'Permissions & Driver · Voice Input Buddy',
+        windowTitle: 'Permissions & Environment · Voice Input Buddy',
         src: 'assets/screenshots/permissions-en.png',
         alt: 'Voice Input Buddy Permissions interface: Bluetooth, Input Monitoring, Accessibility permissions and virtual microphone driver status',
-        desc: 'Centralized overview of Bluetooth, Input Monitoring, and Accessibility permissions, along with the status and instructions for the Voice Input Buddy Mic driver.'
+        desc: 'Check Bluetooth, Input Monitoring, and Accessibility permissions, plus the Voice Input Buddy Mic driver. Follow the page’s instructions if anything is missing.'
       },
       {
         title: 'Settings & Updates',
@@ -191,7 +191,7 @@ button.addEventListener('blur', stop);
         windowTitle: 'Settings & Updates · Voice Input Buddy',
         src: 'assets/screenshots/about-en.png',
         alt: 'Voice Input Buddy Settings interface: version, update checks, configuration import/export, icon and language preferences',
-        desc: 'Check the current version and update status, import or export configuration, and manage Dock and menu bar icons, launch behavior, and app language.'
+        desc: 'Check the app version and updates, import or export settings, and adjust icons, startup behavior, and interface language.'
       }
     ],
     wizard: [
@@ -201,15 +201,15 @@ button.addEventListener('blur', stop);
         windowTitle: 'System Permissions · Setup Wizard',
         src: 'assets/screenshots/wizard-permissions-en.png',
         alt: 'Setup Wizard: System permissions check for Bluetooth, Input Monitoring, and Accessibility',
-        desc: 'Step-by-step guidance to authorize Bluetooth, Input Monitoring, and Accessibility permissions, ensuring reliable communication and key posting.'
+        desc: 'Follow the prompts to grant Bluetooth, Input Monitoring, and Accessibility permissions. Switch between English and Chinese at the bottom left.'
       },
       {
         title: 'Step 2 · Device Type',
         badge: 'Wizard · Device Choice',
         windowTitle: 'Control Source · Setup Wizard',
         src: 'assets/screenshots/wizard-source-en.png',
-        alt: 'Setup Wizard: select Xiaomi, Chromecast G9N9N, Google Streamer GY3LE, or Apple Siri Remote',
-        desc: 'Choose Xiaomi Bluetooth Remote 2 / 2 Pro, Chromecast G9N9N, Google TV Streamer GY3LE, or Apple Siri Remote. The selected remote’s illustration appears on the right.'
+        alt: 'Setup Wizard: remote model list and Xiaomi remote illustration',
+        desc: 'Choose a remote model and view its illustration on the right. See Compatibility below for each model’s support status.'
       },
       {
         title: 'Step 3 · Connect Remote',
@@ -217,7 +217,7 @@ button.addEventListener('blur', stop);
         windowTitle: 'Connect Remote · Setup Wizard',
         src: 'assets/screenshots/wizard-remote-en.png',
         alt: 'Setup Wizard: Remote pairing illustration and live connection status check',
-        desc: 'Follow the pairing instructions for your remote. A single matching connected device is selected automatically; press an ordinary button to confirm that your Mac receives its input.'
+        desc: 'Follow the Bluetooth pairing instructions. A single matching device is selected automatically; press an ordinary button to confirm the connection.'
       },
       {
         title: 'Step 4 · Button Test',
@@ -225,7 +225,7 @@ button.addEventListener('blur', stop);
         windowTitle: 'Button Test · Setup Wizard',
         src: 'assets/screenshots/wizard-controls-en.png',
         alt: 'Setup Wizard: ordinary button checklist with live detection status',
-        desc: 'Press three different ordinary buttons, such as arrows and OK. The checklist marks each received button so you can confirm input before continuing.'
+        desc: 'Press three different ordinary buttons to check that input arrives. For G9N9N, use the two-button combinations shown in the guide.'
       },
       {
         title: 'Step 5 · Driver Check',
@@ -233,7 +233,7 @@ button.addEventListener('blur', stop);
         windowTitle: 'Driver Check · Setup Wizard',
         src: 'assets/screenshots/wizard-driver-en.png',
         alt: 'Setup Wizard: Virtual microphone driver detection for Voice Input Buddy Mic',
-        desc: 'Automatically checks the driver and configures Voice Input Buddy Mic. Click Continue after both driver and audio output checks pass.'
+        desc: 'Check the virtual microphone driver and audio output. Click Continue once both are ready.'
       },
       {
         title: 'Step 6 · Voice Tool',
@@ -241,15 +241,15 @@ button.addEventListener('blur', stop);
         windowTitle: 'Input Tool · Setup Wizard',
         src: 'assets/screenshots/wizard-tool-en.png',
         alt: 'Setup Wizard: Voice input tool selection with visual setup guides',
-        desc: 'Choose your preferred input method or dictation tool, with step-by-step screenshots guiding microphone selection and voice shortcut keys.'
+        desc: 'Choose your input method or dictation tool, then follow the steps on the right to set its microphone and voice shortcut.'
       },
       {
-        title: 'Step 7 · Voice Test & Gain',
+        title: 'Step 7 · Voice Test',
         badge: 'Wizard · Speech Test',
         windowTitle: 'Voice Test · Setup Wizard',
         src: 'assets/screenshots/wizard-test-en.png',
-        alt: 'Setup Wizard: First-phrase voice test with live transcription and microphone gain adjustment',
-        desc: 'Hold the remote voice button, speak, then release and check that audio and text were received. Adjust microphone gain here if needed. The screenshot shows the waiting state.'
+        alt: 'Setup Wizard: voice test text field, microphone gain, and test status',
+        desc: 'Hold the voice button, speak, then release and check the text returned by your input tool. Adjust microphone gain if needed. The screenshot shows the waiting state.'
       }
     ]
   };
