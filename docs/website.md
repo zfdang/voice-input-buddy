@@ -16,7 +16,7 @@ python3 -m http.server 8765 --directory pages
 
 中英文页面的 `#interface` 区域提供程序界面的 3D 画廊（Cathedral 效果）交互式展示，分为“主程序界面”（按左侧菜单从上到下展示：设备连接、按键映射、常用语编辑、输入法集成、权限与驱动、关于与更新，共 6 张，设备连接卡片展示小米与 Google G9N9N 遥控器）与“新手设置向导”（系统权限、设备类型、连接遥控器、按键测试、驱动检查、输入工具、试说与校准，共 7 步）两个分类。支持 3D 舞台层叠切换、左右拖拽/手势、键盘方向键切换及点击全屏放大查看高清细节。截图资产位于 `pages/assets/screenshots/`，包含中英文版本。可通过 `python3 scripts/generate-website-screenshots.py` 先从当前源码构建 Debug App，再用隔离设置渲染设置窗口与向导各步骤，并无损优化 PNG。截图使用示例设备、权限及驱动状态，不代表硬件验收；小米按键页保留代码中的默认映射。
 
-中英文页面的 `#demo` 区域提供两分钟卡通视频。MP4、封面和可选中文字幕轨道位于
+中英文页面的 `#demo` 区域提供 3 分 19 秒卡通视频。MP4、封面和可选中文字幕轨道位于
 `pages/assets/video/`，由 Pages 一起部署。视频为中文旁白与画内中文字幕；英文页面明确标注视频语言。
 播放器使用浏览器原生控制，支持全屏、拖动和下载，不自动播放，只预加载元数据，
 不依赖外部播放器或追踪服务。更新视频时同步更新封面、字幕和两种语言的介绍。
@@ -34,5 +34,5 @@ dist/videos/venv/bin/python scripts/demo-video/render.py
 ```
 
 旁白采用 `zh-CN-XiaoxiaoNeural`，首次生成或文字变化时通过 Edge TTS 合成，
-相同文字的音频缓存在 `dist/videos/source/`。脚本同步生成两分钟 MP4、WebVTT 字幕和封面，
+相同文字的音频缓存在 `dist/videos/source/`。脚本同步生成 MP4、WebVTT 字幕和封面，
 直接写入 `pages/assets/video/`。完成后检查画面、字幕时间和声音，再提交这些资产。
