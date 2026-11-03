@@ -280,15 +280,18 @@ final class VirtualAudioOutput {
         }
         var deviceID = device.id
         logStage("select_device")
-        let result = AudioUnitSetProperty(
+        var result: OSStatus = -1
+        let succeeded = VoiceInputBuddyTryAudioOperation {
+            result = AudioUnitSetProperty(
             outputUnit,
             kAudioOutputUnitProperty_CurrentDevice,
             kAudioUnitScope_Global,
             0,
             &deviceID,
             UInt32(MemoryLayout<AudioDeviceID>.size)
-        )
-        guard result == noErr else {
+            )
+        }
+        guard succeeded && result == noErr else {
             status = LocalizedMessage("audio.output.select_failed", arguments: [String(result)])
             logger(
                 "AUDIO CONFIGURE failed reason=set_current_device " +
@@ -1052,14 +1055,18 @@ final class VirtualAudioOutput {
         guard let outputUnit = engine?.outputNode.audioUnit else { return nil }
         var deviceID = AudioDeviceID(kAudioObjectUnknown)
         var size = UInt32(MemoryLayout<AudioDeviceID>.size)
-        guard AudioUnitGetProperty(
+        var result: OSStatus = -1
+        let succeeded = VoiceInputBuddyTryAudioOperation {
+            result = AudioUnitGetProperty(
             outputUnit,
             kAudioOutputUnitProperty_CurrentDevice,
             kAudioUnitScope_Global,
             0,
             &deviceID,
             &size
-        ) == noErr else { return nil }
+            )
+        }
+        guard succeeded && result == noErr else { return nil }
         return CoreAudioDeviceCatalog.deviceInfo(for: deviceID)
     }
 
