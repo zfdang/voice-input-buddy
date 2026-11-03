@@ -25,7 +25,8 @@ def verify(directory, release):
             raise ValueError('Unexpected package destination')
         if len(base64.b64decode(enclosure.get(f'{{{SPARKLE}}}edSignature', ''), validate=True)) != 64:
             raise ValueError('Missing update signature')
-        if item.findtext(f'{{{SPARKLE}}}version') != str(int(tag.rsplit('.', 1)[1])):
+        version = item.findtext(f'{{{SPARKLE}}}version', '')
+        if not version.isdigit() or int(version) <= 0 or int(version) % 1000 != int(tag.rsplit('.', 1)[1]):
             raise ValueError('Mismatched build version')
         if architecture == 'arm64' and item.findtext(f'{{{SPARKLE}}}hardwareRequirements') != 'arm64':
             raise ValueError('Missing Apple Silicon requirement')

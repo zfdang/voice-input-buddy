@@ -193,7 +193,7 @@ extension AppSettings {
         }
     }
 
-    func beginOnboardingVoiceTrial(_ plan: OnboardingVoicePairingPlan) {
+    func beginOnboardingVoiceTrial(_ plan: OnboardingVoicePairingPlan, applyVoiceSettings: Bool = true) {
         if defaults.data(forKey: Keys.onboardingTrialSnapshot) == nil {
             let snapshot = OnboardingVoiceConfigurationSnapshot(
                 voiceKeyMode: voiceKeyMode,
@@ -208,8 +208,10 @@ extension AppSettings {
         if let data = try? JSONEncoder().encode(plan.binding) {
             defaults.set(data, forKey: Keys.onboardingStagedVoiceBinding)
         }
-        voiceKeyMode = plan.binding.shortcut
-        voiceFnTapModeEnabled = plan.fnTapModeEnabled && plan.binding.shortcut == .function
+        if applyVoiceSettings {
+            voiceKeyMode = plan.binding.shortcut
+            voiceFnTapModeEnabled = plan.fnTapModeEnabled && plan.binding.shortcut == .function
+        }
         if let chromecastVoiceMode = plan.chromecastVoiceMode {
             self.chromecastVoiceMode = chromecastVoiceMode
         }

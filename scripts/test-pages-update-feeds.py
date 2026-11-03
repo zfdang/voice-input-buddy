@@ -33,6 +33,14 @@ class FeedDeploymentTests(unittest.TestCase):
     def test_complete_pair_matches_published_packages(self):
         feeds.verify(self.root, self.release)
 
+    def test_build_version_can_exceed_tag_suffix(self):
+        for arch in ['arm64', 'intel']:
+            path = self.root / f'appcast-{arch}.xml'
+            xml = ET.parse(path)
+            xml.find(f'channel/item/{{{appcast.SPARKLE}}}version').text = '1043'
+            xml.write(path)
+        feeds.verify(self.root, self.release)
+
     def test_stale_feed_cannot_replace_the_live_pair(self):
         self.release['tagName'] = 'v26-10-12.044'
         with self.assertRaises(ValueError): feeds.verify(self.root, self.release)

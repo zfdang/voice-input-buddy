@@ -519,7 +519,7 @@ extension OnboardingView {
     func stageCurrentDocumentedPairingPlanIfPossible() {
         guard settings.onboardingVoiceBindingPreference == .documentedDefault,
               let plan = proposedPairingPlan else { return }
-        settings.beginOnboardingVoiceTrial(plan)
+        settings.beginOnboardingVoiceTrial(plan, applyVoiceSettings: false)
         model.setVoiceKeyMode(plan.binding.shortcut)
         model.setVoiceFnTapModeEnabled(plan.fnTapModeEnabled)
     }
