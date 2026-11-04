@@ -8,6 +8,12 @@ Turn a remote control into a voice-input button for your computer. Press to talk
 
 Supports **macOS 14 and later**, on Apple Silicon and Intel Macs. Windows support is planned.
 
+## Screenshots
+
+![Device connection screen](pages/assets/screenshots/connection-en.png)
+
+![Button mapping screen](pages/assets/screenshots/mapping-en.png)
+
 ## What can it do?
 
 - Use a remote's microphone for voice input, without reaching for the keyboard.

@@ -8,6 +8,12 @@ Voice Input Buddy（语音搭子）把遥控器变成电脑上的语音输入按
 
 当前支持 **macOS 14 及以上版本**，包括 Apple Silicon 和 Intel Mac。Windows 支持正在规划中。
 
+## 界面预览
+
+![设备连接界面](pages/assets/screenshots/connection-zh.png)
+
+![按键映射界面](pages/assets/screenshots/mapping-zh.png)
+
 ## 能做什么
 
 - 用遥控器麦克风进行语音输入，减少对电脑键盘和内置麦克风的依赖。
