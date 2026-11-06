@@ -84,7 +84,7 @@ final class CommonPhraseInserter {
     }
 
     static func isTerminal(_ bundleIdentifier: String) -> Bool {
-        ["com.apple.Terminal", "com.googlecode.iterm2", "org.alacritty", "com.mitchellh.ghostty"]
+        ["com.apple.Terminal", "com.googlecode.iterm2", "org.alacritty", "com.mitchellh.ghostty", "app.getmoshi.desktop"]
             .contains(bundleIdentifier)
     }
 

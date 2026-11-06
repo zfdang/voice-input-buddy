@@ -540,7 +540,8 @@ struct CommonPhraseClipboardTests {
     }
 
     @Test func browserAndTerminalRoutesPreferNativePaste() {
-        for terminal in ["com.apple.Terminal", "com.googlecode.iterm2", "org.alacritty", "com.mitchellh.ghostty"] {
+        for terminal in ["com.apple.Terminal", "com.googlecode.iterm2", "org.alacritty", "com.mitchellh.ghostty",
+                         "app.getmoshi.desktop"] {
             #expect(CommonPhraseInserter.prefersPaste(bundleIdentifier: terminal, electron: false, webContent: false))
         }
         #expect(CommonPhraseInserter.prefersPaste(bundleIdentifier: "com.google.Chrome", electron: false, webContent: false))
