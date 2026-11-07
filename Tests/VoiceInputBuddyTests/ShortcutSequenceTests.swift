@@ -18,6 +18,26 @@ struct ShortcutSequenceTests {
         }
     }
 
+    @Test func shortcutDoesNotFeedSyntheticOptionBackIntoHardwareState() {
+        var hardware: CGEventFlags = []
+        var session: CGEventFlags = []
+        var posted: [Posted] = []
+        let requested: CGEventFlags = [.maskAlternate, .maskCommand,
+            CGEventFlags(rawValue: 0x0020), CGEventFlags(rawValue: 0x0008)]
+        #expect(ShortcutEventSequence.send(keyCode: 123, modifiers: requested,
+            hardwareFlags: { hardware }, eventPoster: { event in
+                ShortcutEventSequence.post(event, eventPoster: { location, submitted in
+                    // Model HID-stage state being visible to the next hardware read.
+                    if location == .cghidEventTap { hardware = submitted.flags }
+                    session = submitted.flags
+                    posted.append(Posted(submitted))
+                })
+            }, logger: { _ in }))
+        #expect(posted.map(\.code) == [58, 55, 123, 123, 55, 58])
+        #expect(hardware.intersection([.maskAlternate, .maskCommand]).isEmpty)
+        #expect(session.intersection([.maskAlternate, .maskCommand]).isEmpty)
+    }
+
     @Test(arguments: [ButtonAction.commandReturn, .shiftReturn, .commandCopy, .commandPaste,
         .commandClose, .commandQuit, .commandCut, .commandSelectAll, .commandUndo,
         .commandRedo, .commandFind, .commandSave, .commandDelete, .showDesktop])
