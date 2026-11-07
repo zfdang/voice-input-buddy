@@ -1152,6 +1152,7 @@
 "settings.integration.microphone_help" = "Choose the same virtual microphone inside the input tool. Its voice shortcut and press/release behavior must match the settings below.";
 "settings.integration.other_title" = "Other Tools";
 "settings.integration.configure" = "Configure & Test with Guide";
+"settings.integration.select_tool" = "Choose an input tool";
 "settings.integration.shortcut_title" = "Voice trigger";
 "settings.integration.shortcut_help" = "These controls affect the voice trigger. Configure ordinary remote buttons in Buttons. The selected input tool performs recognition and text cleanup.";
 
