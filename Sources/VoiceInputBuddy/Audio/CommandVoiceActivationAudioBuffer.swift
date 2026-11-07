@@ -5,7 +5,8 @@ struct CommandVoiceActivationAudioBuffer {
     var samples: [Int16] = []
     private(set) var isWaiting = false
 
-    init(maximumSampleCount: Int = 8_000) {
+    // Reserve two seconds at 16 kHz while composer focus and input-source activation finish.
+    init(maximumSampleCount: Int = 32_000) {
         self.maximumSampleCount = maximumSampleCount
     }
 
