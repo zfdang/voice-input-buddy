@@ -44,6 +44,9 @@ extension AppSettings {
         }
         unifiedBaseBindings.removeAll { $0.remoteProfileID == profileID }
         remoteDeviceProfiles.removeAll { $0.id == profileID }
+        if isOnboardingComplete {
+            synchronizeOnboardingRemoteWithSelectedProfile()
+        }
         return true
     }
 

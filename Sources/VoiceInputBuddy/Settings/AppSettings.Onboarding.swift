@@ -75,6 +75,7 @@ extension AppSettings {
         if let profileID = configuration.selectedRemoteProfileID {
             selectRemoteProfile(profileID)
         }
+        synchronizeOnboardingRemoteWithSelectedProfile()
         onboardingPurpose = .initialSetup
         onboardingStep = configuration.step
         defaults.removeObject(forKey: Self.onboardingReturnConfigurationKey)
@@ -171,6 +172,19 @@ extension AppSettings {
     func selectOnboardingDevice(_ device: RemoteSetupDevice) {
         setOnboardingControlSource(device.onboardingSource ?? .unselected)
         onboardingDevice = device
+    }
+
+    // Integration setup skips device selection, so derive its source from the
+    // current profile instead of reusing a previous wizard's selection.
+    func synchronizeOnboardingRemoteWithSelectedProfile() {
+        let source: OnboardingControlSource
+        switch selectedRemoteProfile?.model {
+        case .rc001, .rc003: source = .xiaomiRemote
+        case .chromecastVoiceRemote: source = .chromecastRemote
+        case .appleSiriRemoteA2540, .appleSiriRemoteA2854: source = .siriRemote
+        case .unknown, nil: source = .unselected
+        }
+        setOnboardingControlSource(source)
     }
 
     func setOnboardingControlSource(_ source: OnboardingControlSource) {
