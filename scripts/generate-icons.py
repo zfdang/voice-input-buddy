@@ -51,4 +51,4 @@ for source, name in status_sources:
     source = source.crop(crop)
     for scale in (1, 2):
         suffix = '@2x' if scale == 2 else ''
-        source.resize((20 * scale, 20 * scale), Image.Resampling.LANCZOS).save(resources / f'{name}{suffix}.png')
+        source.resize((22 * scale, 22 * scale), Image.Resampling.LANCZOS).save(resources / f'{name}{suffix}.png')

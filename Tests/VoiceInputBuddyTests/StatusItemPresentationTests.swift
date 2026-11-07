@@ -12,7 +12,7 @@ struct StatusItemPresentationTests {
         for (state, disabled) in [(StatusItemPresentation.disconnected, true), (.connected, false), (.streaming, false)] {
             state.apply(to: button, description: state.rawValue)
             #expect(button.image?.isTemplate == true)
-            #expect(button.image?.size == NSSize(width: 20, height: 20))
+            #expect(button.image?.size == NSSize(width: 22, height: 22))
             #expect(button.appearsDisabled == disabled)
         }
         #expect(StatusItemPresentation.resolve(physicalConnected: true, isStreaming: false) == .connected)
