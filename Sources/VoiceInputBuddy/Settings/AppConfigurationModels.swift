@@ -59,6 +59,7 @@ struct PersonalizedConfiguration: Codable {
     let openMainWindowAtLaunch: Bool?
     let checksForPreReleaseUpdates: Bool?
     let experimentalContinuousRecordingEnabled: Bool?
+    var voiceAutoFocusCodexEnabled: Bool? = nil
     var voiceTool: OnboardingVoiceTool? = nil
     let voiceFnTapModeEnabled: Bool?
     let voiceKeyMode: VoiceKeyMode?
