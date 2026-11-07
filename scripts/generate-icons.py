@@ -31,8 +31,24 @@ for size in (16, 32, 128, 256, 512):
         app.resize((size * scale, size * scale), Image.Resampling.LANCZOS).save(iconset / f'icon_{size}x{size}{suffix}.png')
 subprocess.run(['iconutil', '-c', 'icns', str(iconset), '-o', str(resources / 'AppIcon.icns')], check=True)
 
-for filename, name in (('status.jpg', 'StatusIconTemplate'), ('status-active.jpg', 'StatusIconActiveTemplate')):
-    source = remove_background(Image.open(artwork / filename), enclosed=True)
+status_sources = [
+    (remove_background(Image.open(artwork / filename), enclosed=True), name)
+    for filename, name in (('status.jpg', 'StatusIconTemplate'), ('status-active.jpg', 'StatusIconActiveTemplate'))
+]
+# Use one crop for both states so the artwork stays in the same position.
+boxes = [image.getchannel('A').point(lambda value: 255 if value >= 32 else 0).getbbox()
+         for image, _ in status_sources]
+left = min(box[0] for box in boxes)
+top = min(box[1] for box in boxes)
+right = max(box[2] for box in boxes)
+bottom = max(box[3] for box in boxes)
+side = max(right - left, bottom - top)
+side = int(side * 1.08)
+center_x, center_y = (left + right) // 2, (top + bottom) // 2
+crop = (center_x - side // 2, center_y - side // 2,
+        center_x - side // 2 + side, center_y - side // 2 + side)
+for source, name in status_sources:
+    source = source.crop(crop)
     for scale in (1, 2):
         suffix = '@2x' if scale == 2 else ''
-        source.resize((18 * scale, 18 * scale), Image.Resampling.LANCZOS).save(resources / f'{name}{suffix}.png')
+        source.resize((20 * scale, 20 * scale), Image.Resampling.LANCZOS).save(resources / f'{name}{suffix}.png')
