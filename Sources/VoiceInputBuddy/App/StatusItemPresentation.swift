@@ -21,14 +21,15 @@ enum StatusItemPresentation: String, Equatable {
     }
 
     @MainActor
-    func apply(to button: NSStatusBarButton, description: String) {
-        let resourceName = self == .streaming ? "StatusIconActiveTemplate" : "StatusIconTemplate"
+    func apply(to button: NSStatusBarButton, description: String,
+               loadImage: (NSImage.Name) -> NSImage? = { NSImage(named: $0) }) {
+        let resourceName = self == .streaming ? "StatusIconActive" : "StatusIconTemplate"
         let fallbackSymbol = self == .streaming ? "mic.fill" : "mic"
         // Named images are shared. Keep localized descriptions local to this status item.
-        let image = (NSImage(named: NSImage.Name(resourceName))?.copy() as? NSImage)
-            ?? NSImage(systemSymbolName: fallbackSymbol, accessibilityDescription: description)
-        // Let macOS tint the monochrome artwork for light and dark menu bars.
-        image?.isTemplate = true
+        let artwork = loadImage(NSImage.Name(resourceName))?.copy() as? NSImage
+        let image = artwork ?? NSImage(systemSymbolName: fallbackSymbol, accessibilityDescription: description)
+        // The recording artwork is full color; system symbols and the idle icon use tinting.
+        image?.isTemplate = self != .streaming || artwork == nil
         image?.size = NSSize(width: 20, height: 20)
         image?.accessibilityDescription = description
         button.image = image
