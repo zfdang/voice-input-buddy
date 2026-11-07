@@ -31,21 +31,23 @@ extension SettingsView {
                 VStack(spacing: 0) {
                     Group {
                         HStack(alignment: .top, spacing: 28) {
-                            VStack(alignment: .leading, spacing: 8) {
+                            HStack(alignment: .center, spacing: 12) {
                                 Image(nsImage: appIconCatalog.image(
                                     for: settings.appIconIdentifier
                                 ))
                                     .resizable()
                                     .frame(width: 72, height: 72)
                                     .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
-                                Text(localization.text("app.name"))
-                                    .font(.title3.weight(.semibold))
-                                Text(localization.text("settings.application.tagline"))
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(2)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(localization.text("app.name"))
+                                        .font(.title3.weight(.semibold))
+                                    Text(localization.text("settings.application.tagline"))
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
                             }
-                            .frame(minWidth: 190, maxWidth: 230, alignment: .leading)
+                            .frame(width: 230, alignment: .leading)
 
                             Divider()
 
