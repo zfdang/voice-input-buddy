@@ -84,7 +84,12 @@ enum ShortcutEventSequence {
     }
 
     static func post(_ event: CGEvent) -> Bool {
-        event.post(tap: .cghidEventTap)
+        post(event, eventPoster: { location, event in event.post(tap: location) })
+    }
+
+    static func post(_ event: CGEvent, eventPoster: (CGEventTapLocation, CGEvent) -> Void) -> Bool {
+        // Keep synthetic modifiers out of the HID snapshot used during cleanup.
+        eventPoster(.cgSessionEventTap, event)
         // CGEventPost has no acknowledgement from the receiving application.
         return true
     }
