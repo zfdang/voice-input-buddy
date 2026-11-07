@@ -30,6 +30,19 @@ extension SettingsView {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                HStack(alignment: .center, spacing: 12) {
+                    Text(localization.text("settings.integration.select_tool"))
+                        .font(.headline)
+                    Spacer()
+                    Button(localization.text("settings.integration.configure")) {
+                        if let tool = integrationToolSelection {
+                            SettingsPageBehavior.beginIntegrationSetup(tool: tool, settings: settings)
+                        }
+                    }
+                    .compatibilityButtonStyle(.prominent)
+                    .controlSize(.large)
+                    .disabled(integrationToolSelection == nil)
+                }
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
                     ForEach(OnboardingVoiceToolVisibilityPolicy.tools) { tool in
                         integrationToolCard(tool)
@@ -52,31 +65,40 @@ extension SettingsView {
             }
         }
         .onAppear {
+            integrationToolSelection = OnboardingVoiceToolVisibilityPolicy.tools.contains(settings.onboardingVoiceTool)
+                ? settings.onboardingVoiceTool : nil
             model.refreshVoiceKeyCompatibilityWarning()
             model.refreshAudioDevices()
         }
     }
 
     private func integrationToolCard(_ tool: OnboardingVoiceTool) -> some View {
-        GlassPanel {
-            VStack(alignment: .leading, spacing: 10) {
+        let selected = integrationToolSelection == tool
+        return Button {
+            integrationToolSelection = tool
+        } label: {
+            VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text(localization.text(tool.titleKey))
                         .font(.headline)
                     Spacer()
-                    if settings.onboardingVoiceTool == tool {
-                        Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.accentColor)
-                    }
+                    Image(systemName: selected ? "largecircle.fill.circle" : "circle")
+                        .foregroundStyle(selected ? Color.accentColor : Color.secondary)
                 }
                 Text(localization.text(tool.detailKey))
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Button(localization.text("settings.integration.configure")) {
-                    SettingsPageBehavior.beginIntegrationSetup(tool: tool, settings: settings)
-                }
-                .compatibilityButtonStyle(.standard)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(selected ? Color.accentColor.opacity(0.09) : Color.primary.opacity(0.04),
+                        in: RoundedRectangle(cornerRadius: 16))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(selected ? Color.accentColor : Color.primary.opacity(0.2), lineWidth: 1)
+            }
         }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

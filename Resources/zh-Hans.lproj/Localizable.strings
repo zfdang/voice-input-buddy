@@ -1149,6 +1149,7 @@
 "settings.integration.microphone_help" = "在输入工具中选择相同的虚拟麦克风，并让语音快捷键、按下与松开行为和下方设置保持一致。";
 "settings.integration.other_title" = "其他工具";
 "settings.integration.configure" = "通过向导配置并测试";
+"settings.integration.select_tool" = "选择输入工具";
 "settings.integration.shortcut_title" = "语音触发方式";
 "settings.integration.shortcut_help" = "这些选项只调整语音触发方式。普通遥控器按键在“按键映射”中配置；识别与文本整理由所选输入工具完成。";
 

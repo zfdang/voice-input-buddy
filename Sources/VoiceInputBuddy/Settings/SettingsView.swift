@@ -26,6 +26,7 @@ struct SettingsView: View {
     @State var remoteRemovalProfile: RemoteDeviceProfile?
     @State var isRemoteRemovalPresented = false
     @State var selectedSection: SettingsSection
+    @State var integrationToolSelection: OnboardingVoiceTool?
     @State var selectedRemoteButton: RemoteButton = .ok
     @State private var selectedSiriRemoteControlID = "select"
     @State private var selectedChromecastControlID = "select"
