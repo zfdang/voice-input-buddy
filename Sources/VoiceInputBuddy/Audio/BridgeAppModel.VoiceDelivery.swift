@@ -196,7 +196,7 @@ extension BridgeAppModel {
             pendingVoiceKeyActivationCompletion = completion
             if owner == .bluetooth { voiceSession.commandAudio.begin() }
             var immediateResult: Bool?
-            preferredInputSourceMonitor.beginVoiceSession { [weak self] activated in
+            let completeActivation: (Bool) -> Void = { [weak self] activated in
                 guard let self else { completion(false); return }
                 guard self.voiceKeyActivationGeneration == generation,
                       self.pendingVoiceKeyActivationOwner == owner else { immediateResult = false; return }
@@ -217,6 +217,20 @@ extension BridgeAppModel {
                     transition: transition, owner: owner, keySetter: keySetter)
                 immediateResult = submitted
                 finish?(submitted)
+            }
+            if owner == .bluetooth, settings.voiceAutoFocusCodexEnabled {
+                prepareVoiceComposer { [weak self] focused in
+                    guard let self, self.voiceKeyActivationGeneration == generation,
+                          self.pendingVoiceKeyActivationOwner == owner else { return }
+                    guard focused else {
+                        AppLogger.shared.write("VOICE INPUT focus_failed result=cancelled")
+                        completeActivation(false)
+                        return
+                    }
+                    self.preferredInputSourceMonitor.beginVoiceSession(completion: completeActivation)
+                }
+            } else {
+                preferredInputSourceMonitor.beginVoiceSession(completion: completeActivation)
             }
             // An asynchronous start is accepted; the caller continues only at completion.
             return immediateResult ?? true
