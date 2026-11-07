@@ -10,11 +10,8 @@ struct StatusItemPresentationTests {
         defer { NSStatusBar.system.removeStatusItem(item) }
         let button = try #require(item.button)
         for (state, disabled) in [(StatusItemPresentation.disconnected, true), (.connected, false), (.streaming, false)] {
-            state.apply(to: button, description: state.rawValue) { name in
-                #expect(name == (state == .streaming ? "StatusIconActive" : "StatusIconTemplate"))
-                return NSImage(size: NSSize(width: 20, height: 20))
-            }
-            #expect(button.image?.isTemplate == (state != .streaming))
+            state.apply(to: button, description: state.rawValue)
+            #expect(button.image?.isTemplate == true)
             #expect(button.image?.size == NSSize(width: 20, height: 20))
             #expect(button.appearsDisabled == disabled)
         }

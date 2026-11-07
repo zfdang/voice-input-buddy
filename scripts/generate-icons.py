@@ -32,8 +32,8 @@ for size in (16, 32, 128, 256, 512):
 subprocess.run(['iconutil', '-c', 'icns', str(iconset), '-o', str(resources / 'AppIcon.icns')], check=True)
 
 status_sources = [
-    (remove_background(Image.open(artwork / 'status.jpg'), enclosed=True), 'StatusIconTemplate'),
-    (app, 'StatusIconActive'),
+    (remove_background(Image.open(artwork / filename), enclosed=True), name)
+    for filename, name in (('status.jpg', 'StatusIconTemplate'), ('status-active.jpg', 'StatusIconActiveTemplate'))
 ]
 # Use one crop for both states so the artwork stays in the same position.
 boxes = [image.getchannel('A').point(lambda value: 255 if value >= 32 else 0).getbbox()
