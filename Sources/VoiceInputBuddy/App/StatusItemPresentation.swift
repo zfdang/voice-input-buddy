@@ -27,7 +27,7 @@ enum StatusItemPresentation: String, Equatable {
         // Named images are shared. Keep localized descriptions local to this status item.
         let image = (NSImage(named: NSImage.Name(resourceName))?.copy() as? NSImage)
             ?? NSImage(systemSymbolName: fallbackSymbol, accessibilityDescription: description)
-        // The supplied artwork includes an opaque white background.
+        // Preserve the supplied artwork colors.
         image?.isTemplate = false
         image?.size = NSSize(width: 18, height: 18)
         image?.accessibilityDescription = description
