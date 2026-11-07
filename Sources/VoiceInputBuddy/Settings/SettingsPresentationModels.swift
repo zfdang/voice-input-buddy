@@ -144,15 +144,19 @@ enum SettingsPageBehavior {
     }
 
     @MainActor static func beginIntegrationSetup(tool: OnboardingVoiceTool, settings: AppSettings) {
+        settings.synchronizeOnboardingRemoteWithSelectedProfile()
         settings.preserveCompletedOnboarding()
         settings.discardOnboardingVoiceTrial()
-        settings.onboardingPurpose = settings.canDismissOnboarding ? .integration : .initialSetup
+        settings.onboardingPurpose = settings.canDismissOnboarding && settings.onboardingControlSource != .unselected
+            ? .integration : .initialSetup
         settings.onboardingCompletedVersion = 0
         settings.setOnboardingVoiceTool(tool)
         if !tool.supportsHoldVoiceRecording {
             settings.voiceFnTapModeEnabled = true
         }
-        settings.setOnboardingStep(settings.onboardingPurpose.steps[0])
+        let start: OnboardingStep = settings.onboardingPurpose == .integration ? .voiceTool
+            : (settings.canDismissOnboarding ? .remoteAvailability : .permissions)
+        settings.setOnboardingStep(start)
     }
 
     static func visibleSection(for requestedSection: SettingsSection) -> SettingsSection {

@@ -149,6 +149,8 @@ struct ProductBoundaryTests {
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let settings = AppSettings(defaults: defaults)
+        let remote = settings.registerBluetoothRemote(identifier: UUID(), model: .chromecastVoiceRemote)
+        settings.selectRemoteProfile(remote)
         settings.gainDB = 6
         settings.customMappingEnabled = true
         settings.setOnboardingControlSource(.chromecastRemote)
