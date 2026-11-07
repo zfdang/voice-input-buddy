@@ -142,17 +142,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     var scheduleVoiceKeyReleaseRetry: OperationScheduler = ScheduledOperation.mainQueue
     var heldVoiceKeyMode: VoiceKeyMode?
     var pendingVoiceKeyMode: VoiceKeyMode?
-    // Focus the current Codex composer before starting remote dictation.
-    var prepareVoiceComposer: (@escaping (Bool) -> Void) -> Void = { completion in
-        guard NSWorkspace.shared.frontmostApplication?.bundleIdentifier ==
-                PresetApplication.codex.bundleIdentifier else {
-            completion(true)
-            return
-        }
-        if !KeyboardInjector.focusFrontmostComposer(completion: completion) {
-            completion(false)
-        }
-    }
+    // Main-queue state; only input-source waits can pump/reenter that queue.
     var voiceKeyActivationInProgress = false
     var voiceKeyActivationGeneration: UInt64 = 0
     var pendingVoiceKeyActivationOwner: VoiceKeyLatch.Owner?

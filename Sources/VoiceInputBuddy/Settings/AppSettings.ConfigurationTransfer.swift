@@ -40,7 +40,6 @@ extension AppSettings {
             openMainWindowAtLaunch: openMainWindowAtLaunch,
             checksForPreReleaseUpdates: checksForPreReleaseUpdates,
             experimentalContinuousRecordingEnabled: experimentalContinuousRecordingEnabled,
-            voiceAutoFocusCodexEnabled: voiceAutoFocusCodexEnabled,
             voiceTool: onboardingVoiceTool,
             voiceFnTapModeEnabled: voiceFnTapModeEnabled,
             voiceKeyMode: voiceKeyMode,
@@ -247,7 +246,6 @@ extension AppSettings {
         }
         setOnboardingVoiceTool(importedVoiceKeyConfiguration.tool)
         voiceKeyMode = importedVoiceKeyConfiguration.mode
-        voiceAutoFocusCodexEnabled = configuration.voiceAutoFocusCodexEnabled ?? false
         voiceFnTapModeEnabled = importedVoiceKeyConfiguration.fnTapModeEnabled && voiceKeyMode == .function
         applyContinuousRecordingExperimentState(
             enabled: configuration.experimentalContinuousRecordingEnabled ?? false,

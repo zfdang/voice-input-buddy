@@ -5,24 +5,6 @@ import Testing
 @Suite("Voice tool configuration transfer")
 @MainActor
 struct VoiceToolConfigurationTransferTests {
-    @Test func codexAutoFocusSurvivesExportImportAndReload() throws {
-        let sourceName = "voice-focus-source-" + UUID().uuidString
-        let targetName = "voice-focus-target-" + UUID().uuidString
-        let sourceDefaults = try #require(UserDefaults(suiteName: sourceName))
-        let targetDefaults = try #require(UserDefaults(suiteName: targetName))
-        defer {
-            sourceDefaults.removePersistentDomain(forName: sourceName)
-            targetDefaults.removePersistentDomain(forName: targetName)
-        }
-        let source = AppSettings(defaults: sourceDefaults)
-        #expect(!source.voiceAutoFocusCodexEnabled)
-        source.voiceAutoFocusCodexEnabled = true
-        let target = AppSettings(defaults: targetDefaults)
-        try target.importConfiguration(from: source.exportedConfigurationData())
-        #expect(target.voiceAutoFocusCodexEnabled)
-        #expect(AppSettings(defaults: targetDefaults).voiceAutoFocusCodexEnabled)
-    }
-
     @Test(arguments: [OnboardingVoiceTool.macosDictation, .typeless, .other])
     func restoresTheToolAndItsStartSequence(tool: OnboardingVoiceTool) throws {
         let sourceName = "voice-tool-export-" + UUID().uuidString

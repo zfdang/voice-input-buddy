@@ -4,15 +4,6 @@ import Testing
 
 @Suite("ATVV protocol")
 struct ATVVProtocolTests {
-    @Test func composerFocusRetainsTheBeginningOfOneSecondOfSpeech() {
-        var buffer = CommandVoiceActivationAudioBuffer()
-        buffer.begin()
-        let firstSecond = (0..<16_000).map { Int16($0) }
-        let buffered = buffer.appendIfWaiting(firstSecond)
-        #expect(buffered)
-        #expect(buffer.drain() == firstSecond)
-    }
-
     @Test func invalidFrameSizesCannotStartOrAccumulateAudio() {
         for size in [513, 65_535] {
             let bytes: [UInt8] = [0x0B, 1, 0, 2, 3, UInt8(size >> 8), UInt8(size & 255)]

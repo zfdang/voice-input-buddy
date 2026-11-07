@@ -25,7 +25,6 @@ final class AppSettings: ObservableObject {
         static let checksForPreReleaseUpdates = "checksForPreReleaseUpdates"
         static let experimentalContinuousRecordingEnabled = "experimentalContinuousRecordingEnabled"
         static let voiceFnTapModeEnabled = "voiceFnTapModeEnabled"
-        static let voiceAutoFocusCodexEnabled = "voiceAutoFocusCodexEnabled"
         static let voiceKeyMode = "voiceKeyMode"
         static let chromecastVoiceMode = "chromecast.voiceMode"
         static let continuousRecordingPowerBindingBackup = "continuousRecordingPowerBindingBackup"
@@ -167,11 +166,6 @@ final class AppSettings: ObservableObject {
                 forKey: Keys.experimentalContinuousRecordingEnabled
             )
         }
-    }
-
-    /// Focus the active Codex composer before remote dictation starts.
-    @Published var voiceAutoFocusCodexEnabled: Bool {
-        didSet { defaults.set(voiceAutoFocusCodexEnabled, forKey: Keys.voiceAutoFocusCodexEnabled) }
     }
 
     @Published var voiceFnTapModeEnabled: Bool {
@@ -462,7 +456,6 @@ final class AppSettings: ObservableObject {
         experimentalContinuousRecordingEnabled = defaults.bool(
             forKey: Keys.experimentalContinuousRecordingEnabled
         )
-        voiceAutoFocusCodexEnabled = defaults.bool(forKey: Keys.voiceAutoFocusCodexEnabled)
         voiceFnTapModeEnabled = defaults.bool(forKey: Keys.voiceFnTapModeEnabled)
         voiceKeyMode = VoiceKeyMode(
             rawValue: defaults.string(forKey: Keys.voiceKeyMode) ?? ""

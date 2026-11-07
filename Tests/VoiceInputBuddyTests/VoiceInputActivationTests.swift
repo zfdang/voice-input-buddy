@@ -12,55 +12,7 @@ struct VoiceInputActivationTests {
         let settings = AppSettings(defaults: defaults)
         settings.setOnboardingVoiceTool(.weixin)
         settings.voiceKeyMode = .function
-        settings.voiceAutoFocusCodexEnabled = true
-        let model = BridgeAppModel(settings: settings, initialAudioDevices: [])
-        model.prepareVoiceComposer = { $0(true) }
-        return model
-    }
-
-    @Test func remoteVoiceWaitsForComposerFocusBeforeSendingFn() throws {
-        let model = try model()
-        var focusCompletion: ((Bool) -> Void)?
-        var posted: [Bool] = []
-        model.prepareVoiceComposer = { focusCompletion = $0 }
-        model.preferredInputSourceMonitor = PreferredInputSourceMonitor(
-            voiceTool: { .weixin }, prepareInputSource: { _ in .selected },
-            currentInputSourceID: { OnboardingVoiceTool.weixin.preferredInputSourceID },
-            installMonitor: { _ in nil }, logger: { _ in })
-        #expect(model.updateVoiceKeyState(streaming: true, forceSoftware: true, owner: .bluetooth,
-            keySetter: { _, down in posted.append(down); return true }))
-        #expect(posted.isEmpty)
-        let finishFocus = try #require(focusCompletion)
-        finishFocus(true)
-        #expect(posted == [true])
-        #expect(model.updateVoiceKeyState(streaming: false, forceSoftware: true, owner: .bluetooth,
-            keySetter: { _, down in posted.append(down); return true }))
-        #expect(posted == [true, false])
-    }
-
-    @Test func releasingVoiceWhileFocusingCannotStartLateDictation() throws {
-        let model = try model()
-        var focusCompletion: ((Bool) -> Void)?
-        var posted: [Bool] = []
-        model.prepareVoiceComposer = { focusCompletion = $0 }
-        #expect(model.updateVoiceKeyState(streaming: true, forceSoftware: true, owner: .bluetooth,
-            keySetter: { _, down in posted.append(down); return true }))
-        #expect(model.updateVoiceKeyState(streaming: false, forceSoftware: true, owner: .bluetooth,
-            keySetter: { _, down in posted.append(down); return true }))
-        let finishFocus = try #require(focusCompletion)
-        finishFocus(true)
-        #expect(posted.isEmpty)
-        #expect(!model.voiceKeyLatch.isHeld)
-        #expect(model.pendingVoiceKeyMode == nil)
-    }
-
-    @Test func failedComposerFocusReleasesVoiceOwnership() throws {
-        let model = try model()
-        model.prepareVoiceComposer = { $0(false) }
-        #expect(!model.updateVoiceKeyState(streaming: true, forceSoftware: true, owner: .bluetooth,
-            keySetter: { _, _ in Issue.record("Fn must wait for focus"); return true }))
-        #expect(!model.voiceKeyLatch.isHeld)
-        #expect(model.pendingVoiceKeyMode == nil)
+        return BridgeAppModel(settings: settings, initialAudioDevices: [])
     }
 
     private func beginInlineSession(_ monitor: PreferredInputSourceMonitor) -> Bool {

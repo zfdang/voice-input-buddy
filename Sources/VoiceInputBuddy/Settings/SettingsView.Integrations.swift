@@ -40,9 +40,6 @@ extension SettingsView {
                         Text(localization.text("settings.integration.shortcut_title")).font(.headline)
                         mappingVoiceKeyModeControl
                         if VoiceFunctionKeyTapApplicability.isApplicable(capabilities: model.selectedRemoteVoiceCapabilities) {
-                            Toggle(localization.text("connection.voice_auto_focus_codex.enabled"),
-                                isOn: $settings.voiceAutoFocusCodexEnabled)
-                                .toggleStyle(.switch)
                             mappingVoiceFnTapControl
                         }
                         Text(localization.text("settings.integration.shortcut_help"))
