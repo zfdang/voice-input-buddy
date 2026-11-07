@@ -1333,3 +1333,5 @@
 
 "action.repeat_single_click" = "持续连发";
 "button_mapping.hold_repeat.help" = "长按选择“持续连发”时，按住约 0.35 秒后重复执行单击动作，松开即停止。也可以选择下方其他动作，长按时只执行一次；双击设置不受影响。";
+
+"connection.voice_auto_focus_codex.enabled" = "录音前自动聚焦 Codex 输入框";
