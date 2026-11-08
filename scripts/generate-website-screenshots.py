@@ -40,6 +40,7 @@ def render_settings(bin_path: Path, language: str, output_tmp: Path):
     env = os.environ.copy()
     env["VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_DIR"] = str(output_tmp)
     env["VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_REMOTE_CARDS"] = "1"
+    env["VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_UP_TO_DATE"] = "1"
     env["VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_LANGUAGE"] = language
     env["VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_APPEARANCE"] = "light"
     subprocess.run([str(bin_path)], cwd=ROOT, env=env, check=True)
