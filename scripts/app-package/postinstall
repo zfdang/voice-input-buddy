@@ -6,8 +6,8 @@ source "$(dirname "$0")/installation-common.sh"
 # HAL drivers remain system-owned.
 # An offline volume or login window has no local desktop owner to use.
 if [[ "${3:-/}" == / ]]; then
-    app='/Applications/Voice Input Buddy.app'
-    buddy_check_bundle "$app" com.zfdang.voice-input-buddy
+    app='/Applications/Remote Buddy.app'
+    buddy_check_bundle "$app" com.zfdang.remote-buddy
     if [[ -d "$app" ]]; then
         owner_uid="$(/usr/bin/stat -f '%u' /dev/console)"
         if [[ "$owner_uid" =~ ^[0-9]+$ && "$owner_uid" -ge 501 ]]; then

@@ -12,7 +12,7 @@ if ! git diff --quiet HEAD -- || [[ -n "$(git ls-files --others --exclude-standa
 fi
 work="$(mktemp -d "$root/.build/release-sources.XXXXXX")"
 trap 'rm -rf "$work"' EXIT
-source_root="$work/Voice_Input_Buddy_$RELEASE_TAG"
+source_root="$work/Remote_Buddy_$RELEASE_TAG"
 mkdir -p "$source_root/vendor" "$root/dist/release"
 # Use exactly the release commit, not unrelated local files.
 git archive HEAD | tar -x -C "$source_root"
@@ -28,4 +28,4 @@ for dependency in BlackHole Sparkle; do
     # Include the actual patched driver source and full dependency license files.
     tar --exclude=.git -cf - -C "$dependency_path" . | tar -xf - -C "$source_root/vendor/$dependency"
 done
-tar -czf "$root/dist/release/Voice_Input_Buddy_${RELEASE_TAG}_sources.tar.gz" -C "$work" "Voice_Input_Buddy_$RELEASE_TAG"
+tar -czf "$root/dist/release/Remote_Buddy_${RELEASE_TAG}_sources.tar.gz" -C "$work" "Remote_Buddy_$RELEASE_TAG"

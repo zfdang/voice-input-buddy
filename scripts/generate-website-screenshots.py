@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate optimized screenshots for the Voice Input Buddy website."""
+"""Generate optimized screenshots for the Remote Buddy website."""
 import os
 from pathlib import Path
 import subprocess
@@ -7,7 +7,7 @@ import tempfile
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-APP_PATH = ROOT / "dist/Voice Input Buddy.app/Contents/MacOS/VoiceInputBuddy"
+APP_PATH = ROOT / "dist/Remote Buddy.app/Contents/MacOS/RemoteBuddy"
 OUTPUT_DIR = ROOT / "pages/assets/screenshots"
 
 SETTINGS_SECTIONS = [
@@ -38,18 +38,18 @@ def ensure_binary() -> Path:
 
 def render_settings(bin_path: Path, language: str, output_tmp: Path):
     env = os.environ.copy()
-    env["VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_DIR"] = str(output_tmp)
-    env["VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_REMOTE_CARDS"] = "1"
-    env["VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_UP_TO_DATE"] = "1"
-    env["VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_LANGUAGE"] = language
-    env["VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_APPEARANCE"] = "light"
+    env["REMOTE_BUDDY_SETTINGS_SCREENSHOT_DIR"] = str(output_tmp)
+    env["REMOTE_BUDDY_SETTINGS_SCREENSHOT_REMOTE_CARDS"] = "1"
+    env["REMOTE_BUDDY_SETTINGS_SCREENSHOT_UP_TO_DATE"] = "1"
+    env["REMOTE_BUDDY_SETTINGS_SCREENSHOT_LANGUAGE"] = language
+    env["REMOTE_BUDDY_SETTINGS_SCREENSHOT_APPEARANCE"] = "light"
     subprocess.run([str(bin_path)], cwd=ROOT, env=env, check=True)
 
 def render_onboarding(bin_path: Path, language: str, output_tmp: Path):
     env = os.environ.copy()
-    env["VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_DIR"] = str(output_tmp)
-    env["VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_LANGUAGE"] = language
-    env["VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_APPEARANCE"] = "light"
+    env["REMOTE_BUDDY_ONBOARDING_SCREENSHOT_DIR"] = str(output_tmp)
+    env["REMOTE_BUDDY_ONBOARDING_SCREENSHOT_LANGUAGE"] = language
+    env["REMOTE_BUDDY_ONBOARDING_SCREENSHOT_APPEARANCE"] = "light"
     subprocess.run([str(bin_path)], cwd=ROOT, env=env, check=True)
 
 def optimize_png(src: Path, dst: Path):

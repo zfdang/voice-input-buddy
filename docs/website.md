@@ -4,7 +4,7 @@
 
 `.github/workflows/static.yml` 在 main 中的 `pages/**` 或该 workflow 更新时部署，也支持手动触发，以及 main 的安装包发布 workflow 成功完成后的部署。部署前通过 `scripts/prepare-pages-update-feeds.sh` 获取并校验已发布的更新源；验证失败时停止部署。仅上传 `pages/`，不上传 App 源码或构建目录；其中不应放入待提交以外的本地文件。
 
-`pages/CNAME` 为 `voice.zfdang.com`，GitHub Pages 仓库设置已选择 Actions 部署与此自定义域名。域名 DNS 应正确指向 GitHub Pages；TLS 证书和域名验证由 GitHub 与域名服务配置决定。部署完成前，本地预览不等于官网已上线。
+`pages/CNAME` 为 `remote.zfdang.com`，GitHub Pages 仓库设置已选择 Actions 部署与此自定义域名。域名 DNS 应正确指向 GitHub Pages；TLS 证书和域名验证由 GitHub 与域名服务配置决定。部署完成前，本地预览不等于官网已上线。
 
 本地预览：
 
@@ -23,7 +23,7 @@ python3 -m http.server 8765 --directory pages
 
 视频的动画源文件与旁白位于 `scripts/demo-video/visuals.py` 和
 `scripts/demo-video/render.py`，更新时先对照当前程序界面。网页硬件区域列出四项设备，
-与输入工具列表并列展示。网页说明小米已适配、G9N9N 支持语音但不支持普通单键映射、GY3LE 与 Siri Remote 计划支持，并链接到 README 的各型号支持情况。实际连接准入与验收状态以 README 和应用向导为准。操作说明须匹配当前界面：音频固定输出 Voice Input Buddy Mic，用户只需在输入工具中选择同名麦克风。安装包未公证的提醒仅保留在网页文字说明中；视频不展示此提醒。
+与输入工具列表并列展示。网页说明小米已适配、G9N9N 支持语音但不支持普通单键映射、GY3LE 与 Siri Remote 计划支持，并链接到 README 的各型号支持情况。实际连接准入与验收状态以 README 和应用向导为准。操作说明须匹配当前界面：音频固定输出 Remote Buddy Mic，用户只需在输入工具中选择同名麦克风。安装包未公证的提醒仅保留在网页文字说明中；视频不展示此提醒。
 
 在 macOS 上重做视频（需要 `ffmpeg`、`ffprobe` 和系统中文字体）：
 

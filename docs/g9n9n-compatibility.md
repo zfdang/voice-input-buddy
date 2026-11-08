@@ -1,6 +1,6 @@
 # G9N9N 语音支持与按键映射限制
 
-更新日期：2026-10-28。适用产品：Voice Input Buddy 的 macOS 版本。
+更新日期：2026-10-28。适用产品：Remote Buddy 的 macOS 版本。
 
 ## 核心结论 (TL;DR)
 
@@ -16,7 +16,7 @@
 | --- | --- | --- |
 | 蓝牙连接与 ATVV 协商 | **支持** | 正常配对与能力握手 |
 | 遥控器麦克风与语音键 | **支持** | 走独立 ATVV 服务，语音输入已实测可用 |
-| 音频解码与虚拟麦克风输出 | **支持** | 16 kHz IMA ADPCM，自动路由至 Voice Input Buddy Mic |
+| 音频解码与虚拟麦克风输出 | **支持** | 16 kHz IMA ADPCM，自动路由至 Remote Buddy Mic |
 | 普通单键映射（方向/确定/返回等） | **不支持** | 报文短于描述符要求，被 macOS 底层拦截丢弃，应用收不到 |
 | 普通按键长按与连发 | **不支持** | 缺失松开报文，无法维护按键按下与释放状态 |
 | OK＋任意方向键 | **实验性 Enter** | 完整双键报文能送达应用；开启映射且应用独占时发送一次 Enter |
@@ -64,7 +64,7 @@
 | 只松开上键 | `00` | 1 字节 | **无（被系统丢弃）** |
 | 全部松开 | `00` | 1 字节 | **无（被系统丢弃）** |
 
-原始证据保存在测试机本地目录 `~/Library/Logs/VoiceInputBuddyDiagnostics/`：
+原始证据保存在测试机本地目录 `~/Library/Logs/RemoteBuddyDiagnostics/`：
 * `g9n9n-single-up.pklg` (`984bca87453ffea640947a7e3bdba3eb8a466f2a0b5aae1867258f53b5d7189f`)
 * `g9n9n-up-back-release.pklg` (`5b944ed5151c741cfc6c02cfbb35a8eaa80ca31c2dacc227fe7ae8b947c5914c`)
 * `g9n9n-hid-after-reboot.log` (`5b7baa430cbe55b9345b54ff26a4aa602e1a9865bb1fa413802845af6a125f8a`)

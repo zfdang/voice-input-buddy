@@ -2,20 +2,20 @@
 import PackageDescription
 
 let package = Package(
-    name: "VoiceInputBuddy",
+    name: "RemoteBuddy",
     platforms: [.macOS(.v14)],
     products: [
         .executable(
-            name: "VoiceInputBuddy",
-            targets: ["VoiceInputBuddy"]
+            name: "RemoteBuddy",
+            targets: ["RemoteBuddy"]
         ),
     ],
     dependencies: [.package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.9.4")],
     targets: [
         .executableTarget(
-            name: "VoiceInputBuddy",
+            name: "RemoteBuddy",
             dependencies: ["AudioExceptionGuard", .product(name: "Sparkle", package: "Sparkle")],
-            path: "Sources/VoiceInputBuddy"
+            path: "Sources/RemoteBuddy"
         ),
         .target(
             name: "AudioExceptionGuard",
@@ -25,7 +25,7 @@ let package = Package(
         ),
         .target(name: "AudioExceptionFixtures", dependencies: ["AudioExceptionGuard"],
             path: "Tests/AudioExceptionFixtures", publicHeadersPath: "include"),
-        .testTarget(name: "VoiceInputBuddyTests", dependencies: ["VoiceInputBuddy", "AudioExceptionFixtures"], path: "Tests/VoiceInputBuddyTests"),
+        .testTarget(name: "RemoteBuddyTests", dependencies: ["RemoteBuddy", "AudioExceptionFixtures"], path: "Tests/RemoteBuddyTests"),
     ],
     swiftLanguageModes: [.v5]
 )

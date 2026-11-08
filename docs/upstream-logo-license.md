@@ -1,4 +1,4 @@
-> Scope: the following license is retained as an upstream reference. Its listed asset paths belong to remote-mic-app; those alternative logos are not distributed by Voice Input Buddy. The application uses its own bundled icon.
+> Scope: the following license is retained as an upstream reference. Its listed asset paths belong to remote-mic-app; those alternative logos are not distributed by Remote Buddy. The application uses its own bundled icon.
 
 # 无线麦 App Logo 许可
 

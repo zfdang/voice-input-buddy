@@ -70,7 +70,7 @@ let result = IOHIDManagerOpen(manager, IOOptionBits(kIOHIDOptionsTypeNone))
 record("OPEN result=\(result) exclusive=false")
 guard result == kIOReturnSuccess else {
     if result == kIOReturnExclusiveAccess {
-        record("ERROR exclusive_access; quit Voice Input Buddy and other device owners before capturing")
+        record("ERROR exclusive_access; quit Remote Buddy and other device owners before capturing")
     }
     IOHIDManagerClose(manager, IOOptionBits(kIOHIDOptionsTypeNone))
     IOHIDManagerUnscheduleFromRunLoop(manager, CFRunLoopGetCurrent(), CFRunLoopMode.defaultMode.rawValue)

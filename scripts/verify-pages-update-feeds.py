@@ -16,7 +16,7 @@ def verify(directory, release):
         if path.stat().st_size > 256 * 1024:
             raise ValueError('Oversized update feed')
         item = ET.parse(path).find('channel/item')
-        package = f'Voice_Input_Buddy_{tag}_macOS_{architecture}.pkg'
+        package = f'Remote_Buddy_{tag}_macOS_{architecture}.pkg'
         if item is None or item.findtext('title') != tag or package not in names:
             raise ValueError('Feed does not match the latest release')
         enclosure = item.find('enclosure')

@@ -2,13 +2,13 @@
 
 首次构建、为自己的发布生成固定证书及设置 GitHub Secrets，请先阅读 [构建与固定签名证书](build-and-signing.md)。普通本地构建不需要本项目的发布私钥。
 
-SwiftPM 主执行目标为 VoiceInputBuddy。采用公开源码的默认构建，不接受上游私有包环境变量。构建时使用 --disable-keychain，避免公开二进制依赖扫描登录钥匙串。
+SwiftPM 主执行目标为 RemoteBuddy。采用公开源码的默认构建，不接受上游私有包环境变量。构建时使用 --disable-keychain，避免公开二进制依赖扫描登录钥匙串。
 
-开发 App：运行 scripts/build-app.sh，输出 dist/Voice Input Buddy.app。首次设置会请求需要的权限，蓝牙权限描述位于 Resources/Info.plist。应用身份为 com.zfdang.voice-input-buddy，设置和系统权限与原产品独立。
+开发 App：运行 scripts/build-app.sh，输出 dist/Remote Buddy.app。首次设置会请求需要的权限，蓝牙权限描述位于 Resources/Info.plist。应用身份为 com.zfdang.remote-buddy，设置和系统权限与原产品独立。
 
-虚拟麦克风：scripts/build-driver.sh 固定 BlackHole v0.7.1 的 e2b22aaaba4e507a097131704bf96dabc004d9cf，应用 USB transport 补丁，使用独立工厂 UUID、Bundle ID 和 BuddyMic UID，避免替换 BlackHole 或原 MiRemoteV 驱动。输出 VoiceInputBuddyMic.driver。scripts/build-driver-package.sh 创建系统 HAL 目录安装包，安装需用户明确授权；安装器在安装前的说明页明确提示：新安装或内容变化的驱动需要重启 Core Audio，短暂中断系统全部播放和录音；驱动未变则不重启。安装后刷新失败时提示重启系统。驱动编译禁用 BlackHole 的通道名称格式，确保实际 UID 为 BuddyMic2ch_UID。
+虚拟麦克风：scripts/build-driver.sh 固定 BlackHole v0.7.1 的 e2b22aaaba4e507a097131704bf96dabc004d9cf，应用 USB transport 补丁，使用独立工厂 UUID、Bundle ID 和 BuddyMic UID，避免替换 BlackHole 或原 MiRemoteV 驱动。输出 RemoteBuddyMic.driver。scripts/build-driver-package.sh 创建系统 HAL 目录安装包，安装需用户明确授权；安装器在安装前的说明页明确提示：新安装或内容变化的驱动需要重启 Core Audio，短暂中断系统全部播放和录音；驱动未变则不重启。安装后刷新失败时提示重启系统。驱动编译禁用 BlackHole 的通道名称格式，确保实际 UID 为 BuddyMic2ch_UID。
 
-应用不会自动修改系统默认音频设备。遥控器连接空闲时不保持音频引擎活动，避免 Core Audio 长期阻止系统自动休眠；语音开始时按需启动，启动期间缓冲语音，语音结束后等待尾音和 Fn 轻点会话处理完成再释放。启动验证及测试音完成后也释放空闲音频。遥控器断开、应用停止、退出、音频配置失败及重连时，只释放或重新绑定应用自身的音频输出；系统默认输入、输出及系统提示音设备保持由用户或系统管理。App 固定使用 Voice Input Buddy Mic（`BuddyMic2ch_UID`），第三方工具的麦克风需选择该设备；没有输出选择或 BlackHole 回退。目标语音快捷键通过向导按工具实际设置配置并验证。
+应用不会自动修改系统默认音频设备。遥控器连接空闲时不保持音频引擎活动，避免 Core Audio 长期阻止系统自动休眠；语音开始时按需启动，启动期间缓冲语音，语音结束后等待尾音和 Fn 轻点会话处理完成再释放。启动验证及测试音完成后也释放空闲音频。遥控器断开、应用停止、退出、音频配置失败及重连时，只释放或重新绑定应用自身的音频输出；系统默认输入、输出及系统提示音设备保持由用户或系统管理。App 固定使用 Remote Buddy Mic（`BuddyMic2ch_UID`），第三方工具的麦克风需选择该设备；没有输出选择或 BlackHole 回退。目标语音快捷键通过向导按工具实际设置配置并验证。
 
 当前发行使用固定自签名证书为 App 和驱动签名，PKG 未签名，不具备 Apple Developer ID，也未公证。证书只生成一次，私钥由 GitHub Secrets 保存；构建时导入 runner 的临时 Keychain，不添加证书信任设置。普通本地开发和 PR 构建仍默认 ad-hoc 签名。更新包另由本项目的 Sparkle Ed25519 密钥签名；push main 自动发布。配置和验收要求见 [releases.md](releases.md)。若以后取得 Developer ID，应加入 Application / Installer 签名和公证。驱动安装卸载仍需真机回归。不会沿用原作者更新密钥、会员后端或发布服务。
 
@@ -60,13 +60,13 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --enable-cod
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test -c release --disable-keychain
 ```
 
-覆盖率报告位于 `.build/debug/codecov/VoiceInputBuddy.json`。按文件检查未覆盖的行为，尤其是错误处理与资源释放；文件覆盖率包含系统适配代码，不能把模拟状态机的通过当作真实系统权限或硬件操作的验证。
+覆盖率报告位于 `.build/debug/codecov/RemoteBuddy.json`。按文件检查未覆盖的行为，尤其是错误处理与资源释放；文件覆盖率包含系统适配代码，不能把模拟状态机的通过当作真实系统权限或硬件操作的验证。
 
 异步边界测试使用可控调度器，显式送达已经取消的旧回调，不依赖睡眠等待。权限轮询、快捷键发送与输入目标测试注入状态和事件接收器，不修改真实权限、发送系统按键或切换其他应用。常用语插入测试注入目标与按键接口，剪贴板事务只使用测试专用 pasteboard，不读取或修改系统通用剪贴板；持久化和文件锁测试使用独立 UserDefaults 域及临时目录，不读取或修改用户的应用设置。结构化诊断测试仅验证本地日志；没有诊断上传和待上传事件存储。
 
 所有映射键盘事件统一排除隐式导航标志：小米遥控器原生 Home 实测带有 `0x800100` 标志，其中包含 Fn，且不一定带数字键盘标志。普通按键、内置／自定义快捷键、独立修饰键、应用切换器和滚动动作不继承硬件状态中的 Fn／数字键盘导航标志，仍保留 Shift、Control、Option、Command 等实际修饰键；只有映射明确配置 Fn 时才在生成事件中加入 Fn。媒体键本身使用空修饰键，不合并原始 Home 状态；无需改写的原生方向键仍按原事件透传。语音 Fn 使用独立路径，保持其按住和松开行为。`MAPPED KEY EVENT` 与 `SHORTCUT SEQUENCE phase=event` 记录实际提交的键码、边沿和修饰键标志；`submitted` 不代表目标应用已经响应。回归测试覆盖原生 Home 状态下的完整选择／取消序列、普通映射键、内置快捷键和显式 Fn 映射，修复后的切换器显示和确认仍需实机复测。
 
-开发 App 位于 `dist/Voice Input Buddy.app`，驱动位于 `dist/VoiceInputBuddyMic.driver`。App 构建按架构使用独立的 `.build/app-arm64` 与 `.build/app-x86_64` 目录，避免 SwiftPM 缓存混用。Release 与一体安装包的复现步骤见 [发布流程](releases.md)。
+开发 App 位于 `dist/Remote Buddy.app`，驱动位于 `dist/RemoteBuddyMic.driver`。App 构建按架构使用独立的 `.build/app-arm64` 与 `.build/app-x86_64` 目录，避免 SwiftPM 缓存混用。Release 与一体安装包的复现步骤见 [发布流程](releases.md)。
 
 本地 `scripts/build-app.sh` 与发布 workflow 共用 Git 版本计算：最近提交在 Asia/Singapore 的日期与完整历史提交数生成 `vYY-MM-DD.NNN`。设置页显示该标记；macOS 的数字版本及构建号分别写入 `CFBundleShortVersionString` 与 `CFBundleVersion`。本地源码有未提交修改时，版本仍对应当前 HEAD，不能把它当作正式发布源码标识。
 
@@ -82,7 +82,7 @@ App 打包先在临时目录组装全新的 bundle，资源检查和签名成功
 
 SwiftPM 使用 Swift 6.2 工具链，语言模式暂为 Swift 5。这是现有并发边界的迁移状态，并不代表已经通过 Swift 6 严格并发检查。切换语言模式需要单独审查事件 tap、蓝牙回调、音频队列和 MainActor 的隔离，不能以一次 manifest 修改代替并发验证。历史 Apple 音频捕获、PacketLogger 与 HCI helper 已移除；CI 只构建当前产品。
 
-HID 原始映射在改写前一次性原子写入 `~/Library/Application Support/VoiceInputBuddy/HIDMappingRecovery.json`。记录绑定本机启动会话；UUID 不可用时用系统启动时间识别，同样无法识别或写入失败时拒绝改写 HID。离线或恢复失败时保留记录，下次重连/启动继续恢复；不恢复到用户后来主动更改的映射。
+HID 原始映射在改写前一次性原子写入 `~/Library/Application Support/RemoteBuddy/HIDMappingRecovery.json`。记录绑定本机启动会话；UUID 不可用时用系统启动时间识别，同样无法识别或写入失败时拒绝改写 HID。离线或恢复失败时保留记录，下次重连/启动继续恢复；不恢复到用户后来主动更改的映射。
 
 Fn 释放最多尝试四次，重试间隔为 1、2、4 秒。耗尽后以失败结果回答配置等待方，保持未释放状态并阻止映射切换；恢复辅助功能权限后可重试释放。旧音频的隔离状态与 Fn 清理完成分离，避免用户切换模式时等待一个尚未到来的遥控器停止通知。音频排空取消、停止及销毁都会回答等待方一次；排空由完成回调与看门狗共同处理。
 
@@ -98,15 +98,15 @@ HID 设备发现仅用受支持的 VendorID／ProductID 组合。IOHIDManager �
 
 蓝牙 `.withResponse` 命令采用有界串行队列，成功 ACK 才发下一条；错误或五秒超时清队列并重连。入队成功只表示接受命令，ATVV 通知才确认实际音频流。
 
-共享日志器不再创建持久化的公开诊断上传队列；没有配置上传服务。运行日志以 UTF-8 文本保存在 `~/Library/Logs/VoiceInputBuddy/`，无需公钥或解密工具，用户可以自行查看；每个文件限制为 10 MiB，达到上限会在当前会话内轮转，最多保留五份旧日志，跳过仍在使用的日志及符号链接。日志不保存录音或识别正文，也不会上传。菜单“显示日志”会先刷新日志，再定位到当前 `.log` 文件。常用语 JSON 由 `scripts/generate-common-phrases.py` 从 Markdown 编辑源生成，打包测试校验生成资源确实存在。
+共享日志器不再创建持久化的公开诊断上传队列；没有配置上传服务。运行日志以 UTF-8 文本保存在 `~/Library/Logs/RemoteBuddy/`，无需公钥或解密工具，用户可以自行查看；每个文件限制为 10 MiB，达到上限会在当前会话内轮转，最多保留五份旧日志，跳过仍在使用的日志及符号链接。日志不保存录音或识别正文，也不会上传。菜单“显示日志”会先刷新日志，再定位到当前 `.log` 文件。常用语 JSON 由 `scripts/generate-common-phrases.py` 从 Markdown 编辑源生成，打包测试校验生成资源确实存在。
 
-向导第六步的每种输入工具包含五个设置步骤，第三个为输入工具自身的麦克风选择；macOS 听写包含四个步骤：打开听写、把快捷键设为“按两下 🌐 键”、选择麦克风来源、清空微信 App 的 Fn 快捷键。它需要系统 🌐 键用于听写，所以不包含“去除系统 Fn 占用”。三个听写步骤使用 2026-10-25 从本机系统设置截取并标注的真实浅色 JPG：开启听写、双击 🌐 快捷键、Voice Input Buddy Mic 麦克风来源；深色界面回退到同一真实截图。首次开启须确认系统隐私提示，并等待所需语言支持下载完成。语音搭子按住遥控器时连按两次 Fn 开始听写，松开并送完音频后按一次 Fn 结束；设置指引不要求手动勾选确认；查看每个步骤后可进入第七步实际测试，步骤完成标记仅表示用户已查看，不表示已检测第三方设置。第七步仅根据按键、声音和文字结果判断通过，不再重复询问设置。豆包和微信的菜单、语音设置、麦克风六张浅色截图于 2026-10-12 从本机安装版本截取并标注，使用 JPG 保存，显示时整图按原比例缩放。VoiceCursor 的快捷键和麦克风使用本机浅色截图。新增 JPG 长边最多 1600 像素，并压缩文件大小。加载和打包校验支持 JPG、JPEG、PNG；优先匹配当前主题，再回退浅色。既有深色截图保持不变；新增截图只有真实浅色版本时，深色界面使用浅色截图回退。微信 App 快捷键及未安装工具的截图保留原素材。
+向导第六步的每种输入工具包含五个设置步骤，第三个为输入工具自身的麦克风选择；macOS 听写包含四个步骤：打开听写、把快捷键设为“按两下 🌐 键”、选择麦克风来源、清空微信 App 的 Fn 快捷键。它需要系统 🌐 键用于听写，所以不包含“去除系统 Fn 占用”。三个听写步骤使用 2026-10-25 从本机系统设置截取并标注的真实浅色 JPG：开启听写、双击 🌐 快捷键、Remote Buddy Mic 麦克风来源；深色界面回退到同一真实截图。首次开启须确认系统隐私提示，并等待所需语言支持下载完成。遥控搭子按住遥控器时连按两次 Fn 开始听写，松开并送完音频后按一次 Fn 结束；设置指引不要求手动勾选确认；查看每个步骤后可进入第七步实际测试，步骤完成标记仅表示用户已查看，不表示已检测第三方设置。第七步仅根据按键、声音和文字结果判断通过，不再重复询问设置。豆包和微信的菜单、语音设置、麦克风六张浅色截图于 2026-10-12 从本机安装版本截取并标注，使用 JPG 保存，显示时整图按原比例缩放。VoiceCursor 的快捷键和麦克风使用本机浅色截图。新增 JPG 长边最多 1600 像素，并压缩文件大小。加载和打包校验支持 JPG、JPEG、PNG；优先匹配当前主题，再回退浅色。既有深色截图保持不变；新增截图只有真实浅色版本时，深色界面使用浅色截图回退。微信 App 快捷键及未安装工具的截图保留原素材。
 
-说明图片在固定显示区内按原比例缩放，整图显示，不采用超出区域的放大和偏移裁剪；同时关闭图片命中测试，确保不会挡住步骤按钮。Debug 构建可在现有向导截图模式中设置 `VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_INTERACTIVE=1`，使用隔离设置打开输入工具页面，最多停留五分钟以进行真实鼠标验证；Release 构建不会启用此交互模式。
+说明图片在固定显示区内按原比例缩放，整图显示，不采用超出区域的放大和偏移裁剪；同时关闭图片命中测试，确保不会挡住步骤按钮。Debug 构建可在现有向导截图模式中设置 `REMOTE_BUDDY_ONBOARDING_SCREENSHOT_INTERACTIVE=1`，使用隔离设置打开输入工具页面，最多停留五分钟以进行真实鼠标验证；Release 构建不会启用此交互模式。
 
 ## 源码组织
 
-主应用继续使用一个 SwiftPM executable target；`Sources/VoiceInputBuddy/` 按功能划分：
+主应用继续使用一个 SwiftPM executable target；`Sources/RemoteBuddy/` 按功能划分：
 
 | 目录 | 职责 |
 | --- | --- |
@@ -130,7 +130,7 @@ HID 设备发现仅用受支持的 VendorID／ProductID 组合。IOHIDManager �
 
 向导专用的焦点 modifier 直接在导航页面使用，不再给整个模块的 View 增加扩展方法。
 
-本地资源定位根据 Package.swift 与 Resources 目录查找，不依赖源码所在层级。打包资源检查递归扫描整个 Sources/VoiceInputBuddy，以覆盖位于 Integrations 等其他功能目录的向导截图引用；同时检查 Onboarding 源码仍存在，没有源码时直接失败，不能静默跳过。`scripts/test-app-bundle.py` 用隔离的编译/签名 fixture 验证嵌套指南缺图时保留已有 App，不需要安装真实驱动。
+本地资源定位根据 Package.swift 与 Resources 目录查找，不依赖源码所在层级。打包资源检查递归扫描整个 Sources/RemoteBuddy，以覆盖位于 Integrations 等其他功能目录的向导截图引用；同时检查 Onboarding 源码仍存在，没有源码时直接失败，不能静默跳过。`scripts/test-app-bundle.py` 用隔离的编译/签名 fixture 验证嵌套指南缺图时保留已有 App，不需要安装真实驱动。
 
 ### Remote device scope
 
@@ -194,7 +194,7 @@ Historical PacketLogger and HCI helpers have been removed from the source tree a
 Persisted unsupported device profiles never receive a Xiaomi mapping illustration.
 Screenshot fixture entry points are debug-only.
 
-Debug interactive onboarding previews can set `VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_INTERACTIVE_STEP=remoteAvailability` to start at device selection (the default remains `voiceTool`).
+Debug interactive onboarding previews can set `REMOTE_BUDDY_ONBOARDING_SCREENSHOT_INTERACTIVE_STEP=remoteAvailability` to start at device selection (the default remains `voiceTool`).
 
 ### G9N9N implementation boundary
 
@@ -257,7 +257,7 @@ Bluetooth identity, independently of the currently selected settings card.
 Portable configuration retains explicit per-profile gains, validating bounds
 and mapping the source selection to the destination selection.
 
-All sources share the fixed `BuddyMic2ch_UID` output (Voice Input Buddy Mic).
+All sources share the fixed `BuddyMic2ch_UID` output (Remote Buddy Mic).
 Output selection and remembered/alternate-device fallback have been removed.
 Startup and recovery retain their generation guards and use that UID even when
 hardware enumeration returns another microphone or speaker. The driver panel
@@ -287,9 +287,9 @@ frame on opening and screen changes. Settings keep a readable
 980×732 scrollable canvas. Onboarding uses the actual viewport height with
 independently scrolling content, so its navigation remains visible; only width
 may scroll when space is smaller. Debug preview
-rendering accepts `VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_SIZE=720x500` and
-`VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_SIZE=720x500`; set
-`VOICE_INPUT_BUDDY_SCREENSHOT_SCROLL_TO_END=1` to verify bottom/right navigation
+rendering accepts `REMOTE_BUDDY_SETTINGS_SCREENSHOT_SIZE=720x500` and
+`REMOTE_BUDDY_ONBOARDING_SCREENSHOT_SIZE=720x500`; set
+`REMOTE_BUDDY_SCREENSHOT_SCROLL_TO_END=1` to verify bottom/right navigation
 remains reachable. Preview fixtures do not start remote or audio hardware.
 
 Hold-to-repeat is represented by the `repeatSingleClick` action in the long-press binding, using the existing per-device binding persistence and portable configuration format. Navigation, volume, and Power buttons default to this value; Back defaults to no long-press action. Power repeats Delete, while Back sends Escape once. The mapping cards display these values explicitly. The HID runtime uses the configured hold value instead of a repeat-capable button allowlist; repeat starts at 350 ms and executes the current single-press action until release. Independent long-press actions retain the 550 ms threshold. Double-click recognition remains available and is cancelled when a held press starts repeating, avoiding a trailing click on release. Timer tokens reject stale repeat callbacks after release or reset. The repeat marker is rejected outside a long-press binding during import.

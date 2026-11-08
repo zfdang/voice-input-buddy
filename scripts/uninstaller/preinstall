@@ -2,6 +2,6 @@
 set -euo pipefail
 source "$(dirname "$0")/installer-common.sh"
 source "$(dirname "$0")/installation-common.sh"
-buddy_check_bundle '/Applications/Voice Input Buddy.app' com.zfdang.voice-input-buddy
-buddy_check_bundle '/Library/Audio/Plug-Ins/HAL/VoiceInputBuddyMic.driver' com.zfdang.voice-input-buddy.mic
+buddy_check_bundle '/Applications/Remote Buddy.app' com.zfdang.remote-buddy
+buddy_check_bundle '/Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver' com.zfdang.remote-buddy.mic
 buddy_run_user prepare

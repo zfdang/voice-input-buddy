@@ -1,3 +1,3 @@
-"CFBundleDisplayName" = "Voice Input Buddy";
-"CFBundleName" = "Voice Input Buddy";
+"CFBundleDisplayName" = "Remote Buddy";
+"CFBundleName" = "Remote Buddy";
 "NSBluetoothAlwaysUsageDescription" = "Connect to supported Bluetooth remotes to receive button presses and microphone audio.";

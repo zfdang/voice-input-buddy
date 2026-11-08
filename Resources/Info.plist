@@ -5,17 +5,17 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Voice Input Buddy</string>
+	<string>Remote Buddy</string>
 	<key>CFBundleExecutable</key>
-	<string>VoiceInputBuddy</string>
+	<string>RemoteBuddy</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.zfdang.voice-input-buddy</string>
+	<string>com.zfdang.remote-buddy</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Voice Input Buddy</string>
+	<string>Remote Buddy</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -26,10 +26,10 @@
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 			<key>CFBundleURLName</key>
-			<string>com.zfdang.VoiceInputBuddy.launch</string>
+			<string>com.zfdang.RemoteBuddy.launch</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>voice-input-buddy</string>
+				<string>remote-buddy</string>
 			</array>
 		</dict>
 	</array>
@@ -42,11 +42,11 @@
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>连接兼容遥控器，接收按键与语音音频。</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2026 Voice Input Buddy contributors; includes GPL-3.0-only upstream code.</string>
+	<string>Copyright © 2026 Remote Buddy contributors; includes GPL-3.0-only upstream code.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>SUFeedURL</key>
-	<string>https://voice.zfdang.com/appcast-arm64.xml</string>
+	<string>https://remote.zfdang.com/appcast-arm64.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>8aHZRXuY+Q0F0FsWNyQTx0wIYXi4MoCCSzAWs0j+uR4=</string>
 	<key>SUVerifyUpdateBeforeExtraction</key>

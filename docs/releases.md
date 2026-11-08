@@ -16,14 +16,14 @@ App 的 CFBundleShortVersionString 为数字日期（例如 26.10.11），CFBund
 
 ## 安装包与源码
 
-- `Voice_Input_Buddy_vYY-MM-DD.NNN_macOS_arm64.pkg` / `*_macOS_intel.pkg`：App 与驱动的一体安装包。
-- `Voice_Input_Buddy_Uninstaller_vYY-MM-DD.NNN_macOS_universal.pkg`：Apple Silicon / Intel 共用的脚本卸载包。
+- `Remote_Buddy_vYY-MM-DD.NNN_macOS_arm64.pkg` / `*_macOS_intel.pkg`：App 与驱动的一体安装包。
+- `Remote_Buddy_Uninstaller_vYY-MM-DD.NNN_macOS_universal.pkg`：Apple Silicon / Intel 共用的脚本卸载包。
 
 Release 只附这三个 PKG，不额外上传 SHA 文件、TXT 更新摘要、appcast XML 或源码压缩包。源码使用对应 Git tag；第三方固定版本源码及构建说明见 [source-code.md](source-code.md)。
 
-安装包按 arm64 和 x86_64（文件名 intel）分别提供，要求 macOS 14 或更新版本。App 安装在 `/Applications/Voice Input Buddy.app`，驱动安装在 `/Library/Audio/Plug-Ins/HAL/VoiceInputBuddyMic.driver`。程序展示名称仍为 Voice Input Buddy；发布文件名使用下划线，App 目录保留空格，内部可执行文件为 VoiceInputBuddy。安装需要管理员授权；仅在首次安装、驱动内容变化或修复损坏的驱动时刷新 Core Audio，短暂中断播放和录音。安装前后会验证驱动签名并比较内容指纹，而非只比较版本号；驱动未变化的重装和 App 升级不会重启音频服务，重新签名的时间戳不影响判断。安装包不自动开启任何系统隐私授权，也不自动启动 App。
+安装包按 arm64 和 x86_64（文件名 intel）分别提供，要求 macOS 14 或更新版本。App 安装在 `/Applications/Remote Buddy.app`，驱动安装在 `/Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver`。程序展示名称仍为 Remote Buddy；发布文件名使用下划线，App 目录保留空格，内部可执行文件为 RemoteBuddy。安装需要管理员授权；仅在首次安装、驱动内容变化或修复损坏的驱动时刷新 Core Audio，短暂中断播放和录音。安装前后会验证驱动签名并比较内容指纹，而非只比较版本号；驱动未变化的重装和 App 升级不会重启音频服务，重新签名的时间戳不影响判断。安装包不自动开启任何系统隐私授权，也不自动启动 App。
 
-旧开发版本若放在其他目录，应退出旧版并改用 `/Applications/Voice Input Buddy.app`，避免同时运行两个副本。首次安装和更新后请核对系统权限。
+旧开发版本若放在其他目录，应退出旧版并改用 `/Applications/Remote Buddy.app`，避免同时运行两个副本。首次安装和更新后请核对系统权限。
 
 一体安装包在当前系统卷安装时，将 App 目录及普通资源交给已登录的桌面用户，方便后续手动替换；但 Sparkle 的 `Autoupdate` 实体可执行文件保留 root 归属。自签名证书没有 Apple Team ID，Sparkle 的 PKG 更新安全检查要求这个助手归 root 所有且位于 App 内；整个 App 都归普通用户会使更新在启动安装器之前失败，界面可显示 `SUSparkleErrorDomain (4005)`。调整归属不修改文件访问模式、签名或系统隐私授权；普通用户拥有助手的父目录，因此仍可删除／替换整个 App。驱动仍由 root 管理，安装器仍需管理员授权，单独安装驱动不改变现有 App 的归属。无人登录或安装到其他卷时保留系统默认归属，不猜测目标用户。其他用户仍受 `/Applications` 的系统写入权限限制；App 归属变更不意味着所有用户都能无授权替换全局应用。
 
@@ -70,7 +70,7 @@ scripts/verify-release-package.sh
 
 ## 应用内更新
 
-Sparkle 从 `https://voice.zfdang.com/appcast-arm64.xml` 或 `appcast-intel.xml` 检查正式版本。应用内置
+Sparkle 从 `https://remote.zfdang.com/appcast-arm64.xml` 或 `appcast-intel.xml` 检查正式版本。应用内置
 `SUPublicEDKey`，下载的 PKG 必须通过对应 Ed25519 公钥验证，才会开始安装。
 通过菜单或设置中的“检查更新”可以手动触发；默认也进行后台检查。
 版本比较使用递增的 CFBundleVersion（完整 Git 提交计数），显示采用完整发布标签。
@@ -94,7 +94,7 @@ GitHub Releases；安装同时更新 App 和驱动，需要管理员授权，并
 不要随意更换密钥。PKG 更新无法通过普通更新自动轮换遗失的签名密钥，
 必须安全备份，并在确需更换时安排用户重新安装。
 
-通用卸载包以 `Voice_Input_Buddy_Uninstaller_vYY-MM-DD.NNN_macOS_universal.pkg` 发布，只有脚本而没有安装载荷。Release matrix 只在 arm64 任务中生成它，避免两份同名产物。
+通用卸载包以 `Remote_Buddy_Uninstaller_vYY-MM-DD.NNN_macOS_universal.pkg` 发布，只有脚本而没有安装载荷。Release matrix 只在 arm64 任务中生成它，避免两份同名产物。
 
 新 App 使用各自的更新源，开发阶段不维护旧 universal feed。arm64 feed 标注 Sparkle 的 [arm64 硬件要求](https://sparkle-project.org/documentation/api-reference/Classes/SUAppcastItem.html)，Intel feed 指向 Intel 包。
 
@@ -110,6 +110,6 @@ GitHub Releases；安装同时更新 App 和驱动，需要管理员授权，并
 
 恢复更新的“安装并重启”确认和等待退出时的重试提示使用浮动面板，切换到其他应用后仍可见，并允许显示在全屏空间。下载、解压和实际安装的进度窗口保持普通层级；稍后安装或关闭确认后隐藏面板。升级验收时分别在显示和隐藏 Dock 图标的状态下点击“升级并重启”，再切换到其他应用（含全屏窗口），完成管理员密码或指纹授权后，确认无需手动切换或再次点击即可继续安装并重启。同时验证授权取消后不会继续安装，以及恢复暂缓更新时仍显示确认，选择“稍后安装”后不再遮挡其他窗口。这条真实授权与升级路径需要实际操作，自动测试仅覆盖流程选择、确认失效、面板配置和阶段切换。
 
-升级后首次启动保留原有的完成检测和权限修复入口，在主窗口顶部显示约 6 秒的完成提示，随后自动消失。提示不拦截窗口操作，不弹出需要点击关闭的完成对话框。Debug 设置页截图可用 `VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_COMPLETED_UPDATE_VERSION=v26-10-15.215` 预览此提示。
+升级后首次启动保留原有的完成检测和权限修复入口，在主窗口顶部显示约 6 秒的完成提示，随后自动消失。提示不拦截窗口操作，不弹出需要点击关闭的完成对话框。Debug 设置页截图可用 `REMOTE_BUDDY_SETTINGS_SCREENSHOT_COMPLETED_UPDATE_VERSION=v26-10-15.215` 预览此提示。
 
-Debug 构建可设置 `VOICE_INPUT_BUDDY_UPDATE_UI_PREVIEW=checking`（也支持 `found`、`current`、`error`、`ready`）和 `VOICE_INPUT_BUDDY_UPDATE_UI_LANGUAGE=en` 来查看隔离的更新界面样例。此预览不联网、不检查权限、不安装更新，不修改用户设置，并在两分钟后结束；Release 构建不包含此入口。
+Debug 构建可设置 `REMOTE_BUDDY_UPDATE_UI_PREVIEW=checking`（也支持 `found`、`current`、`error`、`ready`）和 `REMOTE_BUDDY_UPDATE_UI_LANGUAGE=en` 来查看隔离的更新界面样例。此预览不联网、不检查权限、不安装更新，不修改用户设置，并在两分钟后结束；Release 构建不包含此入口。

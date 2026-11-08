@@ -1,10 +1,10 @@
 # 虚拟麦克风设置
 
-Voice Input Buddy 使用基于 BlackHole v0.7.1 的独立双声道驱动，设备名称为 **Voice Input Buddy Mic**，UID 为 `BuddyMic2ch_UID`。它不会替换已有 BlackHole 或上游产品的驱动。
+Remote Buddy 使用基于 BlackHole v0.7.1 的独立双声道驱动，设备名称为 **Remote Buddy Mic**，UID 为 `BuddyMic2ch_UID`。它不会替换已有 BlackHole 或上游产品的驱动。
 
-从本项目 GitHub Releases 下载 Apple Silicon 的 `*_macOS_arm64.pkg` 或 Intel 的 `*_macOS_intel.pkg`，一次安装 App 与驱动，无需另行构建驱动。安装位置为 `/Applications/Voice Input Buddy.app` 和 `/Library/Audio/Plug-Ins/HAL/VoiceInputBuddyMic.driver`。安装需要管理员授权，会重启 Core Audio 并短暂中断播放或录音；如果设备未加载，刷新检测或按提示重启 Mac。
+从本项目 GitHub Releases 下载 Apple Silicon 的 `*_macOS_arm64.pkg` 或 Intel 的 `*_macOS_intel.pkg`，一次安装 App 与驱动，无需另行构建驱动。安装位置为 `/Applications/Remote Buddy.app` 和 `/Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver`。安装需要管理员授权，会重启 Core Audio 并短暂中断播放或录音；如果设备未加载，刷新检测或按提示重启 Mac。
 
-App 固定输出到 Voice Input Buddy Mic，不提供其他输出或 BlackHole 回退。首次向导在连接遥控器、测试按键后自动检查驱动与输出，二者就绪才继续。在豆包、微信或其他输入工具中选择 **Voice Input Buddy Mic** 麦克风，并按向导配置语音快捷键；增益在设备连接页按遥控器分别调整。
+App 固定输出到 Remote Buddy Mic，不提供其他输出或 BlackHole 回退。首次向导在连接遥控器、测试按键后自动检查驱动与输出，二者就绪才继续。在豆包、微信或其他输入工具中选择 **Remote Buddy Mic** 麦克风，并按向导配置语音快捷键；增益在设备连接页按遥控器分别调整。
 
 验证时，在有焦点的文本框中按住语音键说话、松开结束，或使用已配置的点按行为，确认实际识别与文字输入。构建成功及设备检测通过不代表完整硬件验收。
 

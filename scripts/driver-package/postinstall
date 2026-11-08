@@ -8,7 +8,7 @@ if [[ -f "$snapshot" ]]; then
     before="$(/bin/cat "$snapshot")"
 fi
 /bin/rm -f "$snapshot"
-after="$(buddy_driver_fingerprint "${volume%/}/Library/Audio/Plug-Ins/HAL/VoiceInputBuddyMic.driver")" || after=""
+after="$(buddy_driver_fingerprint "${volume%/}/Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver")" || after=""
 if [[ -n "$before" && "$before" == "$after" ]]; then
     echo 'Microphone driver unchanged; leaving Core Audio running.'
     exit 0
