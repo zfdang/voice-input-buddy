@@ -64,6 +64,19 @@ struct LocalizationResourceDefaultTests {
         #expect(chinese == "帮助与支持")
     }
 
+    @Test func websiteURLResolvesPerLocale() throws {
+        let name = "locale-website-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let store = LocalizationStore(settings: AppSettings(defaults: defaults))
+        store.select(.english)
+        #expect(store.snapshot.localizedWebsiteURL == URL(string: "https://remote.zfdang.com/index.en.html")!)
+        store.select(.simplifiedChinese)
+        #expect(store.snapshot.localizedWebsiteURL == URL(string: "https://remote.zfdang.com/")!)
+        #expect(AppLinks.website(for: Locale(identifier: "en_US")) == AppLinks.englishWebsite)
+        #expect(AppLinks.website(for: Locale(identifier: "zh_CN")) == AppLinks.chineseWebsite)
+    }
+
     @Test func statusItemActionResolverDecisionRules() {
         #expect(StatusItemActionResolver.shouldShowMenu(eventType: .rightMouseUp, modifierFlags: []))
         #expect(StatusItemActionResolver.shouldShowMenu(eventType: .rightMouseUp, modifierFlags: .control))

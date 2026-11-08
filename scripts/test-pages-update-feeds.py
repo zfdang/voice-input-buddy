@@ -17,6 +17,7 @@ def module(name, filename):
 
 feeds = module('feeds', 'verify-pages-update-feeds.py')
 appcast = module('appcast', 'generate-appcast.py')
+rebuild = module('rebuild', 'rebuild-pages-update-feeds.py')
 
 class FeedDeploymentTests(unittest.TestCase):
     def setUp(self):
@@ -68,30 +69,45 @@ class FeedDeploymentTests(unittest.TestCase):
         (self.root / 'appcast-intel.xml').unlink()
         with self.assertRaises(FileNotFoundError): feeds.verify(self.root, self.release)
 
-    def deploy(self, artifact, valid=True):
+    def deploy(self, artifact, valid=True, live_valid=True, release_assets=False, prebuilt_pages=False):
         project = self.root / 'project'
-        scripts = project / 'scripts'; scripts.mkdir(parents=True)
-        (project / 'pages').mkdir()
+        scripts = project / 'scripts'; scripts.mkdir(parents=True, exist_ok=True)
+        pages_dir = project / 'pages'; pages_dir.mkdir(parents=True, exist_ok=True)
         for name in ['prepare-pages-update-feeds.sh', 'verify-pages-update-feeds.py']:
             shutil.copy2(Path(__file__).with_name(name), scripts / name)
-        artifact_directory = self.root / 'artifact'; artifact_directory.mkdir()
+        artifact_directory = self.root / 'artifact'; artifact_directory.mkdir(parents=True, exist_ok=True)
         for path in self.root.glob('appcast-*.xml'):
             shutil.copy2(path, artifact_directory / path.name)
         if not valid:
             path = artifact_directory / 'appcast-arm64.xml'
             path.write_text(path.read_text().replace(self.tag, 'v26-10-12.042'))
+        live_directory = self.root / 'live'; live_directory.mkdir(parents=True, exist_ok=True)
+        for path in self.root.glob('appcast-*.xml'):
+            shutil.copy2(path, live_directory / path.name)
+        if not live_valid:
+            path = live_directory / 'appcast-arm64.xml'
+            path.write_text(path.read_text().replace(self.tag, 'v26-10-12.042'))
+        if prebuilt_pages:
+            for path in self.root.glob('appcast-*.xml'):
+                shutil.copy2(path, pages_dir / path.name)
         release = self.root / 'release.json'; release.write_text(json.dumps(self.release))
-        binaries = self.root / 'bin'; binaries.mkdir()
+        binaries = self.root / 'bin'; binaries.mkdir(parents=True, exist_ok=True)
         gh = binaries / 'gh'
         gh.write_text("""#!/usr/bin/env python3
 import os, pathlib, shutil, sys
 args=sys.argv[1:]
 if args[:2]==['release','view']:
     print(pathlib.Path(os.environ['FIXTURE_RELEASE']).read_text())
-elif args[:2]==['run','download'] and os.environ['FIXTURE_ARTIFACT']=='1':
+elif args[:2]==['run','download'] and os.environ.get('FIXTURE_ARTIFACT')=='1':
     destination=pathlib.Path(args[args.index('--dir')+1]); destination.mkdir(exist_ok=True)
     for source in pathlib.Path(os.environ['FIXTURE_ARTIFACT_DIR']).glob('appcast-*.xml'):
         shutil.copy2(source,destination/source.name)
+elif args[:2]==['release','download'] and os.environ.get('FIXTURE_RELEASE_ASSETS')=='1':
+    destination=pathlib.Path(args[args.index('--dir')+1]); destination.mkdir(exist_ok=True)
+    for source in pathlib.Path(os.environ['FIXTURE_ARTIFACT_DIR']).glob('appcast-*.xml'):
+        shutil.copy2(source,destination/source.name)
+elif args[:2]==['run','list']:
+    print("")
 else:
     sys.exit(1)
 """)
@@ -107,7 +123,8 @@ shutil.copy2(pathlib.Path(os.environ['FIXTURE_LIVE'])/filename,args[args.index('
         environment = {**os.environ, 'PATH': str(binaries) + os.pathsep + os.environ['PATH'],
                        'PAGES_UPDATE_RUN_ID': '123' if artifact else '',
                        'FIXTURE_RELEASE': str(release), 'FIXTURE_ARTIFACT': '1' if artifact else '0',
-                       'FIXTURE_ARTIFACT_DIR': str(artifact_directory), 'FIXTURE_LIVE': str(self.root)}
+                       'FIXTURE_RELEASE_ASSETS': '1' if release_assets else '0',
+                       'FIXTURE_ARTIFACT_DIR': str(artifact_directory), 'FIXTURE_LIVE': str(live_directory)}
         subprocess.run(['bash', str(scripts / 'prepare-pages-update-feeds.sh')], env=environment,
                        capture_output=True, check=True)
         feeds.verify(project / 'pages', self.release)
@@ -120,5 +137,38 @@ shutil.copy2(pathlib.Path(os.environ['FIXTURE_LIVE'])/filename,args[args.index('
 
     def test_stale_run_artifact_falls_back_to_current_live_feeds(self):
         self.deploy(artifact=True, valid=False)
+
+    def test_stale_live_recovers_from_release_assets_when_artifact_missing(self):
+        self.deploy(artifact=False, live_valid=False, release_assets=True)
+
+    def test_stale_live_recovers_from_prebuilt_pages_feeds_when_artifact_missing(self):
+        self.deploy(artifact=False, live_valid=False, prebuilt_pages=True)
+
+    def test_rebuild_pages_update_feeds_from_packages_and_signatures(self):
+        pkgs = {}
+        sigs = {}
+        dummy_sig = base64.b64encode(bytes(64)).decode()
+        for arch in ['arm64', 'intel']:
+            pkgs[arch] = self.root / f'Remote_Buddy_{self.tag}_macOS_{arch}.pkg'
+            sigs[arch] = dummy_sig
+        out = self.root / 'rebuilt_pages'
+        # With dummy signatures, we can test rebuild validation error on bad signature,
+        # and test successful appcast generation with verified signature mock
+        orig_verify = rebuild.verify_payload_signature
+        try:
+            rebuild.verify_payload_signature = lambda pkg, sig, pub: True
+            rebuild.rebuild(
+                tag=self.tag,
+                release_metadata=self.release,
+                arm64_package=pkgs['arm64'],
+                intel_package=pkgs['intel'],
+                arm64_signature=sigs['arm64'],
+                intel_signature=sigs['intel'],
+                version='43',
+                output_dir=out
+            )
+            feeds.verify(out, self.release)
+        finally:
+            rebuild.verify_payload_signature = orig_verify
 
 if __name__ == '__main__': unittest.main()

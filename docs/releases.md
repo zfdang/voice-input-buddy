@@ -18,8 +18,9 @@ App 的 CFBundleShortVersionString 为数字日期（例如 26.10.11），CFBund
 
 - `Remote_Buddy_vYY-MM-DD.NNN_macOS_arm64.pkg` / `*_macOS_intel.pkg`：App 与驱动的一体安装包。
 - `Remote_Buddy_Uninstaller_vYY-MM-DD.NNN_macOS_universal.pkg`：Apple Silicon / Intel 共用的脚本卸载包。
+- `appcast-arm64.xml` / `appcast-intel.xml`：对应架构的更新源，作为可恢复发布产物保留在 Release 中。
 
-Release 只附这三个 PKG，不额外上传 SHA 文件、TXT 更新摘要、appcast XML 或源码压缩包。源码使用对应 Git tag；第三方固定版本源码及构建说明见 [source-code.md](source-code.md)。
+Release 提供这三个安装包与两份更新源，不额外上传 SHA 文件、TXT 更新摘要或源码压缩包。源码使用对应 Git tag；第三方固定版本源码及构建说明见 [source-code.md](source-code.md)。
 
 安装包按 arm64 和 x86_64（文件名 intel）分别提供，要求 macOS 14 或更新版本。App 安装在 `/Applications/Remote Buddy.app`，驱动安装在 `/Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver`。程序展示名称仍为 Remote Buddy；发布文件名使用下划线，App 目录保留空格，内部可执行文件为 RemoteBuddy。安装需要管理员授权；仅在首次安装、驱动内容变化或修复损坏的驱动时刷新 Core Audio，短暂中断播放和录音。安装前后会验证驱动签名并比较内容指纹，而非只比较版本号；驱动未变化的重装和 App 升级不会重启音频服务，重新签名的时间戳不影响判断。安装包不自动开启任何系统隐私授权，也不自动启动 App。
 
@@ -78,10 +79,10 @@ Sparkle 从 `https://remote.zfdang.com/appcast-arm64.xml` 或 `appcast-intel.xml
 main 的发布构建从仓库 Actions Secret `SPARKLE_PRIVATE_KEY` 读取签名私钥，
 仓库 Variable `SPARKLE_PUBLIC_KEY` 必须与内置公钥完全一致。私钥只通过标准输入
 传递给 Sparkle sign_update；不会写入源码、日志、发布资产或 PR 构建。
-签名后使用 CryptoKit 与应用公钥独立验证，再生成对应架构的 appcast XML。更新源上传到 Actions 的 `website-update-feeds` 产物，不作为 Release 下载附件。
+签名后使用 CryptoKit 与应用公钥独立验证，再生成对应架构的 appcast XML。更新源上传到 Actions 的 `website-update-feeds` 产物，并作为发布资产保留在 Release 中。重跑发布工作流时也会重新上传更新源产物。
 PR 构建只测试和打包，不接触签名私钥、不部署更新源。
 
-Release 成功后 Pages workflow 从该次发布的 Actions 产物部署两份 appcast XML。单独更新网页或重复执行已发布版本时，读取网站上已发布的更新源，并验证版本和包地址仍匹配最新 Release。旧 Actions 产物过期不影响单独更新网页；验证失败时停止部署，保留线上站点。PKG 地址指向
+Release 成功后 Pages workflow 优先从该次发布的 Actions 产物部署两份 appcast XML；若产物不可用或单独更新网页，按顺序通过本地预置源、Release 附件、近期构建产物以及线上运行源回退获取，并验证版本和包地址仍匹配最新 Release。若更新源因历史异常丢失，可通过 `scripts/rebuild-pages-update-feeds.py` 从已发布的安装包与签名可靠重建。旧 Actions 产物过期不影响网站与更新部署；验证失败时停止部署，保留线上站点。PKG 地址指向
 GitHub Releases；安装同时更新 App 和驱动，需要管理员授权，并可能短暂重启音频。
 这不是静默安装，也不代替 Apple Developer ID 签名和公证。
 

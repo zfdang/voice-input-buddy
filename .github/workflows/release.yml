@@ -150,7 +150,6 @@ jobs:
             echo 'exists=false' >> "$GITHUB_OUTPUT"
           fi
       - name: Upload website update feeds
-        if: steps.release_state.outputs.exists == 'false'
         uses: actions/upload-artifact@v7.0.2
         with:
           name: website-update-feeds
@@ -161,13 +160,17 @@ jobs:
       - name: Publish release
         shell: bash
         run: |
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            # A completed release is immutable on rerun; do not replace its files.
+          if [[ "${{ steps.release_state.outputs.exists }}" == 'true' ]]; then
+            # A completed release is immutable on rerun; do not replace its packages.
             echo "Release $RELEASE_TAG already exists."
+            gh release upload "$RELEASE_TAG" release/appcast-*.xml --clobber || true
           else
             gh release create "$RELEASE_TAG" \
               "release/Remote_Buddy_${RELEASE_TAG}_macOS_arm64.pkg" \
               "release/Remote_Buddy_${RELEASE_TAG}_macOS_intel.pkg" \
-              "release/Remote_Buddy_Uninstaller_${RELEASE_TAG}_macOS_universal.pkg" --target "$RELEASE_COMMIT" \
+              "release/Remote_Buddy_Uninstaller_${RELEASE_TAG}_macOS_universal.pkg" \
+              "release/appcast-arm64.xml" \
+              "release/appcast-intel.xml" \
+              --target "$RELEASE_COMMIT" \
               --title "$RELEASE_TAG" --notes-file release-notes.md --latest
           fi
