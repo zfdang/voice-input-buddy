@@ -7,7 +7,7 @@
 | 设备 | 官方图片／按键资料 | 应用内素材 |
 | --- | --- | --- |
 | Chromecast Voice Remote（G9N9N） | [Google 外观与按键图](https://support.google.com/chromecast/answer/10116742?hl=en) | `Resources/ChromecastG9N9NIllustration.png` |
-| Google TV Streamer Voice Remote（GY3LE） | [Google 外观与按键图](https://support.google.com/chromecast/answer/15323195?hl=en)、[商品页](https://store.google.com/product/google_tv_streamer_remote?hl=en-US) | `Resources/GoogleStreamerGY3LEIllustration.png` |
+| Google TV Streamer Voice Remote（GY3LE） | [Google 外观与按键图](https://support.google.com/googletv/answer/15323195?hl=en)、[商品页](https://store.google.com/product/google_tv_streamer_remote?hl=en-US) | `Resources/GoogleStreamerGY3LEIllustration.png` |
 | Apple Siri Remote | [Apple 第三代 USB-C 外观图](https://support.apple.com/en-us/111844)、[型号识别](https://support.apple.com/en-au/103233) | `Resources/SiriRemoteA2854Illustration.png` |
 
 官方图片仅作为链接参考，不复制进安装包。新增素材是原创、无品牌标志的透明背景示意图，按项目 GPL-3.0-only 分发；可编辑 SVG 源文件位于 `Resources/RemoteIllustrations/`。示意图不是照片，也不按实际尺寸比例绘制。

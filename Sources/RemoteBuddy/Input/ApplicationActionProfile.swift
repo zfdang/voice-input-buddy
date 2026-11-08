@@ -109,7 +109,7 @@ enum PresetApplication: String, CaseIterable, Identifiable {
 
     var bundleIdentifier: String {
         switch self {
-        case .remoteMic: return "com.zfdang.RemoteBuddy"
+        case .remoteMic: return "com.zfdang.remote-buddy"
         case .codex: return "com.openai.codex"
         case .claude: return "com.anthropic.claudefordesktop"
         case .cmux: return "com.cmuxterm.app"

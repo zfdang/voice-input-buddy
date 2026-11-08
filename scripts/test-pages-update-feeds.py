@@ -69,7 +69,7 @@ class FeedDeploymentTests(unittest.TestCase):
         (self.root / 'appcast-intel.xml').unlink()
         with self.assertRaises(FileNotFoundError): feeds.verify(self.root, self.release)
 
-    def deploy(self, artifact, valid=True, live_valid=True, release_assets=False, prebuilt_pages=False):
+    def deploy(self, artifact, valid=True, live_valid=True, release_assets=False, prebuilt_pages=False, recent_run=False):
         project = self.root / 'project'
         scripts = project / 'scripts'; scripts.mkdir(parents=True, exist_ok=True)
         pages_dir = project / 'pages'; pages_dir.mkdir(parents=True, exist_ok=True)
@@ -98,16 +98,22 @@ import os, pathlib, shutil, sys
 args=sys.argv[1:]
 if args[:2]==['release','view']:
     print(pathlib.Path(os.environ['FIXTURE_RELEASE']).read_text())
-elif args[:2]==['run','download'] and os.environ.get('FIXTURE_ARTIFACT')=='1':
-    destination=pathlib.Path(args[args.index('--dir')+1]); destination.mkdir(exist_ok=True)
-    for source in pathlib.Path(os.environ['FIXTURE_ARTIFACT_DIR']).glob('appcast-*.xml'):
-        shutil.copy2(source,destination/source.name)
+elif args[:2]==['run','download']:
+    if os.environ.get('FIXTURE_ARTIFACT')=='1' or os.environ.get('FIXTURE_RECENT_RUN')=='1':
+        destination=pathlib.Path(args[args.index('--dir')+1]); destination.mkdir(exist_ok=True)
+        for source in pathlib.Path(os.environ['FIXTURE_ARTIFACT_DIR']).glob('appcast-*.xml'):
+            shutil.copy2(source,destination/source.name)
+    else:
+        sys.exit(1)
 elif args[:2]==['release','download'] and os.environ.get('FIXTURE_RELEASE_ASSETS')=='1':
     destination=pathlib.Path(args[args.index('--dir')+1]); destination.mkdir(exist_ok=True)
     for source in pathlib.Path(os.environ['FIXTURE_ARTIFACT_DIR']).glob('appcast-*.xml'):
         shutil.copy2(source,destination/source.name)
 elif args[:2]==['run','list']:
-    print("")
+    if os.environ.get('FIXTURE_RECENT_RUN')=='1':
+        print("99999")
+    else:
+        print("")
 else:
     sys.exit(1)
 """)
@@ -123,6 +129,7 @@ shutil.copy2(pathlib.Path(os.environ['FIXTURE_LIVE'])/filename,args[args.index('
         environment = {**os.environ, 'PATH': str(binaries) + os.pathsep + os.environ['PATH'],
                        'PAGES_UPDATE_RUN_ID': '123' if artifact else '',
                        'FIXTURE_RELEASE': str(release), 'FIXTURE_ARTIFACT': '1' if artifact else '0',
+                       'FIXTURE_RECENT_RUN': '1' if recent_run else '0',
                        'FIXTURE_RELEASE_ASSETS': '1' if release_assets else '0',
                        'FIXTURE_ARTIFACT_DIR': str(artifact_directory), 'FIXTURE_LIVE': str(live_directory)}
         subprocess.run(['bash', str(scripts / 'prepare-pages-update-feeds.sh')], env=environment,
@@ -144,19 +151,53 @@ shutil.copy2(pathlib.Path(os.environ['FIXTURE_LIVE'])/filename,args[args.index('
     def test_stale_live_recovers_from_prebuilt_pages_feeds_when_artifact_missing(self):
         self.deploy(artifact=False, live_valid=False, prebuilt_pages=True)
 
-    def test_rebuild_pages_update_feeds_from_packages_and_signatures(self):
+    def test_stale_live_recovers_from_recent_workflow_runs_when_artifact_missing(self):
+        self.deploy(artifact=False, live_valid=False, recent_run=True)
+
+    def test_extract_summary_from_release_body(self):
+        body = """
+- [新增] 添加新功能 ([1234567](https://github.com/zfdang/remote-buddy/commit/1234567))
+- [修复] 修复错误 ([abcdef0](https://github.com/zfdang/remote-buddy/commit/abcdef0))
+
+[查看完整变化](https://github.com/zfdang/remote-buddy/compare/v26-10-11.042...v26-10-12.043)
+"""
+        summary = rebuild.extract_summary_from_release_body(body)
+        self.assertIn("- [新增] 添加新功能 (1234567)", summary)
+        self.assertIn("- [修复] 修复错误 (abcdef0)", summary)
+        self.assertNotIn("查看完整变化", summary)
+        self.assertNotIn("https://github.com", summary)
+
+    def test_rebuild_pages_update_feeds_with_real_ed25519_signatures(self):
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+        from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+
+        priv = Ed25519PrivateKey.generate()
+        priv_bytes = priv.private_bytes_raw()
+        priv_b64 = base64.b64encode(priv_bytes).decode()
+        pub = priv.public_key()
+        pub_b64 = base64.b64encode(pub.public_bytes(Encoding.Raw, PublicFormat.Raw)).decode()
+
         pkgs = {}
         sigs = {}
-        dummy_sig = base64.b64encode(bytes(64)).decode()
         for arch in ['arm64', 'intel']:
-            pkgs[arch] = self.root / f'Remote_Buddy_{self.tag}_macOS_{arch}.pkg'
-            sigs[arch] = dummy_sig
+            pkg = self.root / f'Remote_Buddy_{self.tag}_macOS_{arch}.pkg'
+            pkg.write_bytes(f'pkg-payload-{arch}'.encode())
+            pkgs[arch] = pkg
+            sigs[arch] = rebuild.sign_payload(pkg, priv_b64)
+
+        # Verify real signatures work
+        for arch in ['arm64', 'intel']:
+            self.assertTrue(rebuild.verify_payload_signature(pkgs[arch], sigs[arch], pub_b64))
+
+        # Corrupted signature is rejected
+        bad_sig = base64.b64encode(bytes(64)).decode()
+        with self.assertRaises(Exception):
+            rebuild.verify_payload_signature(pkgs['arm64'], bad_sig, pub_b64)
+
         out = self.root / 'rebuilt_pages'
-        # With dummy signatures, we can test rebuild validation error on bad signature,
-        # and test successful appcast generation with verified signature mock
-        orig_verify = rebuild.verify_payload_signature
+        orig_embedded = rebuild.get_embedded_public_key
         try:
-            rebuild.verify_payload_signature = lambda pkg, sig, pub: True
+            rebuild.get_embedded_public_key = lambda: pub_b64
             rebuild.rebuild(
                 tag=self.tag,
                 release_metadata=self.release,
@@ -164,11 +205,45 @@ shutil.copy2(pathlib.Path(os.environ['FIXTURE_LIVE'])/filename,args[args.index('
                 intel_package=pkgs['intel'],
                 arm64_signature=sigs['arm64'],
                 intel_signature=sigs['intel'],
+                public_key=pub_b64,
                 version='43',
                 output_dir=out
             )
             feeds.verify(out, self.release)
         finally:
-            rebuild.verify_payload_signature = orig_verify
+            rebuild.get_embedded_public_key = orig_embedded
+
+    def test_rebuild_rejects_mismatched_public_key(self):
+        orig_embedded = rebuild.get_embedded_public_key
+        try:
+            rebuild.get_embedded_public_key = lambda: "embedded_key_different"
+            with self.assertRaises(ValueError) as ctx:
+                rebuild.rebuild(
+                    tag=self.tag,
+                    release_metadata=self.release,
+                    public_key="some_other_key",
+                )
+            self.assertIn("differs from Info.plist", str(ctx.exception))
+        finally:
+            rebuild.get_embedded_public_key = orig_embedded
+
+    def test_version_resolution_across_thousand_commit_boundary(self):
+        existing_feed = self.root / 'appcast-arm64.xml'
+        # With real git tag v26-10-12.043, git rev-list returns 43
+        ver = rebuild.resolve_version('v26-10-12.043', existing_feed_path=existing_feed)
+        self.assertEqual(ver, '43')
+
+        # For a tag not in git history (or shallow checkout), existing feed base is used:
+        # When existing feed has build 1042, next tag ending in 043 resolves to 1043
+        xml = ET.parse(existing_feed)
+        xml.find(f'channel/item/{{{appcast.SPARKLE}}}version').text = '1042'
+        xml.write(existing_feed)
+
+        ver = rebuild.resolve_version('v99-10-12.043', existing_feed_path=existing_feed)
+        self.assertEqual(ver, '1043')
+
+        # Test wraparound from 1042 to 000 -> 2000
+        ver_wrap = rebuild.resolve_version('v99-10-12.000', existing_feed_path=existing_feed)
+        self.assertEqual(ver_wrap, '2000')
 
 if __name__ == '__main__': unittest.main()

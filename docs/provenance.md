@@ -16,4 +16,4 @@
 
 设置向导截图位于 `Resources/Onboarding`，包括从上游继承的图片以及本项目重新截取的微信、豆包和 VoiceCursor 浅色图片；保留上游图片的来源归属，不把全部现有截图都归为上游素材。未使用其受限 App Logo 或遥控器产品照片。小米遥控器图是基于本项目按键布局参考生成的无品牌写实渲染；Google 与 Siri Remote 使用原创 SVG 示意图及 PNG 缩略图，均未使用厂商产品照片。`scripts/generate-remote-layout-reference.swift` 仅生成小米布局参考，不覆盖成品；按键位置与映射连线共用归一化坐标。提示词及维护说明见 [artwork.md](artwork.md) 与 [示意图说明](../Resources/RemoteIllustrations/README.md)。构建及安装包检查会验证截图与示意图完整性。
 
-网页 `pages/assets/screenshots` 的 26 张中英文界面与向导截图于 2026-11-01 使用当前源码（基线 `f51f5c8`）的 Debug App，通过 `scripts/generate-website-screenshots.py` 重新渲染，并仅做无损 PNG 编码优化。渲染使用隔离设置与示例设备、权限及驱动状态，不读取个人设置；小米按键页展示当前代码的默认映射。连接、按键和语音测试画面均为界面示例，不代表本次已完成硬件或语音验收。
+网页 `pages/assets/screenshots` 的 26 张中英文界面与向导截图于 2026-11-08 使用当前源码（基线 `dd9ae2a`）的 Debug App，通过 `scripts/generate-website-screenshots.py` 重新渲染，并仅做无损 PNG 编码优化。渲染使用隔离设置与示例设备、权限及驱动状态，不读取个人设置；小米按键页展示当前代码的默认映射。连接、按键和语音测试画面均为界面示例，不代表本次已完成硬件或语音验收。

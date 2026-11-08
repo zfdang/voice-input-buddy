@@ -163,7 +163,14 @@ jobs:
           if [[ "${{ steps.release_state.outputs.exists }}" == 'true' ]]; then
             # A completed release is immutable on rerun; do not replace its packages.
             echo "Release $RELEASE_TAG already exists."
-            gh release upload "$RELEASE_TAG" release/appcast-*.xml --clobber || true
+            existing_assets="$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name')"
+            for feed in release/appcast-*.xml; do
+              feed_name="$(basename "$feed")"
+              if ! grep -q "^$feed_name\$" <<< "$existing_assets"; then
+                echo "Uploading missing feed asset: $feed_name"
+                gh release upload "$RELEASE_TAG" "$feed"
+              fi
+            done
           else
             gh release create "$RELEASE_TAG" \
               "release/Remote_Buddy_${RELEASE_TAG}_macOS_arm64.pkg" \

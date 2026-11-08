@@ -10,6 +10,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_PUBLIC_KEY = "8aHZRXuY+Q0F0FsWNyQTx0wIYXi4MoCCSzAWs0j+uR4="
@@ -26,8 +27,25 @@ appcast_module = load_module("generate_appcast", "generate-appcast.py")
 verify_module = load_module("verify_pages_update_feeds", "verify-pages-update-feeds.py")
 
 
+def get_embedded_public_key():
+    for plist_path in [
+        ROOT / "Resources" / "Info.plist",
+        ROOT / "dist" / "Remote Buddy.app" / "Contents" / "Info.plist",
+    ]:
+        if plist_path.exists():
+            try:
+                import plistlib
+                with open(plist_path, "rb") as f:
+                    plist = plistlib.load(f)
+                    if "SUPublicEDKey" in plist:
+                        return plist["SUPublicEDKey"]
+            except Exception:
+                pass
+    return DEFAULT_PUBLIC_KEY
+
+
 def sign_payload(package_path, private_key_b64):
-    """Sign package payload with Ed25519 private key."""
+    """Sign package payload with Ed25519 private key. Private key is never passed via argv."""
     try:
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
         priv = Ed25519PrivateKey.from_private_bytes(base64.b64decode(private_key_b64))
@@ -36,22 +54,25 @@ def sign_payload(package_path, private_key_b64):
     except ImportError:
         pass
 
-    # Fallback to Swift with CryptoKit
+    # Fallback to Swift with CryptoKit, reading private key strictly via stdin
     swift_script = """
 import Foundation
 import CryptoKit
 
-guard CommandLine.arguments.count == 3,
-      let keyData = Data(base64Encoded: CommandLine.arguments[1]) else {
+guard CommandLine.arguments.count == 2 else { exit(1) }
+let input = FileHandle.standardInput.readDataToEndOfFile()
+guard let keyString = String(data: input, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+      let keyData = Data(base64Encoded: keyString) else {
     exit(1)
 }
 let key = try Curve25519.Signing.PrivateKey(rawRepresentation: keyData)
-let payload = try Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[2]))
+let payload = try Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[1]))
 let signature = try key.signature(for: payload)
 print(signature.base64EncodedString())
 """
     result = subprocess.run(
-        ["swift", "-e", swift_script, private_key_b64, str(package_path)],
+        ["swift", "-e", swift_script, str(package_path)],
+        input=private_key_b64,
         capture_output=True,
         text=True,
         check=True
@@ -81,6 +102,65 @@ def verify_payload_signature(package_path, signature_b64, public_key_b64):
     if result.returncode != 0:
         raise ValueError(f"Signature verification failed: {result.stderr.strip()}")
     return True
+
+
+def extract_summary_from_release_body(body):
+    """Extract clean update summary from release notes markdown body."""
+    if not body:
+        return "此版本未提供更新摘要。"
+    lines = []
+    for line in body.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith("[查看完整变化](") or line.startswith("首次发布"):
+            continue
+        line = re.sub(r'\(\[([0-9a-f]{7,})\]\([^\)]+\)\)', r'(\1)', line)
+        line = re.sub(r'\\([\\`*_\[\]<>])', r'\1', line)
+        lines.append(line)
+    return "\n".join(lines).strip() or "此版本未提供更新摘要。"
+
+
+def resolve_version(tag, explicit_version=None, target_commitish=None, existing_feed_path=None):
+    """Resolve build version integer matching commit count, avoiding 1000-modulo rollback."""
+    if explicit_version:
+        return str(explicit_version)
+
+    tag_mod = int(tag.rsplit(".", 1)[1])
+
+    # 1. Inspect git history if available
+    for ref in [tag, target_commitish, "HEAD"]:
+        if not ref:
+            continue
+        try:
+            res = subprocess.run(
+                ["git", "rev-list", "--count", ref],
+                capture_output=True,
+                text=True
+            )
+            if res.returncode == 0 and res.stdout.strip().isdigit():
+                count = int(res.stdout.strip())
+                if count % 1000 == tag_mod:
+                    return str(count)
+        except Exception:
+            pass
+
+    # 2. Check existing feed for base thousands
+    if existing_feed_path and Path(existing_feed_path).exists():
+        try:
+            tree = ET.parse(existing_feed_path)
+            ver = tree.findtext(f'.//{{{appcast_module.SPARKLE}}}version')
+            if ver and ver.isdigit():
+                prev_count = int(ver)
+                base = (prev_count // 1000) * 1000
+                if prev_count % 1000 > tag_mod:
+                    base += 1000
+                return str(base + tag_mod)
+        except Exception:
+            pass
+
+    raw_version = tag.rsplit(".", 1)[1].lstrip("0")
+    return raw_version if raw_version else "1"
 
 
 def fetch_release_metadata(tag=None, release_json=None):
@@ -115,31 +195,27 @@ def rebuild(
     if not re.fullmatch(r"v\d{2}-\d{2}-\d{2}\.\d{3}", tag):
         raise ValueError(f"Invalid release tag: {tag}")
 
-    public_key = public_key or os.environ.get("SPARKLE_PUBLIC_KEY") or DEFAULT_PUBLIC_KEY
+    embedded_public_key = get_embedded_public_key()
+    public_key = public_key or os.environ.get("SPARKLE_PUBLIC_KEY") or embedded_public_key
+    if embedded_public_key and public_key != embedded_public_key:
+        raise ValueError(f"Public key ({public_key}) differs from Info.plist SUPublicEDKey ({embedded_public_key})")
+
     private_key = private_key or os.environ.get("SPARKLE_PRIVATE_KEY")
-
-    if version is None:
-        raw_version = tag.rsplit(".", 1)[1].lstrip("0")
-        version = raw_version if raw_version else "1"
-        # If git history is available, prefer rev-list count matching modulo 1000
-        try:
-            res = subprocess.run(
-                ["git", "rev-list", "--count", "HEAD"],
-                capture_output=True,
-                text=True
-            )
-            if res.returncode == 0 and res.stdout.strip().isdigit():
-                git_count = res.stdout.strip()
-                if int(git_count) % 1000 == int(tag.rsplit(".", 1)[1]):
-                    version = git_count
-        except Exception:
-            pass
-
-    if changes is None:
-        changes = release_metadata.get("body", "").strip() or "此版本未提供更新摘要。"
 
     output_path = Path(output_dir or (ROOT / "pages"))
     output_path.mkdir(parents=True, exist_ok=True)
+
+    if version is None:
+        existing_feed = output_path / "appcast-arm64.xml"
+        version = resolve_version(
+            tag,
+            explicit_version=None,
+            target_commitish=release_metadata.get("targetCommitish"),
+            existing_feed_path=existing_feed
+        )
+
+    if changes is None:
+        changes = extract_summary_from_release_body(release_metadata.get("body", ""))
 
     packages = {"arm64": arm64_package, "intel": intel_package}
     signatures = {"arm64": arm64_signature, "intel": intel_signature}
@@ -151,6 +227,10 @@ def rebuild(
     else:
         download_dir = Path(download_dir)
         download_dir.mkdir(parents=True, exist_ok=True)
+
+    # Use a staging directory for atomic publication
+    staging_dir = tempfile.TemporaryDirectory(dir=output_path)
+    staging_path = Path(staging_dir.name)
 
     try:
         for arch in ["arm64", "intel"]:
@@ -176,7 +256,7 @@ def rebuild(
 
             verify_payload_signature(pkg_path, sig, public_key)
 
-            dest_appcast = output_path / f"appcast-{arch}.xml"
+            dest_appcast = staging_path / f"appcast-{arch}.xml"
             appcast_module.generate(
                 package=pkg_path,
                 tag=tag,
@@ -186,9 +266,18 @@ def rebuild(
                 changes=changes,
             )
 
-        verify_module.verify(output_path, release_metadata)
+        # Verify candidate feeds before publishing
+        verify_module.verify(staging_path, release_metadata)
+
+        # Atomically replace files in output_path
+        for arch in ["arm64", "intel"]:
+            src = staging_path / f"appcast-{arch}.xml"
+            dst = output_path / f"appcast-{arch}.xml"
+            os.replace(src, dst)
+
         print(f"Successfully rebuilt and verified update feeds in {output_path} for release {tag}")
     finally:
+        staging_dir.cleanup()
         if temp_dir:
             temp_dir.cleanup()
 
@@ -202,7 +291,7 @@ def main():
     parser.add_argument("--arm64-signature", help="Base64 Ed25519 signature for arm64 pkg")
     parser.add_argument("--intel-signature", help="Base64 Ed25519 signature for intel pkg")
     parser.add_argument("--signatures-file", type=Path, help="JSON file with arm64 and intel signatures")
-    parser.add_argument("--private-key", help="Sparkle private key for signing")
+    parser.add_argument("--private-key-file", type=Path, help="Path to file containing private key, or '-' for stdin")
     parser.add_argument("--public-key", help="Sparkle public key for verification")
     parser.add_argument("--version", help="Bundle version number")
     parser.add_argument("--changes-file", type=Path, help="File containing changelog")
@@ -218,6 +307,13 @@ def main():
         arm64_sig = arm64_sig or sigs.get("arm64")
         intel_sig = intel_sig or sigs.get("intel")
 
+    private_key = None
+    if args.private_key_file:
+        if str(args.private_key_file) == "-":
+            private_key = sys.stdin.read().strip()
+        else:
+            private_key = args.private_key_file.read_text().strip()
+
     changes = args.changes_file.read_text() if args.changes_file else None
     release_metadata = json.loads(Path(args.release_json).read_text()) if args.release_json else None
 
@@ -228,7 +324,7 @@ def main():
         intel_package=args.intel_package,
         arm64_signature=arm64_sig,
         intel_signature=intel_sig,
-        private_key=args.private_key,
+        private_key=private_key,
         public_key=args.public_key,
         version=args.version,
         changes=changes,

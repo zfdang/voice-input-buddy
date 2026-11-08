@@ -51,6 +51,18 @@ struct ProductBoundaryTests {
                 referencedKeys.insert(nsSource.substring(with: match.range(at: 1)))
             }
         }
+        let retiredPrefixes = [
+            "connection.phone.",
+            "connection.watch.",
+            "connection.web.",
+            "connection.approval.",
+            "connection.trusted_devices.",
+            "onboarding.apple_companion.",
+            "onboarding.iphone_remote.",
+            "onboarding.web_remote.",
+            "onboarding.control_source.apple_companion.",
+            "onboarding.control_source.web_remote.",
+        ]
         for lang in ["zh-Hans.lproj", "en.lproj"] {
             let stringsURL = resources.appendingPathComponent(lang).appendingPathComponent("Localizable.strings")
             let content = try String(contentsOf: stringsURL, encoding: .utf8)
@@ -63,6 +75,10 @@ struct ProductBoundaryTests {
             }
             let missing = referencedKeys.subtracting(definedKeys)
             #expect(missing.isEmpty, "Missing keys in \(lang): \(missing)")
+            let retiredFound = definedKeys.filter { key in
+                retiredPrefixes.contains { key.hasPrefix($0) }
+            }
+            #expect(retiredFound.isEmpty, "Found retired keys in \(lang): \(retiredFound)")
         }
     }
 
