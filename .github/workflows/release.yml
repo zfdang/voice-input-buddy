@@ -65,6 +65,18 @@ jobs:
         with:
           name: release-changelog
           path: ${{ runner.temp }}/release-changelog
+      - name: Pre-populate Sparkle binary package cache
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          target_dir="$HOME/Library/Caches/org.swift.swiftpm/artifacts"
+          mkdir -p "$target_dir"
+          cached_file="$target_dir/https___github_com_sparkle_project_Sparkle_releases_download_2_9_4_Sparkle_for_Swift_Package_Manager_zip"
+          expected_sha="cb6fdbdc8884f15d62a616e79face92b08322410fd2d425edc6596ccbf4ba3b0"
+          if [[ ! -f "$cached_file" ]] || ! shasum -a 256 "$cached_file" | grep -q "$expected_sha"; then
+            echo "Pre-fetching Sparkle binary package via GitHub API..."
+            gh api repos/sparkle-project/Sparkle/releases/assets/463901481 -H "Accept: application/octet-stream" > "$cached_file"
+          fi
       - name: Test
         run: |
           python3 scripts/test-release-notes.py
