@@ -275,8 +275,6 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
                                          userDriver: updateUserDriver, delegate: self)
 
     private let connectionItem = NSMenuItem()
-    private let audioItem = NSMenuItem()
-    private let hidItem = NSMenuItem()
 
     var activationPolicy: NSApplication.ActivationPolicy {
         SettingsWindowActivationPolicy.value(
@@ -496,8 +494,6 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
         }
 
         connectionItem.isEnabled = false
-        audioItem.isEnabled = false
-        hidItem.isEnabled = false
 
         statusItem = item
         appliedStatusItemPresentation = nil
@@ -514,8 +510,6 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
     private func removeStatusItem() -> Bool {
         guard let statusItem else { return false }
         statusMenu?.removeItem(connectionItem)
-        statusMenu?.removeItem(audioItem)
-        statusMenu?.removeItem(hidItem)
         NSStatusBar.system.removeStatusItem(statusItem)
         self.statusItem = nil
         statusMenu = nil
@@ -542,29 +536,26 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
 
     private func rebuildStatusMenu() {
         statusMenu?.removeItem(connectionItem)
-        statusMenu?.removeItem(audioItem)
-        statusMenu?.removeItem(hidItem)
 
         let menu = NSMenu()
         menu.delegate = self
         menu.addItem(connectionItem)
-        menu.addItem(audioItem)
-        menu.addItem(hidItem)
-        menu.addItem(.separator())
         menu.addItem(menuItem("connection.action.reconnect", action: #selector(reconnect)))
-        menu.addItem(menuItem("menu.open_settings", action: #selector(showSettingsFromStatusItem)))
-        menu.addItem(menuItem("menu.show_logs", action: #selector(showLog)))
-        menu.addItem(languageMenuItem())
         menu.addItem(.separator())
-        menu.addItem(menuItem("menu.about", action: #selector(showAbout)))
-        menu.addItem(versionMenuItem())
+        let settingsItem = menuItem("menu.open_settings", action: #selector(showSettingsFromStatusItem))
+        settingsItem.keyEquivalent = ","
+        settingsItem.keyEquivalentModifierMask = .command
+        menu.addItem(settingsItem)
+        menu.addItem(.separator())
         if updateFeedSelection.validatedStableFeedURL != nil {
             menu.addItem(menuItem("menu.check_for_updates", action: #selector(checkForUpdates)))
         }
-        menu.addItem(menuItem("about.support.github", action: #selector(openGitHub)))
-        menu.addItem(menuItem("about.support.website", action: #selector(openWebsite)))
+        menu.addItem(supportMenuItem())
+        menu.addItem(menuItem("menu.about", action: #selector(showAbout)))
+        menu.addItem(versionMenuItem())
         menu.addItem(.separator())
         let restoreItem = menuItem("common_phrases.restore_clipboard", action: #selector(restorePhraseClipboard))
+        restoreItem.isHidden = !CommonPhraseClipboardPaste.shared.canRestoreClipboard
         menu.addItem(restoreItem)
         restoreClipboardItem = restoreItem
         menu.addItem(menuItem("common.action.quit", action: #selector(quit)))
@@ -687,23 +678,12 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
         return item
     }
 
-    private func languageMenuItem() -> NSMenuItem {
-        let item = NSMenuItem(title: localization.text("menu.language"), action: nil, keyEquivalent: "")
+    private func supportMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: localization.text("menu.help_and_support"), action: nil, keyEquivalent: "")
         let submenu = NSMenu()
-        for language in AppLanguage.allCases {
-            let title: String
-            switch language {
-            case .system:
-                title = localization.text("language.system")
-            case .simplifiedChinese, .english:
-                title = language.nativeDisplayName
-            }
-            let languageItem = NSMenuItem(title: title, action: #selector(selectLanguage(_:)), keyEquivalent: "")
-            languageItem.target = self
-            languageItem.representedObject = language.rawValue
-            languageItem.state = language == localization.language ? .on : .off
-            submenu.addItem(languageItem)
-        }
+        submenu.addItem(menuItem("about.support.website", action: #selector(openWebsite)))
+        submenu.addItem(menuItem("about.support.github", action: #selector(openGitHub)))
+        submenu.addItem(menuItem("menu.show_logs", action: #selector(showLog)))
         item.submenu = submenu
         return item
     }
@@ -735,10 +715,8 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
         }
         .store(in: &subscriptions)
 
-        Publishers.CombineLatest4(
+        Publishers.CombineLatest(
             model.$connectionStatus,
-            model.$audioStatus,
-            model.$hidStatus,
             model.$isStreaming
         )
         .receive(on: RunLoop.main)
@@ -746,7 +724,6 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
             self?.refreshMenuStatus()
         }
         .store(in: &subscriptions)
-
     }
 
     private func observeLocalization() {
@@ -857,10 +834,6 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
 
     private func refreshMenuStatus() {
         connectionItem.title = model.connectionStatus.text(using: localization)
-        audioItem.title = model.isStreaming
-            ? localization.text("connection.status.voice_active")
-            : model.audioStatus.text(using: localization)
-        hidItem.title = model.hidStatus.text(using: localization)
     }
 
     private func refreshStatusItemPresentation() {
@@ -907,7 +880,9 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
     }
 
     private func showStatusMenu() {
-        restoreClipboardItem?.isEnabled = CommonPhraseClipboardPaste.shared.canRestoreClipboard
+        let canRestore = CommonPhraseClipboardPaste.shared.canRestoreClipboard
+        restoreClipboardItem?.isHidden = !canRestore
+        restoreClipboardItem?.isEnabled = canRestore
         guard let statusItem, let statusMenu else { return }
         refreshMenuStatus()
         statusItem.menu = statusMenu
@@ -917,7 +892,9 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         if menuItem.action == #selector(restorePhraseClipboard) {
-            return CommonPhraseClipboardPaste.shared.canRestoreClipboard
+            let canRestore = CommonPhraseClipboardPaste.shared.canRestoreClipboard
+            menuItem.isHidden = !canRestore
+            return canRestore
         }
         return true
     }
@@ -1073,13 +1050,6 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
         )
         alert.addButton(withTitle: localization.text("common.action.ok"))
         alert.runModal()
-    }
-
-    @objc private func selectLanguage(_ sender: NSMenuItem) {
-        guard let rawValue = sender.representedObject as? String,
-              let language = AppLanguage(rawValue: rawValue)
-        else { return }
-        localization.select(language)
     }
 
     @objc private func checkForUpdates() {
