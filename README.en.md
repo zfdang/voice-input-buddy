@@ -4,7 +4,7 @@
 
 Turn a remote control into a voice-input button for your computer. Press to talk, release to finish, and let your preferred input method or dictation tool enter text into the current field.
 
-[Website](https://remote.zfdang.com/index.en.html) · [Downloads](https://github.com/zfdang/voice-input-buddy/releases)
+[Website](https://remote.zfdang.com/index.en.html) · [Downloads](https://github.com/zfdang/remote-buddy/releases)
 
 Supports **macOS 14 and later**, on Apple Silicon and Intel Macs. Windows support is planned.
 
@@ -34,7 +34,7 @@ The app decodes remote audio and sends it to a virtual microphone while triggeri
 
 ## How do I use it?
 
-Download `Remote_Buddy_*.pkg` from [Releases](https://github.com/zfdang/voice-input-buddy/releases). One installer includes both the app and its virtual microphone driver.
+Download `Remote_Buddy_*.pkg` from [Releases](https://github.com/zfdang/remote-buddy/releases). One installer includes both the app and its virtual microphone driver.
 
 1. Install and open `/Applications/Remote Buddy.app`.
 2. Follow the guide to grant Bluetooth, Input Monitoring, and Accessibility permissions. The app follows your system language by default; you can choose English or Chinese on the first screen.

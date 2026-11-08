@@ -1,6 +1,6 @@
 # 发布记录
 
-当前版本和完整变化见 https://github.com/zfdang/voice-input-buddy/releases 。正式版本使用 `vYY-MM-DD.NNN` 格式，应用内更新摘要读取本项目 appcast。
+当前版本和完整变化见 https://github.com/zfdang/remote-buddy/releases 。正式版本使用 `vYY-MM-DD.NNN` 格式，应用内更新摘要读取本项目 appcast。
 
 ## 历史记录：0.1.0
 

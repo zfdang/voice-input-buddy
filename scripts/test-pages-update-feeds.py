@@ -45,12 +45,20 @@ class FeedDeploymentTests(unittest.TestCase):
         self.release['tagName'] = 'v26-10-12.044'
         with self.assertRaises(ValueError): feeds.verify(self.root, self.release)
 
+    def test_previous_repository_url_is_accepted_for_existing_release(self):
+        for path in self.root.glob('appcast-*.xml'):
+            tree = ET.parse(path)
+            enclosure = tree.find('channel/item/enclosure')
+            enclosure.set('url', enclosure.get('url').replace('/remote-buddy/', '/voice-input-buddy/'))
+            tree.write(path)
+        feeds.verify(self.root, self.release)
+
     def test_unknown_or_unsigned_package_is_rejected(self):
         path = self.root / 'appcast-intel.xml'
         xml = ET.parse(path); enclosure = xml.find('channel/item/enclosure')
         enclosure.set('url', 'https://example.invalid/package.pkg'); xml.write(path)
         with self.assertRaises(ValueError): feeds.verify(self.root, self.release)
-        enclosure.set('url', f'https://github.com/zfdang/voice-input-buddy/releases/download/{self.tag}/Remote_Buddy_{self.tag}_macOS_intel.pkg')
+        enclosure.set('url', f'https://github.com/zfdang/remote-buddy/releases/download/{self.tag}/Remote_Buddy_{self.tag}_macOS_intel.pkg')
         enclosure.set(f'{{{appcast.SPARKLE}}}edSignature', ''); xml.write(path)
         with self.assertRaises(ValueError): feeds.verify(self.root, self.release)
 

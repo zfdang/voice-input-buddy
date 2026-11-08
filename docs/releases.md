@@ -4,7 +4,7 @@
 
 ## 版本
 
-版本格式为 `vYY-MM-DD.NNN`，例如 `v26-10-11.001`，示例不是当前最新版。日期来自发布提交的 committer 时间，使用 Asia/Singapore 时区；序号为 `git rev-list --count HEAD`，包括可达的合并提交，只取末三位，不足三位补零。例如 1、11、113 分别得到 001、011、113。不是每日重置计数。同一提交重跑得到同一版本；已存在 Release 不覆盖。历史必须完整，因此 checkout 使用 fetch-depth: 0。例如 999、1000、1001、12345 的显示尾号分别为 999、000、001、345。显示尾号只用于区分版本，不用于更新排序。实际最新版以 [Releases](https://github.com/zfdang/voice-input-buddy/releases/latest) 为准。
+版本格式为 `vYY-MM-DD.NNN`，例如 `v26-10-11.001`，示例不是当前最新版。日期来自发布提交的 committer 时间，使用 Asia/Singapore 时区；序号为 `git rev-list --count HEAD`，包括可达的合并提交，只取末三位，不足三位补零。例如 1、11、113 分别得到 001、011、113。不是每日重置计数。同一提交重跑得到同一版本；已存在 Release 不覆盖。历史必须完整，因此 checkout 使用 fetch-depth: 0。例如 999、1000、1001、12345 的显示尾号分别为 999、000、001、345。显示尾号只用于区分版本，不用于更新排序。实际最新版以 [Releases](https://github.com/zfdang/remote-buddy/releases/latest) 为准。
 
 App 的 CFBundleShortVersionString 为数字日期（例如 26.10.11），CFBundleVersion 为提交总数；安装包内部使用数字日期加提交总数。Git tag、Release 标题与下载文件采用完整 `vYY-MM-DD.NNN` 格式。
 

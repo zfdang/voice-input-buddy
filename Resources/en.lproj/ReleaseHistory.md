@@ -1,6 +1,6 @@
 # Release history
 
-Current releases and complete changes: https://github.com/zfdang/voice-input-buddy/releases . Production versions use `vYY-MM-DD.NNN`; in-app update summaries come from this project's appcast.
+Current releases and complete changes: https://github.com/zfdang/remote-buddy/releases . Production versions use `vYY-MM-DD.NNN`; in-app update summaries come from this project's appcast.
 
 ## Historical entry: 0.1.0
 
