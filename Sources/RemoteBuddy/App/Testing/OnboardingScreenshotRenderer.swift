@@ -84,12 +84,12 @@ enum OnboardingScreenshotRenderer {
 
     static func renderAll(to outputDirectory: URL, appearanceName: String?) throws {
         let size = try SettingsScreenshotRenderer.screenshotSize(from: ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_SIZE"
+            "REMOTE_BUDDY_ONBOARDING_SCREENSHOT_SIZE"
         ])
         let screenshotAppearance = try ScreenshotAppearance(environmentValue: appearanceName)
         let screenshotLanguage = try ScreenshotLanguage(
             environmentValue: ProcessInfo.processInfo.environment[
-                "VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_LANGUAGE"
+                "REMOTE_BUDDY_ONBOARDING_SCREENSHOT_LANGUAGE"
             ]
         )
         try FileManager.default.createDirectory(
@@ -106,31 +106,31 @@ enum OnboardingScreenshotRenderer {
         let settings = AppSettings(defaults: defaults)
         settings.applicationLanguage = screenshotLanguage.appLanguage
         let requestedVoiceTool = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_VOICE_TOOL"
+            "REMOTE_BUDDY_ONBOARDING_SCREENSHOT_VOICE_TOOL"
         ].flatMap(OnboardingVoiceTool.init(rawValue:))
         let requestedVoiceKeyMode = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_VOICE_KEY_MODE"
+            "REMOTE_BUDDY_ONBOARDING_SCREENSHOT_VOICE_KEY_MODE"
         ].flatMap(VoiceKeyMode.init(rawValue:))
         let requestedGuideStep = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_GUIDE_STEP"
+            "REMOTE_BUDDY_ONBOARDING_SCREENSHOT_GUIDE_STEP"
         ].flatMap(Int.init)
         let requestedControlMethod = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_CONTROL_METHOD"
+            "REMOTE_BUDDY_ONBOARDING_SCREENSHOT_CONTROL_METHOD"
         ].flatMap(OnboardingControlMethod.init(rawValue:))
         let requestedControlSource = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_CONTROL_SOURCE"
+            "REMOTE_BUDDY_ONBOARDING_SCREENSHOT_CONTROL_SOURCE"
         ].flatMap(OnboardingControlSource.init(rawValue:))
         let requestedAppleRemoteGeneration = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_APPLE_REMOTE_GENERATION"
+            "REMOTE_BUDDY_ONBOARDING_SCREENSHOT_APPLE_REMOTE_GENERATION"
         ].flatMap(OnboardingAppleRemoteGeneration.init(rawValue:))
         let systemFunctionKeyAvailable = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_SYSTEM_FN_AVAILABLE"
+            "REMOTE_BUDDY_ONBOARDING_SCREENSHOT_SYSTEM_FN_AVAILABLE"
         ].map { $0 != "0" } ?? true
         let allVoiceToolsUnavailable = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_ALL_VOICE_TOOLS_UNAVAILABLE"
+            "REMOTE_BUDDY_ONBOARDING_SCREENSHOT_ALL_VOICE_TOOLS_UNAVAILABLE"
         ] == "1"
         let onboardingPermissionsOverride: SystemPermissionOverrides? = switch ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_PERMISSIONS"
+            "REMOTE_BUDDY_ONBOARDING_SCREENSHOT_PERMISSIONS"
         ] {
         case "all_granted", "granted":
             .allGranted
@@ -140,7 +140,7 @@ enum OnboardingScreenshotRenderer {
             nil
         }
         let remoteInputDiagnostic = switch ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_REMOTE_INPUT"
+            "REMOTE_BUDDY_ONBOARDING_SCREENSHOT_REMOTE_INPUT"
         ] {
         case "voice":
             FirstUseRemoteInputDiagnostic(
@@ -164,12 +164,12 @@ enum OnboardingScreenshotRenderer {
             )
         }
         if let requestedDevice = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_DEVICE"
+            "REMOTE_BUDDY_ONBOARDING_SCREENSHOT_DEVICE"
         ].flatMap(RemoteSetupDevice.init(rawValue:)) {
             settings.selectOnboardingDevice(requestedDevice)
         }
         let requestedPurpose = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_PURPOSE"
+            "REMOTE_BUDDY_ONBOARDING_SCREENSHOT_PURPOSE"
         ].flatMap(OnboardingPurpose.init(rawValue:)) ?? .initialSetup
         if requestedPurpose != .initialSetup {
             settings.completeOnboarding()
@@ -199,9 +199,9 @@ enum OnboardingScreenshotRenderer {
         defer { NSApp.appearance = previousAppearance }
 
 #if DEBUG
-        let interactive = ProcessInfo.processInfo.environment["VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_INTERACTIVE"] == "1"
+        let interactive = ProcessInfo.processInfo.environment["REMOTE_BUDDY_ONBOARDING_SCREENSHOT_INTERACTIVE"] == "1"
         let interactiveStep = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_INTERACTIVE_STEP"
+            "REMOTE_BUDDY_ONBOARDING_SCREENSHOT_INTERACTIVE_STEP"
         ].flatMap(OnboardingStep.init(rawValue:)) ?? .voiceTool
         let renderedPages: [(OnboardingStep, String)] = interactive
             ? [(interactiveStep, "interactive.png")] : pages(for: controlMethod).filter { requestedPurpose.steps.contains($0.0) }
@@ -235,7 +235,7 @@ enum OnboardingScreenshotRenderer {
 
             window.makeKeyAndOrderFront(nil)
             if !interactive, step == .remoteAvailability,
-               ProcessInfo.processInfo.environment["VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_TRY_CONTINUE"] == "1" {
+               ProcessInfo.processInfo.environment["REMOTE_BUDDY_ONBOARDING_SCREENSHOT_TRY_CONTINUE"] == "1" {
                 window.contentView?.layoutSubtreeIfNeeded()
                 RunLoop.current.run(until: Date().addingTimeInterval(0.1))
                 actionProbe.invoke("continue")

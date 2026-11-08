@@ -91,7 +91,7 @@ struct ProductBoundaryTests {
     }
 
     @Test @MainActor func configurationOperationsPersistPreferencesWithoutUsageData() throws {
-        let suite = "voice-input-buddy.tests.\(UUID().uuidString)"
+        let suite = "remote-buddy.tests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let settings = AppSettings(defaults: defaults)
@@ -145,7 +145,7 @@ struct ProductBoundaryTests {
     }
 
     @Test @MainActor func changingIntegrationKeepsHardwareAudioAndMappings() throws {
-        let suite = "voice-input-buddy.tests.\(UUID().uuidString)"
+        let suite = "remote-buddy.tests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let settings = AppSettings(defaults: defaults)
@@ -178,7 +178,7 @@ struct ProductBoundaryTests {
     }
 
     @Test @MainActor func firstRunLanguageFollowsSystemAndExplicitChoicePersists() throws {
-        let suite = "voice-input-buddy.tests.\(UUID().uuidString)"
+        let suite = "remote-buddy.tests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let settings = AppSettings(defaults: defaults)
@@ -217,7 +217,7 @@ struct ProductBoundaryTests {
     }
 
     @Test @MainActor func g9n9nSelectionPersistsWithoutClaimingAConnection() throws {
-        let suite = "voice-input-buddy.tests.\(UUID().uuidString)"
+        let suite = "remote-buddy.tests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let settings = AppSettings(defaults: defaults)
@@ -235,7 +235,7 @@ struct ProductBoundaryTests {
 
     @Test @MainActor func deviceChoicePersistsAndContinueBlocksOnlyUpcomingAdapters() throws {
         for device in RemoteSetupDevice.allCases {
-            let suite = "voice-input-buddy.tests.\(UUID().uuidString)"
+            let suite = "remote-buddy.tests.\(UUID().uuidString)"
             let defaults = try #require(UserDefaults(suiteName: suite))
             defer { defaults.removePersistentDomain(forName: suite) }
             let settings = AppSettings(defaults: defaults)
@@ -373,7 +373,7 @@ struct ProductBoundaryTests {
     }
 
     @Test @MainActor func wizardStartsWithEnvironmentAndUsesOnlyCurrentSteps() throws {
-        let suite = "voice-input-buddy.tests.\(UUID().uuidString)"
+        let suite = "remote-buddy.tests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let settings = AppSettings(defaults: defaults)

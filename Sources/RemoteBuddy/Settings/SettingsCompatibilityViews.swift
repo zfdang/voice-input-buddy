@@ -21,7 +21,7 @@ enum CompatibilityButtonStyle {
 enum SettingsVisualRenderingPolicy {
 #if DEBUG
     static let isScreenshotHarness = ProcessInfo.processInfo.environment[
-        "VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_DIR"
+        "REMOTE_BUDDY_SETTINGS_SCREENSHOT_DIR"
     ] != nil
 
 #else

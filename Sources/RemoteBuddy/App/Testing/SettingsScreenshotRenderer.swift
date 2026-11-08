@@ -41,32 +41,32 @@ enum SettingsScreenshotRenderer {
         let appearance = try screenshotAppearance(from: appearanceName)
         let language = try screenshotLanguage(from: languageName)
         let opensShortcutEditor = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_OPEN_SHORTCUT_EDITOR"
+            "REMOTE_BUDDY_SETTINGS_SCREENSHOT_OPEN_SHORTCUT_EDITOR"
         ] == "1"
         let opensActionEditor = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_OPEN_ACTION_EDITOR"
+            "REMOTE_BUDDY_SETTINGS_SCREENSHOT_OPEN_ACTION_EDITOR"
         ] == "1"
         let opensMappingEditor = opensShortcutEditor || opensActionEditor
         let editingButton = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_EDITING_BUTTON"
+            "REMOTE_BUDDY_SETTINGS_SCREENSHOT_EDITING_BUTTON"
         ].flatMap(RemoteButton.init(rawValue:)) ?? .ok
         let editingTrigger = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_EDITING_TRIGGER"
+            "REMOTE_BUDDY_SETTINGS_SCREENSHOT_EDITING_TRIGGER"
         ].flatMap(ButtonTrigger.init(rawValue:)) ?? .singleClick
         let showsStandardKeyboard = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_SHORTCUT_MODE"
+            "REMOTE_BUDDY_SETTINGS_SCREENSHOT_SHORTCUT_MODE"
         ] == "keyboard"
         let usesSiriRemote = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_SIRI_REMOTE"
+            "REMOTE_BUDDY_SETTINGS_SCREENSHOT_SIRI_REMOTE"
         ] == "1"
         let usesChromecast = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_CHROMECAST"
+            "REMOTE_BUDDY_SETTINGS_SCREENSHOT_CHROMECAST"
         ] == "1"
         let showsRemoteCards = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_REMOTE_CARDS"
+            "REMOTE_BUDDY_SETTINGS_SCREENSHOT_REMOTE_CARDS"
         ] == "1"
-        let onlySection = ProcessInfo.processInfo.environment["VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_SECTION"]
-        let interactive = ProcessInfo.processInfo.environment["VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_INTERACTIVE"] == "1"
+        let onlySection = ProcessInfo.processInfo.environment["REMOTE_BUDDY_SETTINGS_SCREENSHOT_SECTION"]
+        let interactive = ProcessInfo.processInfo.environment["REMOTE_BUDDY_SETTINGS_SCREENSHOT_INTERACTIVE"] == "1"
         try FileManager.default.createDirectory(
             at: outputDirectory,
             withIntermediateDirectories: true
@@ -82,7 +82,7 @@ enum SettingsScreenshotRenderer {
         settings.applicationLanguage = language
         settings.completeOnboarding()
         if let iconIdentifier = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_APP_ICON"
+            "REMOTE_BUDDY_SETTINGS_SCREENSHOT_APP_ICON"
         ] {
             settings.appIconIdentifier = AppIconIdentifier(rawValue: iconIdentifier)
         }
@@ -90,7 +90,7 @@ enum SettingsScreenshotRenderer {
         var remoteCardBatteryLevels: [UUID: Int] = [:]
         var remoteCardPowerStates: [UUID: RemotePowerState] = [:]
         let screenshotAudioDevices: [AudioDeviceInfo] = switch ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_AUDIO_DRIVER"
+            "REMOTE_BUDDY_SETTINGS_SCREENSHOT_AUDIO_DRIVER"
         ] {
         case "missing":
             []
@@ -101,7 +101,7 @@ enum SettingsScreenshotRenderer {
             ]
         }
         let permissionsOverride: SystemPermissionOverrides? = switch ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_PERMISSIONS"
+            "REMOTE_BUDDY_SETTINGS_SCREENSHOT_PERMISSIONS"
         ] {
         case "missing", "denied":
             SystemPermissionOverrides(bluetooth: .denied, inputMonitoring: false, accessibility: false)
@@ -162,13 +162,13 @@ enum SettingsScreenshotRenderer {
             )
         }
         let updateInformation = UpdateInformationStore(userDefaults: defaults)
-        if ProcessInfo.processInfo.environment["VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_UP_TO_DATE"] == "1" {
+        if ProcessInfo.processInfo.environment["REMOTE_BUDDY_SETTINGS_SCREENSHOT_UP_TO_DATE"] == "1" {
             updateInformation.setUpToDate()
         } else {
             seedAvailableUpdate(updateInformation, language: language)
         }
         if ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_UPDATE_SEEN"
+            "REMOTE_BUDDY_SETTINGS_SCREENSHOT_UPDATE_SEEN"
         ] == "1" {
             updateInformation.markAvailableUpdateSeen()
         }
@@ -186,7 +186,7 @@ enum SettingsScreenshotRenderer {
 
         // Interactive review uses the production view, navigation and window geometry,
         // with the same isolated fixture settings as the offscreen renderer.
-        if ProcessInfo.processInfo.environment["VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_INTERACTIVE"] == "1" {
+        if ProcessInfo.processInfo.environment["REMOTE_BUDDY_SETTINGS_SCREENSHOT_INTERACTIVE"] == "1" {
             let section = sections.first { $0.rawValue == onlySection } ?? .mapping
             let controller = NSHostingController(rootView: SettingsView(
                 model: model,
@@ -327,7 +327,7 @@ enum SettingsScreenshotRenderer {
 
     /// Exercise the compact canvas's actual AppKit scroll range in isolated previews.
     static func scrollCanvasToEndIfRequested(in view: NSView?) {
-        guard ProcessInfo.processInfo.environment["VOICE_INPUT_BUDDY_SCREENSHOT_SCROLL_TO_END"] == "1",
+        guard ProcessInfo.processInfo.environment["REMOTE_BUDDY_SCREENSHOT_SCROLL_TO_END"] == "1",
               let view else { return }
         func firstScrollView(_ view: NSView) -> NSScrollView? {
             if let scroll = view as? NSScrollView { return scroll }

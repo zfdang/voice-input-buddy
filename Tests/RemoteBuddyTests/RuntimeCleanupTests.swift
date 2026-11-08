@@ -196,8 +196,8 @@ struct ProductDeepLinkTests {
     }
 
     @Test func rejectsOtherAppsAndAmbiguousParameters() throws {
-        for value in ["sayall://launch", "voice-input-buddy://launch?status=ready&status=failed",
-                      "voice-input-buddy://launch#fragment", "voice-input-buddy://other"] {
+        for value in ["sayall://launch", "voice-input-buddy://launch", "remote-buddy://launch?status=ready&status=failed",
+                      "remote-buddy://launch#fragment", "remote-buddy://other"] {
             #expect(RemoteBuddyDeepLinkRequest.parse(try #require(URL(string: value))) == nil)
         }
     }

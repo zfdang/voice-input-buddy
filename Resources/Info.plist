@@ -30,7 +30,6 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>remote-buddy</string>
-				<string>voice-input-buddy</string>
 			</array>
 		</dict>
 	</array>

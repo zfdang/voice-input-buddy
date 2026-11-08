@@ -102,7 +102,7 @@ HID 设备发现仅用受支持的 VendorID／ProductID 组合。IOHIDManager �
 
 向导第六步的每种输入工具包含五个设置步骤，第三个为输入工具自身的麦克风选择；macOS 听写包含四个步骤：打开听写、把快捷键设为“按两下 🌐 键”、选择麦克风来源、清空微信 App 的 Fn 快捷键。它需要系统 🌐 键用于听写，所以不包含“去除系统 Fn 占用”。三个听写步骤使用 2026-10-25 从本机系统设置截取并标注的真实浅色 JPG：开启听写、双击 🌐 快捷键、Remote Buddy Mic 麦克风来源；深色界面回退到同一真实截图。首次开启须确认系统隐私提示，并等待所需语言支持下载完成。遥控搭子按住遥控器时连按两次 Fn 开始听写，松开并送完音频后按一次 Fn 结束；设置指引不要求手动勾选确认；查看每个步骤后可进入第七步实际测试，步骤完成标记仅表示用户已查看，不表示已检测第三方设置。第七步仅根据按键、声音和文字结果判断通过，不再重复询问设置。豆包和微信的菜单、语音设置、麦克风六张浅色截图于 2026-10-12 从本机安装版本截取并标注，使用 JPG 保存，显示时整图按原比例缩放。VoiceCursor 的快捷键和麦克风使用本机浅色截图。新增 JPG 长边最多 1600 像素，并压缩文件大小。加载和打包校验支持 JPG、JPEG、PNG；优先匹配当前主题，再回退浅色。既有深色截图保持不变；新增截图只有真实浅色版本时，深色界面使用浅色截图回退。微信 App 快捷键及未安装工具的截图保留原素材。
 
-说明图片在固定显示区内按原比例缩放，整图显示，不采用超出区域的放大和偏移裁剪；同时关闭图片命中测试，确保不会挡住步骤按钮。Debug 构建可在现有向导截图模式中设置 `VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_INTERACTIVE=1`，使用隔离设置打开输入工具页面，最多停留五分钟以进行真实鼠标验证；Release 构建不会启用此交互模式。
+说明图片在固定显示区内按原比例缩放，整图显示，不采用超出区域的放大和偏移裁剪；同时关闭图片命中测试，确保不会挡住步骤按钮。Debug 构建可在现有向导截图模式中设置 `REMOTE_BUDDY_ONBOARDING_SCREENSHOT_INTERACTIVE=1`，使用隔离设置打开输入工具页面，最多停留五分钟以进行真实鼠标验证；Release 构建不会启用此交互模式。
 
 ## 源码组织
 
@@ -194,7 +194,7 @@ Historical PacketLogger and HCI helpers have been removed from the source tree a
 Persisted unsupported device profiles never receive a Xiaomi mapping illustration.
 Screenshot fixture entry points are debug-only.
 
-Debug interactive onboarding previews can set `VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_INTERACTIVE_STEP=remoteAvailability` to start at device selection (the default remains `voiceTool`).
+Debug interactive onboarding previews can set `REMOTE_BUDDY_ONBOARDING_SCREENSHOT_INTERACTIVE_STEP=remoteAvailability` to start at device selection (the default remains `voiceTool`).
 
 ### G9N9N implementation boundary
 
@@ -287,9 +287,9 @@ frame on opening and screen changes. Settings keep a readable
 980×732 scrollable canvas. Onboarding uses the actual viewport height with
 independently scrolling content, so its navigation remains visible; only width
 may scroll when space is smaller. Debug preview
-rendering accepts `VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_SIZE=720x500` and
-`VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_SIZE=720x500`; set
-`VOICE_INPUT_BUDDY_SCREENSHOT_SCROLL_TO_END=1` to verify bottom/right navigation
+rendering accepts `REMOTE_BUDDY_SETTINGS_SCREENSHOT_SIZE=720x500` and
+`REMOTE_BUDDY_ONBOARDING_SCREENSHOT_SIZE=720x500`; set
+`REMOTE_BUDDY_SCREENSHOT_SCROLL_TO_END=1` to verify bottom/right navigation
 remains reachable. Preview fixtures do not start remote or audio hardware.
 
 Hold-to-repeat is represented by the `repeatSingleClick` action in the long-press binding, using the existing per-device binding persistence and portable configuration format. Navigation, volume, and Power buttons default to this value; Back defaults to no long-press action. Power repeats Delete, while Back sends Escape once. The mapping cards display these values explicitly. The HID runtime uses the configured hold value instead of a repeat-capable button allowlist; repeat starts at 350 ms and executes the current single-press action until release. Independent long-press actions retain the 550 ms threshold. Double-click recognition remains available and is cancelled when a held press starts repeating, avoiding a trailing click on release. Timer tokens reject stale repeat callbacks after release or reset. The repeat marker is rejected outside a long-press binding during import.

@@ -5,7 +5,7 @@ import Foundation
 /// It does not change the timeout used by other clients.
 /// Swift initializes this once; ordinary attribute reads do not repeatedly reconfigure AX.
 enum AccessibilityMessaging {
-    static let queryQueue = DispatchQueue(label: "voice-input-buddy.accessibility", qos: .userInitiated)
+    static let queryQueue = DispatchQueue(label: "remote-buddy.accessibility", qos: .userInitiated)
 
     static func attributes(_ element: AXUIElement, keys: [String]) -> [String: Any] {
         prepareQueries()

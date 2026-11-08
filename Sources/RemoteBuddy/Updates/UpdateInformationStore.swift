@@ -52,16 +52,16 @@ enum UpdateFeedResolver {
         assetName: String,
         includePreRelease: Bool
     ) -> ResolvedFeed? {
-        guard environment["VOICE_INPUT_BUDDY_UI_TEST_MODE"] == "1",
+        guard environment["REMOTE_BUDDY_UI_TEST_MODE"] == "1",
               includePreRelease,
-              let rawURL = environment["VOICE_INPUT_BUDDY_UI_TEST_FEED_URL"],
+              let rawURL = environment["REMOTE_BUDDY_UI_TEST_FEED_URL"],
               let url = URL(string: rawURL),
               url.scheme == "http",
               url.host == "127.0.0.1",
               url.port != nil,
               ["appcast-arm64.xml", "appcast-intel.xml"].contains(url.lastPathComponent),
               url.lastPathComponent == assetName,
-              let rawVersion = environment["VOICE_INPUT_BUDDY_UI_TEST_VERSION"],
+              let rawVersion = environment["REMOTE_BUDDY_UI_TEST_VERSION"],
               let version = UpdateVersion.normalized(rawVersion)
         else { return nil }
         return ResolvedFeed(url: url, version: version, buildVersion: 0, isPreRelease: true)

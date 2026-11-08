@@ -17,7 +17,7 @@ struct RemoteBuddyDeepLinkRequest: Equatable {
 
     static func parse(_ url: URL) -> Self? {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              components.scheme?.lowercased() == "remote-buddy" || components.scheme?.lowercased() == "voice-input-buddy",
+              components.scheme?.lowercased() == "remote-buddy",
               components.host?.lowercased() == "launch",
               components.user == nil,
               components.password == nil,

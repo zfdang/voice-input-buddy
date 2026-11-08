@@ -36,7 +36,7 @@ enum RemoteBuddyResourceBundle {
         var urls: [URL] = []
 #if DEBUG
         if let explicitPath = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_RESOURCE_ROOT"
+            "REMOTE_BUDDY_RESOURCE_ROOT"
         ], !explicitPath.isEmpty {
             urls.append(URL(fileURLWithPath: explicitPath, isDirectory: true))
         }

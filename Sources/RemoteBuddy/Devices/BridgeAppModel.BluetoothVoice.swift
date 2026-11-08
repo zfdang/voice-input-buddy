@@ -494,7 +494,7 @@ extension BridgeAppModel {
         batteryLevels: [UUID: Int],
         powerStates: [UUID: RemotePowerState]
     ) {
-        guard ProcessInfo.processInfo.environment["VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_DIR"] != nil else {
+        guard ProcessInfo.processInfo.environment["REMOTE_BUDDY_SETTINGS_SCREENSHOT_DIR"] != nil else {
             return
         }
         connectedRemoteProfileIDs = profileIDs

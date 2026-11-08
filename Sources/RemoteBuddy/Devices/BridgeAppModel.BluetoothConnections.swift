@@ -204,7 +204,7 @@ extension BridgeAppModel {
                 "reason=xiaomi_default family=xiaomi"
         )
 #if DEBUG
-        if ProcessInfo.processInfo.environment["VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_DIR"] != nil {
+        if ProcessInfo.processInfo.environment["REMOTE_BUDDY_SETTINGS_SCREENSHOT_DIR"] != nil {
             settings.selectRemoteProfile(profile.id)
             return
         }

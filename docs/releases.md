@@ -110,6 +110,6 @@ GitHub Releases；安装同时更新 App 和驱动，需要管理员授权，并
 
 恢复更新的“安装并重启”确认和等待退出时的重试提示使用浮动面板，切换到其他应用后仍可见，并允许显示在全屏空间。下载、解压和实际安装的进度窗口保持普通层级；稍后安装或关闭确认后隐藏面板。升级验收时分别在显示和隐藏 Dock 图标的状态下点击“升级并重启”，再切换到其他应用（含全屏窗口），完成管理员密码或指纹授权后，确认无需手动切换或再次点击即可继续安装并重启。同时验证授权取消后不会继续安装，以及恢复暂缓更新时仍显示确认，选择“稍后安装”后不再遮挡其他窗口。这条真实授权与升级路径需要实际操作，自动测试仅覆盖流程选择、确认失效、面板配置和阶段切换。
 
-升级后首次启动保留原有的完成检测和权限修复入口，在主窗口顶部显示约 6 秒的完成提示，随后自动消失。提示不拦截窗口操作，不弹出需要点击关闭的完成对话框。Debug 设置页截图可用 `VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_COMPLETED_UPDATE_VERSION=v26-10-15.215` 预览此提示。
+升级后首次启动保留原有的完成检测和权限修复入口，在主窗口顶部显示约 6 秒的完成提示，随后自动消失。提示不拦截窗口操作，不弹出需要点击关闭的完成对话框。Debug 设置页截图可用 `REMOTE_BUDDY_SETTINGS_SCREENSHOT_COMPLETED_UPDATE_VERSION=v26-10-15.215` 预览此提示。
 
-Debug 构建可设置 `VOICE_INPUT_BUDDY_UPDATE_UI_PREVIEW=checking`（也支持 `found`、`current`、`error`、`ready`）和 `VOICE_INPUT_BUDDY_UPDATE_UI_LANGUAGE=en` 来查看隔离的更新界面样例。此预览不联网、不检查权限、不安装更新，不修改用户设置，并在两分钟后结束；Release 构建不包含此入口。
+Debug 构建可设置 `REMOTE_BUDDY_UPDATE_UI_PREVIEW=checking`（也支持 `found`、`current`、`error`、`ready`）和 `REMOTE_BUDDY_UPDATE_UI_LANGUAGE=en` 来查看隔离的更新界面样例。此预览不联网、不检查权限、不安装更新，不修改用户设置，并在两分钟后结束；Release 构建不包含此入口。

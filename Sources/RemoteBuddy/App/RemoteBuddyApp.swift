@@ -150,19 +150,19 @@ enum RemoteBuddyApp {
         }
 #if DEBUG
         if let screenshotDirectory = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_DIR"
+            "REMOTE_BUDDY_SETTINGS_SCREENSHOT_DIR"
         ] {
             do {
                 try SettingsScreenshotRenderer.renderAll(
                     to: URL(fileURLWithPath: screenshotDirectory, isDirectory: true),
                     sizeValue: ProcessInfo.processInfo.environment[
-                        "VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_SIZE"
+                        "REMOTE_BUDDY_SETTINGS_SCREENSHOT_SIZE"
                     ],
                     appearanceName: ProcessInfo.processInfo.environment[
-                        "VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_APPEARANCE"
+                        "REMOTE_BUDDY_SETTINGS_SCREENSHOT_APPEARANCE"
                     ],
                     languageName: ProcessInfo.processInfo.environment[
-                        "VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_LANGUAGE"
+                        "REMOTE_BUDDY_SETTINGS_SCREENSHOT_LANGUAGE"
                     ]
                 )
             } catch {
@@ -172,13 +172,13 @@ enum RemoteBuddyApp {
             return
         }
         if let screenshotDirectory = ProcessInfo.processInfo.environment[
-            "VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_DIR"
+            "REMOTE_BUDDY_ONBOARDING_SCREENSHOT_DIR"
         ] {
             do {
                 try OnboardingScreenshotRenderer.renderAll(
                     to: URL(fileURLWithPath: screenshotDirectory, isDirectory: true),
                     appearanceName: ProcessInfo.processInfo.environment[
-                        "VOICE_INPUT_BUDDY_ONBOARDING_SCREENSHOT_APPEARANCE"
+                        "REMOTE_BUDDY_ONBOARDING_SCREENSHOT_APPEARANCE"
                     ]
                 )
             } catch {

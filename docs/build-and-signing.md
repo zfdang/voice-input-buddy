@@ -127,7 +127,7 @@ chmod 644 scripts/signing/release-certificate.pem
 使用已登录的 GitHub CLI 上传两个 Secrets。下例通过标准输入传递内容，不在命令参数或输出中显示私钥与密码；不要开启 shell 的 `set -x`。
 
 ```bash
-signing_repository=your-account/voice-input-buddy
+signing_repository=your-account/remote-buddy
 python3 - "$signing_repository" <<'PY'
 import base64
 from pathlib import Path

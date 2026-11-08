@@ -71,7 +71,7 @@ enum ConfigurationFilePanel {
         panel.title = title
         panel.prompt = prompt
         panel.allowedContentTypes = [.json]
-        panel.nameFieldStringValue = "Voice-Input-Buddy-Settings.json"
+        panel.nameFieldStringValue = "Remote-Buddy-Settings.json"
         panel.canCreateDirectories = true
         return panel.runModal() == .OK ? panel.url : nil
     }

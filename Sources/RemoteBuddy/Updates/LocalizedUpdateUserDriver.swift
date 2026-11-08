@@ -350,19 +350,19 @@ final class LocalizedUpdateUserDriver: NSObject, SPUUserDriver, NSWindowDelegate
 #if DEBUG
     static func runPreviewIfRequested() -> Bool {
         let environment = ProcessInfo.processInfo.environment
-        guard let stage = environment["VOICE_INPUT_BUDDY_UPDATE_UI_PREVIEW"] else { return false }
-        let suite = "voice-input-buddy.update-preview." + UUID().uuidString
+        guard let stage = environment["REMOTE_BUDDY_UPDATE_UI_PREVIEW"] else { return false }
+        let suite = "remote-buddy.update-preview." + UUID().uuidString
         guard let defaults = UserDefaults(suiteName: suite) else { return true }
         defer { defaults.removePersistentDomain(forName: suite) }
         let localization = LocalizationStore(settings: AppSettings(defaults: defaults),
             resourceBundle: RemoteBuddyResourceBundle.mainOrDevelopment)
-        localization.select(environment["VOICE_INPUT_BUDDY_UPDATE_UI_LANGUAGE"] == "en" ? .english : .simplifiedChinese)
+        localization.select(environment["REMOTE_BUDDY_UPDATE_UI_LANGUAGE"] == "en" ? .english : .simplifiedChinese)
         let application = NSApplication.shared
         application.setActivationPolicy(.regular)
         application.finishLaunching()
         let current = UpdateDialogVersion(version: "v26-10-13.111", commitCount: "111")
         let next = UpdateDialogVersion(version: "v26-10-14.112", commitCount: "112")
-        let appearance = environment["VOICE_INPUT_BUDDY_UPDATE_UI_APPEARANCE"] == "dark" ? "dark" : "light"
+        let appearance = environment["REMOTE_BUDDY_UPDATE_UI_APPEARANCE"] == "dark" ? "dark" : "light"
         application.appearance = NSAppearance(named: appearance == "dark" ? .darkAqua : .aqua)
         let driver = LocalizedUpdateUserDriver(localization: localization, currentVersion: current)
         let stop = { application.stop(nil) }
@@ -395,7 +395,7 @@ final class LocalizedUpdateUserDriver: NSObject, SPUUserDriver, NSWindowDelegate
         default:
             driver.showUserInitiatedUpdateCheck(cancellation: stop)
         }
-        if let output = environment["VOICE_INPUT_BUDDY_UPDATE_UI_EXPORT_DIR"] {
+        if let output = environment["REMOTE_BUDDY_UPDATE_UI_EXPORT_DIR"] {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 guard let view = driver.window?.contentView?.superview else { application.stop(nil); return }
                 view.layoutSubtreeIfNeeded()
@@ -405,7 +405,7 @@ final class LocalizedUpdateUserDriver: NSObject, SPUUserDriver, NSWindowDelegate
                     if let data = bitmap.representation(using: .png, properties: [:]) {
                         let directory = URL(fileURLWithPath: output, isDirectory: true)
                         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-                        let language = environment["VOICE_INPUT_BUDDY_UPDATE_UI_LANGUAGE"] == "en" ? "en" : "zh"
+                        let language = environment["REMOTE_BUDDY_UPDATE_UI_LANGUAGE"] == "en" ? "en" : "zh"
                         try? data.write(to: directory.appendingPathComponent("\(stage)-\(language)-\(appearance).png"), options: .atomic)
                     }
                 }
