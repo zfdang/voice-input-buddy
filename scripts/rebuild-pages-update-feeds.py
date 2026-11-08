@@ -159,8 +159,10 @@ def resolve_version(tag, explicit_version=None, target_commitish=None, existing_
         except Exception:
             pass
 
-    raw_version = tag.rsplit(".", 1)[1].lstrip("0")
-    return raw_version if raw_version else "1"
+    raise ValueError(
+        f"Cannot reliably determine full build version for release {tag}. "
+        "Please specify --version explicitly."
+    )
 
 
 def fetch_release_metadata(tag=None, release_json=None):

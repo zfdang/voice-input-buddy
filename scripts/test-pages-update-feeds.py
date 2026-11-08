@@ -19,6 +19,27 @@ feeds = module('feeds', 'verify-pages-update-feeds.py')
 appcast = module('appcast', 'generate-appcast.py')
 rebuild = module('rebuild', 'rebuild-pages-update-feeds.py')
 
+def generate_disposable_keypair():
+    try:
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+        from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+        priv = Ed25519PrivateKey.generate()
+        priv_b64 = base64.b64encode(priv.private_bytes_raw()).decode()
+        pub = priv.public_key()
+        pub_b64 = base64.b64encode(pub.public_bytes(Encoding.Raw, PublicFormat.Raw)).decode()
+        return priv_b64, pub_b64
+    except ImportError:
+        script = """import Foundation
+import CryptoKit
+let key = Curve25519.Signing.PrivateKey()
+print(key.rawRepresentation.base64EncodedString())
+print(key.publicKey.rawRepresentation.base64EncodedString())
+"""
+        res = subprocess.run(["swift", "-e", script], capture_output=True, text=True, check=True)
+        priv_b64, pub_b64 = res.stdout.strip().splitlines()
+        return priv_b64, pub_b64
+
+
 class FeedDeploymentTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
@@ -168,14 +189,7 @@ shutil.copy2(pathlib.Path(os.environ['FIXTURE_LIVE'])/filename,args[args.index('
         self.assertNotIn("https://github.com", summary)
 
     def test_rebuild_pages_update_feeds_with_real_ed25519_signatures(self):
-        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-        from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
-
-        priv = Ed25519PrivateKey.generate()
-        priv_bytes = priv.private_bytes_raw()
-        priv_b64 = base64.b64encode(priv_bytes).decode()
-        pub = priv.public_key()
-        pub_b64 = base64.b64encode(pub.public_bytes(Encoding.Raw, PublicFormat.Raw)).decode()
+        priv_b64, pub_b64 = generate_disposable_keypair()
 
         pkgs = {}
         sigs = {}
@@ -245,5 +259,10 @@ shutil.copy2(pathlib.Path(os.environ['FIXTURE_LIVE'])/filename,args[args.index('
         # Test wraparound from 1042 to 000 -> 2000
         ver_wrap = rebuild.resolve_version('v99-10-12.000', existing_feed_path=existing_feed)
         self.assertEqual(ver_wrap, '2000')
+
+        # Without git history and without existing feed, it raises ValueError instead of guessing
+        with self.assertRaises(ValueError) as ctx:
+            rebuild.resolve_version('v99-10-12.043', existing_feed_path=self.root / 'nonexistent.xml')
+        self.assertIn("Cannot reliably determine", str(ctx.exception))
 
 if __name__ == '__main__': unittest.main()

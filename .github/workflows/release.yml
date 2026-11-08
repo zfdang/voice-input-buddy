@@ -51,6 +51,7 @@ jobs:
       DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
     outputs:
       tag: ${{ steps.version.outputs.RELEASE_TAG }}
+      version: ${{ steps.version.outputs.RELEASE_COMMIT_COUNT }}
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -129,8 +130,14 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       RELEASE_TAG: ${{ needs.build.outputs.tag }}
+      RELEASE_VERSION: ${{ needs.build.outputs.version }}
       RELEASE_COMMIT: ${{ github.sha }}
+      SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+      SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
     steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
       - uses: actions/download-artifact@v8.0.2
         with:
           pattern: macOS-release-*
@@ -140,14 +147,43 @@ jobs:
         with:
           name: release-changelog
           path: .
-      - name: Check immutable release
+      - name: Reconcile release update feeds
         id: release_state
         shell: bash
         run: |
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            echo 'exists=true' >> "$GITHUB_OUTPUT"
+            echo "Release $RELEASE_TAG already exists."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            gh release view "$RELEASE_TAG" --json tagName,assets > "$RUNNER_TEMP/release.json"
+            existing_assets="$(jq -r '.assets[].name' "$RUNNER_TEMP/release.json")"
+            has_arm64=false
+            has_intel=false
+            if grep -q '^appcast-arm64\.xml$' <<< "$existing_assets"; then has_arm64=true; fi
+            if grep -q '^appcast-intel\.xml$' <<< "$existing_assets"; then has_intel=true; fi
+
+            if [[ "$has_arm64" == "true" && "$has_intel" == "true" ]]; then
+              echo "Downloading and verifying existing feeds from release $RELEASE_TAG..."
+              gh release download "$RELEASE_TAG" --pattern "appcast-*.xml" --dir release --clobber
+              python3 scripts/verify-pages-update-feeds.py release "$RUNNER_TEMP/release.json"
+            else
+              echo "Release $RELEASE_TAG is missing update feeds. Rebuilding from published packages..."
+              printf '%s' "$SPARKLE_PRIVATE_KEY" | python3 scripts/rebuild-pages-update-feeds.py \
+                --tag "$RELEASE_TAG" \
+                --version "$RELEASE_VERSION" \
+                --private-key-file - \
+                --public-key "$SPARKLE_PUBLIC_KEY" \
+                --output-dir release
+
+              for arch in arm64 intel; do
+                feed="appcast-${arch}.xml"
+                if ! grep -q "^$feed\$" <<< "$existing_assets"; then
+                  echo "Uploading missing feed $feed to release $RELEASE_TAG..."
+                  gh release upload "$RELEASE_TAG" "release/$feed"
+                fi
+              done
+            fi
           else
-            echo 'exists=false' >> "$GITHUB_OUTPUT"
+            echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Upload website update feeds
         uses: actions/upload-artifact@v7.0.2
@@ -161,16 +197,7 @@ jobs:
         shell: bash
         run: |
           if [[ "${{ steps.release_state.outputs.exists }}" == 'true' ]]; then
-            # A completed release is immutable on rerun; do not replace its packages.
-            echo "Release $RELEASE_TAG already exists."
-            existing_assets="$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name')"
-            for feed in release/appcast-*.xml; do
-              feed_name="$(basename "$feed")"
-              if ! grep -q "^$feed_name\$" <<< "$existing_assets"; then
-                echo "Uploading missing feed asset: $feed_name"
-                gh release upload "$RELEASE_TAG" "$feed"
-              fi
-            done
+            echo "Release $RELEASE_TAG already exists and feeds have been reconciled."
           else
             gh release create "$RELEASE_TAG" \
               "release/Remote_Buddy_${RELEASE_TAG}_macOS_arm64.pkg" \
