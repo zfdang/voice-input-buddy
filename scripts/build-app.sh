@@ -46,7 +46,7 @@ if [[ -n "${RELEASE_BUNDLE_VERSION:-}" ]]; then
     /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $RELEASE_COMMIT_COUNT" "$app/Contents/Info.plist"
     /usr/libexec/PlistBuddy -c "Add :BuddyReleaseVersion string $RELEASE_TAG" "$app/Contents/Info.plist"
 fi
-/usr/libexec/PlistBuddy -c "Set :SUFeedURL https://voice.zfdang.com/appcast-$RELEASE_ARCH_LABEL.xml" "$app/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :SUFeedURL https://remote.zfdang.com/appcast-$RELEASE_ARCH_LABEL.xml" "$app/Contents/Info.plist"
 python3 scripts/verify-onboarding-resources.py "$app/Contents/Resources"
 "$root/scripts/sign-bundle.sh" "$app"
 # Publish only after the fresh bundle passes resource validation and signing.

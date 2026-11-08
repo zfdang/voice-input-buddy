@@ -38,7 +38,7 @@ struct UpdateFeedSelection {
         guard let stableFeedURLString,
               let components = URLComponents(string: stableFeedURLString),
               components.scheme == "https",
-              components.host == "voice.zfdang.com",
+              components.host == "remote.zfdang.com",
               components.port == nil,
               components.user == nil,
               components.password == nil,

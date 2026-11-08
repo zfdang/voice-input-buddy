@@ -17,7 +17,7 @@
 - 系统设置开关已开、App 却认为未授权：在权限页核对状态。临时开发签名变化会使旧授权失效，需要添加当前 App 并重新授权。
 - 安装驱动后没有麦克风：在权限页刷新设备，确认 Remote Buddy Mic 已检测到；必要时重新安装当前架构的最新 PKG，并按提示重启 Mac，使 Core Audio 重新加载驱动。
 - 遥控器连不上或不识别按键：进入设备连接检查具体设备与连接状态；检查权限页输入监控授权。
-- TV 键、返回键等失效但语音正常：检查 Karabiner-Elements 的 Devices，关闭这只遥控器的 Modify events，保留其他键盘设置，重连遥控器或重启遥控搭子。若仍提示设备占用，可重启 Karabiner；检查输入监控和辅助功能授权。详见[官网排障](https://voice.zfdang.com/#troubleshooting)与[官方设备设置](https://karabiner-elements.pqrs.org/docs/manual/configuration/configure-devices/)。
+- TV 键、返回键等失效但语音正常：检查 Karabiner-Elements 的 Devices，关闭这只遥控器的 Modify events，保留其他键盘设置，重连遥控器或重启遥控搭子。若仍提示设备占用，可重启 Karabiner；检查输入监控和辅助功能授权。详见[官网排障](https://remote.zfdang.com/#troubleshooting)与[官方设备设置](https://karabiner-elements.pqrs.org/docs/manual/configuration/configure-devices/)。
 - 有声音却无法输入：进入输入法集成，核对目标工具的麦克风、语音快捷键和按下／松开行为，再运行实际输入测试。
 - 需要从头检查配置：通用设置顶部重新运行向导。该流程不清除现有硬件连接与普通按键配置。
 

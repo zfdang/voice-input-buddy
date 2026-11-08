@@ -18,7 +18,7 @@ if [[ "$from_run" == false ]]; then
     # feeds. This also works after old Actions artifacts have expired.
     for arch in arm64 intel; do
         curl --fail --silent --show-error --retry 3 \
-            "https://voice.zfdang.com/appcast-$arch.xml" -o "$work/candidate/appcast-$arch.xml"
+            "https://remote.zfdang.com/appcast-$arch.xml" -o "$work/candidate/appcast-$arch.xml"
     done
     python3 "$root/scripts/verify-pages-update-feeds.py" "$work/candidate" "$work/release.json"
 fi

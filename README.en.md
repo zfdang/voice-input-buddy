@@ -4,7 +4,7 @@
 
 Turn a remote control into a voice-input button for your computer. Press to talk, release to finish, and let your preferred input method or dictation tool enter text into the current field.
 
-[Website](https://voice.zfdang.com/index.en.html) · [Downloads](https://github.com/zfdang/voice-input-buddy/releases)
+[Website](https://remote.zfdang.com/index.en.html) · [Downloads](https://github.com/zfdang/voice-input-buddy/releases)
 
 Supports **macOS 14 and later**, on Apple Silicon and Intel Macs. Windows support is planned.
 

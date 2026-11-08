@@ -4,8 +4,8 @@ enum AppLinks {
     static let githubRepository = URL(
         string: "https://github.com/zfdang/voice-input-buddy"
     )!
-    static let chineseWebsite = URL(string: "https://voice.zfdang.com/")!
-    static let englishWebsite = URL(string: "https://voice.zfdang.com/")!
+    static let chineseWebsite = URL(string: "https://remote.zfdang.com/")!
+    static let englishWebsite = URL(string: "https://remote.zfdang.com/")!
     static let feedback = URL(
         string: "https://github.com/zfdang/voice-input-buddy/issues"
     )!

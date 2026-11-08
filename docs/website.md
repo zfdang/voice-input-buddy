@@ -4,7 +4,7 @@
 
 `.github/workflows/static.yml` 在 main 中的 `pages/**` 或该 workflow 更新时部署，也支持手动触发，以及 main 的安装包发布 workflow 成功完成后的部署。部署前通过 `scripts/prepare-pages-update-feeds.sh` 获取并校验已发布的更新源；验证失败时停止部署。仅上传 `pages/`，不上传 App 源码或构建目录；其中不应放入待提交以外的本地文件。
 
-`pages/CNAME` 为 `voice.zfdang.com`，GitHub Pages 仓库设置已选择 Actions 部署与此自定义域名。域名 DNS 应正确指向 GitHub Pages；TLS 证书和域名验证由 GitHub 与域名服务配置决定。部署完成前，本地预览不等于官网已上线。
+`pages/CNAME` 为 `remote.zfdang.com`，GitHub Pages 仓库设置已选择 Actions 部署与此自定义域名。域名 DNS 应正确指向 GitHub Pages；TLS 证书和域名验证由 GitHub 与域名服务配置决定。部署完成前，本地预览不等于官网已上线。
 
 本地预览：
 

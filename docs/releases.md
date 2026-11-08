@@ -70,7 +70,7 @@ scripts/verify-release-package.sh
 
 ## 应用内更新
 
-Sparkle 从 `https://voice.zfdang.com/appcast-arm64.xml` 或 `appcast-intel.xml` 检查正式版本。应用内置
+Sparkle 从 `https://remote.zfdang.com/appcast-arm64.xml` 或 `appcast-intel.xml` 检查正式版本。应用内置
 `SUPublicEDKey`，下载的 PKG 必须通过对应 Ed25519 公钥验证，才会开始安装。
 通过菜单或设置中的“检查更新”可以手动触发；默认也进行后台检查。
 版本比较使用递增的 CFBundleVersion（完整 Git 提交计数），显示采用完整发布标签。

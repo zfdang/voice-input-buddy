@@ -46,7 +46,7 @@
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>SUFeedURL</key>
-	<string>https://voice.zfdang.com/appcast-arm64.xml</string>
+	<string>https://remote.zfdang.com/appcast-arm64.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>8aHZRXuY+Q0F0FsWNyQTx0wIYXi4MoCCSzAWs0j+uR4=</string>
 	<key>SUVerifyUpdateBeforeExtraction</key>
