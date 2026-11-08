@@ -4,7 +4,7 @@ import Testing
 
 @Suite("Virtual microphone identity")
 struct AudioDeviceIdentityTests {
-    @Test(arguments: ["Remote Buddy", "Remote Buddy Mic", "Voice Input Buddy", "Voice Input Buddy Mic", "BlackHole 2ch"])
+    @Test(arguments: ["Remote Buddy", "Remote Buddy Mic", "Foreign USB Mic", "Unrelated Audio Device", "BlackHole 2ch"])
     func matchingNameDoesNotProveDriverIsInstalled(name: String) {
         let foreign = AudioDeviceInfo(id: 1, uid: "unrelated-output", name: name)
         #expect(BuddyMicrophoneDevicePolicy.device(in: [foreign]) == nil)

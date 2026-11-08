@@ -390,7 +390,7 @@
 "audio.compatibility.microphone_label" = "Compatible virtual microphone";
 "audio.compatibility.select_microphone" = "Select %@";
 "audio.compatibility.open_install_guide" = "Open Driver Installation Guide";
-"audio.compatibility.help" = "Install the compatible microphone and select it here. The device is named Remote Buddy.";
+"audio.compatibility.help" = "Install the compatible microphone and select it here. The device is named Remote Buddy Mic.";
 "audio.compatibility.help_plain" = "If your voice typing app receives no audio, select the compatible microphone included with the installer. Existing audio devices are not replaced.";
 "button_mapping.page.title" = "Button Mapping";
 "button_mapping.page.subtitle" = "Click a button to change its settings";

@@ -390,7 +390,7 @@
 "audio.compatibility.microphone_label" = "兼容虚拟麦克风";
 "audio.compatibility.select_microphone" = "选择 %@";
 "audio.compatibility.open_install_guide" = "打开驱动安装说明";
-"audio.compatibility.help" = "安装兼容麦克风后在这里选中。设备名称为 Remote Buddy。";
+"audio.compatibility.help" = "安装兼容麦克风后在这里选中。设备名称为 Remote Buddy Mic。";
 "audio.compatibility.help_plain" = "如果常用的语音工具收不到声音，可选择随安装包提供的兼容麦克风；已有音频设备不会被替换。";
 "button_mapping.page.title" = "按键映射";
 "button_mapping.page.subtitle" = "点击按键进行设置";
@@ -539,7 +539,7 @@
 "status_item.state.connected" = "%@：设备已连接";
 "status_item.state.streaming" = "%@：正在传输语音";
 "status_item.accessibility.show_menu" = "显示菜单";
-"about.alert.description_with_version" = "版本 %1$@\n让遥控器成为你的语音输入搭子，轻松说话打字，一键操作常用功能。";
+"about.alert.description_with_version" = "版本 %1$@\n让遥控器成为你的语音输入助手，轻松说话打字，一键操作常用功能。";
 "common.action.ok" = "好";
 "common.action.copy_link" = "复制链接";
 "common.status.copied" = "已复制";
@@ -557,7 +557,7 @@
 "settings.section.login" = "我的";
 "settings.section.transcripts" = "回眸";
 "about.page.subtitle" = "查看版本、更新、语言和应用显示选项";
-"about.app.description" = "让遥控器成为你的语音输入搭子，轻松说话打字，一键操作常用功能。";
+"about.app.description" = "让遥控器成为你的语音输入助手，轻松说话打字，一键操作常用功能。";
 "about.app_support.title" = "应用与支持";
 "about.preferences.show_dock_icon" = "在 Dock 中显示应用图标";
 "about.preferences.show_dock_icon_help" = "关闭后仍可通过菜单栏图标打开遥控搭子。";

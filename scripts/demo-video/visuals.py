@@ -48,7 +48,7 @@ def character(d,x,y,t):
  d.line((x-84,y+170,x-150,y+232),fill='#E6BE98',width=36)
  d.line((x+82,y+170,x+156,y+112),fill='#E6BE98',width=36)
  d.ellipse((x+130,y+88,x+174,y+131),fill='#E6BE98',outline=INK,width=3)
- text(d,(x-52,y+165),'VIB',48,'white')
+ center(d,x,y+165,'RB',48,'white')
 
 def remote(d,x,y,t,active=False,scale=1):
  rw,rh=int(112*scale),int(310*scale)
@@ -66,7 +66,7 @@ def remote(d,x,y,t,active=False,scale=1):
  d.ellipse((x+rw*.38,y+89,x+rw*.62,y+114),fill='#728296')
  for row in range(3):
   for px in [.32,.68]:d.ellipse((x+rw*px-10,y+161+row*39,x+rw*px+10,y+181+row*39),fill='#728296')
- center(d,x+rw/2,y+rh-26,'VIB',24,'#AAB8CA')
+ center(d,x+rw/2,y+rh-26,'RB',24,'#AAB8CA')
 
 def window(d,selected,t):
  rr(d,(960,236,1780,836),'white',30,LINE,3)
