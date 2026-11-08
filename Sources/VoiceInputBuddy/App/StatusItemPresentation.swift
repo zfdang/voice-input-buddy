@@ -27,8 +27,9 @@ enum StatusItemPresentation: String, Equatable {
         // Named images are shared. Keep localized descriptions local to this status item.
         let image = (NSImage(named: NSImage.Name(resourceName))?.copy() as? NSImage)
             ?? NSImage(systemSymbolName: fallbackSymbol, accessibilityDescription: description)
+        // Let macOS tint the monochrome artwork for light and dark menu bars.
         image?.isTemplate = true
-        image?.size = NSSize(width: 18, height: 18)
+        image?.size = NSSize(width: 22, height: 22)
         image?.accessibilityDescription = description
         button.image = image
         button.title = image == nil ? description : ""

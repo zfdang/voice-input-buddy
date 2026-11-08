@@ -33,7 +33,7 @@ cp Resources/Info.plist "$app/Contents/Info.plist"
 cp -R Resources/. "$app/Contents/Resources/"
 # Build source artwork is not a runtime resource; retain the compiled AppIcon.icns.
 rm -rf "$app/Contents/Resources/AppIcon.iconset" "$app/Contents/Resources/AppIcon.png" \
-    "$app/Contents/Resources/RemoteIllustrations"
+    "$app/Contents/Resources/RemoteIllustrations" "$app/Contents/Resources/IconArtwork"
 python3 scripts/generate-common-phrases.py Resources/CommonPhrases/built-in.md "$app/Contents/Resources/CommonPhrases.json"
 cp LICENSE THIRD_PARTY_NOTICES.md "$app/Contents/Resources/"
 cp -R "$bin/Sparkle.framework" "$app/Contents/Frameworks/"
