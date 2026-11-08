@@ -24,6 +24,13 @@ struct SettingsWindowLayoutTests {
         #expect(canvas.width == 980)
     }
 
+    @Test func onlyClosedWindowsMoveToAnotherTargetScreen() {
+        #expect(SettingsWindowDisplayPolicy.shouldMove(isOpen: false, currentScreen: 0, targetScreen: 1))
+        #expect(!SettingsWindowDisplayPolicy.shouldMove(isOpen: true, currentScreen: 0, targetScreen: 1))
+        #expect(!SettingsWindowDisplayPolicy.shouldMove(isOpen: false, currentScreen: 1, targetScreen: 1))
+        #expect(!SettingsWindowDisplayPolicy.shouldMove(isOpen: false, currentScreen: 0, targetScreen: nil))
+    }
+
     @Test func compactViewportKeepsFullCanvasAndDesktopHasNoOverflow() {
         let compact = SettingsWindowLayout.canvasSize(viewport: CGSize(width: 720, height: 500))
         #expect(compact == CGSize(width: 980, height: 732))
