@@ -291,21 +291,40 @@ shutil.copy2(pathlib.Path(os.environ['FIXTURE_LIVE'])/filename,args[args.index('
     def test_extract_version_from_pkg(self):
         import plistlib
         pkg_root = self.root / 'pkg_payload'
+        # Include driver bundle which has CFBundleVersion: 3, to verify it is NOT picked
+        driver_dir = pkg_root / 'Library' / 'Audio' / 'Plug-Ins' / 'HAL' / 'RemoteBuddyMic.driver' / 'Contents'
+        driver_dir.mkdir(parents=True)
+        driver_plist = {
+            "CFBundleIdentifier": "com.zfdang.remote-buddy.mic",
+            "CFBundlePackageType": "BNDL",
+            "CFBundleVersion": "3",
+            "CFBundleShortVersionString": "0.1.2",
+        }
+        with open(driver_dir / 'Info.plist', 'wb') as f:
+            plistlib.dump(driver_plist, f)
+
+        # Include application bundle which has CFBundleVersion: 1043
         app_dir = pkg_root / 'Applications' / 'Remote Buddy.app' / 'Contents'
         app_dir.mkdir(parents=True)
-        plist_data = {"CFBundleVersion": "1043", "CFBundleShortVersionString": "26.11.08"}
+        plist_data = {
+            "CFBundleIdentifier": "com.zfdang.remote-buddy",
+            "CFBundlePackageType": "APPL",
+            "CFBundleVersion": "1043",
+            "CFBundleShortVersionString": "26.11.08",
+        }
         with open(app_dir / 'Info.plist', 'wb') as f:
             plistlib.dump(plist_data, f)
 
         pkg_path = self.root / 'test_app.pkg'
         subprocess.run(
-            ['pkgbuild', '--identifier', 'com.zfdang.remote-buddy', '--root', str(pkg_root), str(pkg_path)],
+            ['pkgbuild', '--identifier', 'com.zfdang.remote-buddy.installer', '--root', str(pkg_root), str(pkg_path)],
             check=True,
             capture_output=True
         )
 
         extracted = rebuild.extract_version_from_pkg(pkg_path)
         self.assertEqual(extracted, '1043')
+        self.assertNotEqual(extracted, '3')
 
         # resolve_version prioritizes pkg_path over git rev-list or fallback
         resolved = rebuild.resolve_version('v99-10-12.043', pkg_path=pkg_path)

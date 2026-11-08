@@ -143,13 +143,19 @@ def extract_version_from_pkg(pkg_path):
             )
             if res.returncode == 0:
                 import plistlib
-                for candidate in expanded.glob("**/Contents/Info.plist"):
+                candidates = list(expanded.glob("**/Applications/*.app/Contents/Info.plist"))
+                if not candidates:
+                    candidates = list(expanded.glob("**/Contents/Info.plist"))
+                for candidate in candidates:
                     try:
                         with open(candidate, "rb") as f:
                             plist = plistlib.load(f)
-                            cf_ver = plist.get("CFBundleVersion")
-                            if cf_ver and str(cf_ver).isdigit():
-                                return str(cf_ver)
+                            pkg_type = plist.get("CFBundlePackageType")
+                            bundle_id = plist.get("CFBundleIdentifier", "")
+                            if pkg_type == "APPL" or bundle_id in ("com.zfdang.remote-buddy", "com.zfdang.voice-input-buddy"):
+                                cf_ver = plist.get("CFBundleVersion")
+                                if cf_ver and str(cf_ver).isdigit():
+                                    return str(cf_ver)
                     except Exception:
                         continue
     except Exception:
