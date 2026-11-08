@@ -167,8 +167,16 @@ final class AppLogger: PublicDiagnosticEventSink {
             defer { _ = Darwin.close(descriptor) }
             var status = stat()
             guard fstat(descriptor, &status) == 0,
-                  status.st_mode & S_IFMT == S_IFREG,
-                  flock(descriptor, LOCK_EX | LOCK_NB) == 0 else { continue }
+                  status.st_mode & S_IFMT == S_IFREG else { continue }
+            var locked = false
+            for _ in 0..<5 {
+                if flock(descriptor, LOCK_EX | LOCK_NB) == 0 {
+                    locked = true
+                    break
+                }
+                usleep(2000)
+            }
+            guard locked else { continue }
             // Only files belonging to this logger are eligible; symlinks and active
             // sessions are skipped. A custom retirement handler can move an archive.
             if let handler { try handler(url) }
