@@ -5,7 +5,9 @@ enum AppLinks {
         string: "https://github.com/zfdang/remote-buddy"
     )!
     static let chineseWebsite = URL(string: "https://remote.zfdang.com/")!
-    static let englishWebsite = URL(string: "https://remote.zfdang.com/")!
+    static let englishWebsite = URL(
+        string: "https://remote.zfdang.com/index.en.html"
+    )!
     static let feedback = URL(
         string: "https://github.com/zfdang/remote-buddy/issues"
     )!
