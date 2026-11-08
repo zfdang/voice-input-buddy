@@ -29,8 +29,8 @@ def verify(bundle, identifier):
 
 if __name__ == '__main__':
     try:
-        verify(ROOT / 'dist/Voice Input Buddy.app', 'com.zfdang.voice-input-buddy')
-        verify(ROOT / 'dist/VoiceInputBuddyMic.driver', 'com.zfdang.voice-input-buddy.mic')
+        verify(ROOT / 'dist/Remote Buddy.app', 'com.zfdang.remote-buddy')
+        verify(ROOT / 'dist/RemoteBuddyMic.driver', 'com.zfdang.remote-buddy.mic')
     except RuntimeError as error:
         print(error, file=sys.stderr)
         sys.exit(1)

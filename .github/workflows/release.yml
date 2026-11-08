@@ -94,8 +94,8 @@ jobs:
           scripts/build-driver.sh
           python3 scripts/test-driver-identity.py
           if [[ "$BUILD_ARCH" == arm64 ]]; then scripts/build-uninstaller.sh; fi
-          test "$(lipo -archs 'dist/Voice Input Buddy.app/Contents/MacOS/VoiceInputBuddy')" = "$BUILD_ARCH"
-          test "$(lipo -archs dist/VoiceInputBuddyMic.driver/Contents/MacOS/VoiceInputBuddyMic)" = "$BUILD_ARCH"
+          test "$(lipo -archs 'dist/Remote Buddy.app/Contents/MacOS/RemoteBuddy')" = "$BUILD_ARCH"
+          test "$(lipo -archs dist/RemoteBuddyMic.driver/Contents/MacOS/RemoteBuddyMic)" = "$BUILD_ARCH"
       - name: Verify fixed release signing identity
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: python3 scripts/verify-release-signing.py
@@ -166,8 +166,8 @@ jobs:
             echo "Release $RELEASE_TAG already exists."
           else
             gh release create "$RELEASE_TAG" \
-              "release/Voice_Input_Buddy_${RELEASE_TAG}_macOS_arm64.pkg" \
-              "release/Voice_Input_Buddy_${RELEASE_TAG}_macOS_intel.pkg" \
-              "release/Voice_Input_Buddy_Uninstaller_${RELEASE_TAG}_macOS_universal.pkg" --target "$RELEASE_COMMIT" \
+              "release/Remote_Buddy_${RELEASE_TAG}_macOS_arm64.pkg" \
+              "release/Remote_Buddy_${RELEASE_TAG}_macOS_intel.pkg" \
+              "release/Remote_Buddy_Uninstaller_${RELEASE_TAG}_macOS_universal.pkg" --target "$RELEASE_COMMIT" \
               --title "$RELEASE_TAG" --notes-file release-notes.md --latest
           fi

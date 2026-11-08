@@ -39,11 +39,11 @@ buddy_cleanup_user_data() {
     user_home="$(cd -- "$user_home" && /bin/pwd -P)" || return 1
     [[ "$user_home" != / ]] || return 1
     for path in \
-        "$user_home/Library/Preferences/com.zfdang.voice-input-buddy.plist" \
-        "$user_home/Library/Application Support/VoiceInputBuddy" \
-        "$user_home/Library/Logs/VoiceInputBuddy" \
-        "$user_home/Library/Caches/com.zfdang.voice-input-buddy" \
-        "$user_home/Library/Saved Application State/com.zfdang.voice-input-buddy.savedState"; do
+        "$user_home/Library/Preferences/com.zfdang.remote-buddy.plist" \
+        "$user_home/Library/Application Support/RemoteBuddy" \
+        "$user_home/Library/Logs/RemoteBuddy" \
+        "$user_home/Library/Caches/com.zfdang.remote-buddy" \
+        "$user_home/Library/Saved Application State/com.zfdang.remote-buddy.savedState"; do
         /bin/rm -rf -- "$path"
     done
 }

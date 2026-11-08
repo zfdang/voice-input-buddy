@@ -37,49 +37,49 @@ button.addEventListener('blur', stop);
       {
         title: '设备连接',
         badge: '多设备管理',
-        windowTitle: '设备连接 · Voice Input Buddy',
+        windowTitle: '设备连接 · Remote Buddy',
         src: 'assets/screenshots/connection-zh.png',
-        alt: 'Voice Input Buddy 设备连接界面：已连接的小米遥控器、电量、麦克风增益与设备信息',
+        alt: 'Remote Buddy 设备连接界面：已连接的小米遥控器、电量、麦克风增益与设备信息',
         desc: '查看已添加遥控器的连接状态、电量和设备信息，为每台设备单独调整麦克风增益（0–24 dB）。'
       },
       {
         title: '按键映射',
         badge: '核心按键映射',
-        windowTitle: '按键映射 · Voice Input Buddy',
+        windowTitle: '按键映射 · Remote Buddy',
         src: 'assets/screenshots/mapping-zh.png',
-        alt: 'Voice Input Buddy 按键映射设置界面：可视化遥控器按键映射，支持单击、双击、长按与自定义快捷键',
+        alt: 'Remote Buddy 按键映射设置界面：可视化遥控器按键映射，支持单击、双击、长按与自定义快捷键',
         desc: '点击遥控器按键，设置单击、双击或长按动作。小米默认映射：主页键切换应用、TV 键播放／暂停、菜单键打开上下文菜单。'
       },
       {
         title: '常用语编辑',
         badge: '常用语库管理',
-        windowTitle: '常用语调整 · Voice Input Buddy',
+        windowTitle: '常用语调整 · Remote Buddy',
         src: 'assets/screenshots/phrases-zh.png',
-        alt: 'Voice Input Buddy 常用语调整界面：遥控器五键分配、常用语库与短语编辑管理',
+        alt: 'Remote Buddy 常用语调整界面：遥控器五键分配、常用语库与短语编辑管理',
         desc: '编辑常用语列表，为方向键和确定键分配短语。在常用语面板中用遥控器选择要输入的内容。'
       },
       {
         title: '输入法集成',
         badge: '语音工具',
-        windowTitle: '输入法与语音工具集成 · Voice Input Buddy',
+        windowTitle: '输入法与语音工具集成 · Remote Buddy',
         src: 'assets/screenshots/integration-zh.png',
-        alt: 'Voice Input Buddy 输入法与语音工具集成界面：微信输入法、豆包输入法、网易叭哥说、Typeless、VoiceCursor、macOS 听写等配置入口',
+        alt: 'Remote Buddy 输入法与语音工具集成界面：微信输入法、豆包输入法、网易叭哥说、Typeless、VoiceCursor、macOS 听写等配置入口',
         desc: '查看当前输入工具和麦克风状态，打开对应的设置向导。也可调整语音触发键及 Fn 点按设置。'
       },
       {
         title: '权限与环境',
         badge: '环境检测',
-        windowTitle: '权限与环境 · Voice Input Buddy',
+        windowTitle: '权限与环境 · Remote Buddy',
         src: 'assets/screenshots/permissions-zh.png',
-        alt: 'Voice Input Buddy 权限与环境界面：蓝牙、输入监控、辅助功能权限与虚拟麦克风驱动状态',
-        desc: '检查蓝牙、输入监控和辅助功能权限，以及 Voice Input Buddy Mic 驱动状态。缺少权限或驱动时，按页面提示处理。'
+        alt: 'Remote Buddy 权限与环境界面：蓝牙、输入监控、辅助功能权限与虚拟麦克风驱动状态',
+        desc: '检查蓝牙、输入监控和辅助功能权限，以及 Remote Buddy Mic 驱动状态。缺少权限或驱动时，按页面提示处理。'
       },
       {
         title: '设置与更新',
         badge: '版本与更新',
-        windowTitle: '设置与更新 · Voice Input Buddy',
+        windowTitle: '设置与更新 · Remote Buddy',
         src: 'assets/screenshots/about-zh.png',
-        alt: 'Voice Input Buddy 设置界面：应用版本、更新检查、配置导入导出与语言偏好',
+        alt: 'Remote Buddy 设置界面：应用版本、更新检查、配置导入导出与语言偏好',
         desc: '查看版本、检查更新、导入或导出配置，调整启动行为和界面语言。'
       }
     ],
@@ -121,7 +121,7 @@ button.addEventListener('blur', stop);
         badge: '向导 · 驱动检查',
         windowTitle: '驱动检查 · 首次使用向导',
         src: 'assets/screenshots/wizard-driver-zh.png',
-        alt: '首次使用向导：虚拟麦克风驱动检测，自动配置 Voice Input Buddy Mic',
+        alt: '首次使用向导：虚拟麦克风驱动检测，自动配置 Remote Buddy Mic',
         desc: '检查虚拟麦克风驱动和音频输出。两项均就绪后，点击“继续”。'
       },
       {
@@ -148,49 +148,49 @@ button.addEventListener('blur', stop);
       {
         title: 'Devices',
         badge: 'Multi-device',
-        windowTitle: 'Devices · Voice Input Buddy',
+        windowTitle: 'Devices · Remote Buddy',
         src: 'assets/screenshots/connection-en.png',
-        alt: 'Voice Input Buddy Devices interface: connected Xiaomi remote, battery level, microphone gain, and device information',
+        alt: 'Remote Buddy Devices interface: connected Xiaomi remote, battery level, microphone gain, and device information',
         desc: 'Check connection status, battery level, and device details for added remotes. Adjust microphone gain for each device (0–24 dB).'
       },
       {
         title: 'Button Mapping',
         badge: 'Core Mapping',
-        windowTitle: 'Button Mapping · Voice Input Buddy',
+        windowTitle: 'Button Mapping · Remote Buddy',
         src: 'assets/screenshots/mapping-en.png',
-        alt: 'Voice Input Buddy Button Mapping interface: visual remote layout mapping single, double, and long press shortcuts',
+        alt: 'Remote Buddy Button Mapping interface: visual remote layout mapping single, double, and long press shortcuts',
         desc: 'Click a remote button to configure its single, double, or long press action. Xiaomi defaults: Home switches apps, TV plays or pauses media, and Menu opens the context menu.'
       },
       {
         title: 'Common Phrases',
         badge: 'Phrase Editor',
-        windowTitle: 'Common Phrases · Voice Input Buddy',
+        windowTitle: 'Common Phrases · Remote Buddy',
         src: 'assets/screenshots/phrases-en.png',
-        alt: 'Voice Input Buddy Common Phrases interface: 5-way directional pad assignment and custom phrase library editor',
+        alt: 'Remote Buddy Common Phrases interface: 5-way directional pad assignment and custom phrase library editor',
         desc: 'Edit phrase lists and assign phrases to the arrows and OK button. Use the remote to choose text from the phrase panel.'
       },
       {
         title: 'Voice Tools',
         badge: 'Integrations',
-        windowTitle: 'Voice Tools Integration · Voice Input Buddy',
+        windowTitle: 'Voice Tools Integration · Remote Buddy',
         src: 'assets/screenshots/integration-en.png',
-        alt: 'Voice Input Buddy Voice Tools interface: setup guides for WeType, Doubao, NetEase Bageshuo, Typeless, VoiceCursor, macOS Dictation, and other tools',
+        alt: 'Remote Buddy Voice Tools interface: setup guides for WeType, Doubao, NetEase Bageshuo, Typeless, VoiceCursor, macOS Dictation, and other tools',
         desc: 'Check the selected input tool and microphone status, then open its setup guide. Adjust the voice trigger key and Fn tap settings here too.'
       },
       {
         title: 'Permissions & Environment',
         badge: 'System Environment',
-        windowTitle: 'Permissions & Environment · Voice Input Buddy',
+        windowTitle: 'Permissions & Environment · Remote Buddy',
         src: 'assets/screenshots/permissions-en.png',
-        alt: 'Voice Input Buddy Permissions interface: Bluetooth, Input Monitoring, Accessibility permissions and virtual microphone driver status',
-        desc: 'Check Bluetooth, Input Monitoring, and Accessibility permissions, plus the Voice Input Buddy Mic driver. Follow the page’s instructions if anything is missing.'
+        alt: 'Remote Buddy Permissions interface: Bluetooth, Input Monitoring, Accessibility permissions and virtual microphone driver status',
+        desc: 'Check Bluetooth, Input Monitoring, and Accessibility permissions, plus the Remote Buddy Mic driver. Follow the page’s instructions if anything is missing.'
       },
       {
         title: 'Settings & Updates',
         badge: 'Version & Updates',
-        windowTitle: 'Settings & Updates · Voice Input Buddy',
+        windowTitle: 'Settings & Updates · Remote Buddy',
         src: 'assets/screenshots/about-en.png',
-        alt: 'Voice Input Buddy Settings interface: version, update checks, configuration import/export and language preferences',
+        alt: 'Remote Buddy Settings interface: version, update checks, configuration import/export and language preferences',
         desc: 'Check the app version and updates, import or export settings, and adjust startup behavior and interface language.'
       }
     ],
@@ -232,7 +232,7 @@ button.addEventListener('blur', stop);
         badge: 'Wizard · Audio Ready',
         windowTitle: 'Driver Check · Setup Wizard',
         src: 'assets/screenshots/wizard-driver-en.png',
-        alt: 'Setup Wizard: Virtual microphone driver detection for Voice Input Buddy Mic',
+        alt: 'Setup Wizard: Virtual microphone driver detection for Remote Buddy Mic',
         desc: 'Check the virtual microphone driver and audio output. Click Continue once both are ready.'
       },
       {

@@ -1,4 +1,4 @@
-# Voice Input Buddy
+# Remote Buddy
 
 Wizard: first-run setup.
 

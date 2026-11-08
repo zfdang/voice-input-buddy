@@ -14,7 +14,7 @@ for strings in sorted(resources.glob('*.lproj/Localizable.strings')):
     for key in keys:
         assert key not in seen, f'Duplicate localization key {key}: {strings}'
         seen.add(key)
-app_sources = root / 'Sources/VoiceInputBuddy'
+app_sources = root / 'Sources/RemoteBuddy'
 assert list((app_sources / 'Onboarding').rglob('*.swift')), 'No onboarding sources found; resource checks cannot be skipped'
 setup_sources = sorted(app_sources.rglob('*.swift'))
 source = '\n'.join(path.read_text() for path in setup_sources)

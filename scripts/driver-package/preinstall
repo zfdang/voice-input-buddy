@@ -2,9 +2,9 @@
 set -euo pipefail
 source "$(dirname "$0")/installation-common.sh"
 volume="${3:-/}"
-buddy_check_install_target "${volume%/}/Applications/Voice Input Buddy.app" com.zfdang.voice-input-buddy
-buddy_check_install_target "${volume%/}/Library/Audio/Plug-Ins/HAL/VoiceInputBuddyMic.driver" com.zfdang.voice-input-buddy.mic
+buddy_check_install_target "${volume%/}/Applications/Remote Buddy.app" com.zfdang.remote-buddy
+buddy_check_install_target "${volume%/}/Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver" com.zfdang.remote-buddy.mic
 # Installer gives both scripts the same private, temporary scripts directory.
 # Always replace the snapshot, including when the old driver is absent or invalid.
-buddy_driver_fingerprint "${volume%/}/Library/Audio/Plug-Ins/HAL/VoiceInputBuddyMic.driver" \
+buddy_driver_fingerprint "${volume%/}/Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver" \
     > "$(dirname "$0")/driver-before-install.cdhash" || true

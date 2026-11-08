@@ -2,7 +2,7 @@
 
 ## Current distribution
 
-Voice Input Buddy bundles its app and the independently named VoiceInputBuddyMic driver in one PKG. Driver sources are BlackHole v0.7.1 with third_party/blackhole/device-usb.patch. Matching project source is available at each release Git tag; pinned BlackHole and Sparkle source and reproduction instructions are linked in docs/source-code.md. RC003 product photos, upstream proprietary artwork, libopus binaries and private extensions are not distributed. The historical descriptions below do not imply they are bundled or supported.
+Remote Buddy bundles its app and the independently named RemoteBuddyMic driver in one PKG. Driver sources are BlackHole v0.7.1 with third_party/blackhole/device-usb.patch. Matching project source is available at each release Git tag; pinned BlackHole and Sparkle source and reproduction instructions are linked in docs/source-code.md. RC003 product photos, upstream proprietary artwork, libopus binaries and private extensions are not distributed. The historical descriptions below do not imply they are bundled or supported.
 
 ## Sparkle
 
@@ -155,7 +155,7 @@ POSSIBILITY OF SUCH DAMAGE.
 - Imported revision: `cae2a23804506538c31003d14ec3239379da66c1`
 - License: GPL-3.0-only
 
-Voice Input Buddy is an independent derivative. Original author notices are preserved in `docs/upstream-copyright.md`. The sections below preserve the upstream component inventory and historical descriptions; disabled components are not necessarily included in the macOS app bundle. No upstream proprietary artwork is included. See `docs/provenance.md` for actual build and distribution requirements.
+Remote Buddy is an independent derivative. Original author notices are preserved in `docs/upstream-copyright.md`. The sections below preserve the upstream component inventory and historical descriptions; disabled components are not necessarily included in the macOS app bundle. No upstream proprietary artwork is included. See `docs/provenance.md` for actual build and distribution requirements.
 
 ## remote-bridge-hub
 
@@ -219,9 +219,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 - Pinned source revision: `v0.7.1` / `e2b22aaaba4e507a097131704bf96dabc004d9cf`
 - Copyright: Copyright (C) 2019 Existential Audio Inc.
 - License: GNU General Public License v3.0 (`GPL-3.0`)
-- Bundled driver license: `Contents/Resources/BlackHole-LICENSE` inside `VoiceInputBuddyMic.driver`
+- Bundled driver license: `Contents/Resources/BlackHole-LICENSE` inside `RemoteBuddyMic.driver`
 
-`scripts/build-driver.sh` and `third_party/blackhole/device-usb.patch` build the independent `VoiceInputBuddyMic.driver` from pinned BlackHole source. The app routes audio only to this driver, not to an optional BlackHole device. The driver uses USB transport, its own CFPlugIn factory UUID, bundle identifier and BuddyMic UID. It does not replace an installed BlackHole or MiRemoteV driver. The release PKG installs both the app and VoiceInputBuddyMic; matching driver source is available at the pinned upstream revision together with this repository’s patch and build script. The complete upstream license text is bundled within the driver at `Contents/Resources/BlackHole-LICENSE`.
+`scripts/build-driver.sh` and `third_party/blackhole/device-usb.patch` build the independent `RemoteBuddyMic.driver` from pinned BlackHole source. The app routes audio only to this driver, not to an optional BlackHole device. The driver uses USB transport, its own CFPlugIn factory UUID, bundle identifier and BuddyMic UID. It does not replace an installed BlackHole or MiRemoteV driver. The release PKG installs both the app and RemoteBuddyMic; matching driver source is available at the pinned upstream revision together with this repository’s patch and build script. The complete upstream license text is bundled within the driver at `Contents/Resources/BlackHole-LICENSE`.
 
 ## MiRemoteVoice
 
@@ -234,7 +234,7 @@ The Doubao compatibility design is informed by MiRemoteVoice: a side-by-side Bla
 
 ## RC003 product photo
 
-The upstream project included an RC003 product photo. That photo and upstream proprietary app artwork are not included in Voice Input Buddy. The button mapping interface uses the original `BuddyRemoteIllustration.png` schematic.
+The upstream project included an RC003 product photo. That photo and upstream proprietary app artwork are not included in Remote Buddy. The button mapping interface uses the original `BuddyRemoteIllustration.png` schematic.
 
 ## Setup guide screenshots
 

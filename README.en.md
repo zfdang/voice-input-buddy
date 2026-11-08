@@ -1,4 +1,4 @@
-# Voice Input Buddy
+# Remote Buddy
 
 [简体中文](README.md) | **English**
 
@@ -21,24 +21,24 @@ Supports **macOS 14 and later**, on Apple Silicon and Intel Macs. Windows suppor
 - Configure hold-to-talk or press-to-start/stop behavior for your input tool.
 - Set up permissions, the microphone driver, device connection, and input integration in one guide.
 
-Voice Input Buddy does not collect usage statistics, save recordings or transcript history, or upload logs. Recognition and text cleanup are handled by your selected input tool, with that tool's own network and privacy settings.
+Remote Buddy does not collect usage statistics, save recordings or transcript history, or upload logs. Recognition and text cleanup are handled by your selected input tool, with that tool's own network and privacy settings.
 
 ## How does it work?
 
 ```text
-Remote microphone → Bluetooth audio → Voice Input Buddy → Virtual microphone → Input tool
-Remote voice button → Voice Input Buddy → Voice shortcut → Text in the current field
+Remote microphone → Bluetooth audio → Remote Buddy → Virtual microphone → Input tool
+Remote voice button → Remote Buddy → Voice shortcut → Text in the current field
 ```
 
 The app decodes remote audio and sends it to a virtual microphone while triggering the selected tool's voice shortcut. It connects hardware to input software; it does not run its own speech-recognition model. Live transcription, recognition speed, and corrections depend on the input tool.
 
 ## How do I use it?
 
-Download `Voice_Input_Buddy_*.pkg` from [Releases](https://github.com/zfdang/voice-input-buddy/releases). One installer includes both the app and its virtual microphone driver.
+Download `Remote_Buddy_*.pkg` from [Releases](https://github.com/zfdang/voice-input-buddy/releases). One installer includes both the app and its virtual microphone driver.
 
-1. Install and open `/Applications/Voice Input Buddy.app`.
+1. Install and open `/Applications/Remote Buddy.app`.
 2. Follow the guide to grant Bluetooth, Input Monitoring, and Accessibility permissions. The app follows your system language by default; you can choose English or Chinese on the first screen.
-3. Select and connect your remote, test its buttons, and wait for the driver and fixed output checks to pass. Select **Voice Input Buddy Mic** in your input tool. The app uses this device automatically, without an output picker or fallback to BlackHole or speakers.
+3. Select and connect your remote, test its buttons, and wait for the driver and fixed output checks to pass. Select **Remote Buddy Mic** in your input tool. The app uses this device automatically, without an output picker or fallback to BlackHole or speakers.
 4. Configure the tool's voice shortcut under **Integration**, then test it with the guide.
 5. Focus a text field, press the voice button to speak, and release to finish. Adjust the trigger behavior for tools that use separate start/stop taps.
 
@@ -88,9 +88,9 @@ The tool must accept the virtual microphone and expose a usable voice shortcut. 
 
 ## Download and uninstall
 
-Choose the `*_macOS_arm64.pkg` installer for Apple Silicon or `*_macOS_intel.pkg` for Intel. Each contains the app and its **Voice Input Buddy Mic** driver.
+Choose the `*_macOS_arm64.pkg` installer for Apple Silicon or `*_macOS_intel.pkg` for Intel. Each contains the app and its **Remote Buddy Mic** driver.
 
-To uninstall, download `Voice_Input_Buddy_Uninstaller_*_macOS_universal.pkg` (works on both architectures) and open the package in macOS Installer. The default removes the app, driver, and your settings, logs and caches. Uncheck the personal-data removal option to retain settings and logs. Installer’s fixed **Install** button executes uninstall actions; no software is installed. Administrator authorization is required; audio briefly restarts. See [uninstallation details](docs/uninstall.md).
+To uninstall, download `Remote_Buddy_Uninstaller_*_macOS_universal.pkg` (works on both architectures) and open the package in macOS Installer. The default removes the app, driver, and your settings, logs and caches. Uncheck the personal-data removal option to retain settings and logs. Installer’s fixed **Install** button executes uninstall actions; no software is installed. Administrator authorization is required; audio briefly restarts. See [uninstallation details](docs/uninstall.md).
 
 ## References
 

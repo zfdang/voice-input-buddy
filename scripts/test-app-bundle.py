@@ -23,8 +23,8 @@ class AppBundleTests(unittest.TestCase):
         shutil.copy2(SOURCE / 'scripts/verify-onboarding-resources.py', self.root / 'scripts/verify-onboarding-resources.py')
         shutil.copytree(SOURCE / 'Resources', self.root / 'Resources')
         (self.root / 'Sources').mkdir()
-        shutil.copytree(SOURCE / 'Sources/VoiceInputBuddy',
-                        self.root / 'Sources/VoiceInputBuddy')
+        shutil.copytree(SOURCE / 'Sources/RemoteBuddy',
+                        self.root / 'Sources/RemoteBuddy')
         for name in ['LICENSE', 'THIRD_PARTY_NOTICES.md']:
             shutil.copy2(SOURCE / name, self.root / name)
         self.toolbin = self.root / 'tools'
@@ -32,13 +32,13 @@ class AppBundleTests(unittest.TestCase):
         self.compilerbin = self.root / 'compiler'
         (self.compilerbin / 'Sparkle.framework').mkdir(parents=True)
         (self.compilerbin / 'Sparkle.framework/current').write_text('current framework')
-        (self.compilerbin / 'VoiceInputBuddy').write_text('current executable')
+        (self.compilerbin / 'RemoteBuddy').write_text('current executable')
         self.script(self.root / 'scripts/release-metadata.sh', "printf 'RELEASE_TAG=v26-10-11.001\\nRELEASE_BUNDLE_VERSION=26.10.11\\nRELEASE_COMMIT_COUNT=1\\nRELEASE_PACKAGE_VERSION=26.10.11.1\\n'\n")
         self.script(self.toolbin / 'swift', 'if [[ "$*" == *--show-bin-path* ]]; then printf "%s\\n" "$BUDDY_BUILD_FIXTURE_BIN"; fi\n')
         self.script(self.toolbin / 'lipo', 'cp "$2" "${@: -1}"\n')
         self.script(self.toolbin / 'otool', "printf 'cmd LC_RPATH\\npath @executable_path/../Frameworks\\n'\n")
         self.script(self.toolbin / 'codesign', '[[ "${BUDDY_BUILD_FIXTURE_FAIL_SIGN:-0}" != 1 ]]\n')
-        self.app = self.root / 'dist/Voice Input Buddy.app'
+        self.app = self.root / 'dist/Remote Buddy.app'
 
     def script(self, path, body):
         path.write_text('#!/bin/bash\nset -euo pipefail\n' + body)
@@ -113,7 +113,7 @@ class AppBundleTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         marker = self.app / 'Contents/Resources/previous-build.txt'
         marker.write_text('keep previous build')
-        nested = self.root / 'Sources/VoiceInputBuddy/Onboarding/Guides'
+        nested = self.root / 'Sources/RemoteBuddy/Onboarding/Guides'
         nested.mkdir()
         (nested / 'MissingImage.swift').write_text('let guide = .screenshot("missing-fixture")\n')
         result = self.build()
@@ -126,7 +126,7 @@ class AppBundleTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         marker = self.app / 'Contents/Resources/previous-build.txt'
         marker.write_text('keep previous build')
-        nested = self.root / 'Sources/VoiceInputBuddy/Integrations/SharedGuides'
+        nested = self.root / 'Sources/RemoteBuddy/Integrations/SharedGuides'
         nested.mkdir(parents=True)
         (nested / 'MissingImage.swift').write_text('let guide = .screenshot("missing-external-fixture")\n')
         result = self.build()
@@ -139,7 +139,7 @@ class AppBundleTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         marker = self.app / 'Contents/Resources/previous-build.txt'
         marker.write_text('keep previous build')
-        shutil.rmtree(self.root / 'Sources/VoiceInputBuddy/Onboarding')
+        shutil.rmtree(self.root / 'Sources/RemoteBuddy/Onboarding')
         result = self.build()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('No onboarding sources found', result.stderr)

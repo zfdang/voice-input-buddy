@@ -132,7 +132,7 @@ class ReleaseSigningTests(unittest.TestCase):
         self.assertFalse(self.environment.exists())
 
     def test_cleanup_failure_does_not_fail_job_and_retains_state_for_retry(self):
-        self.directory = self.directory.with_name('voice-input-buddy-signing')
+        self.directory = self.directory.with_name('remote-buddy-signing')
         signing.setup(self.directory)
         self.fail_delete = True
         warnings = io.StringIO()
@@ -188,7 +188,7 @@ class ReleaseSigningTests(unittest.TestCase):
     def test_verification_accepts_fixed_identity_and_rejects_content_hash_identity(self):
         identity = 'ABCDEF0123456789ABCDEF0123456789ABCDEF01'
         normalized_identity = identity.lower()
-        identifier = 'com.zfdang.voice-input-buddy'
+        identifier = 'com.zfdang.remote-buddy'
         with mock.patch.object(verification.signing, 'fingerprint', return_value=identity), \
                 mock.patch.object(verification.signing, 'run') as verify_command:
             for label in [identifier, '"' + identifier + '"']:

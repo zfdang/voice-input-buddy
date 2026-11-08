@@ -22,7 +22,7 @@ scripts/build-app.sh
 scripts/build-driver.sh
 ```
 
-输出为 `dist/Voice Input Buddy.app` 和 `dist/VoiceInputBuddyMic.driver`。`BUILD_ARCH=arm64` 或 `BUILD_ARCH=x86_64` 可指定架构，默认使用本机架构。若没有设置 `CODE_SIGN_IDENTITY`，两个 bundle 都使用 ad-hoc 签名，不会因缺少 GitHub Secrets 而阻止本地构建。
+输出为 `dist/Remote Buddy.app` 和 `dist/RemoteBuddyMic.driver`。`BUILD_ARCH=arm64` 或 `BUILD_ARCH=x86_64` 可指定架构，默认使用本机架构。若没有设置 `CODE_SIGN_IDENTITY`，两个 bundle 都使用 ad-hoc 签名，不会因缺少 GitHub Secrets 而阻止本地构建。
 
 不要把直接运行 `.build` 中的可执行文件、`dist` 中的 App 和安装到 `/Applications` 的 App 混作同一份权限验收。ad-hoc 构建的代码哈希会变化，替换 App 后可能需要重新授予权限。
 
@@ -35,7 +35,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
   python3 scripts/build-local-signed.py
 ```
 
-此入口默认读取仓库外的 `~/Library/Application Support/VoiceInputBuddySigning/`
+此入口默认读取仓库外的 `~/Library/Application Support/RemoteBuddySigning/`
 中的 `release-signing.p12` 和 `password.txt`，也可以用 `--identity-directory` 指定
 已有备份目录。不会生成新证书；证书必须与仓库公开证书一致。它复用现有签名
 辅助脚本导入临时 Keychain，构建并验证 App、驱动与驱动安装包，然后恢复
@@ -45,7 +45,7 @@ Keychain 搜索列表并清理临时身份，不修改证书信任设置。
 仍默认使用 ad-hoc；此入口必须显式执行。缺少身份或校验失败时停止，不回退。
 私钥与密码不会传入编译、打包子进程，也不会进入仓库、产物或日志。
 
-连续测试固定运行 `dist/Voice Input Buddy.app`。首次从 ad-hoc 切换到固定身份
+连续测试固定运行 `dist/Remote Buddy.app`。首次从 ad-hoc 切换到固定身份
 需要重新授权；后续仍应实际验证同一证书下的版本升级是否保留系统权限。
 
 固定签名身份不等于具备 Apple Team ID。验证 Sparkle 的 PKG 更新流程时，必须通过一体安装包安装到 `/Applications`，让安装脚本保留 `Autoupdate` 助手的 root 归属；直接运行或手动复制普通用户所有的本地 App，会在 Sparkle 启动安装器前失败。已处于此状态的 App 需要手动安装一次修复后的一体安装包，单纯重试应用内更新不能修复当前助手的归属。
@@ -61,7 +61,7 @@ from pathlib import Path
 import secrets
 import subprocess
 
-backup = Path.home() / 'Library/Application Support/VoiceInputBuddySigning'
+backup = Path.home() / 'Library/Application Support/RemoteBuddySigning'
 backup.mkdir(mode=0o700, parents=True, exist_ok=False)
 password = backup / 'password.txt'
 password.write_text(secrets.token_hex(32) + '\n')
@@ -72,7 +72,7 @@ prompt = no
 distinguished_name = subject
 x509_extensions = extensions
 [subject]
-CN = Voice Input Buddy Release Signing
+CN = Remote Buddy Release Signing
 [extensions]
 basicConstraints = critical, CA:FALSE
 keyUsage = critical, digitalSignature
@@ -88,7 +88,7 @@ subprocess.run([
 ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 subprocess.run([
     openssl, 'pkcs12', '-export', '-inkey', str(backup / 'private-key.pem'),
-    '-in', str(backup / 'certificate.pem'), '-name', 'Voice Input Buddy Release Signing',
+    '-in', str(backup / 'certificate.pem'), '-name', 'Remote Buddy Release Signing',
     '-out', str(backup / 'release-signing.p12'),
     '-passin', 'file:' + str(password), '-passout', 'stdin',
 ], input=password.read_bytes(), check=True,
@@ -115,7 +115,7 @@ PY
 先用自己的公开证书替换 fork 中的签名校验基准，提交的只有公开证书：
 
 ```bash
-cp "$HOME/Library/Application Support/VoiceInputBuddySigning/certificate.pem" \
+cp "$HOME/Library/Application Support/RemoteBuddySigning/certificate.pem" \
    scripts/signing/release-certificate.pem
 chmod 644 scripts/signing/release-certificate.pem
 /usr/bin/openssl x509 -in scripts/signing/release-certificate.pem \
@@ -134,7 +134,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-backup = Path.home() / 'Library/Application Support/VoiceInputBuddySigning'
+backup = Path.home() / 'Library/Application Support/RemoteBuddySigning'
 values = {
     'MACOS_SIGNING_P12_BASE64': base64.b64encode((backup / 'release-signing.p12').read_bytes()),
     'MACOS_SIGNING_P12_PASSWORD': (backup / 'password.txt').read_bytes().strip(),
@@ -176,10 +176,10 @@ setup 会拒绝再次初始化已有活动状态，保留原 Keychain 和已写�
 构建产物可直接检查：
 
 ```bash
-codesign --verify --deep --strict 'dist/Voice Input Buddy.app'
-codesign --verify --deep --strict dist/VoiceInputBuddyMic.driver
-codesign --display -r- 'dist/Voice Input Buddy.app'
-codesign --display -r- dist/VoiceInputBuddyMic.driver
+codesign --verify --deep --strict 'dist/Remote Buddy.app'
+codesign --verify --deep --strict dist/RemoteBuddyMic.driver
+codesign --display -r- 'dist/Remote Buddy.app'
+codesign --display -r- dist/RemoteBuddyMic.driver
 ```
 
 固定自签名产物的 designated requirement 应包含各自的 Bundle ID 和 `certificate leaf = H"证书指纹"`，而不是只有 `cdhash`。固定身份构建完成后，执行 `python3 scripts/verify-release-signing.py` 可检查两个产物是否使用仓库固定的身份，验证不需要私钥或签名 Keychain；普通 ad-hoc 构建不应通过这个生产身份检查。

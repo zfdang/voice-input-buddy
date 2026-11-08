@@ -13,7 +13,7 @@ spec.loader.exec_module(appcast)
 class AppcastTests(unittest.TestCase):
     def test_shared_changes_are_preserved_as_xml_text_for_the_app(self):
         with tempfile.TemporaryDirectory() as directory:
-            package = Path(directory) / 'Voice_Input_Buddy_v26-10-14.130_macOS_arm64.pkg'
+            package = Path(directory) / 'Remote_Buddy_v26-10-14.130_macOS_arm64.pkg'
             package.write_bytes(b'package')
             output = Path(directory) / 'appcast.xml'
             changes = '新增\n- add G9N9N support (#37)\n修复\n- handle <input> & microphone events\n'
@@ -23,7 +23,7 @@ class AppcastTests(unittest.TestCase):
 
     def test_package_metadata_and_invalid_inputs(self):
         with tempfile.TemporaryDirectory() as directory:
-            package = Path(directory) / 'Voice_Input_Buddy_v26-10-11.021_macOS_arm64.pkg'
+            package = Path(directory) / 'Remote_Buddy_v26-10-11.021_macOS_arm64.pkg'
             package.write_bytes(b'test package bytes')
             output = Path(directory) / 'appcast.xml'
             signature = base64.b64encode(bytes(64)).decode()
@@ -45,7 +45,7 @@ class AppcastTests(unittest.TestCase):
             signature = base64.b64encode(bytes(64)).decode()
             for count in (999, 1000, 1001, 12345):
                 tag = f'v26-10-18.{count % 1000:03d}'
-                package = Path(directory) / f'Voice_Input_Buddy_{tag}_macOS_arm64.pkg'
+                package = Path(directory) / f'Remote_Buddy_{tag}_macOS_arm64.pkg'
                 package.write_bytes(b'package')
                 output = Path(directory) / 'appcast.xml'
                 appcast.generate(package, tag, str(count), signature, output)
@@ -58,14 +58,14 @@ class AppcastTests(unittest.TestCase):
     def test_intel_feed_and_universal_package_rejection(self):
         with tempfile.TemporaryDirectory() as directory:
             signature = base64.b64encode(bytes(64)).decode()
-            package = Path(directory) / 'Voice_Input_Buddy_v26-10-11.021_macOS_intel.pkg'
+            package = Path(directory) / 'Remote_Buddy_v26-10-11.021_macOS_intel.pkg'
             package.write_bytes(b'package')
             output = Path(directory) / 'appcast-intel.xml'
             appcast.generate(package, 'v26-10-11.021', '21', signature, output)
             item = ET.parse(output).find('channel/item')
             self.assertIsNone(item.find(f'{{{appcast.SPARKLE}}}hardwareRequirements'))
             self.assertTrue(item.find('enclosure').get('url').endswith('_intel.pkg'))
-            universal = package.with_name('Voice_Input_Buddy_v26-10-11.021_macOS.pkg')
+            universal = package.with_name('Remote_Buddy_v26-10-11.021_macOS.pkg')
             universal.write_bytes(b'package')
             with self.assertRaises(ValueError):
                 appcast.generate(universal, 'v26-10-11.021', '21', signature, output)

@@ -1,6 +1,6 @@
 #import "AudioExceptionGuard.h"
 
-BOOL VoiceInputBuddyTryAudioOperation(void (^operation)(void)) {
+BOOL RemoteBuddyTryAudioOperation(void (^operation)(void)) {
     try {
         @try {
             operation();
@@ -13,6 +13,6 @@ BOOL VoiceInputBuddyTryAudioOperation(void (^operation)(void)) {
     }
 }
 
-BOOL VoiceInputBuddyTryPlayAudioPlayerNode(AVAudioPlayerNode *player) {
-    return VoiceInputBuddyTryAudioOperation(^{ [player play]; });
+BOOL RemoteBuddyTryPlayAudioPlayerNode(AVAudioPlayerNode *player) {
+    return RemoteBuddyTryAudioOperation(^{ [player play]; });
 }

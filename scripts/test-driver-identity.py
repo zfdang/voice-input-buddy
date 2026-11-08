@@ -29,7 +29,7 @@ int main(void) {
     expect(get_device_name(), CFSTR("BuddyMic 2ch"));
     expect(get_device2_name(), CFSTR("BuddyMic 2ch 2"));
 #else
-    expect(get_device_name(), CFSTR("Voice Input Buddy Mic"));
+    expect(get_device_name(), CFSTR("Remote Buddy Mic"));
     expect(get_device2_name(), CFSTR("BuddyMic2ch Mirror"));
 #endif
     return 0;
@@ -41,7 +41,7 @@ int main(void) {
         if formatted:
             flags += ['-DkDriver_Name="BuddyMic"']
         else:
-            flags += ['-DkDriver_Name="BuddyMic2ch"', '-DkDevice_Name="Voice Input Buddy Mic"']
+            flags += ['-DkDriver_Name="BuddyMic2ch"', '-DkDevice_Name="Remote Buddy Mic"']
         subprocess.run([
             'xcrun', 'clang', '-O2', '-Werror=format-extra-args',
             '-I', str(source.parent), *flags, str(harness), '-o', str(executable),

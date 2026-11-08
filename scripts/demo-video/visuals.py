@@ -10,10 +10,10 @@ def get_font(size):
 
 BLUE='#3268DA'; INK='#253449'; GREEN='#35AB84'; ORANGE='#EF9C4C'; BG='#FFF9EF'; LINE='#DCE3EE'
 scenes=[
- ('语音搭子', '打破人与 AI 之间的沟通带宽瓶颈', ['大模型时代，编码范式变迁', '键盘打字 100 WPM vs 思维语音 300+ WPM', '动口不行动手，与 AI 同频思考'], ''),
+ ('遥控搭子', '打破人与 AI 之间的沟通带宽瓶颈', ['大模型时代，编码范式变迁', '键盘打字 100 WPM vs 思维语音 300+ WPM', '动口不行动手，与 AI 同频思考'], ''),
  ('破局：身边的廉价硬件', '拒绝昂贵 AI 硬件，唤醒闲置电视遥控器', ['市面专用 AI 硬件动辄数百上千元', '电视遥控器：工业级微动、实体盲操按键', '两节干电池供电，超长数月续航'], ''),
- ('Voice Input Buddy · 语音搭子', '让电视遥控器秒变 Mac 语音输入神器', ['专为 macOS 打造的系统级桥接工具', '拿起遥控器，按住说话，松手即上屏', '完全开源 · 零音频留存 · 零隐私泄漏'], ''),
- ('它是怎样工作的？', '不跑大模型，专心做最稳定的驱动级桥梁', ['遥控器：蓝牙压缩音频与物理按键', '语音搭子：实时 ADPCM 解码与快捷键注入', '输入工具：转写文字并写入当前光标'], ''),
+ ('Remote Buddy · 遥控搭子', '让电视遥控器秒变 Mac 语音输入神器', ['专为 macOS 打造的系统级桥接工具', '拿起遥控器，按住说话，松手即上屏', '完全开源 · 零音频留存 · 零隐私泄漏'], ''),
+ ('它是怎样工作的？', '不跑大模型，专心做最稳定的驱动级桥梁', ['遥控器：蓝牙压缩音频与物理按键', '遥控搭子：实时 ADPCM 解码与快捷键注入', '输入工具：转写文字并写入当前光标'], ''),
  ('01  一站式免配置安装', '一个安装包，搞定 App 与虚拟麦克风驱动', ['前往 voice.zfdang.com 下载安装包', '底层打上 USB 伪装，全系统即插即用', '支持 Apple Silicon 与 Intel Mac'], ''),
  ('02  权限与安全底线', '跟随向导透明授权，坚守纯本地隐私', ['蓝牙、输入监控与辅助功能权限透明指引', '零音频保留：纯内存流转，绝不落盘', '零网络遥测：不上传数据，密码框自动防护'], ''),
  ('03  多硬件兼容', '支持小米系列与 Google Chromecast 遥控器', ['小米电视遥控器 2 / 2 Pro (RC001 / RC003)', 'Google Chromecast 语音遥控器 (G9N9N)', '独立设备增益调节，音量自动自愈'], ''),
@@ -72,7 +72,7 @@ def window(d,selected,t):
  rr(d,(960,236,1780,836),'white',30,LINE,3)
  rr(d,(960,236,1780,287),'#E9EFF8',26)
  for i,c in enumerate(['#F57E73','#F3C264','#81CFA5']):d.ellipse((984+i*28,252,999+i*28,267),fill=c)
- center(d,1370,249,'语音搭子',24)
+ center(d,1370,249,'遥控搭子',24)
  rr(d,(960,288,1120,836),'#F2F6FD',12)
  nav=['设备连接','按键映射','常用语','输入法集成','权限与环境','设置']
  for j,n in enumerate(nav):
@@ -89,7 +89,7 @@ def frame(i,u,total):
  for j in range(5):
   xx=1500+j*90; yy=90+math.sin(u*.4+j)*18
   d.ellipse((xx,yy,xx+28,yy+28),fill='#E1EBFA')
- text(d,(92,43),'VOICE INPUT BUDDY  /  语音搭子',28,BLUE)
+ text(d,(92,43),'REMOTE BUDDY  /  遥控搭子',28,BLUE)
  text(d,(92,112),scenes[i][0],64)
  text(d,(94,198),scenes[i][1],32,'#758398')
  rr(d,(92,282,860,835),'#EDF3FC',36)
@@ -124,12 +124,12 @@ def frame(i,u,total):
  elif i==2:
   remote(d,1050,340,u,2<u<8,1.4)
   rr(d,(1270,360,1760,700),'white',30,LINE)
-  center(d,1515,415,'Voice Input Buddy',44,BLUE)
-  center(d,1515,480,'语音搭子',36)
+  center(d,1515,415,'Remote Buddy',44,BLUE)
+  center(d,1515,480,'遥控搭子',36)
   center(d,1515,560,'按住说话 · 松手结束',32,GREEN)
   center(d,1515,620,'文字瞬间落在当前光标处',24,'#758398')
  elif i==3:
-  labels=['遥控器','语音搭子','输入工具']
+  labels=['遥控器','遥控搭子','输入工具']
   for j,l in enumerate(labels):
    xx=930+j*293
    rr(d,(xx,421,xx+255,646),'white',26,LINE)
@@ -140,8 +140,8 @@ def frame(i,u,total):
   pos=930+(u%3)/3*840;d.ellipse((pos,704,pos+24,728),fill=GREEN)
  elif i==4:
   rr(d,(1030,317,1740,763),'white',36,LINE)
-  center(d,1385,365,'Voice_Input_Buddy.pkg',40,BLUE)
-  for j,l in enumerate(['Voice Input Buddy.app','虚拟麦克风驱动 (免驱伪装)']):
+  center(d,1385,365,'Remote_Buddy.pkg',40,BLUE)
+  for j,l in enumerate(['Remote Buddy.app','虚拟麦克风驱动 (免驱伪装)']):
    rr(d,(1100,450+j*105,1670,527+j*105),'#EDF3FC',18)
    center(d,1385,467+j*105,l,32)
   center(d,1385,683,'一个安装包，完成两项安装',28)
@@ -179,7 +179,7 @@ def frame(i,u,total):
   text(d,(x,y),'输入法与语音工具集成',32)
   rr(d,(x,y+56,1735,y+167),'#EDF3FC',18)
   text(d,(x+16,y+70),'输入工具生态自由搭配',28,BLUE)
-  text(d,(x+16,y+119),'语音麦克风：Voice Input Buddy Mic',24)
+  text(d,(x+16,y+119),'语音麦克风：Remote Buddy Mic',24)
   for j,label in enumerate(['微信输入法','豆包输入法','网易叭哥说','Typeless','VoiceCursor','本地离线 Whisper']):
    xx=x+(j%2)*294;yy=y+184+(j//2)*82
    rr(d,(xx,yy,xx+280,yy+73),'#DCE9FF' if j==0 else '#F2F6FD',12)
@@ -228,7 +228,7 @@ def frame(i,u,total):
  else:
   rr(d,(978,310,1780,807),'white',35,LINE)
   center(d,1380,350,'Vibe Coding 时代的语音输入神器',38,BLUE)
-  center(d,1380,425,'Voice Input Buddy · 语音搭子',46)
+  center(d,1380,425,'Remote Buddy · 遥控搭子',46)
   center(d,1380,515,'100% 本地运行 · 零音频留存 · GPL-3.0 开源',26,GREEN)
   center(d,1380,590,'voice.zfdang.com',46,BLUE)
   center(d,1380,685,'前往官网下载，即刻体验！',30)

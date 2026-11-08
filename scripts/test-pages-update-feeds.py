@@ -25,7 +25,7 @@ class FeedDeploymentTests(unittest.TestCase):
         self.tag = 'v26-10-12.043'
         self.release = {'tagName': self.tag, 'assets': []}
         for arch in ['arm64', 'intel']:
-            package = self.root / f'Voice_Input_Buddy_{self.tag}_macOS_{arch}.pkg'
+            package = self.root / f'Remote_Buddy_{self.tag}_macOS_{arch}.pkg'
             package.write_bytes(b'package')
             self.release['assets'].append({'name': package.name})
             appcast.generate(package, self.tag, '43', base64.b64encode(bytes(64)).decode(), self.root / f'appcast-{arch}.xml')
@@ -50,7 +50,7 @@ class FeedDeploymentTests(unittest.TestCase):
         xml = ET.parse(path); enclosure = xml.find('channel/item/enclosure')
         enclosure.set('url', 'https://example.invalid/package.pkg'); xml.write(path)
         with self.assertRaises(ValueError): feeds.verify(self.root, self.release)
-        enclosure.set('url', f'https://github.com/zfdang/voice-input-buddy/releases/download/{self.tag}/Voice_Input_Buddy_{self.tag}_macOS_intel.pkg')
+        enclosure.set('url', f'https://github.com/zfdang/voice-input-buddy/releases/download/{self.tag}/Remote_Buddy_{self.tag}_macOS_intel.pkg')
         enclosure.set(f'{{{appcast.SPARKLE}}}edSignature', ''); xml.write(path)
         with self.assertRaises(ValueError): feeds.verify(self.root, self.release)
 

@@ -1,8 +1,8 @@
-# Voice Input Buddy
+# Remote Buddy
 
 **简体中文** | [English](README.en.md)
 
-Voice Input Buddy（语音搭子）把遥控器变成电脑上的语音输入按钮。拿起遥控器，按下说话、松开结束，就能在当前输入框中使用你喜欢的输入法或听写工具。
+Remote Buddy（遥控搭子）把遥控器变成电脑上的语音输入与控制按钮。拿起遥控器，按下说话、松开结束，就能在当前输入框中使用你喜欢的输入法或听写工具。
 
 [产品官网](https://voice.zfdang.com) · [下载](https://github.com/zfdang/voice-input-buddy/releases)
 
@@ -26,19 +26,19 @@ Voice Input Buddy（语音搭子）把遥控器变成电脑上的语音输入按
 ## 工作原理
 
 ```text
-遥控器麦克风 → 蓝牙音频 → Voice Input Buddy → 虚拟麦克风 → 输入法／听写工具
-遥控器语音键 → Voice Input Buddy → 触发工具的语音快捷键 → 当前输入框
+遥控器麦克风 → 蓝牙音频 → Remote Buddy → 虚拟麦克风 → 输入法／听写工具
+遥控器语音键 → Remote Buddy → 触发工具的语音快捷键 → 当前输入框
 ```
 
-Voice Input Buddy 接收遥控器音频，解码后送入虚拟麦克风，同时将按键动作转换成目标工具需要的快捷键。它负责连接硬件与输入工具，本身不运行语音识别模型。实时文字、识别速度和自动修正效果取决于所选工具。
+Remote Buddy 接收遥控器音频，解码后送入虚拟麦克风，同时将按键动作转换成目标工具需要的快捷键。它负责连接硬件与输入工具，本身不运行语音识别模型。实时文字、识别速度和自动修正效果取决于所选工具。
 
 ## 如何使用
 
-从 [Releases](https://github.com/zfdang/voice-input-buddy/releases) 下载 `Voice_Input_Buddy_*.pkg`。一个安装包包含 App 和虚拟麦克风驱动。
+从 [Releases](https://github.com/zfdang/voice-input-buddy/releases) 下载 `Remote_Buddy_*.pkg`。一个安装包包含 App 和虚拟麦克风驱动。
 
-1. 安装后打开 `/Applications/Voice Input Buddy.app`。
+1. 安装后打开 `/Applications/Remote Buddy.app`。
 2. 按设置向导授予蓝牙、输入监控和辅助功能权限。首次默认跟随系统语言，可在第一步选择中文或英文。
-3. 选择并连接遥控器、测试按键，等待驱动检查与固定输出准备就绪，再在输入工具中选择 **Voice Input Buddy Mic** 虚拟麦克风。App 自动使用该设备，不需要选择输出，也不回退到 BlackHole 或扬声器。
+3. 选择并连接遥控器、测试按键，等待驱动检查与固定输出准备就绪，再在输入工具中选择 **Remote Buddy Mic** 虚拟麦克风。App 自动使用该设备，不需要选择输出，也不回退到 BlackHole 或扬声器。
 4. 在“输入法集成”中配置语音快捷键，通过向导测试。
 5. 打开文本输入框，按住遥控器语音键说话、松开结束。使用 Typeless 等单击触发的工具，可在设置中调整开始／结束行为。
 
@@ -88,9 +88,9 @@ Voice Input Buddy 接收遥控器音频，解码后送入虚拟麦克风，同�
 
 ## 下载与卸载
 
-Apple Silicon 选择 `*_macOS_arm64.pkg`，Intel 选择 `*_macOS_intel.pkg`。每份包含 App 和 **Voice Input Buddy Mic** 驱动。
+Apple Silicon 选择 `*_macOS_arm64.pkg`，Intel 选择 `*_macOS_intel.pkg`。每份包含 App 和 **Remote Buddy Mic** 驱动。
 
-卸载时下载通用的 `Voice_Input_Buddy_Uninstaller_*_macOS_universal.pkg`（Apple Silicon / Intel 共用），通过 macOS Installer 打开。默认删除 App、驱动和当前用户设置、日志、缓存；取消勾选个人数据删除选项即可保留设置与日志。系统固定的“安装”按钮实际执行卸载，不安装程序。需要管理员认证，音频服务会短暂重启。详见[卸载说明](docs/uninstall.md)。
+卸载时下载通用的 `Remote_Buddy_Uninstaller_*_macOS_universal.pkg`（Apple Silicon / Intel 共用），通过 macOS Installer 打开。默认删除 App、驱动和当前用户设置、日志、缓存；取消勾选个人数据删除选项即可保留设置与日志。系统固定的“安装”按钮实际执行卸载，不安装程序。需要管理员认证，音频服务会短暂重启。详见[卸载说明](docs/uninstall.md)。
 
 ## References
 

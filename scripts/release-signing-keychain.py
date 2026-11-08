@@ -104,7 +104,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['setup', 'cleanup'])
     args = parser.parse_args()
-    directory = Path(os.environ['RUNNER_TEMP']) / 'voice-input-buddy-signing'
+    directory = Path(os.environ['RUNNER_TEMP']) / 'remote-buddy-signing'
     try:
         (setup if args.action == 'setup' else cleanup)(directory)
     except Exception as error:

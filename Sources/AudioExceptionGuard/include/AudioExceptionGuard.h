@@ -6,9 +6,9 @@ NS_ASSUME_NONNULL_BEGIN
 extern "C" {
 #endif
 
-FOUNDATION_EXPORT BOOL VoiceInputBuddyTryAudioOperation(void (^operation)(void));
+FOUNDATION_EXPORT BOOL RemoteBuddyTryAudioOperation(void (^operation)(void));
 
-FOUNDATION_EXPORT BOOL VoiceInputBuddyTryPlayAudioPlayerNode(AVAudioPlayerNode *player);
+FOUNDATION_EXPORT BOOL RemoteBuddyTryPlayAudioPlayerNode(AVAudioPlayerNode *player);
 
 #ifdef __cplusplus
 }

@@ -17,7 +17,7 @@ def build(identity_directory, configuration):
     password = identity_directory / 'password.txt'
     if not archive.is_file() or not password.is_file():
         raise RuntimeError('The existing signing identity and password are required; no new identity was generated.')
-    temporary = Path(tempfile.mkdtemp(prefix='voice-input-buddy-local-signing-'))
+    temporary = Path(tempfile.mkdtemp(prefix='remote-buddy-local-signing-'))
     environment_file = temporary / 'environment'
     # Use Apple's PKCS#12-compatible tools rather than an unrelated Python env's OpenSSL.
     local_environment = dict(os.environ, PATH='/usr/bin:' + os.environ.get('PATH', ''))
@@ -53,7 +53,7 @@ def build(identity_directory, configuration):
                        cwd=ROOT, env=build_environment, check=True)
     finally:
         subprocess.run([sys.executable, str(helper), 'cleanup'], env=cleanup_environment, check=False)
-        if (temporary / 'voice-input-buddy-signing/state.json').exists():
+        if (temporary / 'remote-buddy-signing/state.json').exists():
             print(f'Signing cleanup needs a retry; recovery state retained at {temporary}', file=sys.stderr)
         else:
             shutil.rmtree(temporary)
@@ -62,7 +62,7 @@ def build(identity_directory, configuration):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--identity-directory', type=Path,
-        default=Path.home() / 'Library/Application Support/VoiceInputBuddySigning')
+        default=Path.home() / 'Library/Application Support/RemoteBuddySigning')
     parser.add_argument('--configuration', choices=('debug', 'release'), default='debug')
     arguments = parser.parse_args()
     try:

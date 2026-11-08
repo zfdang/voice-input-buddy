@@ -6,16 +6,16 @@
 
 | 模块 | 作用 |
 | --- | --- |
-| VoiceInputBuddy | 主 App、设备会话、设置、权限、音频路由与按键映射 |
+| RemoteBuddy | 主 App、设备会话、设置、权限、音频路由与按键映射 |
 | AudioExceptionGuard | 音频异常保护的 Objective-C 边界 |
-| VoiceInputBuddyTests | 协议、生命周期与产品边界测试 |
+| RemoteBuddyTests | 协议、生命周期与产品边界测试 |
 | Sparkle | 第三方 macOS 更新框架 |
 
 当前连接适配提供小米 RC001／RC003 和 Google G9N9N；G9N9N 当前仅部分支持语音功能，普通按键映射不支持，见 [独立测试报告](g9n9n-compatibility.md)。GY3LE 可进入连接向导，但没有型号专用协议适配；Siri Remote 可在设备目录中选择，不能继续连接。内部兼容类型不代表对应功能已启用；私有扩展包不参与构建。
 
 ## 驱动
 
-VoiceInputBuddyMic.driver 基于固定版本 BlackHole 源码构建，使用独立 Bundle ID、设备 UID 与工厂 UUID。其对应固定版本源码、补丁与许可证通过 Release 的源码链接提供，见 [source-code.md](source-code.md)。
+RemoteBuddyMic.driver 基于固定版本 BlackHole 源码构建，使用独立 Bundle ID、设备 UID 与工厂 UUID。其对应固定版本源码、补丁与许可证通过 Release 的源码链接提供，见 [source-code.md](source-code.md)。
 
 ## macOS 系统模块
 

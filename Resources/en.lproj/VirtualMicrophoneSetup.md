@@ -1,10 +1,10 @@
 # Virtual microphone setup
 
-Voice Input Buddy uses a separate two-channel driver built from BlackHole v0.7.1, named **Voice Input Buddy Mic** with UID `BuddyMic2ch_UID`. It does not replace an existing BlackHole or upstream application driver.
+Remote Buddy uses a separate two-channel driver built from BlackHole v0.7.1, named **Remote Buddy Mic** with UID `BuddyMic2ch_UID`. It does not replace an existing BlackHole or upstream application driver.
 
-Download `*_macOS_arm64.pkg` for Apple Silicon or `*_macOS_intel.pkg` for Intel from this project's GitHub Releases. One package installs the app and driver; no separate driver build is needed. They install at `/Applications/Voice Input Buddy.app` and `/Library/Audio/Plug-Ins/HAL/VoiceInputBuddyMic.driver`. Installation requires administrator authorization and restarts Core Audio, briefly interrupting playback or recording. Refresh detection or restart your Mac as instructed if the device is not loaded.
+Download `*_macOS_arm64.pkg` for Apple Silicon or `*_macOS_intel.pkg` for Intel from this project's GitHub Releases. One package installs the app and driver; no separate driver build is needed. They install at `/Applications/Remote Buddy.app` and `/Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver`. Installation requires administrator authorization and restarts Core Audio, briefly interrupting playback or recording. Refresh detection or restart your Mac as instructed if the device is not loaded.
 
-The app always outputs to Voice Input Buddy Mic, without other output choices or a BlackHole fallback. After connection and button testing, the initial guide automatically checks the driver and output, proceeding only when both are ready. Select **Voice Input Buddy Mic** in Doubao, WeType or your other input tool and configure its voice shortcut with the guide. Adjust each remote's gain on the Devices page.
+The app always outputs to Remote Buddy Mic, without other output choices or a BlackHole fallback. After connection and button testing, the initial guide automatically checks the driver and output, proceeding only when both are ready. Select **Remote Buddy Mic** in Doubao, WeType or your other input tool and configure its voice shortcut with the guide. Adjust each remote's gain on the Devices page.
 
 Verify recognition and text entry in a focused editable field, using hold-to-talk or the configured tap behavior. A successful build or device detection is not complete hardware acceptance.
 

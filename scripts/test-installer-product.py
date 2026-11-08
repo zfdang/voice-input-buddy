@@ -45,7 +45,7 @@ class InstallerNoticeTests(unittest.TestCase):
                            env={**os.environ, 'BUILD_ARCH': 'x86_64'}, check=True)
             subprocess.run(['pkgutil', '--expand', str(intel_product), str(work / 'intel')], check=True)
             self.assertEqual(ET.parse(work / 'intel/Distribution').getroot().find('options').get('hostArchitectures'), 'x86_64')
-            info = ET.parse(expanded / 'VoiceInputBuddyPayload.pkg/PackageInfo').getroot()
+            info = ET.parse(expanded / 'RemoteBuddyPayload.pkg/PackageInfo').getroot()
             self.assertEqual(info.get('identifier'), 'com.example.inert-test')
             self.assertEqual(info.get('version'), '1.0')
 

@@ -23,31 +23,31 @@ if ! git -C "$source" apply --reverse --check "$root/third_party/blackhole/devic
     fi
     git -C "$source" apply "$root/third_party/blackhole/device-usb.patch"
 fi
-destination="$root/dist/VoiceInputBuddyMic.driver"
+destination="$root/dist/RemoteBuddyMic.driver"
 staging="$(mktemp -d "$root/dist/.driver-build.XXXXXX")"
 trap 'rm -rf "$staging"' EXIT
-driver="$staging/VoiceInputBuddyMic.driver"
+driver="$staging/RemoteBuddyMic.driver"
 mkdir -p "$driver/Contents/MacOS" "$driver/Contents/Resources"
 for arch in "$BUILD_ARCH"; do
     xcrun clang -arch "$arch" -mmacosx-version-min=14.0 -bundle -O2 -Werror=format-extra-args \
         -framework CoreFoundation -framework CoreAudio -framework Accelerate \
-        '-DkDriver_Name="BuddyMic2ch"' '-DkPlugIn_BundleID="com.zfdang.voice-input-buddy.mic"' \
-        '-DkDevice_Name="Voice Input Buddy Mic"' -DkNumber_Of_Channels=2 -DkHas_Driver_Name_Format=0 \
+        '-DkDriver_Name="BuddyMic2ch"' '-DkPlugIn_BundleID="com.zfdang.remote-buddy.mic"' \
+        '-DkDevice_Name="Remote Buddy Mic"' -DkNumber_Of_Channels=2 -DkHas_Driver_Name_Format=0 \
         "$source/BlackHole/BlackHole.c" -o "$staging/BuddyMic2ch-$arch"
 done
-cp "$staging/BuddyMic2ch-$BUILD_ARCH" "$driver/Contents/MacOS/VoiceInputBuddyMic"
+cp "$staging/BuddyMic2ch-$BUILD_ARCH" "$driver/Contents/MacOS/RemoteBuddyMic"
 cp "$source/BlackHole/BlackHole.plist" "$driver/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c 'Set :CFBundleExecutable VoiceInputBuddyMic' "$driver/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier com.zfdang.voice-input-buddy.mic' "$driver/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c 'Set :CFBundleName Voice Input Buddy Virtual Microphone' "$driver/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c 'Set :CFBundleExecutable RemoteBuddyMic' "$driver/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier com.zfdang.remote-buddy.mic' "$driver/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c 'Set :CFBundleName Remote Buddy Virtual Microphone' "$driver/Contents/Info.plist"
 # HAL driver versions evolve independently of the dated app release.
 # Installer refresh decisions compare driver content fingerprints, not these fields.
 /usr/libexec/PlistBuddy -c 'Set :CFBundleShortVersionString 0.1.2' "$driver/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Set :CFBundleVersion 3' "$driver/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Set :CFBundleIconFile BlackHole.icns' "$driver/Contents/Info.plist"
 # Check the effective identity, not only compiler command-line arguments.
-strings "$driver/Contents/MacOS/VoiceInputBuddyMic" | grep -Fx 'BuddyMic2ch_UID' > /dev/null
-if strings "$driver/Contents/MacOS/VoiceInputBuddyMic" | grep -F '%ich_UID' > /dev/null; then
+strings "$driver/Contents/MacOS/RemoteBuddyMic" | grep -Fx 'BuddyMic2ch_UID' > /dev/null
+if strings "$driver/Contents/MacOS/RemoteBuddyMic" | grep -F '%ich_UID' > /dev/null; then
     echo 'Driver UID still includes channel formatting' >&2
     exit 1
 fi

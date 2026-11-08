@@ -17,12 +17,12 @@ class AppOwnershipTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
-        self.app = self.root / 'Applications/Voice Input Buddy.app'
+        self.app = self.root / 'Applications/Remote Buddy.app'
         self.app.mkdir(parents=True)
         (self.app / 'Contents').mkdir()
         (self.app / 'Contents/Info.plist').write_bytes(plistlib.dumps({
-            'CFBundleIdentifier': 'com.zfdang.voice-input-buddy',
-            'CFBundleExecutable': 'VoiceInputBuddy',
+            'CFBundleIdentifier': 'com.zfdang.remote-buddy',
+            'CFBundleExecutable': 'RemoteBuddy',
         }))
         self.version = self.app / 'Contents/Frameworks/Sparkle.framework/Versions/B'
         self.version.mkdir(parents=True)
@@ -34,7 +34,7 @@ class AppOwnershipTests(unittest.TestCase):
         shutil.copy2(SCRIPTS / 'installation-common.sh', self.staging)
         self.script = self.staging / 'postinstall'
         self.source = (SCRIPTS / 'app-package/postinstall').read_text().replace(
-            "app='/Applications/Voice Input Buddy.app'", f"app='{self.app}'")
+            "app='/Applications/Remote Buddy.app'", f"app='{self.app}'")
         self.calls = self.root / 'calls'
         self.stub('/usr/bin/stat', 'echo 501')
         self.stub('/usr/bin/id', 'echo 20')
@@ -129,12 +129,12 @@ class AppOwnershipTests(unittest.TestCase):
                        input='int main(void) { return 0; }', text=True, check=True)
         for code in [self.helper, self.version / 'Sparkle', framework]:
             subprocess.run(['codesign', '--force', '--sign', '-', str(code)], capture_output=True, check=True)
-        executable = self.app / 'Contents/MacOS/VoiceInputBuddy'
+        executable = self.app / 'Contents/MacOS/RemoteBuddy'
         executable.parent.mkdir()
         subprocess.run(['xcrun', 'clang', '-x', 'c', '-', '-o', str(executable)],
                        input='int main(void) { return 0; }', text=True, check=True)
         link = self.app / 'Contents/executable-link'
-        link.symlink_to('MacOS/VoiceInputBuddy')
+        link.symlink_to('MacOS/RemoteBuddy')
         subprocess.run(['codesign', '--force', '--sign', '-', str(self.app)], capture_output=True, check=True)
         signature = (self.app / 'Contents/_CodeSignature/CodeResources').read_bytes()
         modes = executable.stat().st_mode
@@ -156,7 +156,7 @@ class AppOwnershipTests(unittest.TestCase):
         self.assertIn('-P', calls[0])
         self.assertEqual(calls[1], ['-h', '0:0', str(self.helper)])
         self.assertTrue(link.is_symlink())
-        self.assertEqual(os.readlink(link), 'MacOS/VoiceInputBuddy')
+        self.assertEqual(os.readlink(link), 'MacOS/RemoteBuddy')
         self.assertEqual(executable.stat().st_mode, modes)
         self.assertEqual((self.app / 'Contents/_CodeSignature/CodeResources').read_bytes(), signature)
         subprocess.run(['codesign', '--verify', '--deep', '--strict', str(self.app)], check=True)

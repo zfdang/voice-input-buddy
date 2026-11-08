@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate optimized screenshots for the Voice Input Buddy website."""
+"""Generate optimized screenshots for the Remote Buddy website."""
 import os
 from pathlib import Path
 import subprocess
@@ -7,7 +7,7 @@ import tempfile
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-APP_PATH = ROOT / "dist/Voice Input Buddy.app/Contents/MacOS/VoiceInputBuddy"
+APP_PATH = ROOT / "dist/Remote Buddy.app/Contents/MacOS/RemoteBuddy"
 OUTPUT_DIR = ROOT / "pages/assets/screenshots"
 
 SETTINGS_SECTIONS = [

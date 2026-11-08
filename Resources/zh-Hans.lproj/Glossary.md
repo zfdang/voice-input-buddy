@@ -1,4 +1,4 @@
-# Voice Input Buddy
+# Remote Buddy
 
 Wizard：首次运行的设置引导。
 

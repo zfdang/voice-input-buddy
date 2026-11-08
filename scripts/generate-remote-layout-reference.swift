@@ -73,7 +73,7 @@ for (x, y, label) in buttons {
         text.draw(at: NSPoint(x: rect.midX - measured.width / 2, y: rect.midY - measured.height / 2))
     }
 }
-for (label, y, fontSize) in [("Voice Input Buddy", CGFloat(885), CGFloat(18)), ("语音搭子", CGFloat(915), CGFloat(20))] {
+for (label, y, fontSize) in [("Remote Buddy", CGFloat(885), CGFloat(18)), ("遥控搭子", CGFloat(915), CGFloat(20))] {
     let text = NSAttributedString(string: label, attributes: [
         .font: NSFont.systemFont(ofSize: fontSize, weight: .medium),
         .foregroundColor: NSColor(calibratedWhite: 0.30, alpha: 1)

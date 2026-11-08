@@ -25,24 +25,24 @@ class InstallationActionsTests(unittest.TestCase):
                                'test', str(self.library), str(path), identity], capture_output=True)
 
     def test_product_bundle_is_removed_and_repeat_is_safe(self):
-        bundle = self.bundle(self.root / 'app.app', 'com.zfdang.voice-input-buddy')
-        self.assertEqual(self.remove(bundle, 'com.zfdang.voice-input-buddy').returncode, 0)
+        bundle = self.bundle(self.root / 'app.app', 'com.zfdang.remote-buddy')
+        self.assertEqual(self.remove(bundle, 'com.zfdang.remote-buddy').returncode, 0)
         self.assertFalse(bundle.exists())
-        self.assertEqual(self.remove(bundle, 'com.zfdang.voice-input-buddy').returncode, 0)
+        self.assertEqual(self.remove(bundle, 'com.zfdang.remote-buddy').returncode, 0)
 
     def test_foreign_bundle_and_symlink_are_refused(self):
         bundle = self.bundle(self.root / 'foreign.driver', 'com.example.other')
-        self.assertNotEqual(self.remove(bundle, 'com.zfdang.voice-input-buddy.mic').returncode, 0)
+        self.assertNotEqual(self.remove(bundle, 'com.zfdang.remote-buddy.mic').returncode, 0)
         self.assertTrue(bundle.exists())
-        owned = self.bundle(self.root / 'owned.driver', 'com.zfdang.voice-input-buddy.mic')
+        owned = self.bundle(self.root / 'owned.driver', 'com.zfdang.remote-buddy.mic')
         link = self.root / 'link.driver'; link.symlink_to(owned, target_is_directory=True)
-        self.assertNotEqual(self.remove(link, 'com.zfdang.voice-input-buddy.mic').returncode, 0)
+        self.assertNotEqual(self.remove(link, 'com.zfdang.remote-buddy.mic').returncode, 0)
         self.assertTrue(owned.exists())
 
     def test_installation_preserves_current_driver_and_other_bundles(self):
         hal = self.root / 'Library/Audio/Plug-Ins/HAL'
         other = self.bundle(hal / 'OtherMicrophone.driver', 'com.example.microphone')
-        new = self.bundle(hal / 'VoiceInputBuddyMic.driver', 'com.zfdang.voice-input-buddy.mic')
+        new = self.bundle(hal / 'RemoteBuddyMic.driver', 'com.zfdang.remote-buddy.mic')
         staging = self.root / 'package-scripts'; staging.mkdir()
         for source in [self.library, SCRIPTS / 'driver-package/preinstall']:
             shutil.copy2(source, staging / source.name)
@@ -56,7 +56,7 @@ class InstallationActionsTests(unittest.TestCase):
             shutil.copy2(source, staging / source.name)
         for invalid in [False, True]:
             volume = self.root / str(invalid)
-            driver = volume / 'Library/Audio/Plug-Ins/HAL/VoiceInputBuddyMic.driver'
+            driver = volume / 'Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver'
             (driver / 'Contents').mkdir(parents=True)
             if invalid:
                 (driver / 'Contents/Info.plist').write_text('broken plist')
@@ -64,8 +64,8 @@ class InstallationActionsTests(unittest.TestCase):
                                     capture_output=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             # Permitting repair must not weaken removal validation.
-            self.assertNotEqual(self.remove(driver, 'com.zfdang.voice-input-buddy.mic').returncode, 0)
-            link = volume / 'Applications/Voice Input Buddy.app'
+            self.assertNotEqual(self.remove(driver, 'com.zfdang.remote-buddy.mic').returncode, 0)
+            link = volume / 'Applications/Remote Buddy.app'
             link.parent.mkdir()
             link.symlink_to(driver, target_is_directory=True)
             result = subprocess.run(['bash', str(staging / 'preinstall'), 'package.pkg', '/', str(volume)],
@@ -75,20 +75,20 @@ class InstallationActionsTests(unittest.TestCase):
     def test_user_uninstaller_only_executes_an_intact_signed_app(self):
         staging = self.root / 'uninstall'; staging.mkdir()
         shutil.copy2(self.library, staging / self.library.name)
-        app = self.bundle(self.root / 'Voice Input Buddy.app', 'com.zfdang.voice-input-buddy')
+        app = self.bundle(self.root / 'Remote Buddy.app', 'com.zfdang.remote-buddy')
         info = app / 'Contents/Info.plist'
         metadata = plistlib.loads(info.read_bytes())
-        metadata.update(CFBundleExecutable='VoiceInputBuddy', CFBundlePackageType='APPL',
+        metadata.update(CFBundleExecutable='RemoteBuddy', CFBundlePackageType='APPL',
                         BuddySupportsUninstallPreparation=True)
         info.write_bytes(plistlib.dumps(metadata))
-        executable = app / 'Contents/MacOS/VoiceInputBuddy'
+        executable = app / 'Contents/MacOS/RemoteBuddy'
         executable.parent.mkdir()
         subprocess.run(['xcrun', 'clang', '-x', 'c', '-', '-o', str(executable)],
                        input='int main(void) { return 0; }', text=True, check=True)
         subprocess.run(['/usr/bin/codesign', '--force', '--sign', '-', str(app)],
                        capture_output=True, check=True)
         source = (SCRIPTS / 'uninstaller/uninstall-user.sh').read_text()
-        source = source.replace("app='/Applications/Voice Input Buddy.app'", f"app='{app}'")
+        source = source.replace("app='/Applications/Remote Buddy.app'", f"app='{app}'")
         for original, name, body in [('/usr/bin/id', 'id', 'echo 501'),
                                      ('/usr/bin/pkill', 'pkill', 'exit 1'),
                                      ('/usr/bin/pgrep', 'pgrep', 'exit 1')]:
@@ -118,7 +118,7 @@ class InstallationActionsTests(unittest.TestCase):
         staging.mkdir()
         shutil.copy2(self.library, staging / self.library.name)
         source = (SCRIPTS / 'uninstaller/uninstall-user.sh').read_text()
-        source = source.replace("app='/Applications/Voice Input Buddy.app'", f"app='{self.root / 'missing.app'}'")
+        source = source.replace("app='/Applications/Remote Buddy.app'", f"app='{self.root / 'missing.app'}'")
         state_file = staging / 'pkill_calls'
         pkill_body = f'#!/bin/bash\necho "$@" >> "{state_file}"\nexit 0\n'
         pgrep_body = f'#!/bin/bash\nif grep -q -- "-9" "{state_file}" 2>/dev/null; then\n    exit 1\nfi\nexit 0\n'
@@ -147,18 +147,18 @@ class InstallationActionsTests(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
 
     def test_cleanup_only_removes_this_products_personal_data(self):
-        for relative in ['Preferences/com.zfdang.voice-input-buddy.plist',
-                         'Application Support/VoiceInputBuddy', 'Logs/VoiceInputBuddy',
-                         'Caches/com.zfdang.voice-input-buddy',
-                         'Saved Application State/com.zfdang.voice-input-buddy.savedState']:
+        for relative in ['Preferences/com.zfdang.remote-buddy.plist',
+                         'Application Support/RemoteBuddy', 'Logs/RemoteBuddy',
+                         'Caches/com.zfdang.remote-buddy',
+                         'Saved Application State/com.zfdang.remote-buddy.savedState']:
             (self.root / 'Library' / relative).mkdir(parents=True)
         other = self.root / 'Library/Logs/other-app'; other.mkdir()
         result = subprocess.run(['bash', '-c', 'source "$1"; buddy_cleanup_user_data "$2"',
                                   'test', str(self.library), str(self.root)], capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(other.exists())
-        self.assertFalse((self.root / 'Library/Logs/VoiceInputBuddy').exists())
-        self.assertFalse((self.root / 'Library/Preferences/com.zfdang.voice-input-buddy.plist').exists())
+        self.assertFalse((self.root / 'Library/Logs/RemoteBuddy').exists())
+        self.assertFalse((self.root / 'Library/Preferences/com.zfdang.remote-buddy.plist').exists())
 
     def test_preinstall_refuses_foreign_app_or_driver_before_overwriting(self):
         staging = self.root / 'package-scripts'; staging.mkdir()
@@ -167,10 +167,10 @@ class InstallationActionsTests(unittest.TestCase):
         for foreign_app in [True, False]:
             with self.subTest(foreign_app=foreign_app):
                 volume = self.root / str(foreign_app)
-                app = self.bundle(volume / 'Applications/Voice Input Buddy.app',
-                                  'com.example.foreign' if foreign_app else 'com.zfdang.voice-input-buddy')
-                driver = self.bundle(volume / 'Library/Audio/Plug-Ins/HAL/VoiceInputBuddyMic.driver',
-                                     'com.zfdang.voice-input-buddy.mic' if foreign_app else 'com.example.foreign')
+                app = self.bundle(volume / 'Applications/Remote Buddy.app',
+                                  'com.example.foreign' if foreign_app else 'com.zfdang.remote-buddy')
+                driver = self.bundle(volume / 'Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver',
+                                     'com.zfdang.remote-buddy.mic' if foreign_app else 'com.example.foreign')
                 result = subprocess.run(['bash', str(staging / 'preinstall'), 'package.pkg', '/', str(volume)],
                                         capture_output=True)
                 self.assertNotEqual(result.returncode, 0)
@@ -178,13 +178,13 @@ class InstallationActionsTests(unittest.TestCase):
                 self.assertTrue(driver.exists())
 
     def test_removed_driver_reports_restart_without_failing_when_daemon_already_exited(self):
-        app = self.bundle(self.root / 'test.app', 'com.zfdang.voice-input-buddy')
-        driver = self.bundle(self.root / 'test.driver', 'com.zfdang.voice-input-buddy.mic')
+        app = self.bundle(self.root / 'test.app', 'com.zfdang.remote-buddy')
+        driver = self.bundle(self.root / 'test.driver', 'com.zfdang.remote-buddy.mic')
         staging = self.root / 'uninstall'; staging.mkdir()
         shutil.copy2(self.library, staging / self.library.name)
         source = (SCRIPTS / 'uninstaller/uninstall-system.sh').read_text()
-        source = source.replace("app='/Applications/Voice Input Buddy.app'", f"app='{app}'")
-        source = source.replace("driver='/Library/Audio/Plug-Ins/HAL/VoiceInputBuddyMic.driver'", f"driver='{driver}'")
+        source = source.replace("app='/Applications/Remote Buddy.app'", f"app='{app}'")
+        source = source.replace("driver='/Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver'", f"driver='{driver}'")
         for original, name, body in [('/usr/bin/id', 'id', 'echo 0'),
                                      ('/usr/sbin/pkgutil', 'pkgutil', 'exit 0'),
                                      ('/usr/bin/pgrep', 'pgrep', 'exit 0'),
@@ -217,7 +217,7 @@ class DriverRestartTests(unittest.TestCase):
             (bundle / 'Contents/Resources').mkdir()
             (bundle / 'Contents/Resources/config.txt').write_text('original resource')
             (bundle / 'Contents/Info.plist').write_bytes(plistlib.dumps({
-                'CFBundleIdentifier': 'com.zfdang.voice-input-buddy.mic',
+                'CFBundleIdentifier': 'com.zfdang.remote-buddy.mic',
                 'CFBundleExecutable': 'Microphone',
                 'CFBundlePackageType': 'BNDL',
                 'CFBundleVersion': '3',
@@ -235,7 +235,7 @@ class DriverRestartTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        self.driver = self.root / 'Library/Audio/Plug-Ins/HAL/VoiceInputBuddyMic.driver'
+        self.driver = self.root / 'Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver'
         self.driver.parent.mkdir(parents=True)
         self.staging = self.root / 'scripts'
         self.staging.mkdir()

@@ -3,5 +3,5 @@
 #include <stdexcept>
 
 BOOL AudioFixtureCatchesCppException(void) {
-    return !VoiceInputBuddyTryAudioOperation(^{ throw std::runtime_error("fixture"); });
+    return !RemoteBuddyTryAudioOperation(^{ throw std::runtime_error("fixture"); });
 }

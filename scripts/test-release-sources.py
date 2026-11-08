@@ -46,9 +46,9 @@ class ReleaseSourcesTests(unittest.TestCase):
     def test_clean_tree_includes_matching_sources_and_licenses(self):
         result = self.package()
         self.assertEqual(result.returncode, 0, result.stderr)
-        archive = self.root / 'dist/release/Voice_Input_Buddy_v26-10-11.001_sources.tar.gz'
+        archive = self.root / 'dist/release/Remote_Buddy_v26-10-11.001_sources.tar.gz'
         with tarfile.open(archive) as files:
-            base = 'Voice_Input_Buddy_v26-10-11.001/'
+            base = 'Remote_Buddy_v26-10-11.001/'
             self.assertEqual(files.extractfile(base + 'source.swift').read(), b'release source\n')
             self.assertEqual(files.extractfile(base + 'vendor/BlackHole/device.c').read(), b'patched driver\n')
             for dep in ['BlackHole', 'Sparkle']:
@@ -65,7 +65,7 @@ class ReleaseSourcesTests(unittest.TestCase):
         self.assertTrue(list((self.root / 'scripts/__pycache__').glob('*.pyc')))
         result = self.package()
         self.assertEqual(result.returncode, 0, result.stderr)
-        archive = self.root / 'dist/release/Voice_Input_Buddy_v26-10-11.001_sources.tar.gz'
+        archive = self.root / 'dist/release/Remote_Buddy_v26-10-11.001_sources.tar.gz'
         with tarfile.open(archive) as files:
             self.assertFalse(any('__pycache__' in name or name.endswith('.pyc')
                                  for name in files.getnames()))

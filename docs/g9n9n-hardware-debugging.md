@@ -10,7 +10,7 @@
 
 ### 重启后：原始蓝牙通知与 IOHID 同时对照
 
-安装 Apple 官方蓝牙日志描述文件并重启后，PacketLogger 实际收到 HCI 和 ACL 数据。Voice Input Buddy 未运行；独立 HID 观测器输入权限正常、非独占打开成功，匹配到目标 VID/PID 及原有描述符。操作者分别完成三次孤立上键，以及返回→上＋返回→只松上→全部松开的两轮操作。
+安装 Apple 官方蓝牙日志描述文件并重启后，PacketLogger 实际收到 HCI 和 ACL 数据。Remote Buddy 未运行；独立 HID 观测器输入权限正常、非独占打开成功，匹配到目标 VID/PID 及原有描述符。操作者分别完成三次孤立上键，以及返回→上＋返回→只松上→全部松开的两轮操作。
 
 以下时间来自 PacketLogger 界面，均为 2026-10-28 新加坡时间。两轮通知均为控制器接收方向、同一连接 handle `0x0046`、ATT CID `0x0004`、通知 opcode `0x1B`、attribute handle `0x0046`：
 
@@ -35,7 +35,7 @@
 
 软件处理边界：现有公开 IOHID 接口收不到这些短报告，CoreBluetooth 又不暴露该 HID 服务，因此不能在现有 App 接收路径里补零修复。设备侧需要按描述符补足槽位并正确报告剩余按键，或使用能规范化报告的独立传输方案；本次没有安装替代 HID 驱动、修改固件或修改 App 按键逻辑。不将这一支样机的结果泛化为所有 G9N9N、所有固件或所有普通键均已逐项验收。
 
-原始证据仅保存在仓库外的本地 `~/Library/Logs/VoiceInputBuddyDiagnostics/`，公开记录只摘录上述必要字段：
+原始证据仅保存在仓库外的本地 `~/Library/Logs/RemoteBuddyDiagnostics/`，公开记录只摘录上述必要字段：
 
 | 文件 | SHA-256 |
 | --- | --- |
@@ -45,7 +45,7 @@
 
 两份 pklg 分别完整解析为 873 条记录（6 条接收 ACL）和 607 条记录（4 条接收 ACL）；均无 SCO/ISO 音频记录。记录结构参照 Wireshark 的 [PacketLogger reader](https://github.com/wireshark/wireshark/blob/master/wiretap/packetlogger.c)，逐项核对 HCI ACL 长度、L2CAP 长度、CID、ATT 类型和 handle，未只凭界面摘要判断。原始文件没有提交或上传。
 
-清理已完成：两轮抓包停止并本地保存，独立 HID 观测进程停止，PacketLogger 退出，临时 **Bluetooth Logging for macOS** 描述文件已移除；系统设置中只保留原有的 Block Major macOS Upgrades。原安装路径的 Voice Input Buddy 已重新打开，App、签名、驱动和原有应用权限未替换。
+清理已完成：两轮抓包停止并本地保存，独立 HID 观测进程停止，PacketLogger 退出，临时 **Bluetooth Logging for macOS** 描述文件已移除；系统设置中只保留原有的 Block Major macOS Upgrades。原安装路径的 Remote Buddy 已重新打开，App、签名、驱动和原有应用权限未替换。
 
 ### 重启前：公开接口对照
 
@@ -60,7 +60,7 @@
 
 组合 report 时间分别为 UTC `05:20:24`、`05:22:36`（新加坡时间 13:20:24、13:22:36）。第二次相同组合没有新的 element value 边沿，不能据此声称组合没有到达；原始 report 回调确实再次到达。丢失松开时，系统保留旧的 element 状态，也会影响后续相同值是否产生边沿。
 
-本轮测试结束后停止独立观测及轮询，重新启动原安装路径的 Voice Input Buddy。未替换已安装 App、签名、权限或驱动。
+本轮测试结束后停止独立观测及轮询，重新启动原安装路径的 Remote Buddy。未替换已安装 App、签名、权限或驱动。
 
 ### 描述符及证据边界
 
@@ -104,7 +104,7 @@ PacketLogger 随 Apple Additional Tools for Xcode 分发，下载需要 Apple �
 
 ### 可复用的诊断入口
 
-先退出 Voice Input Buddy，确保设备已连接；在已获输入监控／蓝牙权限的终端运行：
+先退出 Remote Buddy，确保设备已连接；在已获输入监控／蓝牙权限的终端运行：
 
 ```sh
 # 默认 300 秒，可指定 0～3600 秒之间的正数；只匹配 18D1:9450。
@@ -165,7 +165,7 @@ swift scripts/diagnose-g9n9n-services.swift
 - `swift build --disable-keychain` 成功。
 - `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --disable-keychain`：526 个测试、88 个套件通过。
 - 本地固定签名构建测试 5 项、bundle 签名测试 1 项、release 签名测试 12 项通过。
-- 固定签名 App 与驱动构建及签名验证通过；最终运行及授权仅针对 `dist/Voice Input Buddy.app`。签名升级前后要求一致；没有改变系统证书信任。
+- 固定签名 App 与驱动构建及签名验证通过；最终运行及授权仅针对 `dist/Remote Buddy.app`。签名升级前后要求一致；没有改变系统证书信任。
 - 编译和自动测试不能替代真机验收。上述结果不声明所有按键、音质、链路加密或休眠重连已通过。
 
 ## 下一轮复测

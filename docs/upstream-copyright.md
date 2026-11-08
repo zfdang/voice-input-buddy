@@ -1,6 +1,6 @@
 # Upstream copyright notice (historical)
 
-The notice below is preserved from remote-mic-app. Its SayAll branding, asset paths and distribution descriptions refer to that upstream project, not Voice Input Buddy. The proprietary assets listed here are not distributed in this project. Current component and artwork notices are in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
+The notice below is preserved from remote-mic-app. Its SayAll branding, asset paths and distribution descriptions refer to that upstream project, not Remote Buddy. The proprietary assets listed here are not distributed in this project. Current component and artwork notices are in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 
 ---
 
