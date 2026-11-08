@@ -79,8 +79,8 @@ button.addEventListener('blur', stop);
         badge: '版本与更新',
         windowTitle: '设置与更新 · Voice Input Buddy',
         src: 'assets/screenshots/about-zh.png',
-        alt: 'Voice Input Buddy 设置界面：应用版本、更新检查、配置导入导出与图标和语言偏好',
-        desc: '查看版本、检查更新、导入或导出配置，调整图标、启动行为和界面语言。'
+        alt: 'Voice Input Buddy 设置界面：应用版本、更新检查、配置导入导出与语言偏好',
+        desc: '查看版本、检查更新、导入或导出配置，调整启动行为和界面语言。'
       }
     ],
     wizard: [
@@ -190,8 +190,8 @@ button.addEventListener('blur', stop);
         badge: 'Version & Updates',
         windowTitle: 'Settings & Updates · Voice Input Buddy',
         src: 'assets/screenshots/about-en.png',
-        alt: 'Voice Input Buddy Settings interface: version, update checks, configuration import/export, icon and language preferences',
-        desc: 'Check the app version and updates, import or export settings, and adjust icons, startup behavior, and interface language.'
+        alt: 'Voice Input Buddy Settings interface: version, update checks, configuration import/export and language preferences',
+        desc: 'Check the app version and updates, import or export settings, and adjust startup behavior and interface language.'
       }
     ],
     wizard: [

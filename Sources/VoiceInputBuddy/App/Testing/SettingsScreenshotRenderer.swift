@@ -162,7 +162,11 @@ enum SettingsScreenshotRenderer {
             )
         }
         let updateInformation = UpdateInformationStore(userDefaults: defaults)
-        seedAvailableUpdate(updateInformation, language: language)
+        if ProcessInfo.processInfo.environment["VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_UP_TO_DATE"] == "1" {
+            updateInformation.setUpToDate()
+        } else {
+            seedAvailableUpdate(updateInformation, language: language)
+        }
         if ProcessInfo.processInfo.environment[
             "VOICE_INPUT_BUDDY_SETTINGS_SCREENSHOT_UPDATE_SEEN"
         ] == "1" {
