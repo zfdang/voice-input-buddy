@@ -94,6 +94,12 @@ enum AppEntryPointVisibilityPolicy {
     }
 }
 
+enum SettingsWindowDisplayPolicy {
+    static func shouldMove(isOpen: Bool, currentScreen: Int?, targetScreen: Int?) -> Bool {
+        !isOpen && targetScreen != nil && currentScreen != targetScreen
+    }
+}
+
 enum StatusItemActionResolver {
     static func shouldShowMenu(
         eventType: NSEvent.EventType?,
@@ -546,7 +552,7 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
         menu.addItem(hidItem)
         menu.addItem(.separator())
         menu.addItem(menuItem("connection.action.reconnect", action: #selector(reconnect)))
-        menu.addItem(menuItem("menu.open_settings", action: #selector(showSettings)))
+        menu.addItem(menuItem("menu.open_settings", action: #selector(showSettingsFromStatusItem)))
         menu.addItem(menuItem("menu.show_logs", action: #selector(showLog)))
         menu.addItem(languageMenuItem())
         menu.addItem(.separator())
@@ -890,7 +896,7 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
         ) {
             showStatusMenu()
         } else {
-            showSettings()
+            showSettingsFromStatusItem()
         }
     }
 
@@ -928,7 +934,13 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
         showSettingsWindow()
     }
 
-    private func showSettingsWindow(initialSection: SettingsSection? = nil) {
+    @objc private func showSettingsFromStatusItem() {
+        let point = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first { $0.frame.contains(point) }
+        showSettingsWindow(targetScreen: screen)
+    }
+
+    private func showSettingsWindow(initialSection: SettingsSection? = nil, targetScreen: NSScreen? = nil) {
         if settingsWindowController == nil {
             settingsWindowController = makeSettingsWindowController(
                 initialSettingsSection: initialSection
@@ -936,6 +948,16 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
         }
         guard let windowController = settingsWindowController,
               let window = windowController.window else { return }
+        if let targetScreen, SettingsWindowDisplayPolicy.shouldMove(
+            isOpen: isSettingsWindowOpen,
+            currentScreen: window.screen.flatMap { NSScreen.screens.firstIndex(of: $0) },
+            targetScreen: NSScreen.screens.firstIndex(of: targetScreen)
+        ) {
+            let visibleFrame = targetScreen.visibleFrame
+            var frame = window.frame
+            frame.origin = NSPoint(x: visibleFrame.midX - frame.width / 2, y: visibleFrame.midY - frame.height / 2)
+            window.setFrame(SettingsWindowLayout.fittedFrame(frame, in: visibleFrame), display: false)
+        }
         isSettingsWindowOpen = true
         updateDockActivationPolicy()
         fitSettingsWindowToScreen(window)
