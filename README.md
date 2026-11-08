@@ -4,7 +4,7 @@
 
 Remote Buddy（遥控搭子）把遥控器变成电脑上的语音输入按钮。拿起遥控器，按下说话、松开结束，就能在当前输入框中使用你喜欢的输入法或听写工具。
 
-[产品官网](https://remote.zfdang.com) · [下载](https://github.com/zfdang/voice-input-buddy/releases)
+[产品官网](https://remote.zfdang.com) · [下载](https://github.com/zfdang/remote-buddy/releases)
 
 当前支持 **macOS 14 及以上版本**，包括 Apple Silicon 和 Intel Mac。Windows 支持正在规划中。
 
@@ -34,7 +34,7 @@ Remote Buddy 接收遥控器音频，解码后送入虚拟麦克风，同时将�
 
 ## 如何使用
 
-从 [Releases](https://github.com/zfdang/voice-input-buddy/releases) 下载 `Remote_Buddy_*.pkg`。一个安装包包含 App 和虚拟麦克风驱动。
+从 [Releases](https://github.com/zfdang/remote-buddy/releases) 下载 `Remote_Buddy_*.pkg`。一个安装包包含 App 和虚拟麦克风驱动。
 
 1. 安装后打开 `/Applications/Remote Buddy.app`。
 2. 按设置向导授予蓝牙、输入监控和辅助功能权限。首次默认跟随系统语言，可在第一步选择中文或英文。

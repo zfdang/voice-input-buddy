@@ -8,6 +8,6 @@ App 固定输出到 Remote Buddy Mic，不提供其他输出或 BlackHole 回退
 
 验证时，在有焦点的文本框中按住语音键说话、松开结束，或使用已配置的点按行为，确认实际识别与文字输入。构建成功及设备检测通过不代表完整硬件验收。
 
-当前 PKG 未签名、未公证；App 与驱动使用固定自签名证书，更新包另有本项目 Sparkle 签名。对应驱动源码、补丁和许可见 https://github.com/zfdang/voice-input-buddy/blob/main/docs/source-code.md 。本地开发仍可使用 `scripts/build-driver.sh` 和 `scripts/build-driver-package.sh` 构建独立驱动包。
+当前 PKG 未签名、未公证；App 与驱动使用固定自签名证书，更新包另有本项目 Sparkle 签名。对应驱动源码、补丁和许可见 https://github.com/zfdang/remote-buddy/blob/main/docs/source-code.md 。本地开发仍可使用 `scripts/build-driver.sh` 和 `scripts/build-driver-package.sh` 构建独立驱动包。
 
-卸载请下载通用卸载器 PKG，用 macOS Installer 打开。默认删除 App、驱动及当前用户设置、日志和缓存；可取消个人数据删除。卸载需要管理员授权并会重启 Core Audio。详见 https://github.com/zfdang/voice-input-buddy/blob/main/docs/uninstall.md 。
+卸载请下载通用卸载器 PKG，用 macOS Installer 打开。默认删除 App、驱动及当前用户设置、日志和缓存；可取消个人数据删除。卸载需要管理员授权并会重启 Core Audio。详见 https://github.com/zfdang/remote-buddy/blob/main/docs/uninstall.md 。

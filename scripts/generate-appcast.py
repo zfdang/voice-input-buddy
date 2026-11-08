@@ -37,7 +37,7 @@ def generate(package, tag, version, signature, output, changes=None):
         ET.SubElement(item, f'{{{SPARKLE}}}hardwareRequirements').text = 'arm64'
     ET.SubElement(item, 'description').text = changes or '此版本未提供更新摘要。'
     ET.SubElement(item, 'enclosure', {
-        'url': f'https://github.com/zfdang/voice-input-buddy/releases/download/{tag}/{expected}',
+        'url': f'https://github.com/zfdang/remote-buddy/releases/download/{tag}/{expected}',
         'length': str(package.stat().st_size), 'type': 'application/octet-stream',
         f'{{{SPARKLE}}}edSignature': signature, f'{{{SPARKLE}}}installationType': 'package'})
     ET.indent(rss)

@@ -50,7 +50,7 @@ class FeedDeploymentTests(unittest.TestCase):
         xml = ET.parse(path); enclosure = xml.find('channel/item/enclosure')
         enclosure.set('url', 'https://example.invalid/package.pkg'); xml.write(path)
         with self.assertRaises(ValueError): feeds.verify(self.root, self.release)
-        enclosure.set('url', f'https://github.com/zfdang/voice-input-buddy/releases/download/{self.tag}/Remote_Buddy_{self.tag}_macOS_intel.pkg')
+        enclosure.set('url', f'https://github.com/zfdang/remote-buddy/releases/download/{self.tag}/Remote_Buddy_{self.tag}_macOS_intel.pkg')
         enclosure.set(f'{{{appcast.SPARKLE}}}edSignature', ''); xml.write(path)
         with self.assertRaises(ValueError): feeds.verify(self.root, self.release)
 
