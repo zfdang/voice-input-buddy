@@ -62,6 +62,16 @@ struct ProductBoundaryTests {
             "onboarding.web_remote.",
             "onboarding.control_source.apple_companion.",
             "onboarding.control_source.web_remote.",
+            "onboarding.control_method.iphone_app",
+            "onboarding.control_method.web_remote",
+            "onboarding.permissions.mobile_network",
+            "onboarding.permissions.apple_companion",
+            "onboarding.permissions.web_remote",
+            "onboarding.controls.apple_companion",
+            "onboarding.controls.web_remote",
+            "onboarding.side.iphone",
+            "onboarding.side.web",
+            "macro.integration.",
         ]
         for lang in ["zh-Hans.lproj", "en.lproj"] {
             let stringsURL = resources.appendingPathComponent(lang).appendingPathComponent("Localizable.strings")

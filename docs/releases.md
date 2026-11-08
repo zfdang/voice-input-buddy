@@ -79,10 +79,10 @@ Sparkle 从 `https://remote.zfdang.com/appcast-arm64.xml` 或 `appcast-intel.xml
 main 的发布构建从仓库 Actions Secret `SPARKLE_PRIVATE_KEY` 读取签名私钥，
 仓库 Variable `SPARKLE_PUBLIC_KEY` 必须与内置公钥完全一致。私钥只通过标准输入
 传递给 Sparkle sign_update；不会写入源码、日志、发布资产或 PR 构建。
-签名后使用 CryptoKit 与应用公钥独立验证，再生成对应架构的 appcast XML。更新源上传到 Actions 的 `website-update-feeds` 产物，并作为发布资产保留在 Release 中。重跑发布工作流时也会重新上传更新源产物。
+签名后使用 CryptoKit 与应用公钥独立验证，再生成对应架构的 appcast XML。更新源上传到 Actions 的 `website-update-feeds` 产物，并作为发布资产保留在 Release 中。若 Release 已存在，发布流程不会覆盖已发布的安装包或更新源，确保签名与已发布包严格一致；Pages 工作流部署时直接使用已发布 Release 的更新源。
 PR 构建只测试和打包，不接触签名私钥、不部署更新源。
 
-Release 成功后 Pages workflow 优先从该次发布的 Actions 产物部署两份 appcast XML；若产物不可用或单独更新网页，按顺序通过本地预置源、Release 附件、近期构建产物以及线上运行源回退获取，并验证版本和包地址仍匹配最新 Release。若更新源因历史异常丢失，可通过 `scripts/rebuild-pages-update-feeds.py` 从已发布的安装包与签名可靠重建。旧 Actions 产物过期不影响网站与更新部署；验证失败时停止部署，保留线上站点。PKG 地址指向
+Release 成功后 Pages workflow 优先从该次发布的 Actions 产物部署两份 appcast XML；若产物不可用或单独更新网页，按顺序通过 Actions 产物、Release 附件、近期构建产物、本地预置源以及线上运行源回退获取，并验证版本和包地址仍匹配最新 Release。若更新源因历史异常丢失，可通过 `scripts/rebuild-pages-update-feeds.py` 从已发布的安装包与签名手动重建并上传至 Release。旧 Actions 产物过期不影响网站与更新部署；验证失败时停止部署，保留线上站点。PKG 地址指向
 GitHub Releases；安装同时更新 App 和驱动，需要管理员授权，并可能短暂重启音频。
 这不是静默安装，也不代替 Apple Developer ID 签名和公证。
 

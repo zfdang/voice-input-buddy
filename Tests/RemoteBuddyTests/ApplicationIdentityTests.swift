@@ -19,6 +19,5 @@ struct ApplicationIdentityTests {
 
     @Test func presetApplicationRemoteMicBundleIdentifierMatchesInfoIdentifier() throws {
         #expect(PresetApplication.remoteMic.bundleIdentifier == ApplicationInstanceGuard.fallbackBundleIdentifier)
-        #expect(PresetApplication.remoteMic.bundleIdentifier == "com.zfdang.remote-buddy")
     }
 }

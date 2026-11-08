@@ -59,7 +59,7 @@ extension SettingsView {
                     HStack(spacing: 6) {
                         Image(systemName: installed ? "checkmark.circle.fill" : "exclamationmark.triangle")
                             .foregroundStyle(installed ? Color.green : Color.orange)
-                        Text(localization.text(installed ? "settings.driver.installed" : "settings.driver.missing"))
+                        Text(installed ? localization.text("settings.driver.installed") : localization.text("settings.driver.missing"))
                             .foregroundStyle(.primary)
                     }
                     Spacer()

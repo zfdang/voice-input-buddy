@@ -51,7 +51,6 @@ jobs:
       DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
     outputs:
       tag: ${{ steps.version.outputs.RELEASE_TAG }}
-      version: ${{ steps.version.outputs.RELEASE_COMMIT_COUNT }}
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -130,10 +129,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       RELEASE_TAG: ${{ needs.build.outputs.tag }}
-      RELEASE_VERSION: ${{ needs.build.outputs.version }}
       RELEASE_COMMIT: ${{ github.sha }}
-      SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
-      SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -147,7 +143,7 @@ jobs:
         with:
           name: release-changelog
           path: .
-      - name: Reconcile release update feeds
+      - name: Check immutable release state
         id: release_state
         shell: bash
         run: |
@@ -156,31 +152,15 @@ jobs:
             echo "exists=true" >> "$GITHUB_OUTPUT"
             gh release view "$RELEASE_TAG" --json tagName,assets > "$RUNNER_TEMP/release.json"
             existing_assets="$(jq -r '.assets[].name' "$RUNNER_TEMP/release.json")"
-            has_arm64=false
-            has_intel=false
-            if grep -q '^appcast-arm64\.xml$' <<< "$existing_assets"; then has_arm64=true; fi
-            if grep -q '^appcast-intel\.xml$' <<< "$existing_assets"; then has_intel=true; fi
-
-            if [[ "$has_arm64" == "true" && "$has_intel" == "true" ]]; then
-              echo "Downloading and verifying existing feeds from release $RELEASE_TAG..."
+            if grep -q '^appcast-arm64\.xml$' <<< "$existing_assets" && grep -q '^appcast-intel\.xml$' <<< "$existing_assets"; then
+              echo "Downloading published feeds from existing release $RELEASE_TAG..."
               gh release download "$RELEASE_TAG" --pattern "appcast-*.xml" --dir release --clobber
               python3 scripts/verify-pages-update-feeds.py release "$RUNNER_TEMP/release.json"
             else
-              echo "Release $RELEASE_TAG is missing update feeds. Rebuilding from published packages..."
-              printf '%s' "$SPARKLE_PRIVATE_KEY" | python3 scripts/rebuild-pages-update-feeds.py \
-                --tag "$RELEASE_TAG" \
-                --version "$RELEASE_VERSION" \
-                --private-key-file - \
-                --public-key "$SPARKLE_PUBLIC_KEY" \
-                --output-dir release
-
-              for arch in arm64 intel; do
-                feed="appcast-${arch}.xml"
-                if ! grep -q "^$feed\$" <<< "$existing_assets"; then
-                  echo "Uploading missing feed $feed to release $RELEASE_TAG..."
-                  gh release upload "$RELEASE_TAG" "release/$feed"
-                fi
-              done
+              echo "Error: Release $RELEASE_TAG exists but is missing update feed assets." >&2
+              echo "Cannot upload newly built feeds because package signatures may not match the published release." >&2
+              echo "Please use scripts/rebuild-pages-update-feeds.py with the release signing key to rebuild feeds from published packages." >&2
+              exit 1
             fi
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
@@ -197,7 +177,7 @@ jobs:
         shell: bash
         run: |
           if [[ "${{ steps.release_state.outputs.exists }}" == 'true' ]]; then
-            echo "Release $RELEASE_TAG already exists and feeds have been reconciled."
+            echo "Release $RELEASE_TAG already exists; packages and feeds are immutable."
           else
             gh release create "$RELEASE_TAG" \
               "release/Remote_Buddy_${RELEASE_TAG}_macOS_arm64.pkg" \

@@ -166,7 +166,6 @@
 "trigger.double_click" = "Double Press";
 "trigger.long_press" = "Long Press";
 "app.name" = "Remote Buddy";
-"macro.integration.focus_mcp_boundary" = "Select Input Field places the cursor in the target app. The MCP settings in Reflections let authorized AI clients read local history. These are separate features.";
 "application.wechat" = "WeChat";
 "application.wecom" = "WeCom";
 "application.netease_music" = "NetEase Cloud Music";

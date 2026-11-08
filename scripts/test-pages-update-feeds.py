@@ -49,7 +49,7 @@ class FeedDeploymentTests(unittest.TestCase):
         for arch in ['arm64', 'intel']:
             package = self.root / f'Remote_Buddy_{self.tag}_macOS_{arch}.pkg'
             package.write_bytes(b'package')
-            self.release['assets'].append({'name': package.name})
+            self.release['assets'].append({'name': package.name, 'size': package.stat().st_size})
             appcast.generate(package, self.tag, '43', base64.b64encode(bytes(64)).decode(), self.root / f'appcast-{arch}.xml')
 
     def test_complete_pair_matches_published_packages(self):
@@ -83,6 +83,16 @@ class FeedDeploymentTests(unittest.TestCase):
         enclosure.set('url', f'https://github.com/zfdang/remote-buddy/releases/download/{self.tag}/Remote_Buddy_{self.tag}_macOS_intel.pkg')
         enclosure.set(f'{{{appcast.SPARKLE}}}edSignature', ''); xml.write(path)
         with self.assertRaises(ValueError): feeds.verify(self.root, self.release)
+
+    def test_enclosure_length_mismatch_is_rejected(self):
+        path = self.root / 'appcast-arm64.xml'
+        xml = ET.parse(path)
+        enclosure = xml.find('channel/item/enclosure')
+        enclosure.set('length', '99999999')
+        xml.write(path)
+        with self.assertRaises(ValueError) as ctx:
+            feeds.verify(self.root, self.release)
+        self.assertIn("length mismatch", str(ctx.exception))
 
     def test_missing_architecture_or_asset_is_rejected(self):
         self.release['assets'].pop()
@@ -198,6 +208,9 @@ shutil.copy2(pathlib.Path(os.environ['FIXTURE_LIVE'])/filename,args[args.index('
             pkg.write_bytes(f'pkg-payload-{arch}'.encode())
             pkgs[arch] = pkg
             sigs[arch] = rebuild.sign_payload(pkg, priv_b64)
+            for asset in self.release['assets']:
+                if arch in asset['name']:
+                    asset['size'] = pkg.stat().st_size
 
         # Verify real signatures work
         for arch in ['arm64', 'intel']:
@@ -226,6 +239,16 @@ shutil.copy2(pathlib.Path(os.environ['FIXTURE_LIVE'])/filename,args[args.index('
             feeds.verify(out, self.release)
         finally:
             rebuild.get_embedded_public_key = orig_embedded
+
+    def test_rebuild_handles_64_byte_sparkle_key(self):
+        priv_b64, pub_b64 = generate_disposable_keypair()
+        raw_seed = base64.b64decode(priv_b64)
+        raw_pub = base64.b64decode(pub_b64)
+        sparkle_64_key = base64.b64encode(raw_seed + raw_pub).decode()
+
+        pkg = self.root / f'Remote_Buddy_{self.tag}_macOS_arm64.pkg'
+        sig = rebuild.sign_payload(pkg, sparkle_64_key)
+        self.assertTrue(rebuild.verify_payload_signature(pkg, sig, pub_b64))
 
     def test_rebuild_rejects_mismatched_public_key(self):
         orig_embedded = rebuild.get_embedded_public_key
@@ -260,7 +283,7 @@ shutil.copy2(pathlib.Path(os.environ['FIXTURE_LIVE'])/filename,args[args.index('
         ver_wrap = rebuild.resolve_version('v99-10-12.000', existing_feed_path=existing_feed)
         self.assertEqual(ver_wrap, '2000')
 
-        # Without git history and without existing feed, it raises ValueError instead of guessing
+        # Without git history, without package, and without existing feed, it raises ValueError instead of guessing
         with self.assertRaises(ValueError) as ctx:
             rebuild.resolve_version('v99-10-12.043', existing_feed_path=self.root / 'nonexistent.xml')
         self.assertIn("Cannot reliably determine", str(ctx.exception))
