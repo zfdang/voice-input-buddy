@@ -103,6 +103,29 @@ enum StatusItemActionResolver {
     }
 }
 
+enum ApplicationShortcutAction: Equatable {
+    case closeWindow
+    case passThrough
+}
+
+enum ApplicationShortcutResolver {
+    static func resolve(
+        modifierFlags: NSEvent.ModifierFlags,
+        charactersIgnoringModifiers: String?
+    ) -> ApplicationShortcutAction {
+        let relevantModifiers = modifierFlags.intersection([
+            .command, .control, .option, .shift,
+        ])
+        guard relevantModifiers == .command else { return .passThrough }
+        switch charactersIgnoringModifiers?.lowercased() {
+        case "q", "w":
+            return .closeWindow
+        default:
+            return .passThrough
+        }
+    }
+}
+
 @main
 enum VoiceInputBuddyApp {
     @MainActor
@@ -570,9 +593,8 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
         let quitItem = NSMenuItem(
             title: localization.text("common.action.quit"),
             action: #selector(quit),
-            keyEquivalent: "q"
+            keyEquivalent: ""
         )
-        quitItem.keyEquivalentModifierMask = .command
         quitItem.target = self
         applicationMenu.addItem(quitItem)
         applicationMenuItem.submenu = applicationMenu
@@ -640,18 +662,14 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
     private func installApplicationKeyboardShortcuts() {
         applicationShortcutMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
             [weak self] event in
-            let relevantModifiers = event.modifierFlags.intersection([
-                .command, .control, .option, .shift,
-            ])
-            guard relevantModifiers == .command else { return event }
-            switch event.charactersIgnoringModifiers?.lowercased() {
-            case "q":
-                self?.quit()
-                return nil
-            case "w":
+            switch ApplicationShortcutResolver.resolve(
+                modifierFlags: event.modifierFlags,
+                charactersIgnoringModifiers: event.charactersIgnoringModifiers
+            ) {
+            case .closeWindow:
                 self?.closeKeyWindow()
                 return nil
-            default:
+            case .passThrough:
                 return event
             }
         }
@@ -1195,7 +1213,11 @@ private final class VoiceInputBuddyAppDelegate: NSObject, NSApplicationDelegate,
     }
 
     @objc private func closeKeyWindow() {
-        NSApp.keyWindow?.performClose(nil)
+        if let keyWindow = NSApp.keyWindow {
+            keyWindow.performClose(nil)
+        } else if let window = settingsWindowController?.window, window.isVisible {
+            window.performClose(nil)
+        }
     }
 
     @objc private func quit() {
