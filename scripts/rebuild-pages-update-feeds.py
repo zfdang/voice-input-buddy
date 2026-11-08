@@ -10,6 +10,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_PUBLIC_KEY = "8aHZRXuY+Q0F0FsWNyQTx0wIYXi4MoCCSzAWs0j+uR4="
@@ -26,32 +27,60 @@ appcast_module = load_module("generate_appcast", "generate-appcast.py")
 verify_module = load_module("verify_pages_update_feeds", "verify-pages-update-feeds.py")
 
 
+def get_embedded_public_key():
+    for plist_path in [
+        ROOT / "Resources" / "Info.plist",
+        ROOT / "dist" / "Remote Buddy.app" / "Contents" / "Info.plist",
+    ]:
+        if plist_path.exists():
+            try:
+                import plistlib
+                with open(plist_path, "rb") as f:
+                    plist = plistlib.load(f)
+                    if "SUPublicEDKey" in plist:
+                        return plist["SUPublicEDKey"]
+            except Exception:
+                pass
+    return DEFAULT_PUBLIC_KEY
+
+
 def sign_payload(package_path, private_key_b64):
-    """Sign package payload with Ed25519 private key."""
+    """Sign package payload with Ed25519 private key. Private key is never passed via argv.
+    Supports both 32-byte seeds and 64-byte private keys.
+    """
+    key_bytes = base64.b64decode(private_key_b64)
+    if len(key_bytes) == 64:
+        key_bytes = key_bytes[:32]
+    raw_key_b64 = base64.b64encode(key_bytes).decode()
+
     try:
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-        priv = Ed25519PrivateKey.from_private_bytes(base64.b64decode(private_key_b64))
+        priv = Ed25519PrivateKey.from_private_bytes(key_bytes)
         sig = priv.sign(package_path.read_bytes())
         return base64.b64encode(sig).decode()
     except ImportError:
         pass
 
-    # Fallback to Swift with CryptoKit
+    # Fallback to Swift with CryptoKit, reading private key strictly via stdin
     swift_script = """
 import Foundation
 import CryptoKit
 
-guard CommandLine.arguments.count == 3,
-      let keyData = Data(base64Encoded: CommandLine.arguments[1]) else {
+guard CommandLine.arguments.count == 2 else { exit(1) }
+let input = FileHandle.standardInput.readDataToEndOfFile()
+guard let keyString = String(data: input, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+      let keyData = Data(base64Encoded: keyString) else {
     exit(1)
 }
-let key = try Curve25519.Signing.PrivateKey(rawRepresentation: keyData)
-let payload = try Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[2]))
+let seed = keyData.count == 64 ? keyData.prefix(32) : keyData
+let key = try Curve25519.Signing.PrivateKey(rawRepresentation: seed)
+let payload = try Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[1]))
 let signature = try key.signature(for: payload)
 print(signature.base64EncodedString())
 """
     result = subprocess.run(
-        ["swift", "-e", swift_script, private_key_b64, str(package_path)],
+        ["swift", "-e", swift_script, str(package_path)],
+        input=raw_key_b64,
         capture_output=True,
         text=True,
         check=True
@@ -81,6 +110,109 @@ def verify_payload_signature(package_path, signature_b64, public_key_b64):
     if result.returncode != 0:
         raise ValueError(f"Signature verification failed: {result.stderr.strip()}")
     return True
+
+
+def extract_summary_from_release_body(body):
+    """Extract clean update summary from release notes markdown body."""
+    if not body:
+        return "此版本未提供更新摘要。"
+    lines = []
+    for line in body.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith("[查看完整变化](") or line.startswith("首次发布"):
+            continue
+        line = re.sub(r'\(\[([0-9a-f]{7,})\]\([^\)]+\)\)', r'(\1)', line)
+        line = re.sub(r'\\([\\`*_\[\]<>])', r'\1', line)
+        lines.append(line)
+    return "\n".join(lines).strip() or "此版本未提供更新摘要。"
+
+
+def extract_version_from_pkg(pkg_path):
+    """Try to extract CFBundleVersion directly from a .pkg installer bundle."""
+    if not pkg_path or not Path(pkg_path).exists():
+        return None
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            expanded = Path(td) / "expanded"
+            res = subprocess.run(
+                ["pkgutil", "--expand-full", str(pkg_path), str(expanded)],
+                capture_output=True,
+                text=True
+            )
+            if res.returncode == 0:
+                import plistlib
+                candidates = list(expanded.glob("**/Applications/*.app/Contents/Info.plist"))
+                if not candidates:
+                    candidates = list(expanded.glob("**/Contents/Info.plist"))
+                for candidate in candidates:
+                    try:
+                        with open(candidate, "rb") as f:
+                            plist = plistlib.load(f)
+                            pkg_type = plist.get("CFBundlePackageType")
+                            bundle_id = plist.get("CFBundleIdentifier", "")
+                            if pkg_type == "APPL" or bundle_id in ("com.zfdang.remote-buddy", "com.zfdang.voice-input-buddy"):
+                                cf_ver = plist.get("CFBundleVersion")
+                                if cf_ver and str(cf_ver).isdigit():
+                                    return str(cf_ver)
+                    except Exception:
+                        continue
+    except Exception:
+        pass
+    return None
+
+
+def resolve_version(tag, explicit_version=None, target_commitish=None, existing_feed_path=None, pkg_path=None):
+    """Resolve build version integer matching commit count, avoiding 1000-modulo rollback."""
+    if explicit_version:
+        return str(explicit_version)
+
+    tag_mod = int(tag.rsplit(".", 1)[1])
+
+    # 1. Inspect package if available
+    pkg_ver = extract_version_from_pkg(pkg_path)
+    if pkg_ver and int(pkg_ver) % 1000 == tag_mod:
+        return str(pkg_ver)
+
+    # 2. Inspect git history if available
+    for ref in [tag, target_commitish, "HEAD"]:
+        if not ref:
+            continue
+        try:
+            res = subprocess.run(
+                ["git", "rev-list", "--count", ref],
+                capture_output=True,
+                text=True
+            )
+            if res.returncode == 0 and res.stdout.strip().isdigit():
+                count = int(res.stdout.strip())
+                if count % 1000 == tag_mod:
+                    return str(count)
+        except Exception:
+            pass
+
+    # 3. Check existing feed for base thousands
+    if existing_feed_path and Path(existing_feed_path).exists():
+        try:
+            tree = ET.parse(existing_feed_path)
+            ver = tree.findtext(f'.//{{{appcast_module.SPARKLE}}}version')
+            if ver and ver.isdigit():
+                prev_count = int(ver)
+                prev_tag = tree.findtext('.//channel/item/title')
+                if prev_tag == tag:
+                    return str(prev_count)
+                base = (prev_count // 1000) * 1000
+                if prev_count % 1000 > tag_mod or (prev_count % 1000 == 0 and tag_mod == 0 and prev_count > 0):
+                    base += 1000
+                return str(base + tag_mod)
+        except Exception:
+            pass
+
+    raise ValueError(
+        f"Cannot reliably determine full build version for release {tag}. "
+        "Please specify --version explicitly."
+    )
 
 
 def fetch_release_metadata(tag=None, release_json=None):
@@ -115,28 +247,12 @@ def rebuild(
     if not re.fullmatch(r"v\d{2}-\d{2}-\d{2}\.\d{3}", tag):
         raise ValueError(f"Invalid release tag: {tag}")
 
-    public_key = public_key or os.environ.get("SPARKLE_PUBLIC_KEY") or DEFAULT_PUBLIC_KEY
+    embedded_public_key = get_embedded_public_key()
+    public_key = public_key or os.environ.get("SPARKLE_PUBLIC_KEY") or embedded_public_key
+    if embedded_public_key and public_key != embedded_public_key:
+        raise ValueError(f"Public key ({public_key}) differs from Info.plist SUPublicEDKey ({embedded_public_key})")
+
     private_key = private_key or os.environ.get("SPARKLE_PRIVATE_KEY")
-
-    if version is None:
-        raw_version = tag.rsplit(".", 1)[1].lstrip("0")
-        version = raw_version if raw_version else "1"
-        # If git history is available, prefer rev-list count matching modulo 1000
-        try:
-            res = subprocess.run(
-                ["git", "rev-list", "--count", "HEAD"],
-                capture_output=True,
-                text=True
-            )
-            if res.returncode == 0 and res.stdout.strip().isdigit():
-                git_count = res.stdout.strip()
-                if int(git_count) % 1000 == int(tag.rsplit(".", 1)[1]):
-                    version = git_count
-        except Exception:
-            pass
-
-    if changes is None:
-        changes = release_metadata.get("body", "").strip() or "此版本未提供更新摘要。"
 
     output_path = Path(output_dir or (ROOT / "pages"))
     output_path.mkdir(parents=True, exist_ok=True)
@@ -152,9 +268,21 @@ def rebuild(
         download_dir = Path(download_dir)
         download_dir.mkdir(parents=True, exist_ok=True)
 
+    # Use a staging directory for atomic publication
+    staging_dir = tempfile.TemporaryDirectory(dir=output_path)
+    staging_path = Path(staging_dir.name)
+
     try:
+        # Resolve package paths first (downloading if necessary)
         for arch in ["arm64", "intel"]:
-            pkg_name = f"Remote_Buddy_{tag}_macOS_{arch}.pkg"
+            candidate_names = [
+                f"Remote_Buddy_{tag}_macOS_{arch}.pkg",
+                f"Voice_Input_Buddy_{tag}_macOS_{arch}.pkg",
+            ]
+            pkg_name = next(
+                (name for name in candidate_names if any(a.get("name") == name for a in release_metadata.get("assets", []))),
+                candidate_names[0]
+            )
             pkg_path = packages[arch]
             if pkg_path is None or not Path(pkg_path).exists():
                 local_candidate = download_dir / pkg_name
@@ -164,19 +292,33 @@ def rebuild(
                         check=True
                     )
                 pkg_path = local_candidate
-            else:
-                pkg_path = Path(pkg_path)
+            packages[arch] = Path(pkg_path)
 
+        if version is None:
+            existing_feed = output_path / "appcast-arm64.xml"
+            version = resolve_version(
+                tag,
+                explicit_version=None,
+                target_commitish=release_metadata.get("targetCommitish"),
+                existing_feed_path=existing_feed,
+                pkg_path=packages["arm64"]
+            )
+
+        if changes is None:
+            changes = extract_summary_from_release_body(release_metadata.get("body", ""))
+
+        for arch in ["arm64", "intel"]:
+            pkg_path = packages[arch]
             sig = signatures[arch]
             if not sig:
                 if private_key:
                     sig = sign_payload(pkg_path, private_key)
                 else:
-                    raise ValueError(f"Missing signature for {arch} package {pkg_name}")
+                    raise ValueError(f"Missing signature for {arch} package {pkg_path.name}")
 
             verify_payload_signature(pkg_path, sig, public_key)
 
-            dest_appcast = output_path / f"appcast-{arch}.xml"
+            dest_appcast = staging_path / f"appcast-{arch}.xml"
             appcast_module.generate(
                 package=pkg_path,
                 tag=tag,
@@ -186,9 +328,18 @@ def rebuild(
                 changes=changes,
             )
 
-        verify_module.verify(output_path, release_metadata)
+        # Verify candidate feeds before publishing
+        verify_module.verify(staging_path, release_metadata)
+
+        # Atomically replace files in output_path
+        for arch in ["arm64", "intel"]:
+            src = staging_path / f"appcast-{arch}.xml"
+            dst = output_path / f"appcast-{arch}.xml"
+            os.replace(src, dst)
+
         print(f"Successfully rebuilt and verified update feeds in {output_path} for release {tag}")
     finally:
+        staging_dir.cleanup()
         if temp_dir:
             temp_dir.cleanup()
 
@@ -202,7 +353,7 @@ def main():
     parser.add_argument("--arm64-signature", help="Base64 Ed25519 signature for arm64 pkg")
     parser.add_argument("--intel-signature", help="Base64 Ed25519 signature for intel pkg")
     parser.add_argument("--signatures-file", type=Path, help="JSON file with arm64 and intel signatures")
-    parser.add_argument("--private-key", help="Sparkle private key for signing")
+    parser.add_argument("--private-key-file", type=Path, help="Path to file containing private key, or '-' for stdin")
     parser.add_argument("--public-key", help="Sparkle public key for verification")
     parser.add_argument("--version", help="Bundle version number")
     parser.add_argument("--changes-file", type=Path, help="File containing changelog")
@@ -218,6 +369,13 @@ def main():
         arm64_sig = arm64_sig or sigs.get("arm64")
         intel_sig = intel_sig or sigs.get("intel")
 
+    private_key = None
+    if args.private_key_file:
+        if str(args.private_key_file) == "-":
+            private_key = sys.stdin.read().strip()
+        else:
+            private_key = args.private_key_file.read_text().strip()
+
     changes = args.changes_file.read_text() if args.changes_file else None
     release_metadata = json.loads(Path(args.release_json).read_text()) if args.release_json else None
 
@@ -228,7 +386,7 @@ def main():
         intel_package=args.intel_package,
         arm64_signature=arm64_sig,
         intel_signature=intel_sig,
-        private_key=args.private_key,
+        private_key=private_key,
         public_key=args.public_key,
         version=args.version,
         changes=changes,

@@ -65,6 +65,18 @@ jobs:
         with:
           name: release-changelog
           path: ${{ runner.temp }}/release-changelog
+      - name: Pre-populate Sparkle binary package cache
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          target_dir="$HOME/Library/Caches/org.swift.swiftpm/artifacts"
+          mkdir -p "$target_dir"
+          cached_file="$target_dir/https___github_com_sparkle_project_Sparkle_releases_download_2_9_4_Sparkle_for_Swift_Package_Manager_zip"
+          expected_sha="cb6fdbdc8884f15d62a616e79face92b08322410fd2d425edc6596ccbf4ba3b0"
+          if [[ ! -f "$cached_file" ]] || ! shasum -a 256 "$cached_file" | grep -q "$expected_sha"; then
+            echo "Pre-fetching Sparkle binary package via GitHub API..."
+            gh api repos/sparkle-project/Sparkle/releases/assets/463901481 -H "Accept: application/octet-stream" > "$cached_file"
+          fi
       - name: Test
         run: |
           python3 scripts/test-release-notes.py
@@ -131,6 +143,9 @@ jobs:
       RELEASE_TAG: ${{ needs.build.outputs.tag }}
       RELEASE_COMMIT: ${{ github.sha }}
     steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
       - uses: actions/download-artifact@v8.0.2
         with:
           pattern: macOS-release-*
@@ -140,14 +155,27 @@ jobs:
         with:
           name: release-changelog
           path: .
-      - name: Check immutable release
+      - name: Check immutable release state
         id: release_state
         shell: bash
         run: |
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            echo 'exists=true' >> "$GITHUB_OUTPUT"
+            echo "Release $RELEASE_TAG already exists."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            gh release view "$RELEASE_TAG" --json tagName,assets > "$RUNNER_TEMP/release.json"
+            existing_assets="$(jq -r '.assets[].name' "$RUNNER_TEMP/release.json")"
+            if grep -q '^appcast-arm64\.xml$' <<< "$existing_assets" && grep -q '^appcast-intel\.xml$' <<< "$existing_assets"; then
+              echo "Downloading published feeds from existing release $RELEASE_TAG..."
+              gh release download "$RELEASE_TAG" --pattern "appcast-*.xml" --dir release --clobber
+              python3 scripts/verify-pages-update-feeds.py release "$RUNNER_TEMP/release.json"
+            else
+              echo "Error: Release $RELEASE_TAG exists but is missing update feed assets." >&2
+              echo "Cannot upload newly built feeds because package signatures may not match the published release." >&2
+              echo "Please use scripts/rebuild-pages-update-feeds.py with the release signing key to rebuild feeds from published packages." >&2
+              exit 1
+            fi
           else
-            echo 'exists=false' >> "$GITHUB_OUTPUT"
+            echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Upload website update feeds
         uses: actions/upload-artifact@v7.0.2
@@ -161,9 +189,7 @@ jobs:
         shell: bash
         run: |
           if [[ "${{ steps.release_state.outputs.exists }}" == 'true' ]]; then
-            # A completed release is immutable on rerun; do not replace its packages.
-            echo "Release $RELEASE_TAG already exists."
-            gh release upload "$RELEASE_TAG" release/appcast-*.xml --clobber || true
+            echo "Release $RELEASE_TAG already exists; packages and feeds are immutable."
           else
             gh release create "$RELEASE_TAG" \
               "release/Remote_Buddy_${RELEASE_TAG}_macOS_arm64.pkg" \

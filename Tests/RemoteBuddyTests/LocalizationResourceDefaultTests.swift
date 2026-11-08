@@ -73,8 +73,10 @@ struct LocalizationResourceDefaultTests {
         #expect(store.snapshot.localizedWebsiteURL == URL(string: "https://remote.zfdang.com/index.en.html")!)
         store.select(.simplifiedChinese)
         #expect(store.snapshot.localizedWebsiteURL == URL(string: "https://remote.zfdang.com/")!)
-        #expect(AppLinks.website(for: Locale(identifier: "en_US")) == AppLinks.englishWebsite)
-        #expect(AppLinks.website(for: Locale(identifier: "zh_CN")) == AppLinks.chineseWebsite)
+        #expect(AppLinks.englishWebsite == URL(string: "https://remote.zfdang.com/index.en.html")!)
+        #expect(AppLinks.chineseWebsite == URL(string: "https://remote.zfdang.com/")!)
+        #expect(AppLinks.website(for: Locale(identifier: "en_US")) == URL(string: "https://remote.zfdang.com/index.en.html")!)
+        #expect(AppLinks.website(for: Locale(identifier: "zh_CN")) == URL(string: "https://remote.zfdang.com/")!)
     }
 
     @Test func statusItemActionResolverDecisionRules() {

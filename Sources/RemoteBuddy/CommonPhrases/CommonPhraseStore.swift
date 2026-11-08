@@ -57,8 +57,8 @@ final class CommonPhraseStore: ObservableObject {
     enum StoreError: Error { case invalidData, unavailable }
     static let maximumImportBytes = 4_000_000
     static let buttons: [RemoteButton] = [.ok, .left, .up, .right, .down]
-    static let exportWebsite = "https://github.com/zfdang/remote-buddy"
-    static let exportGitHub = "https://github.com/zfdang/remote-buddy"
+    static let exportWebsite = AppLinks.chineseWebsite.absoluteString
+    static let exportGitHub = AppLinks.githubRepository.absoluteString
     private static let defaultsKey = "commonPhrases.archive.v2"
     @Published private(set) var archive = CommonPhraseArchive(entries: [], bindings: [:])
     @Published private(set) var isAvailable = false

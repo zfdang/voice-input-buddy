@@ -16,4 +16,8 @@ struct ApplicationIdentityTests {
         let plist = try #require(PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any])
         #expect(plist["CFBundleIdentifier"] as? String == ApplicationInstanceGuard.fallbackBundleIdentifier)
     }
+
+    @Test func presetApplicationRemoteMicBundleIdentifierMatchesInfoIdentifier() throws {
+        #expect(PresetApplication.remoteMic.bundleIdentifier == ApplicationInstanceGuard.fallbackBundleIdentifier)
+    }
 }

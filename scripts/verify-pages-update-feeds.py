@@ -16,14 +16,25 @@ def verify(directory, release):
         if path.stat().st_size > 256 * 1024:
             raise ValueError('Oversized update feed')
         item = ET.parse(path).find('channel/item')
-        package = f'Remote_Buddy_{tag}_macOS_{architecture}.pkg'
-        if item is None or item.findtext('title') != tag or package not in names:
+        candidate_packages = [
+            f'Remote_Buddy_{tag}_macOS_{architecture}.pkg',
+            f'Voice_Input_Buddy_{tag}_macOS_{architecture}.pkg',
+        ]
+        package = next((pkg for pkg in candidate_packages if pkg in names), None)
+        if item is None or item.findtext('title') != tag or not package:
             raise ValueError('Feed does not match the latest release')
         enclosure = item.find('enclosure')
-        expected = {f'https://github.com/zfdang/{repo}/releases/download/{tag}/{package}'
-                    for repo in ('remote-buddy', 'voice-input-buddy')}
+        expected = {
+            f'https://github.com/zfdang/{repo}/releases/download/{tag}/{package}'
+            for repo in ('remote-buddy', 'voice-input-buddy')
+        }
         if enclosure is None or enclosure.get('url') not in expected:
             raise ValueError('Unexpected package destination')
+        asset_obj = next((a for a in release.get('assets', []) if a.get('name') == package), None)
+        if asset_obj and 'size' in asset_obj:
+            expected_length = str(asset_obj['size'])
+            if enclosure.get('length') != expected_length:
+                raise ValueError(f"Enclosure length mismatch: feed has {enclosure.get('length')}, release asset has {expected_length}")
         if len(base64.b64decode(enclosure.get(f'{{{SPARKLE}}}edSignature', ''), validate=True)) != 64:
             raise ValueError('Missing update signature')
         version = item.findtext(f'{{{SPARKLE}}}version', '')
