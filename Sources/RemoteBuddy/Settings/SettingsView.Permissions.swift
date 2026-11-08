@@ -48,9 +48,12 @@ extension SettingsView {
                         .compatibilityButtonStyle(.standard)
                 }
                 HStack {
-                    Label(localization.text(installed ? "settings.driver.installed" : "settings.driver.missing"),
-                          systemImage: installed ? "checkmark.circle.fill" : "exclamationmark.triangle")
-                        .foregroundStyle(installed ? Color.green : Color.orange)
+                    HStack(spacing: 6) {
+                        Image(systemName: installed ? "checkmark.circle.fill" : "exclamationmark.triangle")
+                            .foregroundStyle(installed ? Color.green : Color.orange)
+                        Text(localization.text(installed ? "settings.driver.installed" : "settings.driver.missing"))
+                            .foregroundStyle(.primary)
+                    }
                     Spacer()
                     Button(localization.text("audio.compatibility.open_install_guide")) {
                         model.openVirtualMicrophoneSetupInstructions(using: localization)
