@@ -526,6 +526,7 @@
 "menu.window" = "Window";
 "menu.open_log_folder" = "Open Log Folder";
 "menu.check_for_updates" = "Check for Updates…";
+"menu.help_and_support" = "Help & Support";
 "common.action.quit" = "Quit";
 "menu.language" = "Language";
 "language.system" = "System Default";

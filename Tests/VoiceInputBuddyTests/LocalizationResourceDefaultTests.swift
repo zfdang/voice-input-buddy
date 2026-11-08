@@ -50,6 +50,20 @@ struct LocalizationResourceDefaultTests {
         #expect(chinese == "显示菜单")
     }
 
+    @Test func helpAndSupportResolvesInBothLanguages() throws {
+        let name = "locale-help-support-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let store = LocalizationStore(settings: AppSettings(defaults: defaults))
+        let key = "menu.help_and_support"
+        store.select(.english)
+        let english = store.text(key)
+        store.select(.simplifiedChinese)
+        let chinese = store.text(key)
+        #expect(english == "Help & Support")
+        #expect(chinese == "帮助与支持")
+    }
+
     @Test func statusItemActionResolverDecisionRules() {
         #expect(StatusItemActionResolver.shouldShowMenu(eventType: .rightMouseUp, modifierFlags: []))
         #expect(StatusItemActionResolver.shouldShowMenu(eventType: .rightMouseUp, modifierFlags: .control))

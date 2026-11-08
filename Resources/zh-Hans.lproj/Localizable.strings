@@ -526,6 +526,7 @@
 "menu.window" = "窗口";
 "menu.open_log_folder" = "打开日志所在文件夹";
 "menu.check_for_updates" = "检查更新…";
+"menu.help_and_support" = "帮助与支持";
 "common.action.quit" = "退出";
 "menu.language" = "语言";
 "language.system" = "跟随系统";
