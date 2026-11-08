@@ -20,8 +20,9 @@ def verify(directory, release):
         if item is None or item.findtext('title') != tag or package not in names:
             raise ValueError('Feed does not match the latest release')
         enclosure = item.find('enclosure')
-        expected = f'https://github.com/zfdang/remote-buddy/releases/download/{tag}/{package}'
-        if enclosure is None or enclosure.get('url') != expected:
+        expected = {f'https://github.com/zfdang/{repo}/releases/download/{tag}/{package}'
+                    for repo in ('remote-buddy', 'voice-input-buddy')}
+        if enclosure is None or enclosure.get('url') not in expected:
             raise ValueError('Unexpected package destination')
         if len(base64.b64decode(enclosure.get(f'{{{SPARKLE}}}edSignature', ''), validate=True)) != 64:
             raise ValueError('Missing update signature')
