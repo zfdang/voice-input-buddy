@@ -78,9 +78,9 @@ struct UpdateCheckPolicy: Equatable {
 enum SettingsWindowActivationPolicy {
     static func value(
         showDockIcon: Bool,
-        isSettingsWindowOpen _: Bool
+        isSettingsWindowOpen: Bool
     ) -> NSApplication.ActivationPolicy {
-        showDockIcon ? .regular : .accessory
+        (showDockIcon || isSettingsWindowOpen) ? .regular : .accessory
     }
 }
 
@@ -277,9 +277,19 @@ private final class RemoteBuddyAppDelegate: NSObject, NSApplicationDelegate, NSM
     private let connectionItem = NSMenuItem()
 
     var activationPolicy: NSApplication.ActivationPolicy {
-        SettingsWindowActivationPolicy.value(
+        let baseLaunchDecision = OnboardingLaunchPolicy.shouldShowMainWindow(
+            isComplete: model.settings.isOnboardingComplete,
+            completedUpdate: false,
+            openMainWindowAtLaunch: model.settings.openMainWindowAtLaunch
+        )
+        let shouldShowMainWindow = AppEntryPointVisibilityPolicy.shouldShowMainWindow(
+            baseLaunchDecision: baseLaunchDecision,
             showDockIcon: model.settings.showDockIcon,
-            isSettingsWindowOpen: false
+            showStatusBarIcon: model.settings.showStatusBarIcon
+        )
+        return SettingsWindowActivationPolicy.value(
+            showDockIcon: model.settings.showDockIcon,
+            isSettingsWindowOpen: shouldShowMainWindow
         )
     }
 

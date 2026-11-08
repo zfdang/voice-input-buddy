@@ -37,4 +37,11 @@ struct SettingsWindowLayoutTests {
         let desktop = CGSize(width: 1200, height: 900)
         #expect(SettingsWindowLayout.canvasSize(viewport: desktop) == desktop)
     }
+
+    @Test func activationPolicyBecomesRegularWhileWindowIsOpen() {
+        #expect(SettingsWindowActivationPolicy.value(showDockIcon: false, isSettingsWindowOpen: false) == .accessory)
+        #expect(SettingsWindowActivationPolicy.value(showDockIcon: true, isSettingsWindowOpen: false) == .regular)
+        #expect(SettingsWindowActivationPolicy.value(showDockIcon: false, isSettingsWindowOpen: true) == .regular)
+        #expect(SettingsWindowActivationPolicy.value(showDockIcon: true, isSettingsWindowOpen: true) == .regular)
+    }
 }
