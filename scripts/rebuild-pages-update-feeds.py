@@ -135,19 +135,23 @@ def extract_version_from_pkg(pkg_path):
         return None
     try:
         with tempfile.TemporaryDirectory() as td:
+            expanded = Path(td) / "expanded"
             res = subprocess.run(
-                ["pkgutil", "--expand-full", str(pkg_path), td],
+                ["pkgutil", "--expand-full", str(pkg_path), str(expanded)],
                 capture_output=True,
                 text=True
             )
             if res.returncode == 0:
-                for candidate in Path(td).glob("**/Applications/Remote Buddy.app/Contents/Info.plist"):
-                    import plistlib
-                    with open(candidate, "rb") as f:
-                        plist = plistlib.load(f)
-                        cf_ver = plist.get("CFBundleVersion")
-                        if cf_ver and str(cf_ver).isdigit():
-                            return str(cf_ver)
+                import plistlib
+                for candidate in expanded.glob("**/Contents/Info.plist"):
+                    try:
+                        with open(candidate, "rb") as f:
+                            plist = plistlib.load(f)
+                            cf_ver = plist.get("CFBundleVersion")
+                            if cf_ver and str(cf_ver).isdigit():
+                                return str(cf_ver)
+                    except Exception:
+                        continue
     except Exception:
         pass
     return None

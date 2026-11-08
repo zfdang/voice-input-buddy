@@ -288,4 +288,27 @@ shutil.copy2(pathlib.Path(os.environ['FIXTURE_LIVE'])/filename,args[args.index('
             rebuild.resolve_version('v99-10-12.043', existing_feed_path=self.root / 'nonexistent.xml')
         self.assertIn("Cannot reliably determine", str(ctx.exception))
 
+    def test_extract_version_from_pkg(self):
+        import plistlib
+        pkg_root = self.root / 'pkg_payload'
+        app_dir = pkg_root / 'Applications' / 'Remote Buddy.app' / 'Contents'
+        app_dir.mkdir(parents=True)
+        plist_data = {"CFBundleVersion": "1043", "CFBundleShortVersionString": "26.11.08"}
+        with open(app_dir / 'Info.plist', 'wb') as f:
+            plistlib.dump(plist_data, f)
+
+        pkg_path = self.root / 'test_app.pkg'
+        subprocess.run(
+            ['pkgbuild', '--identifier', 'com.zfdang.remote-buddy', '--root', str(pkg_root), str(pkg_path)],
+            check=True,
+            capture_output=True
+        )
+
+        extracted = rebuild.extract_version_from_pkg(pkg_path)
+        self.assertEqual(extracted, '1043')
+
+        # resolve_version prioritizes pkg_path over git rev-list or fallback
+        resolved = rebuild.resolve_version('v99-10-12.043', pkg_path=pkg_path)
+        self.assertEqual(resolved, '1043')
+
 if __name__ == '__main__': unittest.main()
