@@ -30,6 +30,14 @@ extension SettingsView {
             refreshPermissionStates()
             model.refreshAudioDevices()
         }
+        .task { @MainActor in
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(1)) }
+                catch { return }
+                guard !Task.isCancelled else { return }
+                refreshPermissionStates()
+            }
+        }
     }
 
     private var microphoneDriverPanel: some View {
