@@ -367,7 +367,7 @@
 "permissions.upgrade_identity_help" = "如果升级后权限失效，请将遥控搭子保留在“应用程序”中，并重新授予缺失的权限。";
 "diagnostics.title" = "诊断";
 "diagnostics.logs.title" = "应用日志";
-"diagnostics.logs.privacy" = "诊断日志仅存于本机，日志上传已停用。";
+"diagnostics.logs.privacy" = "诊断日志仅保存在本机，永不上传。";
 "diagnostics.logs.last_entry" = "打开本地文本日志，或复制脱敏诊断摘要。";
 "diagnostics.logs.show_in_finder" = "在 Finder 中显示日志";
 "diagnostics.logs.copy_summary" = "复制诊断摘要";

@@ -367,7 +367,7 @@
 "permissions.upgrade_identity_help" = "If access was lost after an update, keep Remote Buddy in Applications and grant the missing permission again.";
 "diagnostics.title" = "Diagnostics";
 "diagnostics.logs.title" = "App Logs";
-"diagnostics.logs.privacy" = "Diagnostic logs stay on this Mac. Log upload is disabled.";
+"diagnostics.logs.privacy" = "Diagnostic logs stay on this Mac and are never uploaded.";
 "diagnostics.logs.last_entry" = "Open local text logs or copy a redacted diagnostic summary.";
 "diagnostics.logs.show_in_finder" = "Show Logs in Finder";
 "diagnostics.logs.copy_summary" = "Copy Diagnostic Summary";
