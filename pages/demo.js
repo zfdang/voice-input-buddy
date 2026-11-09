@@ -75,12 +75,20 @@ button.addEventListener('blur', stop);
         desc: '检查蓝牙、输入监控和辅助功能权限，以及 Remote Buddy Mic 驱动状态。缺少权限或驱动时，按页面提示处理。'
       },
       {
-        title: '设置与更新',
+        title: '通用设置',
+        badge: '偏好设置',
+        windowTitle: '通用设置 · Remote Buddy',
+        src: 'assets/screenshots/general-zh.png',
+        alt: 'Remote Buddy 通用设置界面：图标显示、启动行为、界面语言与向导重置',
+        desc: '管理菜单栏和 Dock 图标显示、开机自动启动、主窗口展示逻辑、界面语言，或重新开始配置向导。'
+      },
+      {
+        title: '关于搭子',
         badge: '版本与更新',
-        windowTitle: '设置与更新 · Remote Buddy',
+        windowTitle: '关于搭子 · Remote Buddy',
         src: 'assets/screenshots/about-zh.png',
-        alt: 'Remote Buddy 设置界面：应用版本、更新检查、配置导入导出与语言偏好',
-        desc: '查看版本、检查更新、导入或导出配置，调整启动行为和界面语言。'
+        alt: 'Remote Buddy 关于界面：应用版本、软件更新检查、诊断与本地日志、开源许可与项目链接',
+        desc: '集中查看当前版本、检查软件更新、复制排障诊断信息、打开本地日志，并查看开源许可与项目支持链接。'
       }
     ],
     wizard: [
@@ -186,12 +194,20 @@ button.addEventListener('blur', stop);
         desc: 'Check Bluetooth, Input Monitoring, and Accessibility permissions, plus the Remote Buddy Mic driver. Follow the page’s instructions if anything is missing.'
       },
       {
-        title: 'Settings & Updates',
+        title: 'General Settings',
+        badge: 'Preferences',
+        windowTitle: 'General Settings · Remote Buddy',
+        src: 'assets/screenshots/general-en.png',
+        alt: 'Remote Buddy General Settings interface: icon visibility, launch behavior, interface language, and setup wizard reset',
+        desc: 'Manage menu bar and Dock icons, launch at login, main window visibility, interface language, or restart the setup wizard.'
+      },
+      {
+        title: 'About Remote Buddy',
         badge: 'Version & Updates',
-        windowTitle: 'Settings & Updates · Remote Buddy',
+        windowTitle: 'About Remote Buddy · Remote Buddy',
         src: 'assets/screenshots/about-en.png',
-        alt: 'Remote Buddy Settings interface: version, update checks, configuration import/export and language preferences',
-        desc: 'Check the app version and updates, import or export settings, and adjust startup behavior and interface language.'
+        alt: 'Remote Buddy About interface: version, software update check, diagnostics and local logs, license, and repository links',
+        desc: 'Check the current version, check for updates, copy diagnostic information, view local logs, and access open-source license and support links.'
       }
     ],
     wizard: [

@@ -16,6 +16,7 @@ SETTINGS_SECTIONS = [
     ("commonPhrases", "commonPhrases-1020x772.png", "phrases"),
     ("integration", "integration-1020x772.png", "integration"),
     ("permissions", "permissions-1020x772.png", "permissions"),
+    ("general", "general-1020x772.png", "general"),
     ("about", "about-1020x772.png", "about"),
 ]
 
@@ -33,6 +34,8 @@ def ensure_binary() -> Path:
     print("Building current sources with CONFIGURATION=debug...")
     env = os.environ.copy()
     env["CONFIGURATION"] = "debug"
+    if "DEVELOPER_DIR" not in env and Path("/Applications/Xcode.app/Contents/Developer").exists():
+        env["DEVELOPER_DIR"] = "/Applications/Xcode.app/Contents/Developer"
     subprocess.run(["scripts/build-app.sh"], cwd=ROOT, env=env, check=True)
     return APP_PATH
 

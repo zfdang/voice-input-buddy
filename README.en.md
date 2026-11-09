@@ -10,7 +10,7 @@ Supports **macOS 14 and later**, on Apple Silicon and Intel Macs. Windows suppor
 
 ## Screenshots
 
-![Device connection screen](pages/assets/screenshots/connection-en.png)
+![Remote connection screen](pages/assets/screenshots/connection-en.png)
 
 ![Button mapping screen](pages/assets/screenshots/mapping-en.png)
 
