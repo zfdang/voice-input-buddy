@@ -94,4 +94,29 @@ struct LocalDiagnosticTests {
         #expect(writtenAudit?.contains("accessibility=false") == true)
     }
 
+    @Test func settingsDiagnosticSnapshotRedactsHomeDirectoryInLogPath() {
+        let fakeHome = "/Users/secret_user_42"
+        let fullPath = "\(fakeHome)/Library/Logs/RemoteBuddy/remotebuddy.log"
+        let sanitized = SettingsDiagnosticSnapshot.sanitizePath(fullPath, homeDirectory: fakeHome)
+        #expect(sanitized == "~/Library/Logs/RemoteBuddy/remotebuddy.log")
+        #expect(SettingsDiagnosticSnapshot.sanitizePath(fakeHome, homeDirectory: fakeHome) == "~")
+        #expect(SettingsDiagnosticSnapshot.sanitizePath("/tmp/safe.log", homeDirectory: fakeHome) == "/tmp/safe.log")
+
+        let actualHome = NSHomeDirectory()
+        let realUserLogPath = "\(actualHome)/Library/Logs/RemoteBuddy/remotebuddy.log"
+        let snapshot = SettingsDiagnosticSnapshot(
+            appVersion: "1.0.0",
+            bluetoothGranted: true,
+            inputMonitoringGranted: true,
+            accessibilityGranted: true,
+            runtimeLogAvailable: true,
+            runtimeLogPath: realUserLogPath
+        )
+
+        #expect(!snapshot.runtimeLogPath.contains(actualHome))
+        #expect(snapshot.runtimeLogPath == "~/Library/Logs/RemoteBuddy/remotebuddy.log")
+        #expect(!snapshot.summary.contains(actualHome))
+        #expect(snapshot.summary.contains("~/Library/Logs/RemoteBuddy/remotebuddy.log"))
+    }
+
 }

@@ -108,7 +108,7 @@ struct SettingsDiagnosticSnapshot: Equatable {
         voiceTool: String = "unselected",
         voiceKeyMode: String = "press_and_hold",
         runtimeLogAvailable: Bool,
-        runtimeLogPath: String = AppLogger.shared.logURL.path,
+        runtimeLogPath: String = SettingsDiagnosticSnapshot.sanitizePath(AppLogger.shared.logURL.path),
         runtimeLogSizeBytes: Int64? = nil,
         generatedAt: Date = Date()
     ) {
@@ -127,9 +127,21 @@ struct SettingsDiagnosticSnapshot: Equatable {
         self.voiceTool = voiceTool
         self.voiceKeyMode = voiceKeyMode
         self.runtimeLogAvailable = runtimeLogAvailable
-        self.runtimeLogPath = runtimeLogPath
+        self.runtimeLogPath = Self.sanitizePath(runtimeLogPath)
         self.runtimeLogSizeBytes = runtimeLogSizeBytes
         self.generatedAt = generatedAt
+    }
+
+    static func sanitizePath(_ path: String, homeDirectory: String = NSHomeDirectory()) -> String {
+        guard !homeDirectory.isEmpty else { return path }
+        if path == homeDirectory {
+            return "~"
+        }
+        let prefix = homeDirectory.hasSuffix("/") ? homeDirectory : homeDirectory + "/"
+        if path.hasPrefix(prefix) {
+            return "~/" + path.dropFirst(prefix.count)
+        }
+        return path
     }
 
     var formattedLogSize: String {

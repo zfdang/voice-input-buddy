@@ -67,7 +67,7 @@ body:
     attributes:
       label: 运行环境与诊断信息 (Diagnostic Information)
       description: |
-        可在 RemoteBuddy 的**「设置」→「通用」→「诊断与日志」**卡片中，点击**「复制诊断信息」**，然后直接粘贴到下方：
+        可在 RemoteBuddy 的**「设置」→「关于」→「诊断与日志」**（Settings → About）卡片中，点击**「复制诊断信息」**（Copy Diagnostic Info），然后直接粘贴到下方：
       render: markdown
       placeholder: |
         <!-- 请在此处粘贴应用中点击「复制诊断信息」得到的内容 -->
@@ -79,7 +79,7 @@ body:
     attributes:
       label: 问题发生时的脱敏日志片段 (Redacted Runtime Logs)
       description: |
-        可在「设置」→「通用」中点击**「在 Finder 中显示日志」**，复制故障发生前后的相关日志片段粘贴于此（日志仅保存在本地且已默认脱敏，不含语音或隐私内容）。
+        可在**「设置」→「关于」**（Settings → About）中点击**「在 Finder 中显示日志」**（Show Logs in Finder），复制故障发生前后的相关日志片段粘贴于此（日志仅保存在本地且已默认脱敏，不含语音或隐私内容）。
       render: text
       placeholder: |
         <!-- 请在此处粘贴相关日志内容 -->

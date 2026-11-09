@@ -79,8 +79,10 @@ extension SettingsView {
             settings.remoteDeviceProfiles.first(where: { $0.id == settings.selectedRemoteProfileID })
         let remoteModelDesc: String
         if let connectedProfile {
-            let name = connectedProfile.customName.isEmpty ? localization.text(connectedProfile.displayNameFallbackKey) : connectedProfile.customName
-            remoteModelDesc = "\(name) (\(connectedProfile.model.rawValue))"
+            // Omit user-defined customName to avoid exposing personal names or room labels in public issues.
+            // Describe only the hardware model using standard localization and raw model identifier.
+            let standardModelName = localization.text(connectedProfile.displayNameFallbackKey)
+            remoteModelDesc = "\(standardModelName) (\(connectedProfile.model.rawValue))"
         } else {
             remoteModelDesc = localization.text("common.value.none")
         }
@@ -103,7 +105,7 @@ extension SettingsView {
             voiceTool: settings.onboardingVoiceTool.rawValue,
             voiceKeyMode: settings.voiceKeyMode.rawValue,
             runtimeLogAvailable: logExists,
-            runtimeLogPath: logURL.path,
+            runtimeLogPath: SettingsDiagnosticSnapshot.sanitizePath(logURL.path),
             runtimeLogSizeBytes: logSizeBytes
         )
         SettingsPageBehavior.copyDiagnosticSummary(
