@@ -32,7 +32,7 @@ struct SettingsView: View {
     @State private var selectedChromecastControlID = "select"
     @State var isMappingSelectionLocked = true
     @State var mappingEditingTarget: ShortcutEditingTarget?
-    @State var mappingActionFilter: MappingActionFilter = .all
+    @State var mappingActionFilter: MappingActionFilter = .basicKeys
     @State var shortcutCaptureTarget: ShortcutEditingTarget?
     @State var applicationShortcutCaptureProfileID: UUID?
     @State var shortcutCaptureFeedback: ShortcutCaptureFeedback?
@@ -44,6 +44,7 @@ struct SettingsView: View {
     @State var isRepositoryLinkCopied = false
     @State var isMappingPermissionAlertPresented = false
     @State var isWaitingForMappingPermissions = false
+    @State var isShowingRestoreAllDefaultsAlert = false
 
     init(
         model: BridgeAppModel,

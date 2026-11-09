@@ -25,15 +25,6 @@ extension AppSettings {
         }
     }
 
-    func saveButtonRapidPressEnabled() {
-        let raw = Dictionary(
-            uniqueKeysWithValues: buttonRapidPressEnabled.map { ($0.key.rawValue, $0.value) }
-        )
-        if let data = try? JSONEncoder().encode(raw) {
-            defaults.set(data, forKey: Keys.buttonRapidPressEnabled)
-        }
-    }
-
     func saveSecondaryBindings() {
         let raw = Dictionary(uniqueKeysWithValues: secondaryButtonBindings.map { button, bindings in
             (
@@ -55,8 +46,7 @@ extension AppSettings {
             buttonBindings: buttonBindings,
             buttonShortcuts: buttonShortcuts,
             buttonApplicationProfileIDs: buttonApplicationProfileIDs,
-            secondaryButtonBindings: secondaryButtonBindings,
-            buttonRapidPressEnabled: buttonRapidPressEnabled
+            secondaryButtonBindings: secondaryButtonBindings
         )
     }
 

@@ -12,7 +12,6 @@ final class AppSettings: ObservableObject {
         static let buttonShortcuts = "buttonShortcuts"
         static let buttonApplicationProfileIDs = "buttonApplicationProfileIDs"
         static let secondaryButtonBindings = "secondaryButtonBindings"
-        static let buttonRapidPressEnabled = "buttonRapidPressEnabled"
         static let customApplicationProfiles = "customApplicationProfiles"
         static let remoteDeviceProfiles = "remoteDeviceProfiles"
         static let selectedRemoteProfileID = "selectedRemoteProfileID"
@@ -106,13 +105,6 @@ final class AppSettings: ObservableObject {
     @Published var secondaryButtonBindings: [RemoteButton: [ButtonTrigger: ConfiguredButtonAction]] {
         didSet {
             saveSecondaryBindings()
-            saveSelectedRemoteProfileMappings()
-        }
-    }
-
-    @Published var buttonRapidPressEnabled: [RemoteButton: Bool] {
-        didSet {
-            saveButtonRapidPressEnabled()
             saveSelectedRemoteProfileMappings()
         }
     }
@@ -302,7 +294,7 @@ final class AppSettings: ObservableObject {
         switch key {
         case "remoteDeviceProfiles": "remote_profiles"
         case "buttonBindings", "buttonShortcuts", "buttonApplicationProfileIDs",
-             "secondaryButtonBindings", "buttonRapidPressEnabled":
+             "secondaryButtonBindings":
             "button_mapping"
         case "customApplicationProfiles": "custom_apps"
         case "onboarding.stagedVoiceBinding": "onboarding"
@@ -376,21 +368,6 @@ final class AppSettings: ObservableObject {
             )
         } else {
             buttonApplicationProfileIDs = [:]
-        }
-
-        if let decoded = Self.decodeSetting(
-            [String: Bool].self,
-            forKey: Keys.buttonRapidPressEnabled,
-            from: defaults,
-            corrupted: &corruptedKeys
-        ) {
-            buttonRapidPressEnabled = Dictionary(
-                uniqueKeysWithValues: decoded.compactMap { key, value in
-                    RemoteButton(rawValue: key).map { ($0, value) }
-                }
-            )
-        } else {
-            buttonRapidPressEnabled = [:]
         }
 
         let shouldSeedSecondaryBindings = defaults.object(forKey: Keys.secondaryButtonBindings) == nil &&
@@ -510,7 +487,6 @@ final class AppSettings: ObservableObject {
                 buttonShortcuts = selected.mappings.parsedButtonShortcuts
                 buttonApplicationProfileIDs = selected.mappings.parsedButtonApplicationProfileIDs
                 secondaryButtonBindings = selected.mappings.parsedSecondaryButtonBindings
-                buttonRapidPressEnabled = selected.mappings.parsedButtonRapidPressEnabled
             }
         }
         unifiedBaseBindings = Self.decodeSetting(

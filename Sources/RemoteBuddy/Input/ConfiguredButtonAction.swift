@@ -41,9 +41,9 @@ struct ConfiguredButtonAction: Codable, Equatable {
 enum ButtonActionCategory: String, CaseIterable, Identifiable {
     case basicKeys
     case systemAndMedia
-    case custom
-    case commonPhrases
     case applications
+    case commonPhrases
+    case custom
 
     var id: String { rawValue }
 
@@ -51,9 +51,9 @@ enum ButtonActionCategory: String, CaseIterable, Identifiable {
         switch self {
         case .basicKeys: return "button_mapping.action_group.basic_keys"
         case .systemAndMedia: return "button_mapping.action_group.system_and_media"
-        case .custom: return "button_mapping.action_group.custom"
-        case .commonPhrases: return "common_phrases.title"
         case .applications: return "button_mapping.action_group.applications"
+        case .commonPhrases: return "common_phrases.title"
+        case .custom: return "button_mapping.action_group.custom"
         }
     }
 }
@@ -85,18 +85,16 @@ enum ButtonAction: String, CaseIterable, Codable, Identifiable {
     case showDesktop
     case contextMenu
     case appSwitcher
+    case focusInput
     case volumeUp
     case volumeDown
     case volumeMute
     case playPause
     case previousCommandLeft
     case nextCommandRight
-    case customShortcut
-    case repeatSingleClick
-    case focusInput
-    case openCustomApplication
     case toggleLongRecording
     case openCommonPhrases
+    case openCustomApplication
     case openRemoteBuddy
     case openCodex
     case openClaude
@@ -110,6 +108,8 @@ enum ButtonAction: String, CaseIterable, Codable, Identifiable {
     case openChrome
     case openSafari
     case openZed
+    case customShortcut
+    case repeatSingleClick
 
     var id: String { rawValue }
 
@@ -198,15 +198,15 @@ enum ButtonAction: String, CaseIterable, Codable, Identifiable {
              .arrowUp, .arrowDown, .arrowLeft, .arrowRight, .scrollUp, .scrollDown,
              .deleteBackward:
             return .basicKeys
-        case .showDesktop, .contextMenu, .appSwitcher, .volumeUp, .volumeDown, .volumeMute,
+        case .showDesktop, .contextMenu, .appSwitcher, .focusInput, .volumeUp, .volumeDown, .volumeMute,
              .playPause, .previousCommandLeft, .nextCommandRight, .toggleLongRecording:
             return .systemAndMedia
-        case .customShortcut, .focusInput, .repeatSingleClick:
-            return .custom
         case .openCommonPhrases:
             return .commonPhrases
         case .openCustomApplication:
             return .applications
+        case .customShortcut, .repeatSingleClick:
+            return .custom
         case .openRemoteBuddy, .openCodex, .openClaude, .openCmux, .openWeChat, .openCursor,
              .openXcode, .openSlack, .openWeCom, .openNeteaseMusic, .openChrome, .openSafari,
              .openZed:

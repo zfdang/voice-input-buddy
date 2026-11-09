@@ -205,7 +205,6 @@
 "action.open_chrome" = "打开 Chrome";
 "action.open_safari" = "打开 Safari";
 "action.open_zed" = "打开 Zed";
-"button_mapping.action_filter.all" = "全部";
 "button_mapping.action_group.basic_keys" = "基础按键";
 "button_mapping.action_group.system_and_media" = "系统与媒体";
 "button_mapping.action_group.custom" = "自定义动作";
@@ -330,7 +329,6 @@
 "button_mapping.permission_prompt.open" = "前往权限页面";
 "common.status.enabled" = "已启用";
 "common.status.disabled" = "未启用";
-"common.action.restore_defaults" = "恢复默认";
 "button_mapping.actions.title" = "按键动作";
 "button_mapping.actions.help" = "点击或按下左侧实体按键定位；修改后自动保存。";
 "button_mapping.all_buttons.title" = "全部按键";
@@ -346,9 +344,6 @@
 "button_mapping.single_click.help" = "按一下立即执行；设置双击后会稍等片刻再确认。";
 "button_mapping.double_click.effect" = "单击会稍等片刻以区分双击；长按仍可选择独立动作或持续连发。";
 "button_mapping.long_press.effect" = "设置长按后，该按键的按住重复会停用。";
-"button_mapping.rapid_press" = "允许连续快速按";
-"button_mapping.rapid_press_hint_short" = "每一次快速按下都会执行动作，而不是只有第一次生效。";
-"button_mapping.rapid_press_help" = "默认情况下，未设为持续连发的按键在松开并稳定一段时间之前只执行一次，避免按住不放时向目标应用重复发送。需要连续点按的按键可以打开本开关；打开后按住该按键可能会重复执行该动作。";
 "common.suffix.not_installed" = "（未安装）";
 "shortcut.action.record" = "点击录入快捷键";
 "shortcut.action.record_again" = "重新录入";
@@ -1165,6 +1160,15 @@
 "common_phrases.inserted" = "常用语已插入。";
 
 "button_mapping.editor.confirm" = "确定";
+
+"button_mapping.action.restore_default" = "恢复默认";
+"button_mapping.action.restore_default_help" = "将当前动作恢复为出厂默认设置。";
+"button_mapping.action.restore_all_defaults" = "恢复所有按键的默认设置";
+"button_mapping.restore_all.title" = "恢复所有按键默认设置";
+"button_mapping.restore_all.hint" = "将当前遥控器的所有按键单击、双击、长按及自定义快捷键全部恢复为出厂默认设置。";
+"button_mapping.restore_all.confirm_title" = "确认恢复所有默认设置？";
+"button_mapping.restore_all.confirm_message" = "此操作将把当前遥控器的所有按键动作恢复为出厂默认设置，已录入的自定义快捷键将被清空。此操作无法撤销。";
+"button_mapping.restore_all.confirm_action" = "恢复全部默认";
 
 "button_mapping.action.not_set_help" = "当前手势不执行任何动作；这个按键的其他手势不受影响。选择下方动作即可重新设置。修改会自动保存。";
 
