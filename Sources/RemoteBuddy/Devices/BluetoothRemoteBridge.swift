@@ -293,14 +293,14 @@ final class BluetoothRemoteBridge: NSObject {
     }
 
     /// Re-read optional battery characteristics without changing connection or audio state.
-    func refreshBatteryTelemetry(reason: String) {
+    func refreshBatteryState(reason: String) {
         guard shouldRun,
               !systemSuspension.isSuspended,
               lifecycle.isReady,
               let peripheral,
               peripheral.state == .connected
         else { return }
-        requestBatteryTelemetryRefresh(
+        requestBatteryStateRefresh(
             peripheral: peripheral,
             reason: reason,
             pollingOnly: false
@@ -1131,7 +1131,7 @@ final class BluetoothRemoteBridge: NSObject {
                 self.stopBatteryPolling(reason: "connection_inactive")
                 return
             }
-            self.requestBatteryTelemetryRefresh(
+            self.requestBatteryStateRefresh(
                 peripheral: peripheral,
                 reason: "timer",
                 pollingOnly: true
@@ -1153,7 +1153,7 @@ final class BluetoothRemoteBridge: NSObject {
         AppLogger.shared.write("BLE BATTERY polling_stopped reason=\(reason)")
     }
 
-    private func requestBatteryTelemetryRefresh(
+    private func requestBatteryStateRefresh(
         peripheral: CBPeripheral,
         reason: String,
         pollingOnly: Bool

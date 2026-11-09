@@ -218,21 +218,11 @@ enum ButtonAction: String, CaseIterable, Codable, Identifiable {
         self == .toggleLongRecording || self == .openCommonPhrases
     }
 
-    func isEnabled(experimentalContinuousRecordingEnabled: Bool) -> Bool {
-        self != .toggleLongRecording || experimentalContinuousRecordingEnabled
-    }
-
     static func pickerActions(
         installedBundleIdentifiers: Set<String>,
-        current: ButtonAction,
-        experimentalContinuousRecordingEnabled: Bool
+        current: ButtonAction
     ) -> [ButtonAction] {
         let actions = allCases.filter { action in
-            guard action.isEnabled(
-                experimentalContinuousRecordingEnabled: experimentalContinuousRecordingEnabled
-            ) else {
-                return action == current
-            }
             guard let application = action.presetApplication else { return true }
             return installedBundleIdentifiers.contains(application.bundleIdentifier) || action == current
         }

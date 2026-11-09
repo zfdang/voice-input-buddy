@@ -419,7 +419,7 @@ extension BridgeAppModel {
             if let identifier = bluetoothIdentifier(for: bridge) {
                 pendingRemoteBatteryLevels[identifier] = level
                 AppLogger.shared.write(
-                    "REMOTE PROFILE_TELEMETRY phase=buffered " +
+                    "REMOTE PROFILE_DIAGNOSTIC phase=buffered " +
                         "result=\(level == nil ? "invalidated" : "deferred") " +
                         "reason=handshake_pending kind=battery"
                 )
@@ -441,7 +441,7 @@ extension BridgeAppModel {
             if let identifier = bluetoothIdentifier(for: bridge) {
                 pendingRemoteModels[identifier] = model
                 AppLogger.shared.write(
-                    "REMOTE PROFILE_TELEMETRY phase=buffered result=deferred " +
+                    "REMOTE PROFILE_DIAGNOSTIC phase=buffered result=deferred " +
                         "reason=handshake_pending kind=model"
                 )
             }
@@ -460,7 +460,7 @@ extension BridgeAppModel {
             if let identifier = bluetoothIdentifier(for: bridge) {
                 pendingRemotePowerStates[identifier] = state
                 AppLogger.shared.write(
-                    "REMOTE PROFILE_TELEMETRY phase=buffered " +
+                    "REMOTE PROFILE_DIAGNOSTIC phase=buffered " +
                         "result=\(state == nil ? "invalidated" : "deferred") " +
                         "reason=handshake_pending kind=power"
                 )
@@ -540,7 +540,7 @@ extension BridgeAppModel {
                 let hadModel = pendingRemoteModels.removeValue(forKey: identifier) != nil
                 if hadBattery || hadPower || hadModel {
                     AppLogger.shared.write(
-                        "REMOTE PROFILE_TELEMETRY phase=cancelled result=discarded " +
+                        "REMOTE PROFILE_DIAGNOSTIC phase=cancelled result=discarded " +
                             "reason=bridge_not_ready battery=\(hadBattery) " +
                             "power=\(hadPower) model=\(hadModel)"
                     )

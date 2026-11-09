@@ -155,7 +155,10 @@ extension AppSettings {
             throw AppConfigurationError.invalidValues
         }
         let profiles = configuration.customApplicationProfiles ?? []
-        guard Set(profiles.map(\.id)).count == profiles.count else {
+        guard configuration.buttonBindings.count <= 100,
+              configuration.secondaryButtonBindings.count <= 100,
+              profiles.count <= 100,
+              Set(profiles.map(\.id)).count == profiles.count else {
             throw AppConfigurationError.invalidValues
         }
         return configuration

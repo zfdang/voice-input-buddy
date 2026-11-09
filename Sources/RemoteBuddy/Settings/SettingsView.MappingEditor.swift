@@ -13,12 +13,8 @@ extension SettingsView {
         let installedBundleIdentifiers = PresetApplication.installedBundleIdentifiers
         let actions = ButtonAction.pickerActions(
             installedBundleIdentifiers: installedBundleIdentifiers,
-            current: configured.action,
-            experimentalContinuousRecordingEnabled: settings.experimentalContinuousRecordingEnabled
+            current: configured.action
         ).filter { $0 != .disabled && $0 != .repeatSingleClick }
-        let isManagedPowerAction = button == .power &&
-            trigger == .singleClick &&
-            settings.experimentalContinuousRecordingEnabled
         return VStack(alignment: .leading, spacing: 16) {
             if trigger == .longPress {
                 let isHoldRepeatSelected = configured.action == .repeatSingleClick
@@ -49,7 +45,6 @@ extension SettingsView {
                         actions: groupedActions,
                         selectedAction: configured.action,
                         installedBundleIdentifiers: installedBundleIdentifiers,
-                        isManagedPowerAction: isManagedPowerAction,
                         onSelect: { action in
                             setMappingAction(action, for: button, trigger: trigger)
                             shortcutCaptureTarget = nil
@@ -81,11 +76,7 @@ extension SettingsView {
                 mappingRapidPressControl(button: button)
             }
 
-            if button == .power && trigger == .singleClick && settings.experimentalContinuousRecordingEnabled {
-                Text(localization.text("button_mapping.continuous_recording_experiment.power_managed"))
-                    .font(.system(size: 12))
-                    .foregroundStyle(.orange)
-            } else if trigger == .doubleClick && configured.action != .disabled {
+            if trigger == .doubleClick && configured.action != .disabled {
                 Text(localization.text("button_mapping.double_click.effect"))
                     .font(.system(size: 12))
                     .foregroundStyle(.orange)
@@ -163,7 +154,6 @@ extension SettingsView {
         actions: [ButtonAction],
         selectedAction: ButtonAction,
         installedBundleIdentifiers: Set<String>,
-        isManagedPowerAction: Bool,
         onSelect: @escaping (ButtonAction) -> Void
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -174,7 +164,6 @@ extension SettingsView {
                 actions: actions,
                 selectedAction: selectedAction,
                 installedBundleIdentifiers: installedBundleIdentifiers,
-                isManagedPowerAction: isManagedPowerAction,
                 onSelect: onSelect
             )
         }
@@ -184,7 +173,6 @@ extension SettingsView {
         actions: [ButtonAction],
         selectedAction: ButtonAction,
         installedBundleIdentifiers: Set<String>,
-        isManagedPowerAction: Bool,
         onSelect: @escaping (ButtonAction) -> Void
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -197,8 +185,6 @@ extension SettingsView {
                     let unavailableApplication = action.presetApplication.map {
                         !installedBundleIdentifiers.contains($0.bundleIdentifier)
                     } ?? false
-                    let unavailableExperiment = action == .toggleLongRecording &&
-                        !settings.experimentalContinuousRecordingEnabled
                     Button {
                         onSelect(action)
                     } label: {
@@ -206,16 +192,14 @@ extension SettingsView {
                             title: action.displayName(using: localization) +
                                 (unavailableApplication
                                     ? localization.text("common.suffix.not_installed")
-                                    : unavailableExperiment
-                                        ? localization.text("common.suffix.experimental_disabled")
-                                        : ""),
+                                    : ""),
                             isSelected: selectedAction == action,
                             systemImage: selectedAction == action ? "checkmark.circle.fill" : "circle"
                         )
                     }
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(selectedAction == action ? .isSelected : [])
-                    .disabled(isManagedPowerAction || unavailableApplication || unavailableExperiment)
+                    .disabled(unavailableApplication)
                 }
                 if actions.contains(.openCommonPhrases) {
                     Button {

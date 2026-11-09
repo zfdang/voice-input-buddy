@@ -3,7 +3,6 @@ import Foundation
 
 @MainActor
 final class AppSettings: ObservableObject {
-    static let continuousRecordingExperimentAvailable = false
     static let currentOnboardingVersion = 1
 
     enum Keys {
@@ -23,7 +22,6 @@ final class AppSettings: ObservableObject {
         static let showStatusBarIcon = "showStatusBarIcon"
         static let openMainWindowAtLaunch = "openMainWindowAtLaunch"
         static let checksForPreReleaseUpdates = "checksForPreReleaseUpdates"
-        static let experimentalContinuousRecordingEnabled = "experimentalContinuousRecordingEnabled"
         static let voiceFnTapModeEnabled = "voiceFnTapModeEnabled"
         static let voiceKeyMode = "voiceKeyMode"
         static let chromecastVoiceMode = "chromecast.voiceMode"
@@ -159,15 +157,6 @@ final class AppSettings: ObservableObject {
         }
     }
 
-    @Published var experimentalContinuousRecordingEnabled: Bool {
-        didSet {
-            defaults.set(
-                experimentalContinuousRecordingEnabled,
-                forKey: Keys.experimentalContinuousRecordingEnabled
-            )
-        }
-    }
-
     @Published var voiceFnTapModeEnabled: Bool {
         didSet {
             defaults.set(
@@ -189,10 +178,6 @@ final class AppSettings: ObservableObject {
         didSet {
             defaults.set(chromecastVoiceMode.rawValue, forKey: Keys.chromecastVoiceMode)
         }
-    }
-
-    var continuousRecordingPowerBindingBackup: ConfiguredButtonAction? {
-        didSet { saveContinuousRecordingPowerBindingBackup() }
     }
 
     var isLoadingRemoteProfile = false
@@ -317,7 +302,7 @@ final class AppSettings: ObservableObject {
         switch key {
         case "remoteDeviceProfiles": "remote_profiles"
         case "buttonBindings", "buttonShortcuts", "buttonApplicationProfileIDs",
-             "secondaryButtonBindings", "buttonRapidPressEnabled", "continuousRecordingPowerBindingBackup":
+             "secondaryButtonBindings", "buttonRapidPressEnabled":
             "button_mapping"
         case "customApplicationProfiles": "custom_apps"
         case "onboarding.stagedVoiceBinding": "onboarding"
@@ -453,9 +438,6 @@ final class AppSettings: ObservableObject {
             ? true
             : defaults.bool(forKey: Keys.openMainWindowAtLaunch)
         checksForPreReleaseUpdates = defaults.bool(forKey: Keys.checksForPreReleaseUpdates)
-        experimentalContinuousRecordingEnabled = defaults.bool(
-            forKey: Keys.experimentalContinuousRecordingEnabled
-        )
         voiceFnTapModeEnabled = defaults.bool(forKey: Keys.voiceFnTapModeEnabled)
         voiceKeyMode = VoiceKeyMode(
             rawValue: defaults.string(forKey: Keys.voiceKeyMode) ?? ""
@@ -463,12 +445,6 @@ final class AppSettings: ObservableObject {
         chromecastVoiceMode = ChromecastVoiceMode(
             rawValue: defaults.string(forKey: Keys.chromecastVoiceMode) ?? ""
         ) ?? .productDefault
-        continuousRecordingPowerBindingBackup = Self.decodeSetting(
-            ConfiguredButtonAction.self,
-            forKey: Keys.continuousRecordingPowerBindingBackup,
-            from: defaults,
-            corrupted: &corruptedKeys
-        )
         onboardingPurpose = defaults.string(forKey: Keys.onboardingPurpose)
             .flatMap(OnboardingPurpose.init(rawValue:)) ?? .initialSetup
         onboardingCompletedVersion = defaults.integer(forKey: Keys.onboardingCompletedVersion)
@@ -537,10 +513,6 @@ final class AppSettings: ObservableObject {
                 buttonRapidPressEnabled = selected.mappings.parsedButtonRapidPressEnabled
             }
         }
-        applyContinuousRecordingExperimentState(
-            enabled: experimentalContinuousRecordingEnabled,
-            backup: continuousRecordingPowerBindingBackup
-        )
         unifiedBaseBindings = Self.decodeSetting(
             [UnifiedButtonBinding].self, forKey: "unifiedBaseBindings",
             from: defaults, corrupted: &corruptedKeys

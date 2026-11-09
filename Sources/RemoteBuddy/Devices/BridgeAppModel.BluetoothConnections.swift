@@ -98,7 +98,7 @@ extension BridgeAppModel {
         }
         if hadBattery || hadPower || hadModel {
             AppLogger.shared.write(
-                "REMOTE PROFILE_TELEMETRY phase=completed result=applied reason=profile_ready " +
+                "REMOTE PROFILE_DIAGNOSTIC phase=completed result=applied reason=profile_ready " +
                     "battery=\(hadBattery) power=\(hadPower) model=\(hadModel)"
             )
         }
@@ -230,7 +230,7 @@ extension BridgeAppModel {
                   connectedRemoteProfileIDs.contains(profileID)
             else { continue }
             requested += 1
-            bridge.refreshBatteryTelemetry(reason: reason.rawValue)
+            bridge.refreshBatteryState(reason: reason.rawValue)
             let name = bridge.currentSystemDeviceName()
             if let name, !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 resolved += 1

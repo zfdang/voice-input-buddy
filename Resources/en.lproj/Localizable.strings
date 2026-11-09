@@ -328,9 +328,6 @@
 "button_mapping.permission_prompt.title" = "Button Permissions Required";
 "button_mapping.permission_prompt.message" = "Custom button controls require Input Monitoring and Accessibility. Open the Permissions page to finish setup.";
 "button_mapping.permission_prompt.open" = "Open Permissions";
-"button_mapping.continuous_recording_experiment.enabled" = "Continuous Recording Experiment";
-"button_mapping.continuous_recording_experiment.help" = "For Xiaomi Bluetooth Remote 2 Pro feature validation only. Each session is limited to 1 minute and may increase remote battery usage.";
-"button_mapping.continuous_recording_experiment.power_managed" = "Managed by the continuous recording experiment";
 "common.status.enabled" = "Enabled";
 "common.status.disabled" = "Disabled";
 "common.action.restore_defaults" = "Restore Defaults";
@@ -353,7 +350,6 @@
 "button_mapping.rapid_press_hint_short" = "Every quick press runs the action instead of only the first one.";
 "button_mapping.rapid_press_help" = "By default, buttons not set to Hold to Repeat run once until they have been released for a moment. Enable this to run an action on every quick press. Holding the button may then repeat the action.";
 "common.suffix.not_installed" = " (Not installed)";
-"common.suffix.experimental_disabled" = " (Experiment disabled)";
 "shortcut.action.record" = "Click to Record a Shortcut";
 "shortcut.action.record_again" = "Record Again";
 "shortcut.record.help" = "Record a single key or key combination to send to the current app";

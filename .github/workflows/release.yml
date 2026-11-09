@@ -75,7 +75,12 @@ jobs:
           expected_sha="cb6fdbdc8884f15d62a616e79face92b08322410fd2d425edc6596ccbf4ba3b0"
           if [[ ! -f "$cached_file" ]] || ! shasum -a 256 "$cached_file" | grep -q "$expected_sha"; then
             echo "Pre-fetching Sparkle binary package via GitHub API..."
+            rm -f "$cached_file"
             gh api repos/sparkle-project/Sparkle/releases/assets/463901481 -H "Accept: application/octet-stream" > "$cached_file"
+            if ! shasum -a 256 "$cached_file" | grep -q "$expected_sha"; then
+              echo "Warning: Sparkle cache pre-fetch failed verification; removing corrupted cache file." >&2
+              rm -f "$cached_file"
+            fi
           fi
       - name: Test
         run: |
@@ -93,6 +98,7 @@ jobs:
           python3 scripts/test-release-signing.py
           python3 scripts/test-sign-bundle.py
           python3 scripts/test-installer-product.py
+          python3 scripts/test-local-signed-build.py
           swift test --disable-keychain
       - name: Import fixed release signing identity
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -115,6 +121,7 @@ jobs:
         run: |
           scripts/build-release-package.sh
           scripts/verify-release-package.sh
+          if [[ "$BUILD_ARCH" == arm64 ]]; then scripts/build-release-sources.sh; fi
       - name: Sign and verify production update package
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
@@ -171,7 +178,7 @@ jobs:
             else
               echo "Error: Release $RELEASE_TAG exists but is missing update feed assets." >&2
               echo "Cannot upload newly built feeds because package signatures may not match the published release." >&2
-              echo "Please use scripts/rebuild-pages-update-feeds.py with the release signing key to rebuild feeds from published packages." >&2
+              echo "To recover, please use scripts/rebuild-pages-update-feeds.py with the release signing key and upload feeds using: gh release upload $RELEASE_TAG pages/appcast-*.xml" >&2
               exit 1
             fi
           else
@@ -195,6 +202,7 @@ jobs:
               "release/Remote_Buddy_${RELEASE_TAG}_macOS_arm64.pkg" \
               "release/Remote_Buddy_${RELEASE_TAG}_macOS_intel.pkg" \
               "release/Remote_Buddy_Uninstaller_${RELEASE_TAG}_macOS_universal.pkg" \
+              "release/Remote_Buddy_${RELEASE_TAG}_sources.tar.gz" \
               "release/appcast-arm64.xml" \
               "release/appcast-intel.xml" \
               --target "$RELEASE_COMMIT" \
