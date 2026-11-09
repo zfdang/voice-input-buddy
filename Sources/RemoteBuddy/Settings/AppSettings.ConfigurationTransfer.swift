@@ -27,11 +27,6 @@ extension AppSettings {
                     )
                 }
             ),
-            buttonRapidPressEnabled: buttonRapidPressEnabled.isEmpty
-                ? nil
-                : Dictionary(
-                    uniqueKeysWithValues: buttonRapidPressEnabled.map { ($0.key.rawValue, $0.value) }
-                ),
             customApplicationProfiles: customApplicationProfiles,
             applicationLanguage: applicationLanguage,
             appIconIdentifier: appIconIdentifier,
@@ -151,16 +146,6 @@ extension AppSettings {
                     return (button, value)
                 }
         )
-        let importedRapidPressEnabled = Dictionary(
-            uniqueKeysWithValues: (configuration.buttonRapidPressEnabled ?? [:])
-                .compactMap { key, value -> (RemoteButton, Bool)? in
-                    guard let button = RemoteButton(rawValue: key) else {
-                        rejected.insert(Keys.buttonRapidPressEnabled)
-                        return nil
-                    }
-                    return (button, value)
-                }
-        )
         let importedSecondaryBindings: [RemoteButton: [ButtonTrigger: ConfiguredButtonAction]] =
             Dictionary(
                 uniqueKeysWithValues: configuration.secondaryButtonBindings.compactMap {
@@ -214,7 +199,6 @@ extension AppSettings {
         }
         buttonApplicationProfileIDs = importedApplicationProfileIDs
         secondaryButtonBindings = importedSecondaryBindings
-        buttonRapidPressEnabled = importedRapidPressEnabled
         if configuration.customApplicationProfiles != nil {
             customApplicationProfiles = importedApplicationProfiles
             // Recorded targets must be tested on this Mac before automatic input.

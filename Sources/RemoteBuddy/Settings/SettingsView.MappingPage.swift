@@ -271,13 +271,15 @@ extension SettingsView {
                         .padding(.vertical, 4)
                         .background(Color.accentColor.opacity(0.12), in: Capsule())
                     Spacer()
-                    Button {
-                        restoreDefaultAction(for: target.button, trigger: target.trigger)
-                    } label: {
-                        Text(localization.text("button_mapping.action.restore_default"))
+                    if target.trigger != .doubleClick {
+                        Button {
+                            restoreDefaultAction(for: target.button, trigger: target.trigger)
+                        } label: {
+                            Text(localization.text("button_mapping.action.restore_default"))
+                        }
+                        .compatibilityButtonStyle(.standard)
+                        .help(localization.text("button_mapping.action.restore_default_help"))
                     }
-                    .compatibilityButtonStyle(.standard)
-                    .help(localization.text("button_mapping.action.restore_default_help"))
 
                     Button {
                         saveMappingBinding(.disabled, button: target.button, trigger: target.trigger)

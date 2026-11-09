@@ -205,7 +205,6 @@
 "action.open_chrome" = "打开 Chrome";
 "action.open_safari" = "打开 Safari";
 "action.open_zed" = "打开 Zed";
-"button_mapping.action_filter.all" = "全部";
 "button_mapping.action_group.basic_keys" = "基础按键";
 "button_mapping.action_group.system_and_media" = "系统与媒体";
 "button_mapping.action_group.custom" = "自定义动作";
@@ -330,7 +329,6 @@
 "button_mapping.permission_prompt.open" = "前往权限页面";
 "common.status.enabled" = "已启用";
 "common.status.disabled" = "未启用";
-"common.action.restore_defaults" = "恢复默认";
 "button_mapping.actions.title" = "按键动作";
 "button_mapping.actions.help" = "点击或按下左侧实体按键定位；修改后自动保存。";
 "button_mapping.all_buttons.title" = "全部按键";

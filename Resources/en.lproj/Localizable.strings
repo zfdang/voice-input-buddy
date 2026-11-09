@@ -205,7 +205,6 @@
 "action.open_chrome" = "Open Chrome";
 "action.open_safari" = "Open Safari";
 "action.open_zed" = "Open Zed";
-"button_mapping.action_filter.all" = "All";
 "button_mapping.action_group.basic_keys" = "Basic Keys";
 "button_mapping.action_group.system_and_media" = "System & Media";
 "button_mapping.action_group.custom" = "Custom Actions";
@@ -330,7 +329,6 @@
 "button_mapping.permission_prompt.open" = "Open Permissions";
 "common.status.enabled" = "Enabled";
 "common.status.disabled" = "Disabled";
-"common.action.restore_defaults" = "Restore Defaults";
 "button_mapping.actions.title" = "Button Actions";
 "button_mapping.actions.help" = "Click or press a physical button on the left to select it. Changes save automatically.";
 "button_mapping.all_buttons.title" = "All Buttons";

@@ -38,7 +38,6 @@ extension AppSettings {
                 buttonShortcuts = [:]
                 buttonApplicationProfileIDs = [:]
                 secondaryButtonBindings = [:]
-                buttonRapidPressEnabled = [:]
                 isLoadingRemoteProfile = false
             }
         }
@@ -113,25 +112,6 @@ extension AppSettings {
               [.up, .down, .left, .right, .power, .volumeUp, .volumeDown].contains(button)
         else { return .disabled }
         return ConfiguredButtonAction(action: .repeatSingleClick, shortcut: nil)
-    }
-
-    func allowsRapidPress(for button: RemoteButton) -> Bool {
-        buttonRapidPressEnabled[button] ?? false
-    }
-
-    func allowsRapidPress(for button: RemoteButton, profileID: UUID?) -> Bool {
-        guard let profileID, profileID != selectedRemoteProfileID,
-              let profile = remoteDeviceProfiles.first(where: { $0.id == profileID })
-        else { return allowsRapidPress(for: button) }
-        return profile.mappings.parsedButtonRapidPressEnabled[button] ?? false
-    }
-
-    func setAllowsRapidPress(_ enabled: Bool, for button: RemoteButton) {
-        if enabled {
-            buttonRapidPressEnabled[button] = true
-        } else {
-            buttonRapidPressEnabled.removeValue(forKey: button)
-        }
     }
 
     func customApplicationProfile(id: UUID?) -> CustomApplicationProfile? {
@@ -235,7 +215,6 @@ extension AppSettings {
         buttonShortcuts = profile.mappings.parsedButtonShortcuts
         buttonApplicationProfileIDs = profile.mappings.parsedButtonApplicationProfileIDs
         secondaryButtonBindings = profile.mappings.parsedSecondaryButtonBindings
-        buttonRapidPressEnabled = profile.mappings.parsedButtonRapidPressEnabled
         isLoadingRemoteProfile = false
     }
 
@@ -409,8 +388,7 @@ extension AppSettings {
             buttonBindings: buttonBindings,
             buttonShortcuts: buttonShortcuts,
             buttonApplicationProfileIDs: buttonApplicationProfileIDs,
-            secondaryButtonBindings: secondaryButtonBindings,
-            buttonRapidPressEnabled: buttonRapidPressEnabled
+            secondaryButtonBindings: secondaryButtonBindings
         )
     }
 
@@ -515,16 +493,16 @@ extension AppSettings {
         // Override inherited bindings only for the selected device.
         if let device = selectedRemoteProfileID {
             for inherited in unifiedBaseBindings.filter({ $0.remoteProfileID == nil }) {
-                setBaseBinding(ConfiguredButtonAction(
-                    action: inherited.trigger == .singleClick ? Self.defaultBindings[inherited.button] ?? .disabled :
-                        Self.defaultSecondaryBindings[inherited.button]?[inherited.trigger]?.action ??
-                        defaultSecondaryAction(for: inherited.button, trigger: inherited.trigger).action,
-                    shortcut: nil), for: inherited.button, trigger: inherited.trigger, profileID: device)
+                setBaseBinding(
+                    defaultAction(for: inherited.button, trigger: inherited.trigger),
+                    for: inherited.button,
+                    trigger: inherited.trigger,
+                    profileID: device
+                )
             }
         }
         buttonApplicationProfileIDs = [:]
         secondaryButtonBindings = Self.defaultSecondaryBindings
-        buttonRapidPressEnabled = [:]
     }
 }
 
