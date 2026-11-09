@@ -65,6 +65,16 @@ jobs:
         with:
           name: release-changelog
           path: ${{ runner.temp }}/release-changelog
+      - name: Cache SwiftPM and build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm/artifacts
+            .build
+          key: ${{ runner.os }}-${{ matrix.arch }}-swift-${{ hashFiles('Package.resolved', 'Package.swift') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.arch }}-swift-${{ hashFiles('Package.resolved', 'Package.swift') }}-
+            ${{ runner.os }}-${{ matrix.arch }}-swift-
       - name: Pre-populate Sparkle binary package cache
         env:
           GH_TOKEN: ${{ github.token }}
