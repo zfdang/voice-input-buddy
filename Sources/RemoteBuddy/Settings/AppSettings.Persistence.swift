@@ -69,14 +69,4 @@ extension AppSettings {
         guard let data = try? JSONEncoder().encode(remoteDeviceProfiles) else { return }
         defaults.set(data, forKey: Keys.remoteDeviceProfiles)
     }
-
-    func saveContinuousRecordingPowerBindingBackup() {
-        guard let continuousRecordingPowerBindingBackup else {
-            defaults.removeObject(forKey: Keys.continuousRecordingPowerBindingBackup)
-            return
-        }
-        if let data = try? JSONEncoder().encode(continuousRecordingPowerBindingBackup) {
-            defaults.set(data, forKey: Keys.continuousRecordingPowerBindingBackup)
-        }
-    }
 }

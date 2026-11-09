@@ -278,11 +278,6 @@ extension SettingsView {
                     }
                     .compatibilityButtonStyle(.standard)
                     .help(localization.text("button_mapping.action.not_set_help"))
-                    .disabled(
-                        target.button == .power &&
-                            target.trigger == .singleClick &&
-                            settings.experimentalContinuousRecordingEnabled
-                    )
                     Button(localization.text("button_mapping.editor.confirm")) {
                         mappingEditingTarget = nil
                         shortcutCaptureTarget = nil

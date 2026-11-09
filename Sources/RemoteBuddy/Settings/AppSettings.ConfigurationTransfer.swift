@@ -39,11 +39,11 @@ extension AppSettings {
             showStatusBarIcon: showStatusBarIcon,
             openMainWindowAtLaunch: openMainWindowAtLaunch,
             checksForPreReleaseUpdates: checksForPreReleaseUpdates,
-            experimentalContinuousRecordingEnabled: experimentalContinuousRecordingEnabled,
+            experimentalContinuousRecordingEnabled: nil,
             voiceTool: onboardingVoiceTool,
             voiceFnTapModeEnabled: voiceFnTapModeEnabled,
             voiceKeyMode: voiceKeyMode,
-            continuousRecordingPowerBindingBackup: continuousRecordingPowerBindingBackup
+            continuousRecordingPowerBindingBackup: nil
         )
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -187,15 +187,8 @@ extension AppSettings {
                 }
             )
 
-        let importedRecordingBackup: ConfiguredButtonAction?
-        if let backup = configuration.continuousRecordingPowerBindingBackup {
-            importedRecordingBackup = backup.applicationProfileID.map(availableApplicationIDs.contains) ?? true
-                ? Self.validatedConfiguredAction(backup) : nil
-            if importedRecordingBackup == nil {
-                rejected.insert(Keys.continuousRecordingPowerBindingBackup)
-            }
-        } else {
-            importedRecordingBackup = nil
+        if configuration.continuousRecordingPowerBindingBackup != nil {
+            rejected.insert(Keys.continuousRecordingPowerBindingBackup)
         }
 
         gainDB = configuration.gainDB
@@ -247,9 +240,6 @@ extension AppSettings {
         setOnboardingVoiceTool(importedVoiceKeyConfiguration.tool)
         voiceKeyMode = importedVoiceKeyConfiguration.mode
         voiceFnTapModeEnabled = importedVoiceKeyConfiguration.fnTapModeEnabled && voiceKeyMode == .function
-        if let experimentalContinuousRecordingEnabled = configuration.experimentalContinuousRecordingEnabled {
-            self.experimentalContinuousRecordingEnabled = experimentalContinuousRecordingEnabled
-        }
 
         let report = ConfigurationImportReport(
             rejectedEntryStorageKeys: rejected.sorted(),

@@ -35,9 +35,6 @@ extension BridgeAppModel {
         if !settings.customMappingEnabled {
             stopLongRecording(reason: "mapping_disabled")
         }
-        if !settings.experimentalContinuousRecordingEnabled {
-            stopLongRecording(reason: "feature_disabled")
-        }
 
         let requestedVoiceKeyMode = settings.voiceKeyMode
         let accessibilityGranted = KeyboardInjector.isAccessibilityTrusted

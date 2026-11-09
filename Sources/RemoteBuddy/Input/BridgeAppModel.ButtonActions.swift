@@ -77,12 +77,6 @@ extension BridgeAppModel {
             }
         }
         guard action == .toggleLongRecording else { return false }
-        guard action.isEnabled(
-            experimentalContinuousRecordingEnabled: settings.experimentalContinuousRecordingEnabled
-        ) else {
-            AppLogger.shared.write("LONG RECORDING ignored feature_enabled=false")
-            return false
-        }
         return toggleLongRecording()
     }
 }

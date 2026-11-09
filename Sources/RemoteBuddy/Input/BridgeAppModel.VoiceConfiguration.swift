@@ -33,14 +33,6 @@ extension BridgeAppModel {
         settings.voiceKeyMode != .function || settings.voiceFnTapModeEnabled || requiresOrderedVoiceFn
     }
 
-    func setExperimentalContinuousRecordingEnabled(_ enabled: Bool) {
-        if !enabled {
-            stopLongRecording(reason: "feature_disabled")
-        }
-        settings.setExperimentalContinuousRecordingEnabled(enabled)
-        applyHIDSettings()
-    }
-
     func setVoiceFnTapModeEnabled(_ enabled: Bool) {
         guard settings.voiceKeyMode == .function else {
             settings.voiceFnTapModeEnabled = false

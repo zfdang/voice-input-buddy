@@ -149,6 +149,44 @@ struct ReviewInputBoundaryTests {
         #expect(settings.applicationProfileID(for: .power) == nil)
     }
 
+    @Test @MainActor func configurationImportWithRetiredExperimentPreservesPowerMappingAndEditability() throws {
+        let name = "retired-experiment-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let settings = AppSettings(defaults: defaults)
+
+        var object = try #require(JSONSerialization.jsonObject(with: settings.exportedConfigurationData()) as? [String: Any])
+        var bindings = (object["buttonBindings"] as? [String: String]) ?? [:]
+        bindings["power"] = ButtonAction.commandReturn.rawValue
+        object["buttonBindings"] = bindings
+        object["experimentalContinuousRecordingEnabled"] = true
+        object["continuousRecordingPowerBindingBackup"] = [
+            "action": ButtonAction.volumeMute.rawValue,
+            "shortcut": NSNull()
+        ]
+
+        let importData = try JSONSerialization.data(withJSONObject: object)
+        try settings.importConfiguration(from: importData)
+
+        // 1. Power mapping matches the imported binding, not locked or forced to toggleLongRecording
+        #expect(settings.action(for: .power) == .commandReturn)
+        #expect(settings.configurationImportNotice?.rejectedEntryStorageKeys.contains("continuousRecordingPowerBindingBackup") == true)
+
+        // 2. Power mapping remains freely editable
+        settings.setAction(.escape, for: .power, trigger: .singleClick)
+        #expect(settings.action(for: .power) == .escape)
+
+        // 3. Resetting bindings restores defaults without forcing power back to continuous recording
+        settings.resetBindings()
+        #expect(settings.action(for: .power) == AppSettings.defaultBindings[.power])
+        #expect(settings.action(for: .power) != .toggleLongRecording)
+
+        // 4. Exported configuration does not re-emit retired experiment fields
+        let reExported = try #require(JSONSerialization.jsonObject(with: settings.exportedConfigurationData()) as? [String: Any])
+        #expect(reExported["experimentalContinuousRecordingEnabled"] == nil)
+        #expect(reExported["continuousRecordingPowerBindingBackup"] == nil)
+    }
+
     @Test @MainActor func failedImportClearsThePreviousFilteringNotice() throws {
         let name = UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: name))

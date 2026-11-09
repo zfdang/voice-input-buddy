@@ -485,10 +485,6 @@ extension AppSettings {
         secondaryButtonBindings[button] = bindings
     }
 
-    func setExperimentalContinuousRecordingEnabled(_ enabled: Bool) {
-        experimentalContinuousRecordingEnabled = enabled
-    }
-
     func resetBindings() {
         isResettingBindings = true
         defer {
@@ -514,13 +510,6 @@ extension AppSettings {
         buttonApplicationProfileIDs = [:]
         secondaryButtonBindings = Self.defaultSecondaryBindings
         buttonRapidPressEnabled = [:]
-        if experimentalContinuousRecordingEnabled {
-            continuousRecordingPowerBindingBackup = ConfiguredButtonAction(
-                action: Self.defaultBindings[.power] ?? .disabled,
-                shortcut: nil
-            )
-            setAction(.toggleLongRecording, for: .power, trigger: .singleClick)
-        }
     }
 }
 
