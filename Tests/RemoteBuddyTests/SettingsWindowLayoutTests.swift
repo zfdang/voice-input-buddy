@@ -44,4 +44,9 @@ struct SettingsWindowLayoutTests {
         #expect(SettingsWindowActivationPolicy.value(showDockIcon: false, isSettingsWindowOpen: true) == .regular)
         #expect(SettingsWindowActivationPolicy.value(showDockIcon: true, isSettingsWindowOpen: true) == .regular)
     }
+
+    @Test func deactivationOnCloseOnlyWhenDockIconNotPersisted() {
+        #expect(SettingsWindowActivationPolicy.shouldDeactivateOnClose(showDockIcon: false))
+        #expect(!SettingsWindowActivationPolicy.shouldDeactivateOnClose(showDockIcon: true))
+    }
 }

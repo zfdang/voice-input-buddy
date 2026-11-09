@@ -82,6 +82,10 @@ enum SettingsWindowActivationPolicy {
     ) -> NSApplication.ActivationPolicy {
         (showDockIcon || isSettingsWindowOpen) ? .regular : .accessory
     }
+
+    static func shouldDeactivateOnClose(showDockIcon: Bool) -> Bool {
+        !showDockIcon
+    }
 }
 
 enum AppEntryPointVisibilityPolicy {
@@ -1022,6 +1026,11 @@ private final class RemoteBuddyAppDelegate: NSObject, NSApplicationDelegate, NSM
 
         isSettingsWindowOpen = false
         updateDockActivationPolicy()
+        if SettingsWindowActivationPolicy.shouldDeactivateOnClose(
+            showDockIcon: model.settings.showDockIcon
+        ) {
+            NSApp.deactivate()
+        }
     }
 
     func windowDidMiniaturize(_ notification: Notification) {
