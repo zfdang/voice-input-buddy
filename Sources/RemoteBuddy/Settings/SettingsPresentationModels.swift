@@ -300,22 +300,22 @@ struct ConfigurationStatus {
 enum MappingActionFilter: String, CaseIterable, Identifiable {
     case basicKeys
     case systemAndMedia
-    case commonPhrases
     case applications
+    case commonPhrases
     case custom
 
     var id: String { rawValue }
 
     static var visibleCases: [Self] {
-        [.basicKeys, .systemAndMedia, .commonPhrases, .applications, .custom]
+        [.basicKeys, .systemAndMedia, .applications, .commonPhrases, .custom]
     }
 
     var localizationKey: String {
         switch self {
         case .basicKeys: return ButtonActionCategory.basicKeys.localizationKey
         case .systemAndMedia: return ButtonActionCategory.systemAndMedia.localizationKey
-        case .commonPhrases: return ButtonActionCategory.commonPhrases.localizationKey
         case .applications: return ButtonActionCategory.applications.localizationKey
+        case .commonPhrases: return ButtonActionCategory.commonPhrases.localizationKey
         case .custom: return ButtonActionCategory.custom.localizationKey
         }
     }
@@ -324,8 +324,8 @@ enum MappingActionFilter: String, CaseIterable, Identifiable {
         switch self {
         case .basicKeys: return .basicKeys
         case .systemAndMedia: return .systemAndMedia
-        case .commonPhrases: return .commonPhrases
         case .applications: return .applications
+        case .commonPhrases: return .commonPhrases
         case .custom: return .custom
         }
     }
@@ -334,8 +334,8 @@ enum MappingActionFilter: String, CaseIterable, Identifiable {
         switch category {
         case .basicKeys: self = .basicKeys
         case .systemAndMedia: self = .systemAndMedia
-        case .commonPhrases: self = .commonPhrases
         case .applications: self = .applications
+        case .commonPhrases: self = .commonPhrases
         case .custom: self = .custom
         }
     }

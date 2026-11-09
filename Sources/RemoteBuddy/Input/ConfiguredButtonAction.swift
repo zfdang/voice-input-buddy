@@ -41,8 +41,8 @@ struct ConfiguredButtonAction: Codable, Equatable {
 enum ButtonActionCategory: String, CaseIterable, Identifiable {
     case basicKeys
     case systemAndMedia
-    case commonPhrases
     case applications
+    case commonPhrases
     case custom
 
     var id: String { rawValue }
@@ -51,8 +51,8 @@ enum ButtonActionCategory: String, CaseIterable, Identifiable {
         switch self {
         case .basicKeys: return "button_mapping.action_group.basic_keys"
         case .systemAndMedia: return "button_mapping.action_group.system_and_media"
-        case .commonPhrases: return "common_phrases.title"
         case .applications: return "button_mapping.action_group.applications"
+        case .commonPhrases: return "common_phrases.title"
         case .custom: return "button_mapping.action_group.custom"
         }
     }
