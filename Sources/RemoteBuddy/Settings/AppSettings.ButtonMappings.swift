@@ -486,10 +486,7 @@ extension AppSettings {
     }
 
     func setExperimentalContinuousRecordingEnabled(_ enabled: Bool) {
-        let backup = enabled
-            ? continuousRecordingPowerBindingBackup ?? configuredAction(for: .power, trigger: .singleClick)
-            : continuousRecordingPowerBindingBackup
-        applyContinuousRecordingExperimentState(enabled: enabled, backup: backup)
+        experimentalContinuousRecordingEnabled = enabled
     }
 
     func resetBindings() {

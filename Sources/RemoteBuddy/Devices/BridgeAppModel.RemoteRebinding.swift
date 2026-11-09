@@ -31,7 +31,7 @@ extension BridgeAppModel {
         refreshBluetoothPresentation()
         learnSelectedRemoteHIDIdentity(bridge)
         applyHIDSettings()
-        bridge.refreshBatteryTelemetry(reason: "remote_rebound")
+        bridge.refreshBatteryState(reason: "remote_rebound")
         refreshRemoteDeviceNames(reason: .connection)
         AppLogger.shared.write("REMOTE REBIND phase=completed result=bound mappings_preserved=true")
         return true

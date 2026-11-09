@@ -3,7 +3,6 @@ import Foundation
 
 @MainActor
 final class AppSettings: ObservableObject {
-    static let continuousRecordingExperimentAvailable = false
     static let currentOnboardingVersion = 1
 
     enum Keys {
@@ -537,10 +536,6 @@ final class AppSettings: ObservableObject {
                 buttonRapidPressEnabled = selected.mappings.parsedButtonRapidPressEnabled
             }
         }
-        applyContinuousRecordingExperimentState(
-            enabled: experimentalContinuousRecordingEnabled,
-            backup: continuousRecordingPowerBindingBackup
-        )
         unifiedBaseBindings = Self.decodeSetting(
             [UnifiedButtonBinding].self, forKey: "unifiedBaseBindings",
             from: defaults, corrupted: &corruptedKeys

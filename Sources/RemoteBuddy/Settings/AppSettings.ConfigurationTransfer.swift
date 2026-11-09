@@ -247,10 +247,9 @@ extension AppSettings {
         setOnboardingVoiceTool(importedVoiceKeyConfiguration.tool)
         voiceKeyMode = importedVoiceKeyConfiguration.mode
         voiceFnTapModeEnabled = importedVoiceKeyConfiguration.fnTapModeEnabled && voiceKeyMode == .function
-        applyContinuousRecordingExperimentState(
-            enabled: configuration.experimentalContinuousRecordingEnabled ?? false,
-            backup: importedRecordingBackup
-        )
+        if let experimentalContinuousRecordingEnabled = configuration.experimentalContinuousRecordingEnabled {
+            self.experimentalContinuousRecordingEnabled = experimentalContinuousRecordingEnabled
+        }
 
         let report = ConfigurationImportReport(
             rejectedEntryStorageKeys: rejected.sorted(),

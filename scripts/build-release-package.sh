@@ -19,6 +19,8 @@ cp scripts/app-package/postinstall "$work/scripts/postinstall"
 cp scripts/driver-package/postinstall "$work/scripts/driver-postinstall"
 chmod 755 "$work/scripts/preinstall"
 chmod 755 "$work/scripts/postinstall"
+chmod 755 "$work/scripts/driver-postinstall"
+chmod 644 "$work/scripts/installation-common.sh"
 # Disable bundle relocation: always update the canonical /Applications copy.
 pkgbuild --analyze --root "$work/payload" "$work/components.plist"
 python3 - "$work/components.plist" <<'PY'

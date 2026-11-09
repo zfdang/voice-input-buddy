@@ -172,7 +172,7 @@ final class CommonPhraseInserter {
             role: role, subrole: subrole)
         guard !values.isEmpty, permitsInsertion(role: terminal || windowEditor ? kAXTextAreaRole : role,
             subrole: subrole, enabled: values[kAXEnabledAttribute] as? Bool ?? true,
-            protectedContent: values["AXProtectedContent"] as? Bool ?? false,
+            protectedContent: (values["AXProtectedContent"] as? Bool) ?? (values["AXProtectedContent"] as? NSNumber)?.boolValue ?? false,
             identifier: semanticText, secureInputEnabled: SecureInputMonitor.isEnabled()) else { return false }
         if windowEditor { return hasEnabledPasteCommand(processID: target.processID) }
         guard let value = values[kAXSelectedTextRangeAttribute], CFGetTypeID(value as CFTypeRef) == AXValueGetTypeID() else {

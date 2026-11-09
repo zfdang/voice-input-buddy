@@ -16,12 +16,12 @@ def generate(package, tag, version, signature, output, changes=None):
         raise ValueError('Invalid bundle version')
     if len(base64.b64decode(signature, validate=True)) != 64:
         raise ValueError('Invalid Ed25519 signature')
-    match = re.fullmatch(r'Remote_Buddy_' + re.escape(tag) + r'_macOS_(arm64|intel)\.pkg', package.name)
+    match = re.fullmatch(r'(Remote|Voice_Input)_Buddy_' + re.escape(tag) + r'_macOS_(arm64|intel)\.pkg', package.name)
     if not match:
         raise ValueError('Package must specify arm64 or intel')
-    architecture = match.group(1)
-    expected = f'Remote_Buddy_{tag}_macOS_{architecture}.pkg'
-    if package.name != expected or package.stat().st_size == 0:
+    architecture = match.group(2)
+    expected = package.name
+    if package.stat().st_size == 0:
         raise ValueError('Package must match release tag and be nonempty')
     rss = ET.Element('rss', {'version': '2.0'})
     channel = ET.SubElement(rss, 'channel')

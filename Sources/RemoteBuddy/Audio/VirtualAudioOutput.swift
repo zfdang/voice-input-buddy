@@ -267,10 +267,14 @@ final class VirtualAudioOutput {
 
         let engine = AVAudioEngine()
         let player = AVAudioPlayerNode()
-        engine.attach(player)
+        var outputUnit: AudioUnit?
+        let setupSucceeded = RemoteBuddyTryAudioOperation {
+            engine.attach(player)
+            outputUnit = engine.outputNode.audioUnit
+        }
 
         logStage("open_output_unit")
-        guard let outputUnit = engine.outputNode.audioUnit else {
+        guard setupSucceeded, let outputUnit else {
             status = LocalizedMessage("audio.output.core_audio_open_failed")
             logger(
                 "AUDIO CONFIGURE failed reason=no_output_unit queue=audio_output " +

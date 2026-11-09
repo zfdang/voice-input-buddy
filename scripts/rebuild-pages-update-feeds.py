@@ -176,7 +176,7 @@ def resolve_version(tag, explicit_version=None, target_commitish=None, existing_
         return str(pkg_ver)
 
     # 2. Inspect git history if available
-    for ref in [tag, target_commitish, "HEAD"]:
+    for ref in [tag, target_commitish]:
         if not ref:
             continue
         try:
@@ -203,7 +203,7 @@ def resolve_version(tag, explicit_version=None, target_commitish=None, existing_
                 if prev_tag == tag:
                     return str(prev_count)
                 base = (prev_count // 1000) * 1000
-                if prev_count % 1000 > tag_mod or (prev_count % 1000 == 0 and tag_mod == 0 and prev_count > 0):
+                if prev_count % 1000 >= tag_mod:
                     base += 1000
                 return str(base + tag_mod)
         except Exception:

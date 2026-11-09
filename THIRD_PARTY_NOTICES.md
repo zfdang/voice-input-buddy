@@ -149,6 +149,14 @@ IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 ```
 
+## open-voice-bridge
+
+- Project: `nijez/open-voice-bridge`
+- Source: <https://github.com/nijez/open-voice-bridge>
+- License: GNU General Public License v3.0 only (`GPL-3.0-only`)
+
+`remote-mic-app` was derived from `open-voice-bridge`. CoreBluetooth peripheral lifecycle handling, initial ATVV service discovery, and audio streaming flow originated from this repository.
+
 ## remote-mic-app
 
 - Source: <https://github.com/HD838A/remote-mic-app>
@@ -165,6 +173,14 @@ Remote Buddy is an independent derivative. Original author notices are preserved
 - License: GNU General Public License v3.0 only (`GPL-3.0-only`)
 
 The Xiaomi RC003 ATVV UUIDs, microphone command behavior, IMA/DVI ADPCM decoding order, capability parsing, and HID usage mapping were adapted from this project. The macOS implementation uses Apple public frameworks and does not include the upstream Windows injection, VB-CABLE packaging, commercial branding, or customer systems.
+
+## mi_remote_control
+
+- Project: `godarrenw/mi_remote_control`
+- Source: <https://github.com/godarrenw/mi_remote_control>
+- License: MIT
+
+Xiaomi remote control Bluetooth protocol analysis and key code identification were informed by this project.
 
 ## codex-siri-remote
 
@@ -221,7 +237,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 - License: GNU General Public License v3.0 (`GPL-3.0`)
 - Bundled driver license: `Contents/Resources/BlackHole-LICENSE` inside `RemoteBuddyMic.driver`
 
-`scripts/build-driver.sh` and `third_party/blackhole/device-usb.patch` build the independent `RemoteBuddyMic.driver` from pinned BlackHole source. The app routes audio only to this driver, not to an optional BlackHole device. The driver uses USB transport, its own CFPlugIn factory UUID, bundle identifier and BuddyMic UID. It does not replace an installed BlackHole or MiRemoteV driver. The release PKG installs both the app and RemoteBuddyMic; matching driver source is available at the pinned upstream revision together with this repository’s patch and build script. The complete upstream license text is bundled within the driver at `Contents/Resources/BlackHole-LICENSE`.
+`scripts/build-driver.sh` and `third_party/blackhole/device-usb.patch` build the independent `RemoteBuddyMic.driver` from pinned BlackHole source. The app routes audio only to this driver, not to an optional BlackHole device. The driver uses USB transport, its own CFPlugIn factory UUID, bundle identifier and BuddyMic UID. It does not replace an installed BlackHole or MiRemoteV driver. The release PKG installs both the app and RemoteBuddyMic; matching driver source is available at the pinned upstream revision together with this repository’s patch and build script. The complete upstream license text is bundled within the driver at `Contents/Resources/BlackHole-LICENSE`. "BlackHole" is a trademark of Existential Audio Inc.; the name is used here strictly to identify the origin of the upstream codebase.
 
 ## MiRemoteVoice
 
@@ -249,7 +265,7 @@ The G9N9N adapter is implemented in this repository using public CoreBluetooth a
 - Source: <https://github.com/81199000/mi-remote-mapper>; reference commit `8436d19b3932863bfa27583e0d4007020e85d7da`.
 - Source: <https://github.com/fanxeon/mi-ao>; reference commit `d6019bcede80ff71d225385b5c44b6f5f84a4832`.
 
-ATVVoice informs ATVV v1.0 control layout, ADPCM ordering, and session keepalive. vibe-mote informs the G9N9N Consumer Control usage table and compatibility diagnostics. mi-remote-mapper and mi-ao are architecture references only; their code is not imported. The following MIT notices are retained for the adapted protocol references.
+ATVVoice informs ATVV v1.0 control layout, ADPCM ordering, and session keepalive. vibe-mote informs the G9N9N Consumer Control usage table and compatibility diagnostics. mi-remote-mapper (MIT) and mi-ao (GPL-3.0) are architecture references only; their code is not imported. The following MIT notices are retained for the adapted protocol references.
 
 ### ATVVoice
 

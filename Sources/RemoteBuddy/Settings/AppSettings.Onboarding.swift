@@ -131,14 +131,16 @@ extension AppSettings {
 
     var firstUseEvents: [FirstUseEvent] {
         // Deliberately not reported through corruptedSettingKeys: a computed getter can run
-        // many times and would append duplicates, and onboarding telemetry is not user
+        // many times and would append duplicates, and onboarding local diagnostics is not user
         // configuration that deserves a configuration-loss warning. It still logs and backs
-        // up the unreadable bytes, so the loss stays recoverable.
+        // up the unreadable bytes, then cleans the corrupted key so the loss stays recoverable
+        // without repeatedly re-triggering decode failures on subsequent reads.
         guard let data = defaults.data(forKey: Keys.firstUseEvents) else { return [] }
         do {
             return try JSONDecoder().decode([FirstUseEvent].self, from: data)
         } catch {
             defaults.set(data, forKey: "\(Keys.firstUseEvents).corrupt")
+            defaults.removeObject(forKey: Keys.firstUseEvents)
             AppLogger.shared.write(
                 "SETTINGS decode_failed key=\(Keys.firstUseEvents) bytes=\(data.count) error=\(error)"
             )

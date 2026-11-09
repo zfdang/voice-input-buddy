@@ -886,20 +886,14 @@ extension KeyboardInjector {
 
     static func cmuxCLIURL(
         applicationURL: URL,
-        environment: [String: String] = ProcessInfo.processInfo.environment,
         fileManager: FileManager = .default
     ) -> URL? {
-        var candidates = [
+        let candidates = [
             applicationURL.appendingPathComponent("Contents/bin/cmux"),
             applicationURL.appendingPathComponent("Contents/Resources/bin/cmux"),
-        ]
-        candidates.append(contentsOf: (environment["PATH"] ?? "")
-            .split(separator: ":")
-            .map { URL(fileURLWithPath: String($0), isDirectory: true).appendingPathComponent("cmux") })
-        candidates.append(contentsOf: [
             URL(fileURLWithPath: "/opt/homebrew/bin/cmux"),
             URL(fileURLWithPath: "/usr/local/bin/cmux"),
-        ])
+        ]
 
         return candidates.first { fileManager.isExecutableFile(atPath: $0.path) }
     }
