@@ -461,6 +461,7 @@
 "common.action.copy_link" = "复制链接";
 "common.status.copied" = "已复制";
 "settings.section.about" = "关于";
+"settings.section.general" = "通用";
 "settings.section.settings" = "设置";
 "settings.update_badge.accessibility_value" = "有新版本可用";
 "settings.page.title" = "设置";

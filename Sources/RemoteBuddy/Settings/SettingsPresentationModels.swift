@@ -10,6 +10,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
     case mapping
     case commonPhrases
     case permissions
+    case general
     case about
 
     var id: String { rawValue }
@@ -21,7 +22,8 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .mapping: return "settings.section.buttons"
         case .commonPhrases: return "common_phrases.title"
         case .permissions: return "settings.section.permissions"
-        case .about: return "settings.section.settings"
+        case .general: return "settings.section.general"
+        case .about: return "settings.section.about"
         }
     }
 
@@ -32,7 +34,8 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .mapping: return "keyboard"
         case .commonPhrases: return "text.quote"
         case .permissions: return "shield.lefthalf.filled"
-        case .about: return "gearshape"
+        case .general: return "slider.horizontal.3"
+        case .about: return "info.circle"
         }
     }
 }
@@ -120,6 +123,7 @@ enum SettingsPageBehavior {
         .mapping,
         .integration,
         .permissions,
+        .general,
         .about,
     ]
 

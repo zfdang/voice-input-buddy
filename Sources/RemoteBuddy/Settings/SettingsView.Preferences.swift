@@ -5,9 +5,9 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 extension SettingsView {
-    var aboutPage: some View {
+    var generalPage: some View {
         settingsPage(contentPadding: 28) {
-            PageHeader(title: localization.text("settings.page.title"))
+            PageHeader(title: localization.text("settings.section.general"))
         } content: {
             GlassPanel {
                 HStack(spacing: 18) {
@@ -27,100 +27,15 @@ extension SettingsView {
                 }
             }
             .padding(.bottom, 16)
+
             CompatibilityGlassContainer(spacing: 0) {
-                VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(localization.text("settings.general.title"))
+                        .font(.title3.weight(.semibold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
                     Group {
-                        HStack(alignment: .top, spacing: 28) {
-                            HStack(alignment: .center, spacing: 12) {
-                                Image(nsImage: appIconCatalog.image(
-                                    for: settings.appIconIdentifier
-                                ))
-                                    .resizable()
-                                    .frame(width: 72, height: 72)
-                                    .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(localization.text("app.name"))
-                                        .font(.title3.weight(.semibold))
-                                    Text(localization.text("settings.application.tagline"))
-                                        .font(.system(size: 12))
-                                        .foregroundStyle(.secondary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                            }
-                            .frame(width: 230, alignment: .leading)
-
-                            Divider()
-
-                            VStack(alignment: .leading, spacing: 12) {
-                                HStack(spacing: 8) {
-                                    Text(localization.text("about.version.current"))
-                                        .font(.system(size: 12))
-                                        .foregroundStyle(.secondary)
-                                    Text(currentVersion)
-                                        .font(.system(size: 13, weight: .medium))
-                                        .monospacedDigit()
-                                    if case .available = updateInformation.state {
-                                        StatusPill(
-                                            text: localization.text("about.version.available"),
-                                            tint: .green
-                                        )
-                                    }
-                                    Spacer(minLength: 8)
-                                }
-
-                                if Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") != nil {
-                                    HStack(spacing: 12) {
-                                        Button(action: checkForUpdates) {
-                                            Label(
-                                                "menu.check_for_updates",
-                                                systemImage: "arrow.triangle.2.circlepath"
-                                            )
-                                        }
-                                        .compatibilityButtonStyle(.standard)
-                                        .fixedSize(horizontal: true, vertical: false)
-
-                                        Spacer(minLength: 12)
-
-                                        Toggle(
-                                            "about.version.check_prerelease",
-                                            isOn: $settings.checksForPreReleaseUpdates
-                                        )
-                                        .toggleStyle(.switch)
-                                        .font(.system(size: 12))
-                                    }
-
-                                    Divider()
-
-                                    updateInformationContent
-                                    if case let .available(update) = updateInformation.state {
-                                        HStack {
-                                            Spacer()
-                                            Button(action: checkForUpdates) {
-                                                Text(String(
-                                                    format: localization.text("about.version.update_to"),
-                                                    locale: localization.locale,
-                                                    arguments: [update.displayVersion]
-                                                ))
-                                            }
-                                            .compatibilityButtonStyle(.prominent)
-                                        }
-                                    }
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .padding(.top, 4)
-                        .padding(.bottom, 16)
-                        .overlay(alignment: .bottom) { Divider() }
-                    }
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(localization.text("settings.general.title"))
-                            .font(.title3.weight(.semibold))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        Group {
-                            VStack(spacing: 0) {
+                        VStack(spacing: 0) {
                             HStack(spacing: 14) {
                                 Image(systemName: "arrow.up.arrow.down")
                                     .font(.title3)
@@ -305,11 +220,104 @@ extension SettingsView {
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.vertical, 8)
-                            }
                         }
                     }
-                    .padding(.vertical, 12)
-                    .overlay(alignment: .bottom) { Divider() }
+                }
+                .padding(.vertical, 12)
+            }
+        }
+    }
+
+    var aboutPage: some View {
+        settingsPage(contentPadding: 28) {
+            PageHeader(title: localization.text("settings.section.about"))
+        } content: {
+            CompatibilityGlassContainer(spacing: 0) {
+                VStack(spacing: 0) {
+                    Group {
+                        HStack(alignment: .top, spacing: 28) {
+                            HStack(alignment: .center, spacing: 12) {
+                                Image(nsImage: appIconCatalog.image(
+                                    for: settings.appIconIdentifier
+                                ))
+                                    .resizable()
+                                    .frame(width: 72, height: 72)
+                                    .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(localization.text("app.name"))
+                                        .font(.title3.weight(.semibold))
+                                    Text(localization.text("settings.application.tagline"))
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                            .frame(width: 230, alignment: .leading)
+
+                            Divider()
+
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack(spacing: 8) {
+                                    Text(localization.text("about.version.current"))
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(.secondary)
+                                    Text(currentVersion)
+                                        .font(.system(size: 13, weight: .medium))
+                                        .monospacedDigit()
+                                    if case .available = updateInformation.state {
+                                        StatusPill(
+                                            text: localization.text("about.version.available"),
+                                            tint: .green
+                                        )
+                                    }
+                                    Spacer(minLength: 8)
+                                }
+
+                                if Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") != nil {
+                                    HStack(spacing: 12) {
+                                        Button(action: checkForUpdates) {
+                                            Label(
+                                                "menu.check_for_updates",
+                                                systemImage: "arrow.triangle.2.circlepath"
+                                            )
+                                        }
+                                        .compatibilityButtonStyle(.standard)
+                                        .fixedSize(horizontal: true, vertical: false)
+
+                                        Spacer(minLength: 12)
+
+                                        Toggle(
+                                            "about.version.check_prerelease",
+                                            isOn: $settings.checksForPreReleaseUpdates
+                                        )
+                                        .toggleStyle(.switch)
+                                        .font(.system(size: 12))
+                                    }
+
+                                    Divider()
+
+                                    updateInformationContent
+                                    if case let .available(update) = updateInformation.state {
+                                        HStack {
+                                            Spacer()
+                                            Button(action: checkForUpdates) {
+                                                Text(String(
+                                                    format: localization.text("about.version.update_to"),
+                                                    locale: localization.locale,
+                                                    arguments: [update.displayVersion]
+                                                ))
+                                            }
+                                            .compatibilityButtonStyle(.prominent)
+                                        }
+                                    }
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(.top, 4)
+                        .padding(.bottom, 16)
+                        .overlay(alignment: .bottom) { Divider() }
+                    }
 
                     inlineDiagnosticsSection
 
