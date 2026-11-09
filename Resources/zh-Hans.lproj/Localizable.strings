@@ -1163,6 +1163,15 @@
 
 "button_mapping.editor.confirm" = "确定";
 
+"button_mapping.action.restore_default" = "恢复默认";
+"button_mapping.action.restore_default_help" = "将当前动作恢复为出厂默认设置。";
+"button_mapping.action.restore_all_defaults" = "恢复所有按键的默认设置";
+"button_mapping.restore_all.title" = "恢复所有按键默认设置";
+"button_mapping.restore_all.hint" = "将当前遥控器的所有按键单击、双击、长按及自定义快捷键全部恢复为出厂默认设置。";
+"button_mapping.restore_all.confirm_title" = "确认恢复所有默认设置？";
+"button_mapping.restore_all.confirm_message" = "此操作将把当前遥控器的所有按键动作恢复为出厂默认设置，已录入的自定义快捷键将被清空。此操作无法撤销。";
+"button_mapping.restore_all.confirm_action" = "恢复全部默认";
+
 "button_mapping.action.not_set_help" = "当前手势不执行任何动作；这个按键的其他手势不受影响。选择下方动作即可重新设置。修改会自动保存。";
 
 "button_mapping.action.clear" = "清除设置";

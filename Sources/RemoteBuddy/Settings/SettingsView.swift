@@ -44,6 +44,7 @@ struct SettingsView: View {
     @State var isRepositoryLinkCopied = false
     @State var isMappingPermissionAlertPresented = false
     @State var isWaitingForMappingPermissions = false
+    @State var isShowingRestoreAllDefaultsAlert = false
 
     init(
         model: BridgeAppModel,

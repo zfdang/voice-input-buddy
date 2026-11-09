@@ -1162,6 +1162,15 @@
 
 "button_mapping.editor.confirm" = "OK";
 
+"button_mapping.action.restore_default" = "Restore Default";
+"button_mapping.action.restore_default_help" = "Restore the factory default action for this trigger.";
+"button_mapping.action.restore_all_defaults" = "Restore All Button Defaults";
+"button_mapping.restore_all.title" = "Restore All Defaults";
+"button_mapping.restore_all.hint" = "Reset all single click, double click, long press, and custom shortcuts for the current remote to factory defaults.";
+"button_mapping.restore_all.confirm_title" = "Restore All Default Settings?";
+"button_mapping.restore_all.confirm_message" = "This will restore all button actions for the current remote to factory defaults, and custom shortcuts will be cleared. This action cannot be undone.";
+"button_mapping.restore_all.confirm_action" = "Restore All Defaults";
+
 "button_mapping.action.not_set_help" = "This gesture performs no action. Other gestures for this button are unchanged. Select an action below to assign it again. Changes are saved automatically.";
 
 "button_mapping.action.clear" = "Clear Assignment";

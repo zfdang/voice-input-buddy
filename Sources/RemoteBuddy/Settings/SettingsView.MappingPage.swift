@@ -135,6 +135,7 @@ extension SettingsView {
                             }
 
                             mappingFooter()
+                            mappingResetAllDefaultsSection
                             Color.clear.frame(height: 1).id("mapping-page-bottom")
                         }
                         .padding(22)
@@ -271,6 +272,14 @@ extension SettingsView {
                         .background(Color.accentColor.opacity(0.12), in: Capsule())
                     Spacer()
                     Button {
+                        restoreDefaultAction(for: target.button, trigger: target.trigger)
+                    } label: {
+                        Text(localization.text("button_mapping.action.restore_default"))
+                    }
+                    .compatibilityButtonStyle(.standard)
+                    .help(localization.text("button_mapping.action.restore_default_help"))
+
+                    Button {
                         saveMappingBinding(.disabled, button: target.button, trigger: target.trigger)
                         shortcutCaptureTarget = nil
                         applicationShortcutCaptureProfileID = nil
@@ -300,18 +309,23 @@ extension SettingsView {
         }
     }
 
+    private func restoreDefaultAction(for button: RemoteButton, trigger: ButtonTrigger) {
+        let defaultAction = settings.defaultAction(for: button, trigger: trigger)
+        saveMappingBinding(defaultAction, button: button, trigger: trigger)
+        shortcutCaptureTarget = nil
+        applicationShortcutCaptureProfileID = nil
+        mappingActionFilter = (defaultAction.action == .disabled || defaultAction.action == .repeatSingleClick)
+            ? .basicKeys
+            : MappingActionFilter(category: defaultAction.action.category)
+    }
+
     private func mappingFooter() -> some View {
         // 能力一律取自「链路自报优先、型号默认兜底」的判定结果（见 RemoteVoiceCapabilities）。
-        return GlassPanel {
+        GlassPanel {
             VStack(alignment: .leading, spacing: 12) {
                 mappingHIDStatus
                 Divider()
                 mappingSelectionLockControl
-                Divider()
-                HStack {
-                    Spacer(minLength: 0)
-                    mappingRestoreDefaultsButton
-                }
             }
         }
     }
@@ -387,12 +401,48 @@ extension SettingsView {
         .disabled(settings.voiceKeyMode != .function)
     }
 
-    private var mappingRestoreDefaultsButton: some View {
-        Button(localization.text("common.action.restore_defaults")) {
-            settings.resetBindings()
-            selectedRemoteButton = .ok
+    private var mappingResetAllDefaultsSection: some View {
+        GlassPanel {
+            HStack(alignment: .center, spacing: 16) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(localization.text("button_mapping.restore_all.title"))
+                        .font(.system(size: 13, weight: .semibold))
+                    Text(localization.text("button_mapping.restore_all.hint"))
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 16)
+                Button(role: .destructive) {
+                    isShowingRestoreAllDefaultsAlert = true
+                } label: {
+                    Label(
+                        localization.text("button_mapping.action.restore_all_defaults"),
+                        systemImage: "arrow.counterclockwise"
+                    )
+                    .foregroundStyle(.red)
+                }
+                .compatibilityButtonStyle(.standard)
+            }
         }
-        .compatibilityButtonStyle(.standard)
+        .alert(
+            localization.text("button_mapping.restore_all.confirm_title"),
+            isPresented: $isShowingRestoreAllDefaultsAlert
+        ) {
+            Button(
+                localization.text("button_mapping.restore_all.confirm_action"),
+                role: .destructive
+            ) {
+                settings.resetBindings()
+                selectedRemoteButton = .ok
+                mappingEditingTarget = nil
+                shortcutCaptureTarget = nil
+                applicationShortcutCaptureProfileID = nil
+            }
+            Button(localization.text("common.action.cancel"), role: .cancel) {}
+        } message: {
+            Text(localization.text("button_mapping.restore_all.confirm_message"))
+        }
     }
 
     private var mappingDevicePicker: some View {

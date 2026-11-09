@@ -93,6 +93,21 @@ extension AppSettings {
             profileID: profileID ?? selectedRemoteProfileID).action == .repeatSingleClick
     }
 
+    func defaultAction(for button: RemoteButton, trigger: ButtonTrigger) -> ConfiguredButtonAction {
+        switch trigger {
+        case .singleClick:
+            return ConfiguredButtonAction(
+                action: Self.defaultBindings[button] ?? .disabled,
+                shortcut: nil
+            )
+        case .doubleClick:
+            return Self.defaultSecondaryBindings[button]?[.doubleClick] ?? .disabled
+        case .longPress:
+            return Self.defaultSecondaryBindings[button]?[.longPress] ??
+                defaultSecondaryAction(for: button, trigger: .longPress)
+        }
+    }
+
     private func defaultSecondaryAction(for button: RemoteButton, trigger: ButtonTrigger) -> ConfiguredButtonAction {
         guard trigger == .longPress,
               [.up, .down, .left, .right, .power, .volumeUp, .volumeDown].contains(button)
