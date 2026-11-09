@@ -412,11 +412,16 @@ final class VirtualAudioOutput {
     }
 
     private func makeBuffer(samples: [Int16]) -> AVAudioPCMBuffer? {
-        guard !samples.isEmpty,
-              let buffer = AVAudioPCMBuffer(
-                pcmFormat: sourceFormat,
+        guard !samples.isEmpty else { return nil }
+        var buffer: AVAudioPCMBuffer?
+        let succeeded = RemoteBuddyTryAudioOperation {
+            buffer = AVAudioPCMBuffer(
+                pcmFormat: self.sourceFormat,
                 frameCapacity: AVAudioFrameCount(samples.count)
-              ),
+            )
+        }
+        guard succeeded,
+              let buffer,
               let channel = buffer.floatChannelData?[0]
         else { return nil }
 

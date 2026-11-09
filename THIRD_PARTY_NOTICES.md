@@ -265,7 +265,7 @@ The G9N9N adapter is implemented in this repository using public CoreBluetooth a
 - Source: <https://github.com/81199000/mi-remote-mapper>; reference commit `8436d19b3932863bfa27583e0d4007020e85d7da`.
 - Source: <https://github.com/fanxeon/mi-ao>; reference commit `d6019bcede80ff71d225385b5c44b6f5f84a4832`.
 
-ATVVoice informs ATVV v1.0 control layout, ADPCM ordering, and session keepalive. vibe-mote informs the G9N9N Consumer Control usage table and compatibility diagnostics. mi-remote-mapper (MIT) and mi-ao (GPL-3.0) are architecture references only; their code is not imported. The following MIT notices are retained for the adapted protocol references.
+ATVVoice informs ATVV v1.0 control layout, ADPCM ordering, and session keepalive. vibe-mote informs the G9N9N Consumer Control usage table and compatibility diagnostics. mi-remote-mapper (MIT) and mi-ao (MIT) are architecture references only; their code is not imported. The following MIT notices are retained for the adapted protocol references.
 
 ### ATVVoice
 
