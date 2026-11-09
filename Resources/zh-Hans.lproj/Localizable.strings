@@ -238,12 +238,12 @@
 "custom_application.error.title" = "无法配置 APP";
 "custom_application.error.not_installed" = "目标 APP 已移动或卸载，请重新添加。";
 "custom_application.error.open_failed" = "无法打开目标 APP。";
-"settings.section.connection" = "设备连接";
+"settings.section.connection" = "遥控器连接";
 "settings.section.buttons" = "按键映射";
 "settings.section.permissions" = "权限与环境";
 "permission.status.enabled" = "已开启";
 "permission.status.pending" = "待授权";
-"connection.page.title" = "设备连接";
+"connection.page.title" = "遥控器连接";
 "connection.page.subtitle" = "连接遥控器，并选择语音输出设备";
 "connection.device.name" = "小米蓝牙遥控器 2 / 2 Pro";
 "remote.device.selector" = "遥控器";
