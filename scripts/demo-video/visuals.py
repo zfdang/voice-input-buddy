@@ -74,7 +74,7 @@ def window(d,selected,t):
  for i,c in enumerate(['#F57E73','#F3C264','#81CFA5']):d.ellipse((984+i*28,252,999+i*28,267),fill=c)
  center(d,1370,249,'遥控搭子',24)
  rr(d,(960,288,1120,836),'#F2F6FD',12)
- nav=['设备连接','按键映射','常用语','输入法集成','权限与环境','设置']
+ nav=['遥控器连接','按键映射','常用语','输入法集成','权限与环境','设置']
  for j,n in enumerate(nav):
   yy=310+j*82
   if j==selected:rr(d,(973,yy-10,1106,yy+50),'#DCE9FF',12)

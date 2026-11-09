@@ -65,12 +65,48 @@ extension SettingsView {
     }
 
     func copySettingsDiagnosticSummary() {
+        let appBuild = (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String) ?? "unknown"
+        let logURL = AppLogger.shared.logURL
+        let logExists = FileManager.default.fileExists(atPath: logURL.path)
+        var logSizeBytes: Int64?
+        if logExists,
+           let attrs = try? FileManager.default.attributesOfItem(atPath: logURL.path),
+           let size = attrs[.size] as? Int64 {
+            logSizeBytes = size
+        }
+
+        let connectedProfile = settings.remoteDeviceProfiles.first(where: { model.connectedRemoteProfileIDs.contains($0.id) }) ??
+            settings.remoteDeviceProfiles.first(where: { $0.id == settings.selectedRemoteProfileID })
+        let remoteModelDesc: String
+        if let connectedProfile {
+            // Omit user-defined customName to avoid exposing personal names or room labels in public issues.
+            // Describe only the hardware model using standard localization and raw model identifier.
+            let standardModelName = localization.text(connectedProfile.displayNameFallbackKey)
+            remoteModelDesc = "\(standardModelName) (\(connectedProfile.model.rawValue))"
+        } else {
+            remoteModelDesc = localization.text("common.value.none")
+        }
+
+        let virtualMicReady = BuddyMicrophoneDevicePolicy.device(in: model.audioDevices) != nil
+
         let snapshot = SettingsDiagnosticSnapshot(
             appVersion: currentVersion,
+            appBuild: appBuild,
+            macosVersion: FirstUseDiagnosticSnapshot.systemVersion,
+            architecture: FirstUseDiagnosticSnapshot.architecture,
+            isRosetta: FirstUseDiagnosticSnapshot.runningUnderRosetta == "true",
             bluetoothGranted: bluetoothPermissionState == .granted,
             inputMonitoringGranted: inputMonitoringGranted,
             accessibilityGranted: accessibilityGranted,
-            runtimeLogAvailable: FileManager.default.fileExists(atPath: AppLogger.shared.logURL.path)
+            remoteConnected: model.isConnected,
+            remoteModel: remoteModelDesc,
+            virtualMicrophoneReady: virtualMicReady,
+            audioOutputReady: model.isAudioOutputReady,
+            voiceTool: settings.onboardingVoiceTool.rawValue,
+            voiceKeyMode: settings.voiceKeyMode.rawValue,
+            runtimeLogAvailable: logExists,
+            runtimeLogPath: SettingsDiagnosticSnapshot.sanitizePath(logURL.path),
+            runtimeLogSizeBytes: logSizeBytes
         )
         SettingsPageBehavior.copyDiagnosticSummary(
             snapshot,

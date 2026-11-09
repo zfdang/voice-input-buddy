@@ -528,7 +528,7 @@ struct FirstUseDiagnosticSnapshot {
         return String(cString: buffer)
     }
 
-    private static var runningUnderRosetta: String {
+    static var runningUnderRosetta: String {
         if let translated = sysctlInt32("sysctl.proc_translated") {
             return translated == 1 ? "true" : "false"
         }
@@ -537,7 +537,7 @@ struct FirstUseDiagnosticSnapshot {
             : "unknown"
     }
 
-    private static var hardwareArchitecture: String {
+    static var hardwareArchitecture: String {
         #if arch(arm64)
         return "arm64"
         #else
@@ -548,7 +548,7 @@ struct FirstUseDiagnosticSnapshot {
         #endif
     }
 
-    private static var systemVersion: String {
+    static var systemVersion: String {
         let version = ProcessInfo.processInfo.operatingSystemVersion
         return "\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"
     }

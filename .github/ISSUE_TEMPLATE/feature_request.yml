@@ -1,0 +1,44 @@
+name: "功能建议 / Feature Request"
+description: "提出新功能需求、新遥控器设备适配或体验改进建议"
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你为 RemoteBuddy 提出宝贵建议！我们欢迎任何关于遥控器适配、语音输入法集成与易用性提升的提议。
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: 需求或功能描述 (Feature Description)
+      description: 清晰、简洁地描述你希望增加的功能或现有体验中遇到的痛点。
+      placeholder: "我希望 RemoteBuddy 能够..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: 解决方案或预期交互 (Proposed Solution)
+      description: 你设想这个功能应该如何运作？界面上如何展示？
+      placeholder: "期望的交互方式或功能实现细节..."
+    validations:
+      required: false
+
+  - type: input
+    id: target-hardware
+    attributes:
+      label: 相关硬件设备或语音工具 (Target Hardware / Tool)
+      description: 若涉及特定型号蓝牙遥控器或第三方输入法/语音工具，请注明型号或应用名。
+      placeholder: "例如：某品牌特定型号蓝牙遥控器 / 某语音工具"
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 补充说明 (Additional Context)
+      description: 任何其他相关的背景信息、参考资料或使用场景。
+    validations:
+      required: false

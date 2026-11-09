@@ -10,6 +10,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
     case mapping
     case commonPhrases
     case permissions
+    case general
     case about
 
     var id: String { rawValue }
@@ -21,7 +22,8 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .mapping: return "settings.section.buttons"
         case .commonPhrases: return "common_phrases.title"
         case .permissions: return "settings.section.permissions"
-        case .about: return "settings.section.settings"
+        case .general: return "settings.section.general"
+        case .about: return "settings.section.about"
         }
     }
 
@@ -32,7 +34,8 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .mapping: return "keyboard"
         case .commonPhrases: return "text.quote"
         case .permissions: return "shield.lefthalf.filled"
-        case .about: return "gearshape"
+        case .general: return "slider.horizontal.3"
+        case .about: return "info.circle"
         }
     }
 }
@@ -71,26 +74,144 @@ enum SettingsPermissionAction: Equatable {
 
 struct SettingsDiagnosticSnapshot: Equatable {
     let appVersion: String
+    let appBuild: String
+    let macosVersion: String
+    let architecture: String
+    let isRosetta: Bool
     let bluetoothGranted: Bool
     let inputMonitoringGranted: Bool
     let accessibilityGranted: Bool
+    let remoteConnected: Bool
+    let remoteModel: String
+    let virtualMicrophoneReady: Bool
+    let audioOutputReady: Bool
+    let voiceTool: String
+    let voiceKeyMode: String
     let runtimeLogAvailable: Bool
+    let runtimeLogPath: String
+    let runtimeLogSizeBytes: Int64?
+    let generatedAt: Date
+
+    init(
+        appVersion: String,
+        appBuild: String = "1",
+        macosVersion: String = FirstUseDiagnosticSnapshot.systemVersion,
+        architecture: String = FirstUseDiagnosticSnapshot.architecture,
+        isRosetta: Bool = FirstUseDiagnosticSnapshot.runningUnderRosetta == "true",
+        bluetoothGranted: Bool,
+        inputMonitoringGranted: Bool,
+        accessibilityGranted: Bool,
+        remoteConnected: Bool = false,
+        remoteModel: String = "none",
+        virtualMicrophoneReady: Bool = false,
+        audioOutputReady: Bool = false,
+        voiceTool: String = "unselected",
+        voiceKeyMode: String = "press_and_hold",
+        runtimeLogAvailable: Bool,
+        runtimeLogPath: String = SettingsDiagnosticSnapshot.sanitizePath(AppLogger.shared.logURL.path),
+        runtimeLogSizeBytes: Int64? = nil,
+        generatedAt: Date = Date()
+    ) {
+        self.appVersion = appVersion
+        self.appBuild = appBuild
+        self.macosVersion = macosVersion
+        self.architecture = architecture
+        self.isRosetta = isRosetta
+        self.bluetoothGranted = bluetoothGranted
+        self.inputMonitoringGranted = inputMonitoringGranted
+        self.accessibilityGranted = accessibilityGranted
+        self.remoteConnected = remoteConnected
+        self.remoteModel = remoteModel
+        self.virtualMicrophoneReady = virtualMicrophoneReady
+        self.audioOutputReady = audioOutputReady
+        self.voiceTool = voiceTool
+        self.voiceKeyMode = voiceKeyMode
+        self.runtimeLogAvailable = runtimeLogAvailable
+        self.runtimeLogPath = Self.sanitizePath(runtimeLogPath)
+        self.runtimeLogSizeBytes = runtimeLogSizeBytes
+        self.generatedAt = generatedAt
+    }
+
+    static func sanitizePath(_ path: String, homeDirectory: String = NSHomeDirectory()) -> String {
+        guard !homeDirectory.isEmpty else { return path }
+        if path == homeDirectory {
+            return "~"
+        }
+        let prefix = homeDirectory.hasSuffix("/") ? homeDirectory : homeDirectory + "/"
+        if path.hasPrefix(prefix) {
+            return "~/" + path.dropFirst(prefix.count)
+        }
+        return path
+    }
+
+    var formattedLogSize: String {
+        guard let bytes = runtimeLogSizeBytes else { return "0 B" }
+        return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+    }
+
+    private static func timestamp(_ date: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter.string(from: date)
+    }
 
     var summary: String {
-        [
-            "RemoteBuddy settings diagnostics",
-            "app_version=\(appVersion)",
-            "permission_bluetooth=\(bluetoothGranted)",
-            "permission_input_monitoring=\(inputMonitoringGranted)",
-            "permission_accessibility=\(accessibilityGranted)",
-            "runtime_log_available=\(runtimeLogAvailable)",
-        ].joined(separator: "\n")
+        let lines: [String] = [
+            "### RemoteBuddy 运行环境与诊断信息",
+            "- **应用版本 / App Version:** \(appVersion) (Build \(appBuild))",
+            "- **系统版本 / macOS:** \(macosVersion) (\(architecture)\(isRosetta ? ", Rosetta" : ""))",
+            "- **生成时间 / Generated At:** \(Self.timestamp(generatedAt))",
+            "",
+            "#### 系统权限状态 / Permissions",
+            "- 蓝牙 / Bluetooth: \(bluetoothGranted ? "已授权 (Granted)" : "未授权 (Denied)")",
+            "- 输入监控 / Input Monitoring: \(inputMonitoringGranted ? "已授权 (Granted)" : "未授权 (Denied)")",
+            "- 辅助功能 / Accessibility: \(accessibilityGranted ? "已授权 (Granted)" : "未授权 (Denied)")",
+            "",
+            "#### 设备与驱动 / Devices & Drivers",
+            "- 遥控器连接 / Remote Connected: \(remoteConnected ? "已连接 (Yes)" : "未连接 (No)") [\(remoteModel)]",
+            "- 虚拟麦克风驱动 / Virtual Mic Driver: \(virtualMicrophoneReady ? "已就绪 (Ready)" : "未就绪 (Not Ready)")",
+            "- 音频输出 / Audio Output: \(audioOutputReady ? "已就绪 (Ready)" : "未就绪 (Not Ready)")",
+            "",
+            "#### 配置与集成 / Configuration",
+            "- 语音工具 / Voice Tool: \(voiceTool)",
+            "- 按键模式 / Voice Key Mode: \(voiceKeyMode)",
+            "",
+            "#### 诊断日志 / Runtime Logs",
+            "- 日志文件状态 / Log Available: \(runtimeLogAvailable ? "存在 (\(formattedLogSize))" : "未找到 (Not Found)")",
+            "- 本地路径 / Log Path: \(runtimeLogPath)",
+            "- 隐私承诺: 诊断日志仅保存在本机，永不上传，绝不含语音、转写文本或剪贴板等隐私数据。",
+            "",
+            "```yaml",
+            "# Machine-parseable diagnostics",
+            "app_version: \"\(appVersion)\"",
+            "app_build: \"\(appBuild)\"",
+            "macos_version: \"\(macosVersion)\"",
+            "architecture: \"\(architecture)\"",
+            "rosetta: \(isRosetta)",
+            "permission_bluetooth: \(bluetoothGranted)",
+            "permission_input_monitoring: \(inputMonitoringGranted)",
+            "permission_accessibility: \(accessibilityGranted)",
+            "remote_connected: \(remoteConnected)",
+            "remote_model: \"\(remoteModel)\"",
+            "virtual_microphone: \(virtualMicrophoneReady)",
+            "audio_output: \(audioOutputReady)",
+            "voice_tool: \"\(voiceTool)\"",
+            "voice_key_mode: \"\(voiceKeyMode)\"",
+            "runtime_log_available: \(runtimeLogAvailable)",
+            "```"
+        ]
+        return lines.joined(separator: "\n")
     }
 
     var auditLog: String {
-        "SETTINGS DIAGNOSTICS copied permission_bluetooth=\(bluetoothGranted) " +
-            "permission_input_monitoring=\(inputMonitoringGranted) " +
-            "permission_accessibility=\(accessibilityGranted)"
+        "SETTINGS DIAGNOSTICS copied app_version=\(appVersion) " +
+            "macos=\(macosVersion) arch=\(architecture) " +
+            "bluetooth=\(bluetoothGranted) " +
+            "input_monitoring=\(inputMonitoringGranted) " +
+            "accessibility=\(accessibilityGranted) " +
+            "remote_connected=\(remoteConnected) " +
+            "remote_model=\(remoteModel)"
     }
 }
 
@@ -120,6 +241,7 @@ enum SettingsPageBehavior {
         .mapping,
         .integration,
         .permissions,
+        .general,
         .about,
     ]
 

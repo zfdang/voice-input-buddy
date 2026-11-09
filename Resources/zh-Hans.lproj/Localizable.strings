@@ -238,12 +238,12 @@
 "custom_application.error.title" = "无法配置 APP";
 "custom_application.error.not_installed" = "目标 APP 已移动或卸载，请重新添加。";
 "custom_application.error.open_failed" = "无法打开目标 APP。";
-"settings.section.connection" = "设备连接";
+"settings.section.connection" = "遥控器连接";
 "settings.section.buttons" = "按键映射";
 "settings.section.permissions" = "权限与环境";
 "permission.status.enabled" = "已开启";
 "permission.status.pending" = "待授权";
-"connection.page.title" = "设备连接";
+"connection.page.title" = "遥控器连接";
 "connection.page.subtitle" = "连接遥控器，并选择语音输出设备";
 "connection.device.name" = "小米蓝牙遥控器 2 / 2 Pro";
 "remote.device.selector" = "遥控器";
@@ -367,10 +367,10 @@
 "permissions.upgrade_identity_help" = "如果升级后权限失效，请将遥控搭子保留在“应用程序”中，并重新授予缺失的权限。";
 "diagnostics.title" = "诊断";
 "diagnostics.logs.title" = "应用日志";
-"diagnostics.logs.privacy" = "诊断日志仅存于本机，日志上传已停用。";
-"diagnostics.logs.last_entry" = "打开本地文本日志，或复制脱敏诊断摘要。";
+"diagnostics.logs.privacy" = "诊断日志仅保存在本机，永不上传。";
+"diagnostics.logs.last_entry" = "打开本地文本日志，或复制环境与诊断信息用于排障反馈。";
 "diagnostics.logs.show_in_finder" = "在 Finder 中显示日志";
-"diagnostics.logs.copy_summary" = "复制诊断摘要";
+"diagnostics.logs.copy_summary" = "复制诊断信息";
 "diagnostics.logs.send" = "发送诊断信息";
 "common.status.connected" = "已连接";
 "common.status.connecting" = "连接中";
@@ -448,6 +448,7 @@
 "menu.language" = "语言";
 "language.system" = "跟随系统";
 "common.value.unknown" = "未知";
+"common.value.none" = "无";
 "app.version_with_build" = "版本 %1$@ (%2$@)";
 "app.version" = "版本 %1$@";
 "status_item.voice_active_accessibility" = "小米蓝牙遥控器 2 Pro 正在传输语音";
@@ -461,6 +462,7 @@
 "common.action.copy_link" = "复制链接";
 "common.status.copied" = "已复制";
 "settings.section.about" = "关于";
+"settings.section.general" = "通用";
 "settings.section.settings" = "设置";
 "settings.update_badge.accessibility_value" = "有新版本可用";
 "settings.page.title" = "设置";

@@ -48,7 +48,9 @@ struct RuntimeBoundaryTests {
         let profile = UUID()
         let monitor = HIDRemoteMonitor(settings: settings, profileID: profile,
             eventSuppressor: filter, ownsEventSuppressor: false,
-            runtimePermissions: { true }, diagnosticLogger: { _ in })
+            runtimePermissions: { true },
+            frontmostBundleIdentifier: { "test.editor" },
+            diagnosticLogger: { _ in })
         monitor.connectSimulatedDevice(fingerprint: "test", profileID: profile, isSeized: false)
         let usage = RemoteButton.right.hidUsage
         monitor.handleSimulatedReport(reportID: 1, data: Data([UInt8(usage & 255), UInt8(usage >> 8)]))

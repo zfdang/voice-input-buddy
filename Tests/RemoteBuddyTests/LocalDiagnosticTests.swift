@@ -46,4 +46,77 @@ struct LocalDiagnosticTests {
         #expect(try String(contentsOf: owned, encoding: .utf8).contains("owned session"))
     }
 
+    @Test func settingsDiagnosticSnapshotContainsComprehensiveRedactedInfo() {
+        let snapshot = SettingsDiagnosticSnapshot(
+            appVersion: "1.2.3",
+            appBuild: "42",
+            macosVersion: "15.3.1",
+            architecture: "arm64",
+            isRosetta: false,
+            bluetoothGranted: true,
+            inputMonitoringGranted: true,
+            accessibilityGranted: false,
+            remoteConnected: true,
+            remoteModel: "小米蓝牙遥控器 (xiaomi)",
+            virtualMicrophoneReady: true,
+            audioOutputReady: true,
+            voiceTool: "wechat",
+            voiceKeyMode: "press_and_hold",
+            runtimeLogAvailable: true,
+            runtimeLogPath: "/tmp/test.log",
+            runtimeLogSizeBytes: 2048,
+            generatedAt: Date(timeIntervalSince1970: 1700000000)
+        )
+
+        let summary = snapshot.summary
+        #expect(summary.contains("1.2.3 (Build 42)"))
+        #expect(summary.contains("15.3.1 (arm64)"))
+        #expect(summary.contains("蓝牙 / Bluetooth: 已授权 (Granted)"))
+        #expect(summary.contains("辅助功能 / Accessibility: 未授权 (Denied)"))
+        #expect(summary.contains("遥控器连接 / Remote Connected: 已连接 (Yes) [小米蓝牙遥控器 (xiaomi)]"))
+        #expect(summary.contains("虚拟麦克风驱动 / Virtual Mic Driver: 已就绪 (Ready)"))
+        #expect(summary.contains("语音工具 / Voice Tool: wechat"))
+        #expect(summary.contains("按键模式 / Voice Key Mode: press_and_hold"))
+        #expect(summary.contains("日志文件状态 / Log Available: 存在"))
+        #expect(summary.contains("永不上传"))
+        #expect(summary.contains("app_version: \"1.2.3\""))
+
+        var writtenSummary: String?
+        var writtenAudit: String?
+        SettingsPageBehavior.copyDiagnosticSummary(
+            snapshot,
+            writeToPasteboard: { writtenSummary = $0 },
+            writeAuditLog: { writtenAudit = $0 }
+        )
+        #expect(writtenSummary == summary)
+        #expect(writtenAudit?.contains("SETTINGS DIAGNOSTICS copied") == true)
+        #expect(writtenAudit?.contains("bluetooth=true") == true)
+        #expect(writtenAudit?.contains("accessibility=false") == true)
+    }
+
+    @Test func settingsDiagnosticSnapshotRedactsHomeDirectoryInLogPath() {
+        let fakeHome = "/Users/secret_user_42"
+        let fullPath = "\(fakeHome)/Library/Logs/RemoteBuddy/remotebuddy.log"
+        let sanitized = SettingsDiagnosticSnapshot.sanitizePath(fullPath, homeDirectory: fakeHome)
+        #expect(sanitized == "~/Library/Logs/RemoteBuddy/remotebuddy.log")
+        #expect(SettingsDiagnosticSnapshot.sanitizePath(fakeHome, homeDirectory: fakeHome) == "~")
+        #expect(SettingsDiagnosticSnapshot.sanitizePath("/tmp/safe.log", homeDirectory: fakeHome) == "/tmp/safe.log")
+
+        let actualHome = NSHomeDirectory()
+        let realUserLogPath = "\(actualHome)/Library/Logs/RemoteBuddy/remotebuddy.log"
+        let snapshot = SettingsDiagnosticSnapshot(
+            appVersion: "1.0.0",
+            bluetoothGranted: true,
+            inputMonitoringGranted: true,
+            accessibilityGranted: true,
+            runtimeLogAvailable: true,
+            runtimeLogPath: realUserLogPath
+        )
+
+        #expect(!snapshot.runtimeLogPath.contains(actualHome))
+        #expect(snapshot.runtimeLogPath == "~/Library/Logs/RemoteBuddy/remotebuddy.log")
+        #expect(!snapshot.summary.contains(actualHome))
+        #expect(snapshot.summary.contains("~/Library/Logs/RemoteBuddy/remotebuddy.log"))
+    }
+
 }

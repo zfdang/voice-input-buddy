@@ -1,0 +1,95 @@
+name: "Bug 报告 / Bug Report"
+description: "提交功能异常、遥控器连接问题、语音输入无法触发或程序故障"
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你帮助改进 RemoteBuddy！提交前请确认你正在使用最新版本。
+        
+        > [!NOTE]
+        > **隐私安全承诺**：RemoteBuddy 的诊断信息与本地日志**仅保存在本机，永不自动上传**。在粘贴日志或诊断信息前，已自动进行脱敏处理，不包含任何个人隐私、语音音频或识别文本。
+
+  - type: input
+    id: version
+    attributes:
+      label: 应用版本 (App Version)
+      description: 当前运行的 RemoteBuddy 版本号（如 1.0.0）。
+      placeholder: "例如：1.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS 系统版本与芯片架构 (macOS & Architecture)
+      description: 例如 macOS 15.3 (Apple Silicon M1/M2/M3/M4) 或 Intel。
+      placeholder: "例如：macOS 15.3 (Apple Silicon)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述 (Problem Description)
+      description: 请详细描述遇到的问题现象、出现频率及影响。
+      placeholder: "简要说明发生了什么故障..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤 (Steps to Reproduce)
+      description: 请列出导致问题出现的具体操作步骤。
+      value: |
+        1. 启动 RemoteBuddy
+        2. 连接遥控器（型号：___）
+        3. 按下按键 / 尝试触发语音输入...
+        4. 出现异常：___
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: 期望行为与实际表现 (Expected vs Actual Behavior)
+      description: 正常预期应该发生什么，实际上发生了什么？
+      placeholder: |
+        - 期望行为：
+        - 实际表现：
+    validations:
+      required: false
+
+  - type: textarea
+    id: diagnostic-info
+    attributes:
+      label: 运行环境与诊断信息 (Diagnostic Information)
+      description: |
+        可在 RemoteBuddy 的**「设置」→「关于」→「诊断与日志」**（Settings → About）卡片中，点击**「复制诊断信息」**（Copy Diagnostic Info），然后直接粘贴到下方：
+      render: markdown
+      placeholder: |
+        <!-- 请在此处粘贴应用中点击「复制诊断信息」得到的内容 -->
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 问题发生时的脱敏日志片段 (Redacted Runtime Logs)
+      description: |
+        可在**「设置」→「关于」**（Settings → About）中点击**「在 Finder 中显示日志」**（Show Logs in Finder），复制故障发生前后的相关日志片段粘贴于此（日志仅保存在本地且已默认脱敏，不含语音或隐私内容）。
+      render: text
+      placeholder: |
+        <!-- 请在此处粘贴相关日志内容 -->
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 截图或录屏 (Screenshots or Screen Recording)
+      description: 如有相关界面截图、系统报错提示或录屏，可直接拖拽或粘贴至此。
+    validations:
+      required: false

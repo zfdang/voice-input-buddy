@@ -160,14 +160,19 @@ struct ProductBoundaryTests {
 
     @Test func dailyNavigationKeepsPermissionRepairBeforeSettings() {
         let sections = SettingsPageBehavior.sidebarSections()
-        #expect(sections == [.connection, .mapping, .integration, .permissions, .about])
+        #expect(sections == [.connection, .mapping, .integration, .permissions, .general, .about])
         #expect(SettingsPageBehavior.visibleSection(for: .permissions) == .permissions)
+        #expect(SettingsPageBehavior.visibleSection(for: .general) == .general)
+        #expect(SettingsPageBehavior.visibleSection(for: .about) == .about)
         #expect(SettingsPageBehavior.initialSection(
             requestedSection: nil
         ) == .connection)
         #expect(SettingsPageBehavior.initialSection(
             requestedSection: .permissions
         ) == .permissions)
+        #expect(SettingsPageBehavior.initialSection(
+            requestedSection: .general
+        ) == .general)
     }
 
     @Test @MainActor func changingIntegrationKeepsHardwareAudioAndMappings() throws {

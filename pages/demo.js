@@ -35,11 +35,11 @@ button.addEventListener('blur', stop);
   const galleryDataZh = {
     settings: [
       {
-        title: '设备连接',
+        title: '遥控器连接',
         badge: '多设备管理',
-        windowTitle: '设备连接 · Remote Buddy',
+        windowTitle: '遥控器连接 · Remote Buddy',
         src: 'assets/screenshots/connection-zh.png',
-        alt: 'Remote Buddy 设备连接界面：已连接的小米遥控器、电量、麦克风增益与设备信息',
+        alt: 'Remote Buddy 遥控器连接界面：已连接的小米遥控器、电量、麦克风增益与设备信息',
         desc: '查看已添加遥控器的连接状态、电量和设备信息，为每台设备单独调整麦克风增益（0–24 dB）。'
       },
       {

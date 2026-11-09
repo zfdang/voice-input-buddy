@@ -10,20 +10,30 @@ extension SettingsView {
             WindowDragArea()
                 .frame(height: SettingsPageBehavior.sidebarTopDragHeight)
                 .accessibilityHidden(true)
-            VStack(spacing: 4) {
+            VStack(spacing: 6) {
+                Image(nsImage: appIconCatalog.image(for: settings.appIconIdentifier))
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 44, height: 44)
                 Text(verbatim: localization.text("app.name"))
                     .multilineTextAlignment(.center)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 13, weight: .bold))
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
+            .padding(.top, 14)
+            .padding(.bottom, 12)
             .accessibilityElement(children: .combine)
+
+            Divider()
+                .padding(.horizontal, 10)
+
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 0) {
                     ForEach(visibleSections) { section in
                         sidebarButton(section)
                     }
                 }
+                .padding(.top, 6)
             }
         }
         .background(Color(nsColor: .controlBackgroundColor))
@@ -106,6 +116,8 @@ extension SettingsView {
             }
         case .permissions:
             permissionsPage
+        case .general:
+            generalPage
         case .about:
             aboutPage
         }
