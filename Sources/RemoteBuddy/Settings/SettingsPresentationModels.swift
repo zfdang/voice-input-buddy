@@ -298,45 +298,50 @@ struct ConfigurationStatus {
 }
 
 enum MappingActionFilter: String, CaseIterable, Identifiable {
-    case all
     case basicKeys
     case systemAndMedia
-    case custom
     case commonPhrases
     case applications
+    case custom
 
     var id: String { rawValue }
 
     static var visibleCases: [Self] {
-        [.basicKeys, .systemAndMedia, .custom, .commonPhrases, .applications]
+        [.basicKeys, .systemAndMedia, .commonPhrases, .applications, .custom]
     }
 
     var localizationKey: String {
         switch self {
-        case .all: return "button_mapping.action_filter.all"
         case .basicKeys: return ButtonActionCategory.basicKeys.localizationKey
         case .systemAndMedia: return ButtonActionCategory.systemAndMedia.localizationKey
-        case .custom: return ButtonActionCategory.custom.localizationKey
         case .commonPhrases: return ButtonActionCategory.commonPhrases.localizationKey
         case .applications: return ButtonActionCategory.applications.localizationKey
+        case .custom: return ButtonActionCategory.custom.localizationKey
+        }
+    }
+
+    var category: ButtonActionCategory {
+        switch self {
+        case .basicKeys: return .basicKeys
+        case .systemAndMedia: return .systemAndMedia
+        case .commonPhrases: return .commonPhrases
+        case .applications: return .applications
+        case .custom: return .custom
+        }
+    }
+
+    init(category: ButtonActionCategory) {
+        switch category {
+        case .basicKeys: self = .basicKeys
+        case .systemAndMedia: self = .systemAndMedia
+        case .commonPhrases: self = .commonPhrases
+        case .applications: self = .applications
+        case .custom: self = .custom
         }
     }
 
     func includes(_ category: ButtonActionCategory) -> Bool {
-        switch self {
-        case .all:
-            return true
-        case .basicKeys:
-            return category == .basicKeys
-        case .systemAndMedia:
-            return category == .systemAndMedia
-        case .custom:
-            return category == .custom
-        case .commonPhrases:
-            return category == .commonPhrases
-        case .applications:
-            return category == .applications
-        }
+        self.category == category
     }
 }
 

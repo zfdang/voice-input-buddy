@@ -37,43 +37,36 @@ extension SettingsView {
 
             mappingActionFilterControl
 
-            ForEach(ButtonActionCategory.allCases.filter(mappingActionFilter.includes)) { category in
-                let groupedActions = actions.filter { $0.category == category }
-                if !groupedActions.isEmpty {
-                    mappingActionGroup(
-                        category: category,
-                        actions: groupedActions,
-                        selectedAction: configured.action,
-                        installedBundleIdentifiers: installedBundleIdentifiers,
-                        onSelect: { action in
-                            setMappingAction(action, for: button, trigger: trigger)
-                            shortcutCaptureTarget = nil
-                            applicationShortcutCaptureProfileID = nil
-                        }
+            let currentCategory = mappingActionFilter.category
+            let groupedActions = actions.filter { $0.category == currentCategory }
+            if !groupedActions.isEmpty {
+                mappingActionGroup(
+                    category: currentCategory,
+                    actions: groupedActions,
+                    selectedAction: configured.action,
+                    installedBundleIdentifiers: installedBundleIdentifiers,
+                    onSelect: { action in
+                        setMappingAction(action, for: button, trigger: trigger)
+                        shortcutCaptureTarget = nil
+                        applicationShortcutCaptureProfileID = nil
+                    }
+                )
+
+                if currentCategory == .applications, configured.action == .openCustomApplication {
+                    customApplicationEditor(
+                        button: button,
+                        trigger: trigger,
+                        configured: configured
                     )
                 }
-            }
 
-            if configured.action == .customShortcut {
-                inlineShortcutEditor(
-                    button: button,
-                    trigger: trigger,
-                    configured: configured
-                )
-            }
-
-            if configured.action == .openCustomApplication {
-                customApplicationEditor(
-                    button: button,
-                    trigger: trigger,
-                    configured: configured
-                )
-            }
-
-            if trigger == .singleClick,
-               configured.action != .disabled,
-               !settings.allowsHoldRepeat(for: button) {
-                mappingRapidPressControl(button: button)
+                if currentCategory == .custom, configured.action == .customShortcut {
+                    inlineShortcutEditor(
+                        button: button,
+                        trigger: trigger,
+                        configured: configured
+                    )
+                }
             }
 
             if trigger == .doubleClick && configured.action != .disabled {
@@ -128,24 +121,6 @@ extension SettingsView {
         }
         .padding(8)
         .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 12))
-    }
-
-    private func mappingRapidPressControl(button: RemoteButton) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Toggle(localization.text("button_mapping.rapid_press"), isOn: Binding(
-                get: { settings.allowsRapidPress(for: button) },
-                set: { settings.setAllowsRapidPress($0, for: button) }
-            ))
-            .font(.system(size: 13, weight: .medium))
-            .toggleStyle(.switch)
-            Text(localization.text("button_mapping.rapid_press_hint_short"))
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(12)
-        .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 10))
-        .help(localization.text("button_mapping.rapid_press_help"))
     }
 
     @ViewBuilder
