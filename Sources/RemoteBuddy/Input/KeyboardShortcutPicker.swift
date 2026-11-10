@@ -386,7 +386,7 @@ struct KeyboardShortcutPicker: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Picker("shortcut.picker.selection_method", selection: $selectionMode) {
+            Picker(localization.text("shortcut.picker.selection_method"), selection: $selectionMode) {
                 ForEach(SelectionMode.allCases) { mode in
                     Text(localization.text(mode.localizationKey)).tag(mode)
                 }

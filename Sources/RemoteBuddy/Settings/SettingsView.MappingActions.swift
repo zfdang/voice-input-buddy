@@ -181,7 +181,7 @@ extension SettingsView {
         case .deleteBackward: return "⌫"
         case .volumeUp: return localization.text("action.system_volume_up_short")
         case .volumeDown: return localization.text("action.system_volume_down_short")
-        case .volumeMute: return "Mute"
+        case .volumeMute: return localization.text("action.system_volume_mute_short")
         default: break
         }
         return configured.action.displayName(using: localization)

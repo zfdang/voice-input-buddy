@@ -184,6 +184,7 @@
 "action.system_volume_down" = "Decrease System Volume";
 "action.system_volume_up_short" = "Vol+";
 "action.system_volume_down_short" = "Vol-";
+"action.system_volume_mute_short" = "Mute";
 "action.system_mute" = "Mute System Audio";
 "action.play_pause" = "Play/Pause";
 "action.previous_command_left" = "Previous Track (System Media)";
@@ -1162,9 +1163,9 @@
 
 "common_phrases.inserted" = "Phrase inserted.";
 
-"button_mapping.editor.confirm" = "OK";
+"button_mapping.editor.confirm" = "Done";
 
-"button_mapping.action.restore_default" = "Restore Default";
+"button_mapping.action.restore_default" = "Restore This Trigger";
 "button_mapping.action.restore_default_help" = "Restore the factory default action for this trigger.";
 "button_mapping.action.restore_all_defaults" = "Restore All Button Defaults";
 "button_mapping.restore_all.title" = "Restore All Defaults";

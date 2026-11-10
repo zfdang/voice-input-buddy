@@ -149,6 +149,8 @@ extension SettingsView {
                     mappingEditingTarget = nil
                     shortcutCaptureTarget = nil
                     applicationShortcutCaptureProfileID = nil
+                    shortcutCaptureFeedback = nil
+                    mappingActionFilter = .basicKeys
                     DispatchQueue.main.async {
                         proxy.scrollTo("mapping-page-top", anchor: .top)
                     }
@@ -339,7 +341,17 @@ extension SettingsView {
             VStack(alignment: .leading, spacing: 12) {
                 mappingHIDStatus
                 Divider()
-                mappingSelectionLockControl
+                HStack {
+                    mappingSelectionLockControl
+                    Spacer()
+                    Button {
+                        selectedSection = .commonPhrases
+                    } label: {
+                        Label(localization.text("common_phrases.adjust"), systemImage: "text.quote")
+                    }
+                    .compatibilityButtonStyle(.standard)
+                    .font(.system(size: 12))
+                }
             }
         }
     }
@@ -452,6 +464,8 @@ extension SettingsView {
                 mappingEditingTarget = nil
                 shortcutCaptureTarget = nil
                 applicationShortcutCaptureProfileID = nil
+                shortcutCaptureFeedback = nil
+                mappingActionFilter = .basicKeys
             }
             Button(localization.text("common.action.cancel"), role: .cancel) {}
         } message: {

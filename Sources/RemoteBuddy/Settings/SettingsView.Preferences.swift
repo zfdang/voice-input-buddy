@@ -93,6 +93,7 @@ extension SettingsView {
                                     set: { setDockIconVisible($0) }
                                 ))
                                 .labelsHidden()
+                                .accessibilityLabel(localization.text("about.preferences.show_dock_icon"))
                                 .toggleStyle(.switch)
                             }
                             .padding(.vertical, 8)
@@ -123,6 +124,7 @@ extension SettingsView {
                                     set: { setStatusBarIconVisible($0) }
                                 ))
                                 .labelsHidden()
+                                .accessibilityLabel(localization.text("about.preferences.show_status_bar_icon"))
                                 .toggleStyle(.switch)
                             }
                             .padding(.vertical, 8)
@@ -152,6 +154,7 @@ extension SettingsView {
                                             set: { loginItemService.setEnabled($0) }
                                         ))
                                         .labelsHidden()
+                                        .accessibilityLabel(localization.text("about.preferences.launch_at_login"))
                                         .toggleStyle(.switch)
                                     }
 
@@ -163,6 +166,7 @@ extension SettingsView {
                                             .font(.system(size: 12, weight: .medium))
                                         Toggle("", isOn: $settings.openMainWindowAtLaunch)
                                             .labelsHidden()
+                                            .accessibilityLabel(localization.text("about.preferences.open_main_window_at_launch"))
                                             .toggleStyle(.switch)
                                     }
                                 }
@@ -177,7 +181,7 @@ extension SettingsView {
                                     .frame(maxWidth: .infinity, alignment: .trailing)
                                     .padding(.bottom, 8)
                                 Button(
-                                    "about.preferences.launch_at_login_open_system_settings",
+                                    localization.text("about.preferences.launch_at_login_open_system_settings"),
                                     action: loginItemService.openLoginItemsSettings
                                 )
                                 .compatibilityButtonStyle(.standard)
@@ -324,7 +328,7 @@ extension SettingsView {
                     Spacer(minLength: 16)
 
                     Toggle(
-                        "about.version.check_prerelease",
+                        localization.text("about.version.check_prerelease"),
                         isOn: $settings.checksForPreReleaseUpdates
                     )
                     .toggleStyle(.switch)
@@ -332,7 +336,7 @@ extension SettingsView {
 
                     Button(action: checkForUpdates) {
                         Label(
-                            "menu.check_for_updates",
+                            localization.text("menu.check_for_updates"),
                             systemImage: "arrow.triangle.2.circlepath"
                         )
                     }

@@ -14,7 +14,7 @@
 "audio.test_tone.cancelled_device_changed" = "设备已更新，测试音已取消";
 "audio.test_tone.ready" = "可发送测试音";
 "audio.output.none_or_unavailable" = "未选择语音输出设备或设备不可用";
-"audio.test_tone.blocked_voice_active" = "小米蓝牙遥控器 2 Pro 正在传输语音，暂时无法播放测试音";
+"audio.test_tone.blocked_voice_active" = "遥控器正在传输语音，暂时无法播放测试音";
 "audio.test_tone.already_playing" = "测试音正在播放中";
 "audio.test_tone.device_not_ready" = "测试音发送失败：设备未就绪";
 "audio.test_tone.playing" = "正在播放约 1 秒测试音";
@@ -184,6 +184,7 @@
 "action.system_volume_down" = "系统音量 -";
 "action.system_volume_up_short" = "Vol+";
 "action.system_volume_down_short" = "Vol-";
+"action.system_volume_mute_short" = "静音";
 "action.system_mute" = "系统静音";
 "action.play_pause" = "播放 / 暂停";
 "action.previous_command_left" = "上一首（系统媒体）";
@@ -1163,10 +1164,10 @@
 
 "common_phrases.inserted" = "常用语已插入。";
 
-"button_mapping.editor.confirm" = "确定";
+"button_mapping.editor.confirm" = "完成";
 
-"button_mapping.action.restore_default" = "恢复默认";
-"button_mapping.action.restore_default_help" = "将当前动作恢复为出厂默认设置。";
+"button_mapping.action.restore_default" = "恢复此项默认";
+"button_mapping.action.restore_default_help" = "将当前触发条件的动作恢复为出厂默认设置。";
 "button_mapping.action.restore_all_defaults" = "恢复所有按键的默认设置";
 "button_mapping.restore_all.title" = "恢复所有按键默认设置";
 "button_mapping.restore_all.hint" = "将当前遥控器的所有按键单击、双击、长按及自定义快捷键全部恢复为出厂默认设置。";
