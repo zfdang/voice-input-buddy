@@ -34,12 +34,10 @@ extension AppSettings {
             showStatusBarIcon: showStatusBarIcon,
             openMainWindowAtLaunch: openMainWindowAtLaunch,
             checksForPreReleaseUpdates: checksForPreReleaseUpdates,
-            experimentalContinuousRecordingEnabled: nil,
             voiceTool: onboardingVoiceTool,
             voiceFnTapModeEnabled: voiceFnTapModeEnabled,
             voiceKeyMode: voiceKeyMode,
-            chromecastVoiceMode: chromecastVoiceMode,
-            continuousRecordingPowerBindingBackup: nil
+            chromecastVoiceMode: chromecastVoiceMode
         )
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -172,10 +170,6 @@ extension AppSettings {
                     return parsed.isEmpty ? nil : (button, parsed)
                 }
             )
-
-        if configuration.continuousRecordingPowerBindingBackup != nil {
-            rejected.insert(Keys.continuousRecordingPowerBindingBackup)
-        }
 
         gainDB = configuration.gainDB
         for (id, value) in configuration.remoteGainDB ?? [:] {

@@ -68,12 +68,10 @@ struct PersonalizedConfiguration: Codable {
     let showStatusBarIcon: Bool?
     let openMainWindowAtLaunch: Bool?
     let checksForPreReleaseUpdates: Bool?
-    let experimentalContinuousRecordingEnabled: Bool?
     var voiceTool: OnboardingVoiceTool? = nil
     let voiceFnTapModeEnabled: Bool?
     let voiceKeyMode: VoiceKeyMode?
     var chromecastVoiceMode: ChromecastVoiceMode? = nil
-    let continuousRecordingPowerBindingBackup: ConfiguredButtonAction?
 }
 
 /// Reads at most the limit plus one byte, including growing files and streams.

@@ -24,7 +24,6 @@ final class AppSettings: ObservableObject {
         static let voiceFnTapModeEnabled = "voiceFnTapModeEnabled"
         static let voiceKeyMode = "voiceKeyMode"
         static let chromecastVoiceMode = "chromecast.voiceMode"
-        static let continuousRecordingPowerBindingBackup = "continuousRecordingPowerBindingBackup"
         static let lastLaunchedBuild = "launch.lastLaunchedBuild"
         static let onboardingPurpose = "onboarding.purpose"
         static let onboardingCompletedVersion = "onboarding.completedVersion"
@@ -66,8 +65,12 @@ final class AppSettings: ObservableObject {
 
     @Published var unifiedBaseBindings: [UnifiedButtonBinding] = [] {
         didSet {
-            if !isResettingBindings, let data = try? JSONEncoder().encode(unifiedBaseBindings) {
+            guard !isResettingBindings else { return }
+            do {
+                let data = try JSONEncoder().encode(unifiedBaseBindings)
                 defaults.set(data, forKey: "unifiedBaseBindings")
+            } catch {
+                AppLogger.shared.write("SETTINGS ERROR encode unifiedBaseBindings failed: \(error)")
             }
         }
     }
@@ -224,8 +227,20 @@ final class AppSettings: ObservableObject {
         }
     }
 
-    var isLoadingRemoteProfile = false
-    var isResettingBindings = false
+    private(set) var isLoadingRemoteProfile = false
+    private(set) var isResettingBindings = false
+
+    func withLoadingRemoteProfile<T>(_ block: () throws -> T) rethrows -> T {
+        isLoadingRemoteProfile = true
+        defer { isLoadingRemoteProfile = false }
+        return try block()
+    }
+
+    func withResettingBindings<T>(_ block: () throws -> T) rethrows -> T {
+        isResettingBindings = true
+        defer { isResettingBindings = false }
+        return try block()
+    }
 
     @Published var onboardingPurpose: OnboardingPurpose {
         didSet { defaults.set(onboardingPurpose.rawValue, forKey: Keys.onboardingPurpose) }

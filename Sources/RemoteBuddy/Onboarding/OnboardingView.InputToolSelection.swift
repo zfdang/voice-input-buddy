@@ -125,42 +125,21 @@ extension OnboardingView {
                     Label {
                         Text(verbatim: localization.text("onboarding.voice_tool.binding.recommended"))
                     } icon: {
-                        Image(systemName: settings.onboardingVoiceBindingPreference == .documentedDefault
-                            ? "checkmark.circle.fill"
-                            : "circle")
-                    }
-                }
-                .buttonStyle(.bordered)
-
-                onboardingActionButton(id: "voice-binding.learn-current") {
-                    selectVoiceBindingPreference(.learnCurrent)
-                } label: {
-                    Label {
-                        Text(verbatim: localization.text("onboarding.voice_tool.binding.learn"))
-                    } icon: {
-                        Image(systemName: settings.onboardingVoiceBindingPreference == .learnCurrent
-                            ? "checkmark.circle.fill"
-                            : "circle")
+                        Image(systemName: "checkmark.circle.fill")
                     }
                 }
                 .buttonStyle(.bordered)
             }
 
-            Text(verbatim: localization.text(
-                settings.onboardingVoiceBindingPreference == .learnCurrent
-                    ? "onboarding.voice_tool.binding.learn_detail"
-                    : "onboarding.voice_tool.binding.recommended_detail"
-            ))
-            .font(.system(size: 12))
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
+            Text(verbatim: localization.text("onboarding.voice_tool.binding.recommended_detail"))
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
-            if settings.onboardingVoiceBindingPreference == .documentedDefault {
-                Text(defaultBindingSummary(profile: profile))
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(profile.evidenceState == .verified ? Color.green : Color.orange)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            Text(defaultBindingSummary(profile: profile))
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(profile.evidenceState == .verified ? Color.green : Color.orange)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(10)
         .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 10))

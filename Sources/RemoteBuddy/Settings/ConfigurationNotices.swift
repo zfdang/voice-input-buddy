@@ -37,7 +37,6 @@ enum ConfigurationImportNoticeText {
         "buttonShortcuts": buttonMappingItemKey,
         "buttonApplicationProfileIDs": buttonMappingItemKey,
         "secondaryButtonBindings": buttonMappingItemKey,
-        "continuousRecordingPowerBindingBackup": buttonMappingItemKey,
         "customApplicationProfiles": customApplicationItemKey,
         "remoteGainDB": audioGainItemKey,
     ]
@@ -99,7 +98,6 @@ enum CorruptedSettingsNotice {
         "buttonShortcuts": buttonMappingItemKey,
         "buttonApplicationProfileIDs": buttonMappingItemKey,
         "secondaryButtonBindings": buttonMappingItemKey,
-        "continuousRecordingPowerBindingBackup": buttonMappingItemKey,
         "customApplicationProfiles": customApplicationItemKey,
         "remoteDeviceProfiles": remoteDeviceItemKey,
     ]

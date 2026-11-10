@@ -151,7 +151,7 @@ final class LocalizationStore: ObservableObject {
         }
     }
 
-    deinit {
+    isolated deinit {
         if let localeObserver {
             NotificationCenter.default.removeObserver(localeObserver)
         }

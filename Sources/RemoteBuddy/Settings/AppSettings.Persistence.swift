@@ -2,27 +2,30 @@ import Combine
 import Foundation
 
 extension AppSettings {
+    func encodeAndSave<T: Encodable>(_ value: T, forKey key: String) {
+        do {
+            let data = try JSONEncoder().encode(value)
+            defaults.set(data, forKey: key)
+        } catch {
+            AppLogger.shared.write("SETTINGS ERROR save failed for \(key): \(error)")
+        }
+    }
+
     func saveBindings() {
         let raw = Dictionary(uniqueKeysWithValues: buttonBindings.map { ($0.key.rawValue, $0.value) })
-        if let data = try? JSONEncoder().encode(raw) {
-            defaults.set(data, forKey: Keys.buttonBindings)
-        }
+        encodeAndSave(raw, forKey: Keys.buttonBindings)
     }
 
     func saveShortcuts() {
         let raw = Dictionary(uniqueKeysWithValues: buttonShortcuts.map { ($0.key.rawValue, $0.value) })
-        if let data = try? JSONEncoder().encode(raw) {
-            defaults.set(data, forKey: Keys.buttonShortcuts)
-        }
+        encodeAndSave(raw, forKey: Keys.buttonShortcuts)
     }
 
     func saveButtonApplicationProfileIDs() {
         let raw = Dictionary(
             uniqueKeysWithValues: buttonApplicationProfileIDs.map { ($0.key.rawValue, $0.value) }
         )
-        if let data = try? JSONEncoder().encode(raw) {
-            defaults.set(data, forKey: Keys.buttonApplicationProfileIDs)
-        }
+        encodeAndSave(raw, forKey: Keys.buttonApplicationProfileIDs)
     }
 
     func saveSecondaryBindings() {
@@ -32,9 +35,7 @@ extension AppSettings {
                 Dictionary(uniqueKeysWithValues: bindings.map { ($0.key.rawValue, $0.value) })
             )
         })
-        if let data = try? JSONEncoder().encode(raw) {
-            defaults.set(data, forKey: Keys.secondaryButtonBindings)
-        }
+        encodeAndSave(raw, forKey: Keys.secondaryButtonBindings)
     }
 
     func saveSelectedRemoteProfileMappings() {
@@ -51,12 +52,10 @@ extension AppSettings {
     }
 
     func saveCustomApplicationProfiles() {
-        guard let data = try? JSONEncoder().encode(customApplicationProfiles) else { return }
-        defaults.set(data, forKey: Keys.customApplicationProfiles)
+        encodeAndSave(customApplicationProfiles, forKey: Keys.customApplicationProfiles)
     }
 
     func saveRemoteDeviceProfiles() {
-        guard let data = try? JSONEncoder().encode(remoteDeviceProfiles) else { return }
-        defaults.set(data, forKey: Keys.remoteDeviceProfiles)
+        encodeAndSave(remoteDeviceProfiles, forKey: Keys.remoteDeviceProfiles)
     }
 }
