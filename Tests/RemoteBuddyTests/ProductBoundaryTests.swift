@@ -116,7 +116,7 @@ struct ProductBoundaryTests {
         }
     }
 
-    @Test @MainActor func configurationOperationsPersistPreferencesWithoutUsageData() throws {
+    @Test @MainActor func settingsPersistPreferencesWithoutUsageData() throws {
         let suite = "remote-buddy.tests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }

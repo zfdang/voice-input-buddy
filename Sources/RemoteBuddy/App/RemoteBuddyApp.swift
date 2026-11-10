@@ -974,9 +974,6 @@ private final class RemoteBuddyAppDelegate: NSObject, NSApplicationDelegate, NSM
                 setStatusBarIconVisible: { [weak self] isVisible in
                     self?.setStatusBarIconVisible(isVisible)
                 },
-                syncEntryPointVisibility: { [weak self] in
-                    self?.applyImportedEntryPointVisibility()
-                },
                 initialSettingsSection: initialSettingsSection,
                 completedUpdateVersion: completedUpdateVersion
             )
@@ -1197,14 +1194,6 @@ private final class RemoteBuddyAppDelegate: NSObject, NSApplicationDelegate, NSM
     private func setStatusBarIconVisible(_ isVisible: Bool) {
         model.settings.showStatusBarIcon = isVisible
         applyStatusBarIconVisibility(isVisible, source: "status_bar_toggle")
-    }
-
-    private func applyImportedEntryPointVisibility() {
-        updateDockActivationPolicy()
-        applyStatusBarIconVisibility(
-            model.settings.showStatusBarIcon,
-            source: "configuration_import"
-        )
     }
 
     private func updateDockActivationPolicy() {

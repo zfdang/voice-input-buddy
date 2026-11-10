@@ -742,7 +742,7 @@ final class HIDRemoteMonitor {
             usageExpiryTokens.removeValue(forKey: usage)
             usageExpiryTimers.removeValue(forKey: usage)?.cancel()
         }
-        for usage in usages { refreshUsageExpiry(usage) }
+        for usage in pressed { refreshUsageExpiry(usage) }
         onActiveButtons?(profileID, RemoteButton.buttons(for: usages))
 
         for usage in pressed.sorted() {

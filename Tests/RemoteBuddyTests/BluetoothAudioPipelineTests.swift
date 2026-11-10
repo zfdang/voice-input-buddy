@@ -140,4 +140,34 @@ struct BluetoothAudioPipelineTests {
         deliveries.run()
         #expect(!secondStop)
     }
+
+    @Test func tailFramePartialDecodingProducesBoundedNonSaturatingSamples() {
+        let queue = DispatchQueue(label: "test.audio.tail.saturation")
+        let deliveries = AudioDeliveries()
+        let pipeline = BluetoothAudioPipeline(queue: queue, deliver: { deliveries.enqueue($0) })
+        var decodedSamples: [[Int16]] = []
+
+        // Feed arbitrary partial frame with extreme nibbles
+        let pattern = Data([0xFF, 0x00, 0xAA, 0x55, 0x77, 0x88, 0x11, 0xEE, 0x44, 0x99])
+        #expect(pipeline.beginStream {})
+        #expect(pipeline.append(pattern, frameSize: 120, gainDB: 12) { decodedSamples.append($0) })
+        queue.sync {}
+        #expect(pipeline.pendingByteCount == pattern.count)
+
+        pipeline.endStream(frameSize: 120, gainDB: 12, onDecoded: { samples in
+            decodedSamples.append(samples)
+        }, onStop: {})
+        queue.sync {}
+        deliveries.run()
+
+        #expect(decodedSamples.count == 1)
+        guard let samples = decodedSamples.first else {
+            Issue.record("Expected tail samples")
+            return
+        }
+        #expect(samples.count == pattern.count * 2)
+        for sample in samples {
+            #expect(sample >= Int16.min && sample <= Int16.max)
+        }
+    }
 }

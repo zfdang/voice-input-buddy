@@ -132,11 +132,11 @@ struct RuntimeBoundaryTests {
     @Test func oversizedFileIsRejectedBeforeReading() throws {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: file) }
-        let data = Data(repeating: 32, count: ConfigurationFileReader.maximumBytes + 1)
+        let data = Data(repeating: 32, count: CommonPhraseFileReader.maximumBytes + 1)
         try data.write(to: file)
-        #expect(throws: AppConfigurationError.self) { try ConfigurationFileReader.read(from: file) }
+        #expect(throws: CommonPhraseFileReader.ReadError.self) { try CommonPhraseFileReader.read(from: file) }
         try Data("small".utf8).write(to: file)
-        #expect(try ConfigurationFileReader.read(from: file) == Data("small".utf8))
+        #expect(try CommonPhraseFileReader.read(from: file) == Data("small".utf8))
     }
     @Test func focusInputWaitsForActualFocusCompletionEvenIfOldFieldWasEditable() {
         let snapshot = VoiceInputDestinationSnapshot(bundleIdentifier: "example.editor", role: "AXTextArea", subrole: "", enabled: true, editable: true, protectedContent: false, semanticText: "Composer", focusIdentity: "old")

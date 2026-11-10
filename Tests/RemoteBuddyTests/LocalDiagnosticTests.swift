@@ -148,4 +148,13 @@ struct LocalDiagnosticTests {
         #expect(DiagnosticRedactor.redactedDeviceName("   ") == "unknown")
     }
 
+    @Test func bluetoothBridgeStateLogDescriptionRedactsDeviceName() {
+        #expect(BluetoothBridgeState.ready("Siri Remote").logDescription == "ready(Siri Remote)")
+        #expect(BluetoothBridgeState.ready("MI RC").logDescription == "ready(MI RC)")
+        let customDesc = BluetoothBridgeState.ready("Living Room Siri Remote").logDescription
+        #expect(customDesc.hasPrefix("ready(device_"))
+        #expect(!customDesc.contains("Siri Remote"))
+        #expect(BluetoothBridgeState.scanning.logDescription == "scanning")
+        #expect(BluetoothBridgeState.stopped.logDescription == "stopped")
+    }
 }

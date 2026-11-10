@@ -87,8 +87,7 @@ final class VirtualAudioOutput {
     private var playbackCounters = VirtualAudioPlaybackCounters()
     private var playbackCountersByDeliveryGeneration: [Int: VirtualAudioPlaybackCounters] = [:]
     private var pendingByDeliveryGeneration: [Int: PendingDeliveryCounters] = [:]
-    private var lastAudibilityCheckTime: TimeInterval = 0
-    private var lastAudibilityHealthy: Bool = true
+    private var cachedAudibility: (deviceID: AudioObjectID, checkTime: TimeInterval, healthy: Bool)?
     private var pendingDrainLogContexts: [String] = []
     private var drainRequests: [DrainRequest] = []
     private var drainGeneration: UInt64 = 0
@@ -712,7 +711,12 @@ final class VirtualAudioOutput {
         }
     }
 
+    func invalidateAudibilityCache() {
+        cachedAudibility = nil
+    }
+
     private func stopOnEngineQueue() {
+        invalidateAudibilityCache()
         updateOutputState { $0.ready = false; $0.healthy = false; $0.engineRunning = false; $0.playerPlaying = false }
         playbackLock.lock()
         let interruptedContexts = pendingVoiceBufferCount > 0 ? pendingDrainLogContexts : []
@@ -995,13 +999,17 @@ final class VirtualAudioOutput {
         playbackLock.unlock()
         let now = uptime()
         let audibilityHealthy: Bool
-        if now - lastAudibilityCheckTime < 2.0 {
-            audibilityHealthy = lastAudibilityHealthy
-        } else {
-            let audibility = CoreAudioDeviceCatalog.virtualAudioAudibilitySnapshot(for: state.selectedDevice)
+        if let targetID = state.selectedDevice?.id,
+           let cached = cachedAudibility,
+           cached.deviceID == targetID,
+           now - cached.checkTime < 2.0 {
+            audibilityHealthy = cached.healthy
+        } else if let selected = state.selectedDevice {
+            let audibility = CoreAudioDeviceCatalog.virtualAudioAudibilitySnapshot(for: selected)
             audibilityHealthy = !audibility.requiresAudibilityRepair
-            lastAudibilityHealthy = audibilityHealthy
-            lastAudibilityCheckTime = now
+            cachedAudibility = (deviceID: selected.id, checkTime: now, healthy: audibilityHealthy)
+        } else {
+            audibilityHealthy = true
         }
         return VirtualAudioOutputDiagnosticSnapshot(
             selectedDeviceKind: .classify(state.selectedDevice),

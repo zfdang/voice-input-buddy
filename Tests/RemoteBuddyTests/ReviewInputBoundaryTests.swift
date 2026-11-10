@@ -40,7 +40,7 @@ struct ReviewInputBoundaryTests {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: url) }
         try Data(repeating: 32, count: CommonPhraseStore.maximumImportBytes + 1).write(to: url)
-        #expect(throws: AppConfigurationError.self) { try CommonPhraseStore.readImport(from: url) }
+        #expect(throws: CommonPhraseFileReader.ReadError.self) { try CommonPhraseStore.readImport(from: url) }
         let archive = CommonPhraseArchive(entries: [CommonPhrase(id: "test", text: "测试",
             label: "测试")], bindings: ["ok": "test"])
         try JSONEncoder().encode(archive).write(to: url)
@@ -53,8 +53,8 @@ struct ReviewInputBoundaryTests {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: url) }
         try Data(repeating: 7, count: 128).write(to: url)
-        #expect(try ConfigurationFileReader.read(from: url, maximumBytes: 128).count == 128)
-        #expect(throws: AppConfigurationError.self) { try ConfigurationFileReader.read(from: url, maximumBytes: 127) }
+        #expect(try CommonPhraseFileReader.read(from: url, maximumBytes: 128).count == 128)
+        #expect(throws: CommonPhraseFileReader.ReadError.self) { try CommonPhraseFileReader.read(from: url, maximumBytes: 127) }
     }
 
     @Test @MainActor func corruptGainCannotReachIntegerFormatting() throws {
@@ -87,7 +87,8 @@ struct ReviewInputBoundaryTests {
         let settings = AppSettings(defaults: defaults)
 
         settings.setAction(.commandReturn, for: .power, trigger: .singleClick)
-        #expect(settings.action(for: .power) == .commandReturn)
+        let reloaded = AppSettings(defaults: defaults)
+        #expect(reloaded.action(for: .power) == .commandReturn)
 
         settings.setAction(.escape, for: .power, trigger: .singleClick)
         #expect(settings.action(for: .power) == .escape)

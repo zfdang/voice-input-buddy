@@ -1,8 +1,4 @@
-import AppKit
-import Combine
-import CoreBluetooth
-import SwiftUI
-import UniformTypeIdentifiers
+import Foundation
 
 /// Turns the storage keys published by `AppSettings.corruptedSettingKeys` into the warning the
 /// button mapping page shows. Storage keys are an implementation detail, so they are collapsed

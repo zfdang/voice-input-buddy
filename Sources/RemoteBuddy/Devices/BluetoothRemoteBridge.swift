@@ -23,6 +23,19 @@ enum BluetoothBridgeState: Equatable {
         case .failed(let reason): return reason
         }
     }
+
+    var logDescription: String {
+        switch self {
+        case .stopped: return "stopped"
+        case .bluetoothUnavailable: return "bluetooth_unavailable"
+        case .scanning: return "scanning"
+        case .connecting: return "connecting"
+        case .discovering: return "discovering"
+        case .ready(let name): return "ready(\(DiagnosticRedactor.redactedDeviceName(name)))"
+        case .reconnecting: return "reconnecting"
+        case .failed: return "failed"
+        }
+    }
 }
 
 @MainActor
@@ -431,7 +444,7 @@ final class BluetoothRemoteBridge: NSObject {
         }
         let centralState = central.map { String($0.state.rawValue) } ?? "none"
         AppLogger.shared.write(
-            "BLE RECOVERY phase=requested trigger=\(reason) state=\(String(describing: state)) " +
+            "BLE RECOVERY phase=requested trigger=\(reason) state=\(state.logDescription) " +
                 "lifecycle=\(String(describing: lifecycle)) " +
                 "central_state=\(centralState) " +
                 "generation=\(generationCounter)"

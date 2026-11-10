@@ -64,30 +64,6 @@ private struct ProfilePanel<Content: View>: View {
     }
 }
 
-@MainActor
-enum ConfigurationFilePanel {
-    static func exportURL(title: String, prompt: String) -> URL? {
-        let panel = NSSavePanel()
-        panel.title = title
-        panel.prompt = prompt
-        panel.allowedContentTypes = [.json]
-        panel.nameFieldStringValue = "Remote-Buddy-Settings.json"
-        panel.canCreateDirectories = true
-        return panel.runModal() == .OK ? panel.url : nil
-    }
-
-    static func importURL(title: String, prompt: String) -> URL? {
-        let panel = NSOpenPanel()
-        panel.title = title
-        panel.prompt = prompt
-        panel.allowedContentTypes = [.json]
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = false
-        return panel.runModal() == .OK ? panel.url : nil
-    }
-}
-
 struct StatusPill: View {
     let text: String
     let tint: Color

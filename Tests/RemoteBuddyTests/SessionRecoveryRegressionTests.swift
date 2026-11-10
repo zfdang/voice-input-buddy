@@ -340,6 +340,40 @@ struct SessionRecoveryRegressionTests {
         monitor.stop()
     }
 
+    @Test func repeatedHeldReportsDoNotPostponeMissingReleaseRecovery() {
+        let clock = ControlledTestScheduler()
+        let prefs = defaults()
+        let settings = AppSettings(defaults: prefs)
+        settings.customMappingEnabled = true
+        var releaseCount = 0
+        let profile = UUID()
+        let monitor = HIDRemoteMonitor(settings: settings, profileID: profile, scheduler: clock,
+            runtimePermissions: { true }, diagnosticLogger: { _ in })
+        monitor.onRuntimeButton = { _, _, phase in
+            if phase == .release { releaseCount += 1 }
+            return true
+        }
+        monitor.connectSimulatedDevice(fingerprint: "test-device", profileID: profile, isSeized: true)
+        let usage = RemoteButton.power.hidUsage
+        let reportData = Data([UInt8(usage & 255), UInt8(usage >> 8)])
+
+        // Initial press
+        monitor.handleSimulatedReport(reportID: 1, data: reportData)
+        #expect(releaseCount == 0)
+
+        // Repeated identical reports while button remains held
+        for time: UInt64 in [1000, 2000, 3000, 4000, 5000, 6000, 7000] {
+            clock.advance(to: time)
+            monitor.handleSimulatedReport(reportID: 1, data: reportData)
+            #expect(releaseCount == 0)
+        }
+
+        // At 8000ms, missing-release expiry fires despite continuous reports
+        clock.advance(to: 8000)
+        #expect(releaseCount == 1)
+        monitor.stop()
+    }
+
     @Test func rawPressAfterExplicitReleaseIsAcceptedPromptly() {
         let clock = ControlledTestScheduler()
         let prefs = defaults()

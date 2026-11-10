@@ -172,10 +172,6 @@ extension SettingsView {
         }
     }
 
-    /// Inline on purpose: an import that quietly dropped an entry must leave a trace the user
-    /// can still read afterwards, and the repository's interface rules keep page-level notices
-    /// flat inside the page rather than behind a sheet. Renders nothing when the last import
-    /// adopted everything, so a clean import keeps the page's layout.
     /// Inline on purpose: a sheet or alert here would be dismissed once and never seen again,
     /// and the repository's interface rules keep page-level notices flat inside the page.
     /// Renders nothing at all when no key failed to decode, so a healthy launch keeps its layout.
