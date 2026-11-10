@@ -145,4 +145,26 @@ struct AudioRecoveryReviewTests {
         #expect(reconfigurations == 0)
         #expect(model.isAudioOutputReady)
     }
+
+    @Test func concurrentDiagnosticSnapshotAndCacheInvalidationAreThreadSafe() async {
+        let output = VirtualAudioOutput(logger: { _ in })
+        await withTaskGroup(of: Void.self) { group in
+            // Concurrent cache invalidation tasks simulating audio stop / reconfigure on background queues
+            for _ in 0..<4 {
+                group.addTask {
+                    for _ in 0..<300 {
+                        output.invalidateAudibilityCache()
+                    }
+                }
+            }
+            // Concurrent diagnosticSnapshot reading tasks simulating UI polling
+            for _ in 0..<4 {
+                group.addTask {
+                    for _ in 0..<300 {
+                        _ = output.diagnosticSnapshot
+                    }
+                }
+            }
+        }
+    }
 }

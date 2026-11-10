@@ -166,8 +166,10 @@ struct BluetoothAudioPipelineTests {
             return
         }
         #expect(samples.count == pattern.count * 2)
-        for sample in samples {
-            #expect(sample >= Int16.min && sample <= Int16.max)
-        }
+        let reference = ATVVAudioDecoder().append(pattern, frameSize: pattern.count, gainDB: 12).flatMap { $0 }
+        #expect(samples == reference)
+        let peak = samples.map { abs(Int32($0)) }.max() ?? 0
+        #expect(peak > 0)
+        #expect(peak < Int32(Int16.max))
     }
 }

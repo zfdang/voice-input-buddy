@@ -87,6 +87,7 @@ final class VirtualAudioOutput {
     private var playbackCounters = VirtualAudioPlaybackCounters()
     private var playbackCountersByDeliveryGeneration: [Int: VirtualAudioPlaybackCounters] = [:]
     private var pendingByDeliveryGeneration: [Int: PendingDeliveryCounters] = [:]
+    private let audibilityLock = NSLock()
     private var cachedAudibility: (deviceID: AudioObjectID, checkTime: TimeInterval, healthy: Bool)?
     private var pendingDrainLogContexts: [String] = []
     private var drainRequests: [DrainRequest] = []
@@ -109,8 +110,13 @@ final class VirtualAudioOutput {
     // This lock protects values only. Never hold it across AVAudioEngine or HAL calls.
     private func updateOutputState(_ update: (inout OutputState) -> Void) {
         outputStateLock.lock()
+        let previousID = outputState.selectedDevice?.id
         update(&outputState)
+        let newID = outputState.selectedDevice?.id
         outputStateLock.unlock()
+        if previousID != newID {
+            invalidateAudibilityCache()
+        }
     }
     private let sourceFormat = AVAudioFormat(
         commonFormat: .pcmFormatFloat32,
@@ -244,6 +250,7 @@ final class VirtualAudioOutput {
 
         logStage("repair_audibility")
         let audibilityRepair = CoreAudioDeviceCatalog.ensureVirtualAudioDeviceAudible(device)
+        invalidateAudibilityCache()
         if audibilityRepair.applicable {
             logger(
                 "AUDIO AUDIBILITY repair " +
@@ -712,7 +719,9 @@ final class VirtualAudioOutput {
     }
 
     func invalidateAudibilityCache() {
-        cachedAudibility = nil
+        audibilityLock.withLock {
+            cachedAudibility = nil
+        }
     }
 
     private func stopOnEngineQueue() {
@@ -999,15 +1008,26 @@ final class VirtualAudioOutput {
         playbackLock.unlock()
         let now = uptime()
         let audibilityHealthy: Bool
-        if let targetID = state.selectedDevice?.id,
-           let cached = cachedAudibility,
-           cached.deviceID == targetID,
-           now - cached.checkTime < 2.0 {
-            audibilityHealthy = cached.healthy
-        } else if let selected = state.selectedDevice {
-            let audibility = CoreAudioDeviceCatalog.virtualAudioAudibilitySnapshot(for: selected)
-            audibilityHealthy = !audibility.requiresAudibilityRepair
-            cachedAudibility = (deviceID: selected.id, checkTime: now, healthy: audibilityHealthy)
+        if let selected = state.selectedDevice {
+            let targetID = selected.id
+            let cachedResult: Bool? = audibilityLock.withLock {
+                if let cached = cachedAudibility,
+                   cached.deviceID == targetID,
+                   now - cached.checkTime < 2.0 {
+                    return cached.healthy
+                }
+                return nil
+            }
+            if let cachedResult {
+                audibilityHealthy = cachedResult
+            } else {
+                let audibility = CoreAudioDeviceCatalog.virtualAudioAudibilitySnapshot(for: selected)
+                let healthy = !audibility.requiresAudibilityRepair
+                audibilityLock.withLock {
+                    cachedAudibility = (deviceID: targetID, checkTime: now, healthy: healthy)
+                }
+                audibilityHealthy = healthy
+            }
         } else {
             audibilityHealthy = true
         }

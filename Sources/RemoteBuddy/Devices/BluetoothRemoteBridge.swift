@@ -27,13 +27,13 @@ enum BluetoothBridgeState: Equatable {
     var logDescription: String {
         switch self {
         case .stopped: return "stopped"
-        case .bluetoothUnavailable: return "bluetooth_unavailable"
+        case .bluetoothUnavailable(let reason): return "bluetooth_unavailable(\(reason.key))"
         case .scanning: return "scanning"
         case .connecting: return "connecting"
         case .discovering: return "discovering"
         case .ready(let name): return "ready(\(DiagnosticRedactor.redactedDeviceName(name)))"
         case .reconnecting: return "reconnecting"
-        case .failed: return "failed"
+        case .failed(let reason): return "failed(\(reason.key))"
         }
     }
 }

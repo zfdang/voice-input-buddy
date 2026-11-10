@@ -18,9 +18,10 @@ App 的 CFBundleShortVersionString 为数字日期（例如 26.10.11），CFBund
 
 - `Remote_Buddy_vYY-MM-DD.NNN_macOS_arm64.pkg` / `*_macOS_intel.pkg`：App 与驱动的一体安装包。
 - `Remote_Buddy_Uninstaller_vYY-MM-DD.NNN_macOS_universal.pkg`：Apple Silicon / Intel 共用的脚本卸载包。
+- `Remote_Buddy_vYY-MM-DD.NNN_sources.tar.gz`：包含本项目源码与打补丁后 BlackHole 驱动源码的完整源码归档（遵循 GPL-3.0 对应源码要求）。
 - `appcast-arm64.xml` / `appcast-intel.xml`：对应架构的更新源，作为可恢复发布产物保留在 Release 中。
 
-Release 提供这三个安装包与两份更新源，不额外上传 SHA 文件、TXT 更新摘要或源码压缩包。源码使用对应 Git tag；第三方固定版本源码及构建说明见 [source-code.md](source-code.md)。
+Release 提供上述安装包、源码归档与两份更新源，不额外上传 SHA 文件或 TXT 更新摘要。第三方固定版本源码及构建说明见 [source-code.md](source-code.md)。
 
 安装包按 arm64 和 x86_64（文件名 intel）分别提供，要求 macOS 14 或更新版本。App 安装在 `/Applications/Remote Buddy.app`，驱动安装在 `/Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver`。程序展示名称仍为 Remote Buddy；发布文件名使用下划线，App 目录保留空格，内部可执行文件为 RemoteBuddy。安装需要管理员授权；仅在首次安装、驱动内容变化或修复损坏的驱动时刷新 Core Audio，短暂中断播放和录音。安装前后会验证驱动签名并比较内容指纹，而非只比较版本号；驱动未变化的重装和 App 升级不会重启音频服务，重新签名的时间戳不影响判断。安装包不自动开启任何系统隐私授权，也不自动启动 App。
 

@@ -156,5 +156,24 @@ struct LocalDiagnosticTests {
         #expect(!customDesc.contains("Siri Remote"))
         #expect(BluetoothBridgeState.scanning.logDescription == "scanning")
         #expect(BluetoothBridgeState.stopped.logDescription == "stopped")
+        #expect(BluetoothBridgeState.failed(LocalizedMessage("test.failure")).logDescription == "failed(test.failure)")
+        #expect(BluetoothBridgeState.bluetoothUnavailable(LocalizedMessage("test.unavailable")).logDescription == "bluetooth_unavailable(test.unavailable)")
+    }
+
+    @Test @MainActor func bridgeStateRecoveryLogOutputNeverContainsCustomDeviceName() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let logURL = directory.appendingPathComponent("bridge-audit.log")
+        let logger = AppLogger(logURL: logURL, reportFailure: { _ in })
+
+        let state = BluetoothBridgeState.ready("Alice's Secret Living Room Siri Remote")
+        let line = "BLE RECOVERY phase=requested trigger=test state=\(state.logDescription) lifecycle=idle central_state=5 generation=1"
+        logger.writeSynchronously(line, at: Date())
+        logger.flush()
+
+        let contents = try String(contentsOf: logURL, encoding: .utf8)
+        #expect(contents.contains("state=ready(device_"))
+        #expect(!contents.contains("Alice's Secret Living Room Siri Remote"))
+        #expect(!contents.contains("Siri Remote"))
     }
 }

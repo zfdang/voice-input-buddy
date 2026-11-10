@@ -6,7 +6,7 @@ enum CommonPhraseFileReader {
         case fileTooLarge
     }
 
-    static let maximumBytes = 2 * 1024 * 1024
+    static let maximumBytes = 4_000_000
 
     static func read(from url: URL, maximumBytes: Int = maximumBytes) throws -> Data {
         guard maximumBytes >= 0, maximumBytes < Int.max else { throw ReadError.fileTooLarge }

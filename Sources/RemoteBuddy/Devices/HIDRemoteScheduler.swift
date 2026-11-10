@@ -19,6 +19,7 @@ enum HIDRemoteTiming {
     static let repeatStartMilliseconds: UInt64 = 350
     static let stableReleaseMilliseconds: UInt64 = 600
     static let missingReleaseTimeoutMilliseconds: UInt64 = 8_000
+    static let maximumContinuousHoldMilliseconds: UInt64 = 60_000
     static let permissionPollMilliseconds: UInt64 = 1_000
     static let appSwitcherTimeoutMilliseconds: UInt64 = 15_000
     static let appSwitcherFrontmostPollMilliseconds: UInt64 = 500
