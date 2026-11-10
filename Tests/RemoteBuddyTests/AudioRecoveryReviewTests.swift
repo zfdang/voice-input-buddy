@@ -146,27 +146,36 @@ struct AudioRecoveryReviewTests {
         #expect(model.isAudioOutputReady)
     }
 
-    @Test func concurrentDiagnosticSnapshotAndCacheInvalidationAreThreadSafe() async {
-        // Task.detached escapes @MainActor isolation – tasks run on the cooperative pool
-        nonisolated(unsafe) let output = VirtualAudioOutput(logger: { _ in })
-        await withTaskGroup(of: Void.self) { group in
-            for _ in 0 ..< 4 {
-                group.addTask {
-                    for _ in 0 ..< 300 {
-                        output.invalidateAudibilityCache()
-                    }
+    @Test func invalidationDuringQueryCannotRestoreStaleAudibility() async {
+        let cache = AudibilityCache()
+        let queryStarted = DispatchSemaphore(value: 0)
+        let resumeQuery = DispatchSemaphore(value: 0)
+        let firstResult = Task.detached {
+            var calls = 0
+            return cache.value(for: 101, at: 10) {
+                calls += 1
+                if calls == 1 {
+                    queryStarted.signal()
+                    resumeQuery.wait()
+                    return false
                 }
-            }
-            for _ in 0 ..< 4 {
-                group.addTask {
-                    for _ in 0 ..< 300 {
-                        let snap = output.diagnosticSnapshot()
-                        _ = snap.audibilityHealthy  // must not crash; Bool read under lock
-                    }
-                }
+                return true
             }
         }
-        // Reaching here without a crash / data-race (TSan) proves lock coverage
-        #expect(Bool(true), "concurrent access completed without crash")
+        #expect(queryStarted.wait(timeout: .now() + 5) == .success)
+        cache.invalidate()
+        let current = cache.value(for: 101, at: 10) { true }
+        resumeQuery.signal()
+        #expect(await firstResult.value)
+        #expect(current)
+        #expect(cache.value(for: 101, at: 10) { false })
+    }
+
+    @Test func audibilityCachePartitionsDevicesAndExpires() {
+        let cache = AudibilityCache()
+        #expect(cache.value(for: 101, at: 10) { true })
+        #expect(cache.value(for: 101, at: 11) { false })
+        #expect(!cache.value(for: 102, at: 11) { false })
+        #expect(cache.value(for: 102, at: 13) { true })
     }
 }

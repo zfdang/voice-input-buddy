@@ -45,6 +45,39 @@ enum VirtualAudioDrainOutcome: String, Equatable {
 }
 
 
+/// Protects cache state without holding a lock during CoreAudio calls.
+final class AudibilityCache: @unchecked Sendable {
+    private let lock = NSLock()
+    private var generation: UInt64 = 0
+    private var cached: (deviceID: AudioObjectID, checkTime: TimeInterval, healthy: Bool)?
+
+    func invalidate() {
+        lock.withLock {
+            generation &+= 1
+            cached = nil
+        }
+    }
+
+    func value(for deviceID: AudioObjectID, at time: TimeInterval, query: () -> Bool) -> Bool {
+        while true {
+            let state = lock.withLock { () -> (Bool?, UInt64) in
+                if let cached, cached.deviceID == deviceID, time - cached.checkTime < 2.0 {
+                    return (cached.healthy, generation)
+                }
+                return (nil, generation)
+            }
+            if let value = state.0 { return value }
+            let value = query()
+            let accepted = lock.withLock { () -> Bool in
+                guard generation == state.1 else { return false }
+                cached = (deviceID, time, value)
+                return true
+            }
+            if accepted { return value }
+        }
+    }
+}
+
 final class VirtualAudioOutput {
     private struct OutputState {
         var ready = false
@@ -87,8 +120,7 @@ final class VirtualAudioOutput {
     private var playbackCounters = VirtualAudioPlaybackCounters()
     private var playbackCountersByDeliveryGeneration: [Int: VirtualAudioPlaybackCounters] = [:]
     private var pendingByDeliveryGeneration: [Int: PendingDeliveryCounters] = [:]
-    private let audibilityLock = NSLock()
-    private var cachedAudibility: (deviceID: AudioObjectID, checkTime: TimeInterval, healthy: Bool)?
+    private let audibilityCache = AudibilityCache()
     private var pendingDrainLogContexts: [String] = []
     private var drainRequests: [DrainRequest] = []
     private var drainGeneration: UInt64 = 0
@@ -719,9 +751,7 @@ final class VirtualAudioOutput {
     }
 
     func invalidateAudibilityCache() {
-        audibilityLock.withLock {
-            cachedAudibility = nil
-        }
+        audibilityCache.invalidate()
     }
 
     private func stopOnEngineQueue() {
@@ -1009,24 +1039,8 @@ final class VirtualAudioOutput {
         let now = uptime()
         let audibilityHealthy: Bool
         if let selected = state.selectedDevice {
-            let targetID = selected.id
-            let cachedResult: Bool? = audibilityLock.withLock {
-                if let cached = cachedAudibility,
-                   cached.deviceID == targetID,
-                   now - cached.checkTime < 2.0 {
-                    return cached.healthy
-                }
-                return nil
-            }
-            if let cachedResult {
-                audibilityHealthy = cachedResult
-            } else {
-                let audibility = CoreAudioDeviceCatalog.virtualAudioAudibilitySnapshot(for: selected)
-                let healthy = !audibility.requiresAudibilityRepair
-                audibilityLock.withLock {
-                    cachedAudibility = (deviceID: targetID, checkTime: now, healthy: healthy)
-                }
-                audibilityHealthy = healthy
+            audibilityHealthy = audibilityCache.value(for: selected.id, at: now) {
+                !CoreAudioDeviceCatalog.virtualAudioAudibilitySnapshot(for: selected).requiresAudibilityRepair
             }
         } else {
             audibilityHealthy = true
