@@ -113,3 +113,7 @@ Apple Silicon 选择 `*_macOS_arm64.pkg`，Intel 选择 `*_macOS_intel.pkg`。�
 | [Opus](https://www.opus-codec.org/) | Apple 遥控器音频兼容代码涉及的编解码器；当前安装包不包含其动态库 |
 
 历史兼容代码的引用不代表当前支持 Apple 遥控器。系统框架和内部模块详见 [模块清单](docs/modules.md)，各模块版本、版权及许可见 [第三方声明](THIRD_PARTY_NOTICES.md)。
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=zfdang/remote-buddy&type=Date)](https://star-history.com/#zfdang/remote-buddy&Date)
