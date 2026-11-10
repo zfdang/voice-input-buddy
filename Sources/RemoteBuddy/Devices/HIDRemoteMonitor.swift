@@ -965,6 +965,9 @@ final class HIDRemoteMonitor {
     }
 
     private func recoverMissingRelease(for usage: UInt16) {
+        // Some remotes send no reports between press and release. A repeating
+        // hold remains active until its release or the independent hard ceiling.
+        guard repeatTimers[usage] == nil, !nativePassthroughUsages.contains(usage) else { return }
         suppressedUsageExpiryTimers.removeValue(forKey: usage)?.cancel()
         suppressedUntilReleasedUsages.remove(usage)
         synthesizeReleaseState(for: usage, reason: "missing_release")

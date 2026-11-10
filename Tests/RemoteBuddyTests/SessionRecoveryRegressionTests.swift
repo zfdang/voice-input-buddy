@@ -135,8 +135,8 @@ struct SessionRecoveryRegressionTests {
         monitor.disconnectSimulatedDevice()
     }
 
-    @Test(arguments: [ButtonAction.arrowRight, .commandCopy])
-    func everyHeldUsageExpiresEvenForRepeatsAndGestures(action: ButtonAction) {
+    @Test func nonRepeatingGestureExpiresAfterSilence() {
+        let action = ButtonAction.commandCopy
         let clock = ControlledTestScheduler()
         let prefs = defaults()
         let settings = AppSettings(defaults: prefs)
@@ -162,6 +162,37 @@ struct SessionRecoveryRegressionTests {
         monitor.handleSimulatedReport(reportID: 1, data: report)
         #expect(presses == 2)
         monitor.disconnectSimulatedDevice()
+    }
+
+    @Test func silentRepeatingHoldSurvivesWatchdogAndStopsAtHardCeiling() {
+        let clock = ControlledTestScheduler()
+        let settings = AppSettings(defaults: defaults())
+        settings.customMappingEnabled = true
+        settings.setAction(.deleteBackward, for: .power)
+        settings.setAction(.repeatSingleClick, for: .power, trigger: .longPress)
+        let profile = UUID()
+        var actions = 0, releases = 0
+        let monitor = HIDRemoteMonitor(settings: settings, profileID: profile, scheduler: clock,
+            runtimePermissions: { true }, actionPerformer: { _, _, _ in actions += 1; return true },
+            diagnosticLogger: { _ in })
+        monitor.onRuntimeButton = { _, _, phase in
+            if phase == .release { releases += 1 }
+            return false
+        }
+        monitor.connectSimulatedDevice(fingerprint: "silent-hold", profileID: profile, isSeized: true)
+        let usage = RemoteButton.power.hidUsage
+        monitor.handleSimulatedReport(reportID: 1, data: Data([UInt8(usage & 255), UInt8(usage >> 8)]))
+        clock.advance(to: 8000)
+        let countAtEightSeconds = actions
+        clock.advance(to: 9000)
+        #expect(actions > countAtEightSeconds)
+        #expect(releases == 0)
+        clock.advance(to: 60000)
+        #expect(releases == 1)
+        let countAtCeiling = actions
+        clock.advance(to: 61000)
+        #expect(actions == countAtCeiling)
+        monitor.stop()
     }
 
     @Test func repeatedReportsWhileHeldDoNotInterruptHeldButton() {
