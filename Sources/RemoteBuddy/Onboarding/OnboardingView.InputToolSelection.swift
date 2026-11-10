@@ -120,7 +120,7 @@ extension OnboardingView {
                     .font(.system(size: 13, weight: .semibold))
                 Spacer(minLength: 4)
                 onboardingActionButton(id: "voice-binding.recommended") {
-                    selectVoiceBindingPreference(.documentedDefault)
+                    stageCurrentDocumentedPairingPlanIfPossible()
                 } label: {
                     Label {
                         Text(verbatim: localization.text("onboarding.voice_tool.binding.recommended"))

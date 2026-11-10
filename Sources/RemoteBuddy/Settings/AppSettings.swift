@@ -33,7 +33,6 @@ final class AppSettings: ObservableObject {
         static let onboardingDevice = "onboarding.device"
         static let onboardingAppleRemoteGeneration = "onboarding.appleRemoteGeneration"
         static let onboardingVoiceTool = "onboarding.voiceTool"
-        static let onboardingVoiceBindingPreference = "onboarding.voiceBindingPreference"
         static let onboardingPreferredGesture = "onboarding.preferredGesture"
         static let onboardingVerifiedVoiceBinding = "onboarding.verifiedVoiceBinding"
         static let onboardingStagedVoiceBinding = "onboarding.stagedVoiceBinding"
@@ -292,15 +291,6 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(onboardingVoiceTool.rawValue, forKey: Keys.onboardingVoiceTool) }
     }
 
-    @Published var onboardingVoiceBindingPreference: OnboardingVoiceBindingPreference {
-        didSet {
-            defaults.set(
-                onboardingVoiceBindingPreference.rawValue,
-                forKey: Keys.onboardingVoiceBindingPreference
-            )
-        }
-    }
-
     @Published var onboardingPreferredGesture: VoiceGestureMode? {
         didSet {
             defaults.set(onboardingPreferredGesture?.rawValue, forKey: Keys.onboardingPreferredGesture)
@@ -508,11 +498,6 @@ final class AppSettings: ObservableObject {
         onboardingRemoteAvailability = persistedControlSource == .unselected ? .unselected : .hasRemote
         onboardingVoiceTool = defaults.string(forKey: Keys.onboardingVoiceTool)
             .flatMap(OnboardingVoiceTool.init(rawValue:)) ?? .unselected
-        onboardingVoiceBindingPreference = defaults.string(
-            forKey: Keys.onboardingVoiceBindingPreference
-        )
-            .flatMap(OnboardingVoiceBindingPreference.init(rawValue:))
-            ?? .documentedDefault
         onboardingPreferredGesture = defaults.string(forKey: Keys.onboardingPreferredGesture)
             .flatMap(VoiceGestureMode.init(rawValue:))
         verifiedVoiceToolBinding = Self.decodeSetting(

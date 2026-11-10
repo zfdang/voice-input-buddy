@@ -308,7 +308,6 @@
 "audio.gain.help" = "0 dB keeps the original volume. Higher values make the voice louder and also amplify background noise. Start with 6–12 dB.";
 "audio.status.title" = "Audio status";
 "audio.action.refresh_devices" = "Refresh Devices";
-"audio.action.learn_virtual_microphones" = "Get BlackHole";
 "audio.action.send_test_tone" = "Play Test Sound";
 "audio.output.privacy_help" = "Remote audio is sent only to the selected device. Disconnecting, stopping, quitting or reconfiguring Remote Buddy does not change the system default microphone or speakers. Select the same virtual microphone in your voice input tool.";
 "audio.compatibility.title" = "Compatible Audio Device";
@@ -668,8 +667,6 @@
 "onboarding.pairing_plan.fn_tap_on" = "Fn tap conversion on";
 "onboarding.pairing_plan.fn_tap_off" = "Fn tap conversion off";
 "onboarding.pairing_plan.pending_evidence" = "This setup is saved after the voice-and-text test passes.";
-"onboarding.pairing_plan.needs_learning" = "Learn the current shortcut";
-"onboarding.pairing_plan.needs_learning_detail" = "No safe documented combination is available. Choose “I Changed It,” then press the actual shortcut after granting permissions.";
 "onboarding.shortcut_learning.title" = "Learn your current voice shortcut";
 "onboarding.shortcut_learning.detail" = "Choose hold or toggle, start learning, then press the complete shortcut. Remote Buddy does not read private settings from another app.";
 "onboarding.shortcut_learning.start" = "Start Learning";
@@ -900,8 +897,6 @@
 "button_mapping.search_macros" = "Search action sequences";
 
 "button_mapping.manage_macros" = "Manage action sequences";
-
-"button_mapping.macro_unavailable" = "Action unavailable. Choose another action.";
 
 
 "button_mapping.macro_step_count" = "%d-step sequence";

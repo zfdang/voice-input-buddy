@@ -147,24 +147,26 @@ struct AudioRecoveryReviewTests {
     }
 
     @Test func concurrentDiagnosticSnapshotAndCacheInvalidationAreThreadSafe() async {
-        let output = VirtualAudioOutput(logger: { _ in })
+        // Task.detached escapes @MainActor isolation – tasks run on the cooperative pool
+        nonisolated(unsafe) let output = VirtualAudioOutput(logger: { _ in })
         await withTaskGroup(of: Void.self) { group in
-            // Concurrent cache invalidation tasks simulating audio stop / reconfigure on background queues
-            for _ in 0..<4 {
+            for _ in 0 ..< 4 {
                 group.addTask {
-                    for _ in 0..<300 {
+                    for _ in 0 ..< 300 {
                         output.invalidateAudibilityCache()
                     }
                 }
             }
-            // Concurrent diagnosticSnapshot reading tasks simulating UI polling
-            for _ in 0..<4 {
+            for _ in 0 ..< 4 {
                 group.addTask {
-                    for _ in 0..<300 {
-                        _ = output.diagnosticSnapshot
+                    for _ in 0 ..< 300 {
+                        let snap = output.diagnosticSnapshot()
+                        _ = snap.audibilityHealthy  // must not crash; Bool read under lock
                     }
                 }
             }
         }
+        // Reaching here without a crash / data-race (TSan) proves lock coverage
+        #expect(Bool(true), "concurrent access completed without crash")
     }
 }

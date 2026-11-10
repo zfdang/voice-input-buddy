@@ -308,7 +308,6 @@
 "audio.gain.help" = "0 dB 保持原始音量；数值越大声音越响，也会放大环境噪声。建议先从 6–12 dB 开始。";
 "audio.status.title" = "音频状态";
 "audio.action.refresh_devices" = "刷新音频设备";
-"audio.action.learn_virtual_microphones" = "获取 BlackHole";
 "audio.action.send_test_tone" = "发送 1 秒测试音";
 "audio.output.privacy_help" = "应用只把遥控器语音写到所选设备。遥控器断开、应用停止、退出或重新配置时，都不会修改系统默认麦克风和扬声器。请在语音输入工具中选择同一个虚拟麦克风。";
 "audio.compatibility.title" = "兼容音频设备";
@@ -667,8 +666,6 @@
 "onboarding.pairing_plan.fn_tap_on" = "已启用 Fn 点按转换";
 "onboarding.pairing_plan.fn_tap_off" = "无需 Fn 点按转换";
 "onboarding.pairing_plan.pending_evidence" = "语音文字测试通过后保存这套设置。";
-"onboarding.pairing_plan.needs_learning" = "需要学习当前快捷键";
-"onboarding.pairing_plan.needs_learning_detail" = "当前工具没有可安全采用的默认组合。请选择“我修改过快捷键”，权限完成后按下实际快捷键。";
 "onboarding.shortcut_learning.title" = "学习你当前的语音快捷键";
 "onboarding.shortcut_learning.detail" = "先选择按住或按一次，再点击开始并完整按下当前工具的快捷键。遥控搭子不会读取第三方工具的私有设置。";
 "onboarding.shortcut_learning.start" = "开始学习快捷键";
@@ -898,7 +895,6 @@
 
 "button_mapping.manage_macros" = "管理组合动作";
 
-"button_mapping.macro_unavailable" = "组合动作不可用，请重新选择";
 
 
 "button_mapping.macro_step_count" = "%d 个步骤";

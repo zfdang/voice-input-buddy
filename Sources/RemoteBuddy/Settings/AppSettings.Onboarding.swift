@@ -9,7 +9,6 @@ private struct OnboardingReturnConfiguration: Codable {
     let device: String?
     let remoteAvailability: OnboardingRemoteAvailability
     let appleRemoteGeneration: OnboardingAppleRemoteGeneration?
-    let bindingPreference: OnboardingVoiceBindingPreference
     let preferredGesture: VoiceGestureMode?
     let verifiedBinding: VoiceToolUserBinding?
     let voiceKeyMode: VoiceKeyMode
@@ -43,7 +42,6 @@ extension AppSettings {
             device: onboardingDevice?.rawValue,
             remoteAvailability: onboardingRemoteAvailability,
             appleRemoteGeneration: onboardingAppleRemoteGeneration,
-            bindingPreference: onboardingVoiceBindingPreference,
             preferredGesture: onboardingPreferredGesture,
             verifiedBinding: verifiedVoiceToolBinding,
             voiceKeyMode: voiceKeyMode,
@@ -65,7 +63,6 @@ extension AppSettings {
         onboardingDevice = configuration.device.flatMap(RemoteSetupDevice.init(rawValue:))
         onboardingRemoteAvailability = configuration.remoteAvailability
         onboardingAppleRemoteGeneration = configuration.appleRemoteGeneration
-        onboardingVoiceBindingPreference = configuration.bindingPreference
         onboardingPreferredGesture = configuration.preferredGesture
         verifiedVoiceToolBinding = configuration.verifiedBinding
         voiceKeyMode = configuration.voiceKeyMode
@@ -152,15 +149,7 @@ extension AppSettings {
         guard onboardingVoiceTool != voiceTool else { return }
         discardOnboardingVoiceTrial()
         onboardingVoiceTool = voiceTool
-        onboardingVoiceBindingPreference = .documentedDefault
         onboardingPreferredGesture = nil
-        stagedVoiceToolBinding = nil
-    }
-
-    func setOnboardingVoiceBindingPreference(_ preference: OnboardingVoiceBindingPreference) {
-        guard onboardingVoiceBindingPreference != preference else { return }
-        discardOnboardingVoiceTrial()
-        onboardingVoiceBindingPreference = preference
         stagedVoiceToolBinding = nil
     }
 
@@ -327,7 +316,6 @@ extension AppSettings {
         onboardingControlSource = .unselected
         onboardingDevice = nil
         onboardingAppleRemoteGeneration = nil
-        onboardingVoiceBindingPreference = .documentedDefault
         onboardingPreferredGesture = nil
         onboardingStep = .permissions
         onboardingCompletedVersion = 0
