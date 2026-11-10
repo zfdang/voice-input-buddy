@@ -37,56 +37,6 @@ extension SettingsView {
                     Group {
                         VStack(spacing: 0) {
                             HStack(spacing: 14) {
-                                Image(systemName: "arrow.up.arrow.down")
-                                    .font(.title3)
-                                    .foregroundStyle(Color.accentColor)
-                                    .frame(width: 34)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(localization.text("about.configuration.title"))
-                                        .font(.subheadline.weight(.semibold))
-                                    Text(localization.text("about.configuration.export_description"))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer(minLength: 16)
-                                Button(localization.text("about.configuration.export"), action: exportConfiguration)
-                                    .compatibilityButtonStyle(.standard)
-                                    .fixedSize(horizontal: true, vertical: false)
-                                    .frame(width: 150)
-                                Button(localization.text("about.configuration.import"), action: importConfiguration)
-                                    .disabled(model.isVoiceConfigurationBusy)
-                                    .compatibilityButtonStyle(.standard)
-                                    .fixedSize(horizontal: true, vertical: false)
-                                    .frame(width: 150)
-                            }
-                            .padding(.vertical, 8)
-
-                            if let status = configurationStatus {
-                                Divider()
-                                HStack {
-                                    Label(
-                                        status.message.text(using: localization),
-                                        systemImage: status.systemImage
-                                    )
-                                    .font(.caption)
-                                    .foregroundStyle(status.tint)
-                                    Spacer()
-                                    if settings.lastImportRollbackSnapshot != nil {
-                                        Button(localization.text(ConfigurationImportNoticeText.rollbackKey)) {
-                                            rollbackConfiguration()
-                                            self.configurationStatus = nil
-                                        }
-                                        .compatibilityButtonStyle(.standard)
-                                        .font(.caption)
-                                    }
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.vertical, 8)
-                            }
-
-                            Divider()
-
-                            HStack(spacing: 14) {
                                 Image(systemName: "dock.rectangle")
                                     .font(.title3)
                                     .foregroundStyle(Color.accentColor)

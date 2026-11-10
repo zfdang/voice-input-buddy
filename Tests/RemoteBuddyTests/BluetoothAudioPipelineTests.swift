@@ -34,7 +34,6 @@ struct BluetoothAudioPipelineTests {
         #expect(!model.canAcceptNewVoiceSession(from: .chromecast))
         #expect(model.canAcceptNewVoiceSession(from: .bluetooth))
         #expect(model.shouldKeepVirtualAudioActive)
-        #expect(throws: AppConfigurationError.self) { try model.importConfiguration(from: Data()) }
         deliveries.run()
         #expect(!pipeline.hasPendingVoiceWork)
         #expect(!model.isVoiceConfigurationBusy)

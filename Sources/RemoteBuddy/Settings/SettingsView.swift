@@ -40,7 +40,6 @@ struct SettingsView: View {
     @State var bluetoothAuthorization: CBManagerAuthorization
     @State var inputMonitoringGranted: Bool
     @State var accessibilityGranted: Bool
-    @State var configurationStatus: ConfigurationStatus?
     @State var isRepositoryLinkCopied = false
     @State var isMappingPermissionAlertPresented = false
     @State var isWaitingForMappingPermissions = false

@@ -129,11 +129,7 @@ extension AppSettings {
         guard let index = customApplicationProfiles.firstIndex(where: { $0.id == profile.id }) else {
             return
         }
-        let previous = customApplicationProfiles[index]
         customApplicationProfiles[index] = profile
-        if profile.accessibilityTarget != nil && profile.accessibilityTarget != previous.accessibilityTarget {
-            markPortableApplicationVerified(profile.id)
-        }
     }
 
     func configuredBaseAction(

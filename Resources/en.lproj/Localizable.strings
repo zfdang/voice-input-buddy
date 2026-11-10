@@ -492,12 +492,6 @@
 "about.page.hero_subtitle" = "Version, preferences, and support for your wireless voice workspace";
 "about.page.hero_description" = "Turn your remote into an always-ready voice and shortcut controller for your Mac.";
 "about.privacy.local_only" = "Data stays on this Mac";
-"about.configuration.title" = "Your Settings";
-"about.configuration.description" = "Transfer audio, button, shortcut, language, appearance, startup, and update settings to another Mac.";
-"about.configuration.export" = "Export Configuration…";
-"about.configuration.export_description" = "Save the current settings to a file.";
-"about.configuration.import" = "Import Configuration…";
-"about.configuration.import_description" = "Restore settings from a previously exported file.";
 "about.preferences.title" = "App Preferences";
 "about.support.title" = "Updates & Support";
 "about.version.title" = "Version & Updates";
@@ -561,16 +555,6 @@
 "update.completed.message" = "Successfully updated to version %1$@.";
 "update.prerelease.feed_unavailable.title" = "Unable to Check Pre-release Updates";
 "update.prerelease.feed_unavailable.message" = "The latest candidate information is unavailable. Check your network and try again. Stable updates are unaffected.";
-"configuration.export.panel_title" = "Export Settings";
-"configuration.export.prompt" = "Export";
-"configuration.export.success" = "Configuration exported";
-"configuration.export.write_failed" = "Export failed: the file could not be written";
-"configuration.import.panel_title" = "Import Settings";
-"configuration.import.prompt" = "Import";
-"configuration.import.success" = "Configuration imported and applied";
-"configuration.import.unsupported_version" = "Import failed: this configuration version is not supported";
-"configuration.import.voice_key_busy" = "Import failed: the voice button is active or could not be released safely. End voice input and try again.";
-"configuration.import.invalid_file" = "Import failed: the configuration file is invalid";
 "onboarding.phase.prepare" = "Prepare";
 "onboarding.phase.setup" = "Set Up";
 "onboarding.phase.try_it" = "Try It";
@@ -891,20 +875,6 @@
 "about.preferences.restart_onboarding_action" = "Run Again";
 "common.action.copy" = "Copy";
 
-"settings.import_notice.title" = "Some Settings Were Skipped During Import";
-"settings.import_notice.clean_title" = "Configuration Imported Successfully";
-"settings.import_notice.dismiss" = "Dismiss";
-"settings.import_notice.rejected" = "These settings did not pass validation: %1$@.";
-"settings.import_notice.missing_app" = "These applications are not installed on this Mac, so buttons pointing to them will not work yet: %1$@.";
-"settings.import_notice.applied_target" = "Applied to current remote: %1$@.";
-"settings.import_notice.rollback" = "Undo this import";
-"settings.import_notice.next_step" = "Set the skipped items again to use them; this notice clears on relaunch.";
-"settings.import_notice.separator" = ", ";
-"settings.import_notice.item.button_mapping" = "remote button mappings";
-"settings.import_notice.item.custom_application" = "custom application actions";
-"settings.import_notice.item.audio_gain" = "device gain";
-"settings.import_notice.item.other" = "other settings";
-"configuration.import.partial" = "Settings imported. Some items were skipped; see the Button Mapping page.";
 "settings.corrupted.title" = "Some settings could not be read and were reset to defaults";
 "settings.corrupted.summary" = "Affected: %1$@.";
 "settings.corrupted.recovery" = "Your saved content was not deleted; it is still in the settings file. Contact us if you need help recovering it.";
@@ -985,9 +955,6 @@
 "common_phrases.error.cancelled" = "Insertion cancelled.";
 "custom_application.accessibility.test" = "Test input field";
 
-"custom_application.accessibility.needs_verification" = "Needs learning or verification";
-
-"settings.portable_configuration.title" = "Combination actions, app configurations and button profiles";
 "onboarding.voice_tool.guide.screenshot.doubao_menu" = "In the input menu, choose Doubao (豆包输入法), then Settings (设置).";
 "onboarding.voice_tool.guide.screenshot.doubao_settings" = "In Voice Input (语音输入), set the matching mode’s shortcut to Fn. The image shows Hold mode (长按模式). Enable global voice input (全局唤起语音) and select Remote Buddy as the microphone (麦克风选择).";
 "onboarding.voice_tool.guide.screenshot.weixin_input_menu" = "In the input menu, choose WeType (微信输入法), then Settings (设置).";

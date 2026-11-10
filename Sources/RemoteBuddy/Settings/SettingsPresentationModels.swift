@@ -413,12 +413,6 @@ enum CustomApplicationLearningState: Equatable {
     }
 }
 
-struct ConfigurationStatus {
-    let message: LocalizedMessage
-    let tint: Color
-    let systemImage: String
-}
-
 enum MappingActionFilter: String, CaseIterable, Identifiable {
     case basicKeys
     case systemAndMedia

@@ -492,12 +492,6 @@
 "about.page.hero_subtitle" = "集中查看无线语音工作台的版本、偏好与支持信息";
 "about.page.hero_description" = "让遥控器成为随手可用的 Mac 语音与快捷操作入口。";
 "about.privacy.local_only" = "数据仅存本机";
-"about.configuration.title" = "个性化配置";
-"about.configuration.description" = "迁移增益、音频设备、按键映射、快捷键、语言、Dock 显示、启动与更新通道设置。";
-"about.configuration.export" = "导出配置…";
-"about.configuration.export_description" = "将当前设置导出到文件。";
-"about.configuration.import" = "导入配置…";
-"about.configuration.import_description" = "从之前导出的文件恢复设置。";
 "about.preferences.title" = "应用偏好";
 "about.support.title" = "更新与支持";
 "about.version.title" = "版本与更新";
@@ -561,16 +555,6 @@
 "update.completed.message" = "已成功更新到版本 %1$@。";
 "update.prerelease.feed_unavailable.title" = "暂时无法检查预发布版本";
 "update.prerelease.feed_unavailable.message" = "无法取得最新候选版本信息，请检查网络后重试。稳定版更新源不受影响。";
-"configuration.export.panel_title" = "导出个性化配置";
-"configuration.export.prompt" = "导出";
-"configuration.export.success" = "配置已导出";
-"configuration.export.write_failed" = "导出失败：无法写入文件";
-"configuration.import.panel_title" = "导入个性化配置";
-"configuration.import.prompt" = "导入";
-"configuration.import.success" = "配置已导入并应用";
-"configuration.import.unsupported_version" = "导入失败：不支持此配置版本";
-"configuration.import.voice_key_busy" = "导入失败：语音键正在使用或无法安全释放，请结束语音输入后重试";
-"configuration.import.invalid_file" = "导入失败：配置文件无效";
 "onboarding.phase.prepare" = "准备";
 "onboarding.phase.setup" = "设置";
 "onboarding.phase.try_it" = "试一下";
@@ -888,20 +872,6 @@
 "about.preferences.restart_onboarding_action" = "重新运行";
 "common.action.copy" = "复制";
 
-"settings.import_notice.title" = "导入的配置里有内容没有通过检查";
-"settings.import_notice.clean_title" = "已成功导入配置";
-"settings.import_notice.dismiss" = "关闭提示";
-"settings.import_notice.rejected" = "未通过检查已跳过：%1$@。";
-"settings.import_notice.missing_app" = "以下应用在这台 Mac 上未安装，相关按键暂时不会生效：%1$@。";
-"settings.import_notice.applied_target" = "已应用到当前遥控器：%1$@。";
-"settings.import_notice.rollback" = "撤销本次导入";
-"settings.import_notice.next_step" = "重新设置一次被跳过的内容即可；这条提示只保留到本次退出。";
-"settings.import_notice.separator" = "、";
-"settings.import_notice.item.button_mapping" = "遥控器按键映射";
-"settings.import_notice.item.custom_application" = "自定义应用动作";
-"settings.import_notice.item.audio_gain" = "设备增益";
-"settings.import_notice.item.other" = "其他设置";
-"configuration.import.partial" = "已导入，部分内容未通过检查（详见「按键映射」页提示）";
 "settings.corrupted.title" = "部分设置读不出来，已经暂时换回默认设置";
 "settings.corrupted.summary" = "受影响的是：%1$@。";
 "settings.corrupted.recovery" = "你原来保存的内容没有被删掉，还留在设置文件里，需要时可以联系我们帮你找回。";
@@ -982,9 +952,6 @@
 "common_phrases.error.cancelled" = "插入已取消。";
 "custom_application.accessibility.test" = "测试输入框";
 
-"custom_application.accessibility.needs_verification" = "待学习或验证";
-
-"settings.portable_configuration.title" = "组合动作、App 配置与键位方案";
 "onboarding.voice_tool.guide.screenshot.doubao_menu" = "在输入法菜单中选择豆包输入法，再打开设置。";
 "onboarding.voice_tool.guide.screenshot.doubao_settings" = "在语音输入中，将匹配模式的快捷键设为 Fn。图中为长按模式。开启全局唤起语音，并在麦克风选择中选择 Remote Buddy。";
 "onboarding.voice_tool.guide.screenshot.weixin_input_menu" = "在输入法菜单中选择微信输入法，再打开设置。";

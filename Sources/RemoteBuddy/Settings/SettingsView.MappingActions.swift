@@ -46,7 +46,6 @@ extension SettingsView {
                 Button(localization.text("custom_application.accessibility.test")) {
                     KeyboardInjector.testCustomApplicationInput(profile) { success in
                         DispatchQueue.main.async {
-                            if success { settings.markPortableApplicationVerified(profile.id) }
                             customApplicationLearningStates[profile.id] = success ? .succeeded : .failed
                         }
                     }
@@ -54,9 +53,7 @@ extension SettingsView {
                 .compatibilityButtonStyle(.standard)
                 .disabled(profile.accessibilityTarget == nil)
                 Text(
-                    settings.portablePendingApplications.contains(profile.id.uuidString)
-                        ? localization.text("custom_application.accessibility.needs_verification")
-                        : profile.accessibilityTarget == nil
+                    profile.accessibilityTarget == nil
                         ? localization.text("custom_application.accessibility.not_recorded")
                         : localization.text("custom_application.accessibility.recorded")
                 )
@@ -151,7 +148,6 @@ extension SettingsView {
                         updated.accessibilityTarget = target
                         updated.focusStrategy = .recordedAccessibility
                         settings.updateCustomApplicationProfile(updated)
-                        settings.markPortableApplicationVerified(updated.id)
                     }
                     customApplicationLearningStates[profileID] = target == nil ? .failed : .succeeded
                     NSApp.activate()

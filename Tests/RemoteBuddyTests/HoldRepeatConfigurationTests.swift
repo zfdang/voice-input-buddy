@@ -187,23 +187,6 @@ struct HoldRepeatConfigurationTests {
         }
     }
 
-    @Test func importRejectsRepeatOutsideTheLongPressSlot() throws {
-        try withSettings { settings in
-            var payload = try #require(JSONSerialization.jsonObject(with: settings.exportedConfigurationData()) as? [String: Any])
-            payload["buttonBindings"] = ["power": "repeatSingleClick"]
-            payload["secondaryButtonBindings"] = ["ok": ["doubleClick": ["action": "repeatSingleClick"]]]
-            payload["unifiedBaseBindings"] = [["button": "menu", "trigger": "singleClick",
-                                               "configured": ["action": "repeatSingleClick"]]]
-            try settings.importConfiguration(from: JSONSerialization.data(withJSONObject: payload))
-            #expect(settings.configurationImportNotice?.rejectedEntryStorageKeys.contains("buttonBindings") == true)
-            #expect(settings.configurationImportNotice?.rejectedEntryStorageKeys.contains("secondaryButtonBindings") == true)
-            #expect(settings.configurationImportNotice?.rejectedEntryStorageKeys.contains("unifiedBaseBindings") == true)
-            #expect(settings.action(for: .power) == .deleteBackward)
-            #expect(settings.configuredAction(for: .ok, trigger: .doubleClick).action == .disabled)
-            #expect(settings.action(for: .menu) == .disabled)
-        }
-    }
-
     @Test func resetRestoresDefaultRepeatingHoldsOverInheritedActions() throws {
         try withSettings { settings in
             settings.setBaseBinding(.init(action: .escape, shortcut: nil),
@@ -215,7 +198,7 @@ struct HoldRepeatConfigurationTests {
         }
     }
 
-    @Test func holdValuesPersistPerDeviceAndSurviveExportImportAndReset() throws {
+    @Test func holdValuesPersistPerDeviceAndSurviveReset() throws {
         try withSettings { settings in
             let first = settings.registerBluetoothRemote(identifier: UUID(), model: .rc003)
             let second = settings.registerBluetoothRemote(identifier: UUID(), model: .rc001)
@@ -231,15 +214,6 @@ struct HoldRepeatConfigurationTests {
             #expect(restored.allowsHoldRepeat(for: .power, profileID: first))
             #expect(restored.configuredAction(for: .power, trigger: .longPress, profileID: second).action == .escape)
             settings.selectRemoteProfile(first)
-            let data = try settings.exportedConfigurationData()
-            try withSettings { imported in
-                try imported.importConfiguration(from: data)
-                #expect(imported.allowsHoldRepeat(for: .power))
-                imported.resetBindings()
-                #expect(imported.allowsHoldRepeat(for: .power))
-                #expect(!imported.allowsHoldRepeat(for: .back))
-                #expect(imported.allowsHoldRepeat(for: .volumeUp))
-            }
             settings.resetBindings()
             #expect(settings.allowsHoldRepeat(for: .power, profileID: first))
             #expect(settings.configuredAction(for: .power, trigger: .longPress, profileID: second).action == .escape)

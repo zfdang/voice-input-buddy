@@ -124,7 +124,6 @@ extension SettingsView {
                             Color.clear
                                 .frame(height: 0)
                                 .id("mapping-page-top")
-                            configurationImportBanner
                             corruptedSettingsBanner
 
                             hardwareCanvas()
@@ -177,98 +176,6 @@ extension SettingsView {
     /// can still read afterwards, and the repository's interface rules keep page-level notices
     /// flat inside the page rather than behind a sheet. Renders nothing when the last import
     /// adopted everything, so a clean import keeps the page's layout.
-    @ViewBuilder
-    private var configurationImportBanner: some View {
-        if let notice = settings.configurationImportNotice {
-            let rejected = ConfigurationImportNoticeText.rejectedSummary(
-                for: notice.rejectedEntryStorageKeys,
-                localize: localization.text
-            )
-            let missing = ConfigurationImportNoticeText.missingApplicationSummary(
-                for: notice.applicationsMissingOnThisMac,
-                localize: localization.text
-            )
-            GlassPanel {
-                HStack(alignment: .top, spacing: 11) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.orange)
-                        .frame(width: 22)
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(localization.text(ConfigurationImportNoticeText.titleKey))
-                            .font(.system(size: 12, weight: .semibold))
-                        if let target = notice.targetProfileName {
-                            Text(String(format: localization.text(ConfigurationImportNoticeText.appliedTargetKey), target))
-                                .font(.system(size: 12))
-                        }
-                        if let rejected {
-                            Text(rejected)
-                                .font(.system(size: 12))
-                        }
-                        if let missing {
-                            Text(missing)
-                                .font(.system(size: 12))
-                        }
-                        Text(localization.text(ConfigurationImportNoticeText.nextStepKey))
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
-                        HStack(spacing: 8) {
-                            if settings.lastImportRollbackSnapshot != nil {
-                                Button(localization.text(ConfigurationImportNoticeText.rollbackKey)) {
-                                    rollbackConfiguration()
-                                }
-                                .compatibilityButtonStyle(.standard)
-                                .font(.system(size: 11))
-                            }
-                            Button(localization.text(ConfigurationImportNoticeText.dismissKey)) {
-                                settings.configurationImportNotice = nil
-                                settings.lastImportRollbackSnapshot = nil
-                            }
-                            .compatibilityButtonStyle(.standard)
-                            .font(.system(size: 11))
-                        }
-                        .padding(.top, 2)
-                    }
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-        } else if let snapshot = settings.lastImportRollbackSnapshot {
-            GlassPanel {
-                HStack(alignment: .top, spacing: 11) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.green)
-                        .frame(width: 22)
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(localization.text(ConfigurationImportNoticeText.cleanTitleKey))
-                            .font(.system(size: 12, weight: .semibold))
-                        if let target = snapshot.targetProfileName {
-                            Text(String(format: localization.text(ConfigurationImportNoticeText.appliedTargetKey), target))
-                                .font(.system(size: 12))
-                        }
-                        HStack(spacing: 8) {
-                            Button(localization.text(ConfigurationImportNoticeText.rollbackKey)) {
-                                rollbackConfiguration()
-                            }
-                            .compatibilityButtonStyle(.standard)
-                            .font(.system(size: 11))
-
-                            Button(localization.text(ConfigurationImportNoticeText.dismissKey)) {
-                                settings.lastImportRollbackSnapshot = nil
-                            }
-                            .compatibilityButtonStyle(.standard)
-                            .font(.system(size: 11))
-                        }
-                        .padding(.top, 2)
-                    }
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-        }
-    }
-
     /// Inline on purpose: a sheet or alert here would be dismissed once and never seen again,
     /// and the repository's interface rules keep page-level notices flat inside the page.
     /// Renders nothing at all when no key failed to decode, so a healthy launch keeps its layout.

@@ -55,41 +55,6 @@ extension BridgeAppModel {
             voiceFnTapSession.requiresCleanupBeforeMapping || voiceKeyReleaseRetry != nil
     }
 
-    func importConfiguration(from data: Data) throws {
-        guard !isVoiceConfigurationBusy else { throw AppConfigurationError.unsafeVoiceKeyChange }
-        let changedVoiceKeyConfiguration: Bool
-        do {
-            changedVoiceKeyConfiguration = try Self.importConfiguration(
-                from: data,
-                into: settings,
-                isStreaming: isStreaming,
-                releaseVoiceKey: { releaseVoiceKeyIfNeeded() }
-            )
-        } catch AppConfigurationError.unsafeVoiceKeyChange {
-            AppLogger.shared.write(
-                "CONFIGURATION IMPORT rejected reason=unsafe_voice_key_change"
-            )
-            throw AppConfigurationError.unsafeVoiceKeyChange
-        }
-        if changedVoiceKeyConfiguration {
-            preferredInputSourceMonitor.endVoiceSession()
-        }
-        applyAudioSettings(reason: "configuration_import")
-        applyHIDSettings()
-    }
-
-    @discardableResult
-    func rollbackConfigurationImport() -> Bool {
-        guard settings.lastImportRollbackSnapshot != nil else { return false }
-        let rolledBack = settings.rollbackLastImport()
-        if rolledBack {
-            preferredInputSourceMonitor.endVoiceSession()
-            applyAudioSettings(reason: "configuration_rollback")
-            applyHIDSettings()
-        }
-        return rolledBack
-    }
-
     func setVoiceKeyMode(_ mode: VoiceKeyMode) {
         guard mode != settings.voiceKeyMode else { return }
         let previousMode = settings.voiceKeyMode.rawValue

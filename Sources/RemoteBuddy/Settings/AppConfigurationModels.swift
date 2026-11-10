@@ -1,93 +1,14 @@
 import Combine
 import Foundation
 
-/// What an import refused to adopt. An exported configuration file is the app's only trust
-/// boundary: it travels between Macs through downloads and chat, and it carries application
-/// paths, bundle identifiers and keyboard shortcuts that a remote button later launches or
-/// synthesizes. Entries that cannot be trusted are dropped instead of installed, and this
-/// report is what turns a silent drop into something the user is told about.
-struct ConfigurationImportReport: Equatable {
-    /// Storage keys of the settings that lost at least one entry.
-    var rejectedEntryStorageKeys: [String] = []
-    /// Custom applications that are structurally fine but absent from this Mac. They are kept
-    /// so a configuration exported from a better-equipped Mac survives the trip.
-    var applicationsMissingOnThisMac: [String] = []
-    /// The name of the remote profile that imported mappings were applied to.
-    var targetProfileName: String? = nil
-
-    var isClean: Bool {
-        rejectedEntryStorageKeys.isEmpty && applicationsMissingOnThisMac.isEmpty
-    }
-}
-
-struct ConfigurationRollbackSnapshot {
-    let gainDB: Double
-    let remoteDeviceProfiles: [RemoteDeviceProfile]
-    let customMappingEnabled: Bool
-    let buttonBindings: [RemoteButton: ButtonAction]
-    let buttonShortcuts: [RemoteButton: CustomKeyboardShortcut]
-    let buttonApplicationProfileIDs: [RemoteButton: UUID]
-    let secondaryButtonBindings: [RemoteButton: [ButtonTrigger: ConfiguredButtonAction]]
-    let unifiedBaseBindings: [UnifiedButtonBinding]
-    let customApplicationProfiles: [CustomApplicationProfile]
-    let portablePendingApplications: Set<String>
-    let applicationLanguage: AppLanguage
-    let appIconIdentifier: AppIconIdentifier
-    let showDockIcon: Bool
-    let showStatusBarIcon: Bool
-    let openMainWindowAtLaunch: Bool
-    let checksForPreReleaseUpdates: Bool
-    let chromecastVoiceMode: ChromecastVoiceMode
-    let onboardingVoiceTool: OnboardingVoiceTool
-    let voiceKeyMode: VoiceKeyMode
-    let voiceFnTapModeEnabled: Bool
-    let targetProfileID: UUID?
-    let targetProfileName: String?
-}
-
 enum AppConfigurationError: Error {
-    case unsupportedVersion
     case fileTooLarge
-    case invalidValues
-    case unsafeVoiceKeyChange
-}
-
-struct VoiceKeyConfigurationState: Equatable {
-    let mode: VoiceKeyMode
-    let fnTapModeEnabled: Bool
-    let tool: OnboardingVoiceTool
 }
 
 struct OnboardingVoiceConfigurationSnapshot: Codable {
     let voiceKeyMode: VoiceKeyMode
     let voiceFnTapModeEnabled: Bool
     let chromecastVoiceMode: ChromecastVoiceMode
-}
-
-struct PersonalizedConfiguration: Codable {
-    static let currentFormatVersion = 2
-
-    let formatVersion: Int
-    let gainDB: Double
-    var remoteGainDB: [UUID: Double]? = nil
-    let customMappingEnabled: Bool
-    let buttonBindings: [String: ButtonAction]
-    let buttonShortcuts: [String: CustomKeyboardShortcut]
-    let unifiedBaseBindings: [UnifiedButtonBinding]?
-    let selectedMappingProfileID: UUID?
-    let buttonApplicationProfileIDs: [String: UUID]?
-    let secondaryButtonBindings: [String: [String: ConfiguredButtonAction]]
-    let customApplicationProfiles: [CustomApplicationProfile]?
-    let applicationLanguage: AppLanguage
-    let appIconIdentifier: AppIconIdentifier?
-    let showDockIcon: Bool
-    let showStatusBarIcon: Bool?
-    let openMainWindowAtLaunch: Bool?
-    let checksForPreReleaseUpdates: Bool?
-    var voiceTool: OnboardingVoiceTool? = nil
-    let voiceFnTapModeEnabled: Bool?
-    let voiceKeyMode: VoiceKeyMode?
-    var chromecastVoiceMode: ChromecastVoiceMode? = nil
 }
 
 /// Reads at most the limit plus one byte, including growing files and streams.

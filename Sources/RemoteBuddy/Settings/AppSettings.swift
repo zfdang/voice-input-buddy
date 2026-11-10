@@ -563,25 +563,4 @@ final class AppSettings: ObservableObject {
         corruptedSettingKeys = corruptedKeys
         if shouldSeedSecondaryBindings { saveSecondaryBindings() }
     }
-
-    /// What the last import in this session refused to adopt, or `nil` when it adopted
-    /// everything. In memory only: it describes one user action, not stored state, and it must
-    /// not outlive the session in which the user imported the file.
-    @Published var configurationImportNotice: ConfigurationImportReport?
-    @Published var lastImportRollbackSnapshot: ConfigurationRollbackSnapshot?
-
-    /// Bundle identifiers, audio device identifiers and display names are matched or displayed,
-    /// never executed, so a length bound is the whole requirement for them.
-    static let maximumImportedIdentifierLength = 256
-    static let maximumImportedPathLength = 1_024
-    static let maximumImportedKeyLabelLength = 64
-    /// macOS virtual key codes are 7-bit; this app's own label table stops at 126 and
-    /// `RemoteButton.nativeEvent` never exceeds it. A larger code is not a key.
-    static let maximumImportedKeyCode: UInt16 = 127
-
-    enum ImportedApplicationProfile {
-        case usable(CustomApplicationProfile)
-        case notInstalledOnThisMac(CustomApplicationProfile)
-        case rejected
-    }
 }
