@@ -891,6 +891,8 @@
 "common.action.copy" = "复制";
 
 "settings.import_notice.title" = "导入的配置里有内容没有通过检查";
+"settings.import_notice.clean_title" = "已成功导入配置";
+"settings.import_notice.dismiss" = "关闭提示";
 "settings.import_notice.rejected" = "未通过检查已跳过：%1$@。";
 "settings.import_notice.missing_app" = "以下应用在这台 Mac 上未安装，相关按键暂时不会生效：%1$@。";
 "settings.import_notice.applied_target" = "已应用到当前遥控器：%1$@。";

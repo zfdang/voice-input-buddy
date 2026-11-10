@@ -212,14 +212,55 @@ extension SettingsView {
                         Text(localization.text(ConfigurationImportNoticeText.nextStepKey))
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
-                        if settings.lastImportRollbackSnapshot != nil {
+                        HStack(spacing: 8) {
+                            if settings.lastImportRollbackSnapshot != nil {
+                                Button(localization.text(ConfigurationImportNoticeText.rollbackKey)) {
+                                    settings.rollbackLastImport()
+                                }
+                                .compatibilityButtonStyle(.standard)
+                                .font(.system(size: 11))
+                            }
+                            Button(localization.text(ConfigurationImportNoticeText.dismissKey)) {
+                                settings.configurationImportNotice = nil
+                                settings.lastImportRollbackSnapshot = nil
+                            }
+                            .compatibilityButtonStyle(.standard)
+                            .font(.system(size: 11))
+                        }
+                        .padding(.top, 2)
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        } else if let snapshot = settings.lastImportRollbackSnapshot {
+            GlassPanel {
+                HStack(alignment: .top, spacing: 11) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.green)
+                        .frame(width: 22)
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(localization.text(ConfigurationImportNoticeText.cleanTitleKey))
+                            .font(.system(size: 12, weight: .semibold))
+                        if let target = snapshot.targetProfileName {
+                            Text(String(format: localization.text(ConfigurationImportNoticeText.appliedTargetKey), target))
+                                .font(.system(size: 12))
+                        }
+                        HStack(spacing: 8) {
                             Button(localization.text(ConfigurationImportNoticeText.rollbackKey)) {
                                 settings.rollbackLastImport()
                             }
                             .compatibilityButtonStyle(.standard)
                             .font(.system(size: 11))
-                            .padding(.top, 2)
+
+                            Button(localization.text(ConfigurationImportNoticeText.dismissKey)) {
+                                settings.lastImportRollbackSnapshot = nil
+                            }
+                            .compatibilityButtonStyle(.standard)
+                            .font(.system(size: 11))
                         }
+                        .padding(.top, 2)
                     }
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)

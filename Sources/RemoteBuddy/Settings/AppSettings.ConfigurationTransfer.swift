@@ -86,7 +86,33 @@ extension AppSettings {
     /// `configurationImportNotice` so the user is told rather than silently downgraded.
     func importConfiguration(from data: Data) throws {
         configurationImportNotice = nil
+        lastImportRollbackSnapshot = nil
         let configuration = try Self.validatedConfiguration(from: data)
+        let targetName = selectedRemoteProfile.map { $0.customName.isEmpty ? $0.model.rawValue : $0.customName }
+        lastImportRollbackSnapshot = ConfigurationRollbackSnapshot(
+            gainDB: gainDB,
+            remoteDeviceProfiles: remoteDeviceProfiles,
+            customMappingEnabled: customMappingEnabled,
+            buttonBindings: buttonBindings,
+            buttonShortcuts: buttonShortcuts,
+            buttonApplicationProfileIDs: buttonApplicationProfileIDs,
+            secondaryButtonBindings: secondaryButtonBindings,
+            unifiedBaseBindings: unifiedBaseBindings,
+            customApplicationProfiles: customApplicationProfiles,
+            portablePendingApplications: Set(defaults.stringArray(forKey: "portableTransferPendingApplications") ?? []),
+            applicationLanguage: applicationLanguage,
+            appIconIdentifier: appIconIdentifier,
+            showDockIcon: showDockIcon,
+            showStatusBarIcon: showStatusBarIcon,
+            openMainWindowAtLaunch: openMainWindowAtLaunch,
+            checksForPreReleaseUpdates: checksForPreReleaseUpdates,
+            chromecastVoiceMode: chromecastVoiceMode,
+            onboardingVoiceTool: onboardingVoiceTool,
+            voiceKeyMode: voiceKeyMode,
+            voiceFnTapModeEnabled: voiceFnTapModeEnabled,
+            targetProfileID: selectedRemoteProfileID,
+            targetProfileName: targetName
+        )
         var rejected: Set<String> = []
         var missingApplications: [String] = []
         let importedMode = configuration.voiceKeyMode ?? .function
@@ -183,14 +209,6 @@ extension AppSettings {
             }
         }
         customMappingEnabled = configuration.customMappingEnabled
-        lastImportRollbackSnapshot = ConfigurationRollbackSnapshot(
-            buttonBindings: buttonBindings,
-            buttonShortcuts: buttonShortcuts,
-            buttonApplicationProfileIDs: buttonApplicationProfileIDs,
-            secondaryButtonBindings: secondaryButtonBindings,
-            unifiedBaseBindings: unifiedBaseBindings,
-            targetProfileID: selectedRemoteProfileID
-        )
         buttonBindings = Self.defaultBindings.merging(importedBindings) { _, imported in imported }
         buttonShortcuts = importedShortcuts
         unifiedBaseBindings = importedUnifiedBindings(from: configuration, rejected: &rejected).map { binding in
@@ -231,7 +249,6 @@ extension AppSettings {
         voiceKeyMode = importedVoiceKeyConfiguration.mode
         voiceFnTapModeEnabled = importedVoiceKeyConfiguration.fnTapModeEnabled && voiceKeyMode == .function
 
-        let targetName = selectedRemoteProfile.map { $0.customName.isEmpty ? $0.model.rawValue : $0.customName }
         let report = ConfigurationImportReport(
             rejectedEntryStorageKeys: rejected.sorted(),
             applicationsMissingOnThisMac: missingApplications.sorted(),
@@ -249,14 +266,41 @@ extension AppSettings {
     @discardableResult
     func rollbackLastImport() -> Bool {
         guard let snapshot = lastImportRollbackSnapshot else { return false }
+        gainDB = snapshot.gainDB
+        remoteDeviceProfiles = snapshot.remoteDeviceProfiles
+        customMappingEnabled = snapshot.customMappingEnabled
         if snapshot.targetProfileID == selectedRemoteProfileID {
             buttonBindings = snapshot.buttonBindings
             buttonShortcuts = snapshot.buttonShortcuts
             buttonApplicationProfileIDs = snapshot.buttonApplicationProfileIDs
             secondaryButtonBindings = snapshot.secondaryButtonBindings
-            unifiedBaseBindings = snapshot.unifiedBaseBindings
             saveSelectedRemoteProfileMappings()
+        } else if let selectedRemoteProfileID,
+                  let profile = snapshot.remoteDeviceProfiles.first(where: { $0.id == selectedRemoteProfileID }) {
+            buttonBindings = Self.defaultBindings.merging(profile.mappings.parsedButtonBindings) { _, saved in saved }
+            buttonShortcuts = profile.mappings.parsedButtonShortcuts
+            buttonApplicationProfileIDs = profile.mappings.parsedButtonApplicationProfileIDs
+            secondaryButtonBindings = profile.mappings.parsedSecondaryButtonBindings
+            saveSelectedRemoteProfileMappings()
+        } else {
+            buttonBindings = snapshot.buttonBindings
+            buttonShortcuts = snapshot.buttonShortcuts
+            buttonApplicationProfileIDs = snapshot.buttonApplicationProfileIDs
+            secondaryButtonBindings = snapshot.secondaryButtonBindings
         }
+        unifiedBaseBindings = snapshot.unifiedBaseBindings
+        customApplicationProfiles = snapshot.customApplicationProfiles
+        defaults.set(snapshot.portablePendingApplications.sorted(), forKey: "portableTransferPendingApplications")
+        applicationLanguage = snapshot.applicationLanguage
+        appIconIdentifier = snapshot.appIconIdentifier
+        showDockIcon = snapshot.showDockIcon
+        showStatusBarIcon = snapshot.showStatusBarIcon
+        openMainWindowAtLaunch = snapshot.openMainWindowAtLaunch
+        checksForPreReleaseUpdates = snapshot.checksForPreReleaseUpdates
+        chromecastVoiceMode = snapshot.chromecastVoiceMode
+        setOnboardingVoiceTool(snapshot.onboardingVoiceTool)
+        voiceKeyMode = snapshot.voiceKeyMode
+        voiceFnTapModeEnabled = snapshot.voiceFnTapModeEnabled
         lastImportRollbackSnapshot = nil
         configurationImportNotice = nil
         return true

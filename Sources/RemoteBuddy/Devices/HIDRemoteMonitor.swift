@@ -119,7 +119,6 @@ final class HIDRemoteMonitor {
     private var nativePassthroughUsages = Set<UInt16>()
     private var usageExpiryTimers: [UInt16: HIDRemoteScheduledTask] = [:]
     private var usageExpiryTokens: [UInt16: UUID] = [:]
-    private var heldReportSuppressionTimers: [UInt16: HIDRemoteScheduledTask] = [:]
     private var repeatTimers: [UInt16: HIDRemoteScheduledTask] = [:]
     private var repeatTokens: [UInt16: UUID] = [:]
     private var nonRepeatablePressedButtons = Set<RemoteButton>()
@@ -730,29 +729,8 @@ final class HIDRemoteMonitor {
     }
 
     private func process(usages: Set<UInt16>) {
-        var pressed = usages.subtracting(activeUsages)
-        var released = activeUsages.subtracting(usages)
-        if usages == activeUsages, !usages.isEmpty {
-            let isAnySuppressed = usages.contains { heldReportSuppressionTimers[$0] != nil }
-            if !isAnySuppressed {
-                diagnosticLogger(
-                    "HID EDGE duplicate report recovered as release+press for \(Self.buttonList(for: usages))"
-                )
-                processReleases(for: activeUsages)
-                activeUsages = []
-                pressed = usages
-                released = []
-            }
-        }
-        for usage in pressed {
-            heldReportSuppressionTimers[usage]?.cancel()
-            heldReportSuppressionTimers[usage] = scheduler.schedule(
-                afterMilliseconds: 250,
-                repeatingEveryMilliseconds: nil
-            ) { [weak self] in
-                self?.heldReportSuppressionTimers.removeValue(forKey: usage)
-            }
-        }
+        let pressed = usages.subtracting(activeUsages)
+        let released = activeUsages.subtracting(usages)
         if !pressed.isEmpty || !released.isEmpty {
             diagnosticLogger(
                 "HID EDGE pressed=\(Self.buttonList(for: pressed)) " +
@@ -894,7 +872,6 @@ final class HIDRemoteMonitor {
 
     private func processReleases(for released: Set<UInt16>) {
         for usage in released {
-            heldReportSuppressionTimers.removeValue(forKey: usage)?.cancel()
             let usedNativePassthrough = nativePassthroughUsages.remove(usage) != nil
             if !activeDeviceIsSeized, !usedNativePassthrough,
                let button = RemoteButton.usageMap[usage] {
@@ -1542,8 +1519,6 @@ final class HIDRemoteMonitor {
         usageExpiryTokens.removeAll()
         usageExpiryTimers.values.forEach { $0.cancel() }
         usageExpiryTimers.removeAll()
-        heldReportSuppressionTimers.values.forEach { $0.cancel() }
-        heldReportSuppressionTimers.removeAll()
         nonRepeatableReleaseTimers.values.forEach { $0.cancel() }
         nonRepeatableReleaseTimers.removeAll()
         nonRepeatablePressedButtons.removeAll()

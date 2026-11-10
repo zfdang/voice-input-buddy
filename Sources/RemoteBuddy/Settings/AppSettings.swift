@@ -568,7 +568,7 @@ final class AppSettings: ObservableObject {
     /// everything. In memory only: it describes one user action, not stored state, and it must
     /// not outlive the session in which the user imported the file.
     @Published var configurationImportNotice: ConfigurationImportReport?
-    var lastImportRollbackSnapshot: ConfigurationRollbackSnapshot?
+    @Published var lastImportRollbackSnapshot: ConfigurationRollbackSnapshot?
 
     /// Bundle identifiers, audio device identifiers and display names are matched or displayed,
     /// never executed, so a length bound is the whole requirement for them.

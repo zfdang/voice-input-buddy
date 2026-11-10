@@ -87,24 +87,96 @@ struct VoiceToolConfigurationTransferTests {
         #expect(target.chromecastVoiceMode == .hold)
     }
 
-    @Test func importRollbackRestoresPreviousMappings() throws {
+    @Test func importRollbackRestoresCompleteAffectedState() throws {
         let name = "import-rollback-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: name))
         defer { defaults.removePersistentDomain(forName: name) }
         let settings = AppSettings(defaults: defaults)
-        settings.setBaseBinding(ConfiguredButtonAction(action: .playPause, shortcut: nil), for: .ok, trigger: .singleClick, profileID: settings.selectedRemoteProfileID)
+
+        // Set up initial state with unique values across categories
+        settings.gainDB = 6.0
+        settings.chromecastVoiceMode = .hold
+        settings.applicationLanguage = .simplifiedChinese
+        settings.showDockIcon = false
+        settings.openMainWindowAtLaunch = false
+        settings.voiceKeyMode = .leftOption
+        settings.setOnboardingVoiceTool(.macosDictation)
+
+        let initialAppProfile = CustomApplicationProfile(
+            id: UUID(),
+            displayName: "Finder Initial",
+            bundleIdentifier: "com.apple.finder",
+            applicationPath: "/System/Library/CoreServices/Finder.app",
+            focusStrategy: .none
+        )
+        settings.customApplicationProfiles = [initialAppProfile]
+
+        settings.setBaseBinding(
+            ConfiguredButtonAction(action: .playPause, shortcut: nil),
+            for: .ok,
+            trigger: .singleClick,
+            profileID: settings.selectedRemoteProfileID
+        )
         let initialAction = settings.configuredBaseAction(for: .ok, trigger: .singleClick).action
         #expect(initialAction == .playPause)
 
         let otherDefaults = try #require(UserDefaults(suiteName: name + "-other"))
         defer { otherDefaults.removePersistentDomain(forName: name + "-other") }
         let otherSettings = AppSettings(defaults: otherDefaults)
-        otherSettings.setBaseBinding(ConfiguredButtonAction(action: .showDesktop, shortcut: nil), for: .ok, trigger: .singleClick, profileID: otherSettings.selectedRemoteProfileID)
+
+        otherSettings.gainDB = 18.0
+        otherSettings.chromecastVoiceMode = .toggle
+        otherSettings.applicationLanguage = .english
+        otherSettings.showDockIcon = true
+        otherSettings.openMainWindowAtLaunch = true
+        otherSettings.voiceKeyMode = .rightCommand
+        otherSettings.setOnboardingVoiceTool(.weixin)
+
+        let importedAppProfile = CustomApplicationProfile(
+            id: UUID(),
+            displayName: "Finder Imported",
+            bundleIdentifier: "com.apple.finder",
+            applicationPath: "/System/Library/CoreServices/Finder.app",
+            focusStrategy: .none
+        )
+        otherSettings.customApplicationProfiles = [importedAppProfile]
+
+        otherSettings.setBaseBinding(
+            ConfiguredButtonAction(action: .showDesktop, shortcut: nil),
+            for: .ok,
+            trigger: .singleClick,
+            profileID: otherSettings.selectedRemoteProfileID
+        )
         let otherData = try otherSettings.exportedConfigurationData()
 
+        // Clean import succeeds
         try settings.importConfiguration(from: otherData)
+        #expect(settings.configurationImportNotice == nil)
+        #expect(settings.lastImportRollbackSnapshot != nil)
         #expect(settings.configuredBaseAction(for: .ok, trigger: .singleClick).action == .showDesktop)
+        #expect(settings.gainDB == 18.0)
+        #expect(settings.chromecastVoiceMode == .toggle)
+        #expect(settings.applicationLanguage == .english)
+        #expect(settings.showDockIcon == true)
+        #expect(settings.openMainWindowAtLaunch == true)
+        #expect(settings.voiceKeyMode == .rightCommand)
+        #expect(settings.onboardingVoiceTool == .weixin)
+        #expect(settings.customApplicationProfiles.map(\.displayName) == ["Finder Imported"])
+
+        // Rollback restores complete state
         #expect(settings.rollbackLastImport())
+        #expect(settings.lastImportRollbackSnapshot == nil)
         #expect(settings.configuredBaseAction(for: .ok, trigger: .singleClick).action == .playPause)
+        #expect(settings.gainDB == 6.0)
+        #expect(settings.chromecastVoiceMode == .hold)
+        #expect(settings.applicationLanguage == .simplifiedChinese)
+        #expect(settings.showDockIcon == false)
+        #expect(settings.openMainWindowAtLaunch == false)
+        #expect(settings.voiceKeyMode == .leftOption)
+        #expect(settings.onboardingVoiceTool == .macosDictation)
+        #expect(settings.customApplicationProfiles.map(\.displayName) == ["Finder Initial"])
+
+        // Second rollback returns false
+        #expect(!settings.rollbackLastImport())
     }
 }

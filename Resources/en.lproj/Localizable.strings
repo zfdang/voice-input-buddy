@@ -894,6 +894,8 @@
 "common.action.copy" = "Copy";
 
 "settings.import_notice.title" = "Some Settings Were Skipped During Import";
+"settings.import_notice.clean_title" = "Configuration Imported Successfully";
+"settings.import_notice.dismiss" = "Dismiss";
 "settings.import_notice.rejected" = "These settings did not pass validation: %1$@.";
 "settings.import_notice.missing_app" = "These applications are not installed on this Mac, so buttons pointing to them will not work yet: %1$@.";
 "settings.import_notice.applied_target" = "Applied to current remote: %1$@.";

@@ -11,6 +11,8 @@ import UniformTypeIdentifiers
 /// entries is the exact defect this notice exists to close.
 enum ConfigurationImportNoticeText {
     static let titleKey = "settings.import_notice.title"
+    static let cleanTitleKey = "settings.import_notice.clean_title"
+    static let dismissKey = "settings.import_notice.dismiss"
     static let rejectedKey = "settings.import_notice.rejected"
     static let missingApplicationKey = "settings.import_notice.missing_app"
     static let appliedTargetKey = "settings.import_notice.applied_target"

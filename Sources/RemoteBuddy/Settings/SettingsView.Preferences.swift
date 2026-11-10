@@ -61,14 +61,25 @@ extension SettingsView {
                             }
                             .padding(.vertical, 8)
 
-                            if let configurationStatus {
+                            if let status = configurationStatus {
                                 Divider()
-                                Label(
-                                    configurationStatus.message.text(using: localization),
-                                    systemImage: configurationStatus.systemImage
-                                )
-                                .font(.caption)
-                                .foregroundStyle(configurationStatus.tint)
+                                HStack {
+                                    Label(
+                                        status.message.text(using: localization),
+                                        systemImage: status.systemImage
+                                    )
+                                    .font(.caption)
+                                    .foregroundStyle(status.tint)
+                                    Spacer()
+                                    if settings.lastImportRollbackSnapshot != nil {
+                                        Button(localization.text(ConfigurationImportNoticeText.rollbackKey)) {
+                                            settings.rollbackLastImport()
+                                            self.configurationStatus = nil
+                                        }
+                                        .compatibilityButtonStyle(.standard)
+                                        .font(.caption)
+                                    }
+                                }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.vertical, 8)
                             }

@@ -21,12 +21,28 @@ struct ConfigurationImportReport: Equatable {
 }
 
 struct ConfigurationRollbackSnapshot {
+    let gainDB: Double
+    let remoteDeviceProfiles: [RemoteDeviceProfile]
+    let customMappingEnabled: Bool
     let buttonBindings: [RemoteButton: ButtonAction]
     let buttonShortcuts: [RemoteButton: CustomKeyboardShortcut]
     let buttonApplicationProfileIDs: [RemoteButton: UUID]
     let secondaryButtonBindings: [RemoteButton: [ButtonTrigger: ConfiguredButtonAction]]
     let unifiedBaseBindings: [UnifiedButtonBinding]
+    let customApplicationProfiles: [CustomApplicationProfile]
+    let portablePendingApplications: Set<String>
+    let applicationLanguage: AppLanguage
+    let appIconIdentifier: AppIconIdentifier
+    let showDockIcon: Bool
+    let showStatusBarIcon: Bool
+    let openMainWindowAtLaunch: Bool
+    let checksForPreReleaseUpdates: Bool
+    let chromecastVoiceMode: ChromecastVoiceMode
+    let onboardingVoiceTool: OnboardingVoiceTool
+    let voiceKeyMode: VoiceKeyMode
+    let voiceFnTapModeEnabled: Bool
     let targetProfileID: UUID?
+    let targetProfileName: String?
 }
 
 enum AppConfigurationError: Error {

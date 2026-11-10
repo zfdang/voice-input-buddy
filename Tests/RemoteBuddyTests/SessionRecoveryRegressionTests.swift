@@ -164,7 +164,7 @@ struct SessionRecoveryRegressionTests {
         monitor.disconnectSimulatedDevice()
     }
 
-    @Test func missedReleaseRecoversImmediatelyOnSubsequentReportWithoutWaitingForExpiry() {
+    @Test func repeatedReportsWhileHeldDoNotInterruptHeldButton() {
         let clock = ControlledTestScheduler()
         let prefs = defaults()
         let settings = AppSettings(defaults: prefs)
@@ -177,20 +177,25 @@ struct SessionRecoveryRegressionTests {
             if phase == .press { presses += 1 } else { releases += 1 }
             return false
         }
-        monitor.connectSimulatedDevice(fingerprint: "missed-release-test", profileID: profile)
+        monitor.connectSimulatedDevice(fingerprint: "hold-test", profileID: profile)
         let usage = RemoteButton.ok.hidUsage
         let report = Data([UInt8(usage & 255), UInt8(usage >> 8)])
-        // First press
+        // Initial press
         monitor.handleSimulatedReport(reportID: 1, data: report)
         #expect(presses == 1)
         #expect(releases == 0)
-        // Advance clock only 500ms (way before 8000ms missing-release timeout)
+        // Advance clock while remote continues sending held reports
         clock.advance(to: 500)
-        // Subsequent press report with same button arrives (release report was dropped)
         monitor.handleSimulatedReport(reportID: 1, data: report)
-        // Immediate recovery: synthesized release + second press
+        clock.advance(to: 1000)
+        monitor.handleSimulatedReport(reportID: 1, data: report)
+        // Must NOT emit spurious release or new press edges during hold
+        #expect(presses == 1)
+        #expect(releases == 0)
+        // Physical release report arrives
+        monitor.handleSimulatedReport(reportID: 1, data: Data([0, 0]))
+        #expect(presses == 1)
         #expect(releases == 1)
-        #expect(presses == 2)
         monitor.disconnectSimulatedDevice()
     }
 
