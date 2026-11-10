@@ -155,33 +155,30 @@ extension AppSettings {
             $0.remoteProfileID == nil && $0.button == button && $0.trigger == trigger
         }) { return binding.configured }
 
-        if profileID == nil || profileID == selectedRemoteProfileID {
+        if let profileID,
+           profileID != selectedRemoteProfileID,
+           let profile = remoteDeviceProfiles.first(where: { $0.id == profileID }) {
+            let bindings = profile.mappings.parsedButtonBindings
+            let shortcuts = profile.mappings.parsedButtonShortcuts
             if trigger == .singleClick {
                 return ConfiguredButtonAction(
-                    action: buttonBindings[button] ?? Self.defaultBindings[button] ?? .disabled,
-                    shortcut: buttonShortcuts[button],
-                    applicationProfileID: applicationProfileID(for: button)
+                    action: bindings[button] ?? Self.defaultBindings[button] ?? .disabled,
+                    shortcut: shortcuts[button],
+                    applicationProfileID: profile.mappings.parsedButtonApplicationProfileIDs[button]
                 )
             }
-            return secondaryButtonBindings[button]?[trigger] ??
+            return profile.mappings.parsedSecondaryButtonBindings[button]?[trigger] ??
                 defaultSecondaryAction(for: button, trigger: trigger)
         }
 
-        guard let profile = remoteDeviceProfiles.first(where: { $0.id == profileID }) else {
-            return trigger == .singleClick
-                ? ConfiguredButtonAction(action: Self.defaultBindings[button] ?? .disabled, shortcut: nil)
-                : defaultSecondaryAction(for: button, trigger: trigger)
-        }
-        let bindings = profile.mappings.parsedButtonBindings
-        let shortcuts = profile.mappings.parsedButtonShortcuts
         if trigger == .singleClick {
             return ConfiguredButtonAction(
-                action: bindings[button] ?? Self.defaultBindings[button] ?? .disabled,
-                shortcut: shortcuts[button],
-                applicationProfileID: profile.mappings.parsedButtonApplicationProfileIDs[button]
+                action: buttonBindings[button] ?? Self.defaultBindings[button] ?? .disabled,
+                shortcut: buttonShortcuts[button],
+                applicationProfileID: applicationProfileID(for: button)
             )
         }
-        return profile.mappings.parsedSecondaryButtonBindings[button]?[trigger] ??
+        return secondaryButtonBindings[button]?[trigger] ??
             defaultSecondaryAction(for: button, trigger: trigger)
     }
 
@@ -492,10 +489,6 @@ extension AppSettings {
 
     func resetBindings() {
         withResettingBindings {
-            defer {
-                saveSelectedRemoteProfileMappings()
-                encodeAndSave(unifiedBaseBindings, forKey: "unifiedBaseBindings")
-            }
             buttonBindings = Self.defaultBindings
             buttonShortcuts = [:]
             unifiedBaseBindings.removeAll { $0.remoteProfileID == selectedRemoteProfileID }
@@ -513,6 +506,8 @@ extension AppSettings {
             buttonApplicationProfileIDs = [:]
             secondaryButtonBindings = Self.defaultSecondaryBindings
         }
+        saveSelectedRemoteProfileMappings()
+        encodeAndSave(unifiedBaseBindings, forKey: "unifiedBaseBindings")
     }
 }
 

@@ -5,7 +5,7 @@ work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
 gh release view --json tagName,assets > "$work/release.json"
-tag="$(python3 -c "import json; print(json.load(open('$work/release.json'))['tagName'])")"
+tag="$(python3 -c "import json, sys; print(json.load(open(sys.argv[1]))['tagName'])" "$work/release.json")"
 mkdir -p "$work/candidate"
 valid_candidate=false
 

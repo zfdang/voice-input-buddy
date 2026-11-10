@@ -83,8 +83,39 @@ final class AppSettings: ObservableObject {
                                             trigger: trigger, configured: configured))
         unifiedBaseBindings = bindings
 
-        let targetProfileID = profileID ?? selectedRemoteProfileID
-        if targetProfileID == selectedRemoteProfileID {
+        if let profileID {
+            if let index = remoteDeviceProfiles.firstIndex(where: { $0.id == profileID }) {
+                let mappings = remoteDeviceProfiles[index].mappings
+                var parsedBindings = mappings.parsedButtonBindings
+                var parsedShortcuts = mappings.parsedButtonShortcuts
+                var parsedAppIDs = mappings.parsedButtonApplicationProfileIDs
+                var parsedSecondary = mappings.parsedSecondaryButtonBindings
+                if trigger == .singleClick {
+                    parsedBindings[button] = configured.action
+                    if let shortcut = configured.shortcut {
+                        parsedShortcuts[button] = shortcut
+                    } else {
+                        parsedShortcuts.removeValue(forKey: button)
+                    }
+                    if let appID = configured.applicationProfileID {
+                        parsedAppIDs[button] = appID
+                    } else {
+                        parsedAppIDs.removeValue(forKey: button)
+                    }
+                } else {
+                    var secondary = parsedSecondary[button] ?? [:]
+                    secondary[trigger] = configured
+                    parsedSecondary[button] = secondary
+                }
+                remoteDeviceProfiles[index].mappings = RemoteDeviceMappings(
+                    buttonBindings: parsedBindings,
+                    buttonShortcuts: parsedShortcuts,
+                    buttonApplicationProfileIDs: parsedAppIDs,
+                    secondaryButtonBindings: parsedSecondary
+                )
+                saveRemoteDeviceProfiles()
+            }
+        } else {
             if trigger == .singleClick {
                 buttonBindings[button] = configured.action
                 if let shortcut = configured.shortcut {
@@ -102,37 +133,6 @@ final class AppSettings: ObservableObject {
                 secondary[trigger] = configured
                 secondaryButtonBindings[button] = secondary
             }
-        } else if let targetProfileID,
-                  let index = remoteDeviceProfiles.firstIndex(where: { $0.id == targetProfileID }) {
-            let mappings = remoteDeviceProfiles[index].mappings
-            var parsedBindings = mappings.parsedButtonBindings
-            var parsedShortcuts = mappings.parsedButtonShortcuts
-            var parsedAppIDs = mappings.parsedButtonApplicationProfileIDs
-            var parsedSecondary = mappings.parsedSecondaryButtonBindings
-            if trigger == .singleClick {
-                parsedBindings[button] = configured.action
-                if let shortcut = configured.shortcut {
-                    parsedShortcuts[button] = shortcut
-                } else {
-                    parsedShortcuts.removeValue(forKey: button)
-                }
-                if let appID = configured.applicationProfileID {
-                    parsedAppIDs[button] = appID
-                } else {
-                    parsedAppIDs.removeValue(forKey: button)
-                }
-            } else {
-                var secondary = parsedSecondary[button] ?? [:]
-                secondary[trigger] = configured
-                parsedSecondary[button] = secondary
-            }
-            remoteDeviceProfiles[index].mappings = RemoteDeviceMappings(
-                buttonBindings: parsedBindings,
-                buttonShortcuts: parsedShortcuts,
-                buttonApplicationProfileIDs: parsedAppIDs,
-                secondaryButtonBindings: parsedSecondary
-            )
-            saveRemoteDeviceProfiles()
         }
     }
 

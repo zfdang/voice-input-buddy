@@ -186,18 +186,4 @@ extension SettingsView {
         }
         return configured.action.displayName(using: localization)
     }
-
-    private func buttonProfileSystemImage(for action: ButtonAction) -> String {
-        if action.presetApplication != nil { return "app" }
-        switch action {
-        case .openCommonPhrases: return "text.quote"
-        case .focusInput: return "scope"
-        case .showDesktop: return "macwindow"
-        case .appSwitcher: return "command"
-        case .volumeUp, .volumeDown, .volumeMute: return "speaker.wave.2"
-        case .playPause, .previousCommandLeft, .nextCommandRight: return "play.circle"
-        case .toggleLongRecording: return "record.circle"
-        default: return "keyboard"
-        }
-    }
 }

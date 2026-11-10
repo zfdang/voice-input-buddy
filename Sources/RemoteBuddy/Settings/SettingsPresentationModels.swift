@@ -461,10 +461,6 @@ enum MappingActionFilter: String, CaseIterable, Identifiable {
         case .custom: self = .custom
         }
     }
-
-    func includes(_ category: ButtonActionCategory) -> Bool {
-        self.category == category
-    }
 }
 
 enum MappingSelectionPolicy {

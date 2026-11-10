@@ -14,7 +14,13 @@ extension AppSettings {
         let sourceSelection = configuration.selectedMappingProfileID
         let globals = bindings.filter { $0.remoteProfileID == nil }
         let scoped = bindings.filter { $0.remoteProfileID != nil }
-        var imported: [UnifiedButtonBinding] = []
+        struct BindingKey: Hashable {
+            let profileID: UUID?
+            let button: RemoteButton
+            let trigger: ButtonTrigger
+        }
+        var importedByKey: [BindingKey: UnifiedButtonBinding] = [:]
+        var keyOrder: [BindingKey] = []
         for binding in globals + scoped {
             var result = binding
             if let id = binding.remoteProfileID, !localIDs.contains(id) {
@@ -30,13 +36,13 @@ extension AppSettings {
             result.configured = configured ?? .disabled
             // A selected-device override beats a global default when imported
             // before pairing, where both now have the same destination scope.
-            imported.removeAll {
-                $0.remoteProfileID == result.remoteProfileID &&
-                    $0.button == result.button && $0.trigger == result.trigger
+            let key = BindingKey(profileID: result.remoteProfileID, button: result.button, trigger: result.trigger)
+            if importedByKey[key] == nil {
+                keyOrder.append(key)
             }
-            imported.append(result)
+            importedByKey[key] = result
         }
-        return imported
+        return keyOrder.compactMap { importedByKey[$0] }
     }
 
     /// `nil` when the shortcut is outside what the app can record or inject. A shortcut that
@@ -157,6 +163,7 @@ extension AppSettings {
         let profiles = configuration.customApplicationProfiles ?? []
         guard configuration.buttonBindings.count <= 100,
               configuration.secondaryButtonBindings.count <= 100,
+              (configuration.unifiedBaseBindings?.count ?? 0) <= 200,
               profiles.count <= 100,
               Set(profiles.map(\.id)).count == profiles.count else {
             throw AppConfigurationError.invalidValues
