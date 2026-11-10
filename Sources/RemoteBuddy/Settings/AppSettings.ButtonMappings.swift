@@ -162,7 +162,7 @@ extension AppSettings {
             let shortcuts = profile.mappings.parsedButtonShortcuts
             if trigger == .singleClick {
                 return ConfiguredButtonAction(
-                    action: bindings[button] ?? Self.defaultBindings[button] ?? .disabled,
+                    action: bindings[button] ?? .disabled,
                     shortcut: shortcuts[button],
                     applicationProfileID: profile.mappings.parsedButtonApplicationProfileIDs[button]
                 )
@@ -173,7 +173,7 @@ extension AppSettings {
 
         if trigger == .singleClick {
             return ConfiguredButtonAction(
-                action: buttonBindings[button] ?? Self.defaultBindings[button] ?? .disabled,
+                action: buttonBindings[button] ?? .disabled,
                 shortcut: buttonShortcuts[button],
                 applicationProfileID: applicationProfileID(for: button)
             )

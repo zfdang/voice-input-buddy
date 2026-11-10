@@ -8,12 +8,6 @@ extension OnboardingView {
         refreshPermissionStates()
         switch step {
         case .voiceTool:
-            // The current flow always uses the documented Fn-based path. Keep
-            // legacy learn-current state readable, but do not expose or resume
-            // that obsolete capture UI in a normal onboarding run.
-            if settings.onboardingVoiceBindingPreference != .documentedDefault {
-                settings.setOnboardingVoiceBindingPreference(.documentedDefault)
-            }
             refreshVoiceToolAvailability()
             refreshSelectedInputMethodStatus()
             refreshSystemFunctionKeyUsage()

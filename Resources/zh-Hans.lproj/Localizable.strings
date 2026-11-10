@@ -655,10 +655,8 @@
 "onboarding.voice_tool.status.unknown" = "请打开工具后继续";
 "onboarding.voice_tool.binding.title" = "快捷键配置来源";
 "onboarding.voice_tool.binding.recommended" = "使用推荐配置";
-"onboarding.voice_tool.binding.learn" = "我修改过快捷键";
 "onboarding.voice_tool.binding.recommended_detail" = "遥控搭子会根据控制设备和已记录的工具默认值生成配置，真实文字测试通过后才保存。";
-"onboarding.voice_tool.binding.learn_detail" = "完成系统权限后，直接按一次你在该工具里正在使用的语音快捷键，遥控搭子会学习并适配。";
-"onboarding.voice_tool.binding.no_documented_default" = "没有可安全自动采用的默认快捷键，请学习当前快捷键。";
+"onboarding.voice_tool.binding.no_documented_default" = "没有可安全自动采用的默认快捷键。";
 "onboarding.voice_tool.binding.evidence_verified" = "推荐";
 "onboarding.voice_tool.binding.evidence_pending" = "测试通过后保存";
 "onboarding.control_source.title" = "选择控制设备";

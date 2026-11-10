@@ -127,6 +127,18 @@ struct BluetoothAudioPipelineTests {
         deliveries.run()
         #expect(stopped)
         #expect(decodedSamples.count == 1)
+        #expect(decodedSamples.first?.count == 100) // 50 bytes decoded without zero-padding distortion
         #expect(pipeline.pendingByteCount == 0)
+
+        // Second endStream invocation is a no-op and does not decode residual audio again
+        var secondStop = false
+        pipeline.endStream(frameSize: 120, gainDB: 0, onDecoded: { _ in
+            #expect(Bool(false), "Second endStream should not yield decoded samples")
+        }, onStop: {
+            secondStop = true
+        })
+        queue.sync {}
+        deliveries.run()
+        #expect(!secondStop)
     }
 }

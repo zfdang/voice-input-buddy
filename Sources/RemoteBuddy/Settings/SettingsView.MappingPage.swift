@@ -215,7 +215,7 @@ extension SettingsView {
                         HStack(spacing: 8) {
                             if settings.lastImportRollbackSnapshot != nil {
                                 Button(localization.text(ConfigurationImportNoticeText.rollbackKey)) {
-                                    settings.rollbackLastImport()
+                                    rollbackConfiguration()
                                 }
                                 .compatibilityButtonStyle(.standard)
                                 .font(.system(size: 11))
@@ -249,7 +249,7 @@ extension SettingsView {
                         }
                         HStack(spacing: 8) {
                             Button(localization.text(ConfigurationImportNoticeText.rollbackKey)) {
-                                settings.rollbackLastImport()
+                                rollbackConfiguration()
                             }
                             .compatibilityButtonStyle(.standard)
                             .font(.system(size: 11))

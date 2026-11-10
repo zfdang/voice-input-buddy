@@ -199,6 +199,70 @@ struct SessionRecoveryRegressionTests {
         monitor.disconnectSimulatedDevice()
     }
 
+    @Test func staleUsageExpiryTimerDoesNotCancelSubsequentPressToken() {
+        let clock = ControlledTestScheduler()
+        let prefs = defaults()
+        let settings = AppSettings(defaults: prefs)
+        settings.customMappingEnabled = true
+        let profile = UUID()
+        var presses = 0, releases = 0
+        let monitor = HIDRemoteMonitor(settings: settings, profileID: profile, scheduler: clock,
+            runtimePermissions: { true }, actionPerformer: { _, _, _ in true }, diagnosticLogger: { _ in })
+        monitor.onRuntimeButton = { _, _, phase in
+            if phase == .press { presses += 1 } else { releases += 1 }
+            return false
+        }
+        monitor.connectSimulatedDevice(fingerprint: "token-expiry-test", profileID: profile)
+        let usage = RemoteButton.ok.hidUsage
+        let report = Data([UInt8(usage & 255), UInt8(usage >> 8)])
+
+        // First press at t=0 (expiry scheduled for t=8000)
+        monitor.handleSimulatedReport(reportID: 1, data: report)
+        #expect(presses == 1)
+        #expect(releases == 0)
+
+        // Advance to t=7000 and release button
+        clock.advance(to: 7000)
+        monitor.handleSimulatedReport(reportID: 1, data: Data([0, 0]))
+        #expect(presses == 1)
+        #expect(releases == 1)
+
+        // Second press at t=7500 (new token issued, new expiry scheduled for t=15500)
+        clock.advance(to: 7500)
+        monitor.handleSimulatedReport(reportID: 1, data: report)
+        #expect(presses == 2)
+        #expect(releases == 1)
+
+        // Advance to t=8500 (where the first timer would have fired at t=8000)
+        clock.advance(to: 8500)
+        // Must NOT expire the second press because token was updated
+        #expect(presses == 2)
+        #expect(releases == 1)
+
+        // Advance to t=15500: the second press's timer expires
+        clock.advance(to: 15500)
+        #expect(presses == 2)
+        #expect(releases == 2)
+
+        monitor.disconnectSimulatedDevice()
+    }
+
+    @Test func hidMonitorContextWeakBoxGuardsAgainstDeallocatedMonitorCallback() {
+        var monitor: HIDRemoteMonitor? = HIDRemoteMonitor(
+            settings: AppSettings(defaults: defaults()),
+            profileID: UUID(),
+            scheduler: ControlledTestScheduler(),
+            runtimePermissions: { true },
+            actionPerformer: { _, _, _ in true },
+            diagnosticLogger: { _ in }
+        )
+        let context = HIDMonitorContext(monitor!)
+        #expect(context.monitor != nil)
+        monitor = nil
+        // After deallocation of monitor, weak reference is safely cleared
+        #expect(context.monitor == nil)
+    }
+
     @Test func rejectedVoiceRequestsLogTheirActualReason() {
         let clock = ControlledTestScheduler()
         var logs: [String] = []

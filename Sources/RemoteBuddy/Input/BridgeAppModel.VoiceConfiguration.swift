@@ -78,6 +78,18 @@ extension BridgeAppModel {
         applyHIDSettings()
     }
 
+    @discardableResult
+    func rollbackConfigurationImport() -> Bool {
+        guard settings.lastImportRollbackSnapshot != nil else { return false }
+        let rolledBack = settings.rollbackLastImport()
+        if rolledBack {
+            preferredInputSourceMonitor.endVoiceSession()
+            applyAudioSettings(reason: "configuration_rollback")
+            applyHIDSettings()
+        }
+        return rolledBack
+    }
+
     func setVoiceKeyMode(_ mode: VoiceKeyMode) {
         guard mode != settings.voiceKeyMode else { return }
         let previousMode = settings.voiceKeyMode.rawValue

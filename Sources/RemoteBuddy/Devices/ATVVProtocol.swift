@@ -217,6 +217,7 @@ final class ATVVAudioDecoder {
             decoder.reset(predictor: sync.predictor, stepIndex: sync.stepIndex)
             pendingSync = nil
         }
+        if framesBeforeSync > 0 { framesBeforeSync -= 1 }
         return postprocessor.process(decoder.decode(frame), gainDB: gainDB)
     }
 }
@@ -247,11 +248,8 @@ struct FrameAccumulator {
             pending = Data()
             return nil
         }
-        var frame = pending
+        let frame = pending
         pending = Data()
-        if frame.count < frameSize {
-            frame.append(Data(repeating: 0, count: frameSize - frame.count))
-        }
         return frame
     }
 

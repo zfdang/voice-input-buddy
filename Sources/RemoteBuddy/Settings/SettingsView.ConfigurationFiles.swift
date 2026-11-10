@@ -72,4 +72,11 @@ extension SettingsView {
             )
         }
     }
+
+    func rollbackConfiguration() {
+        if model.rollbackConfigurationImport() {
+            localization.select(settings.applicationLanguage)
+            syncEntryPointVisibility()
+        }
+    }
 }

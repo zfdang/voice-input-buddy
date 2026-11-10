@@ -73,7 +73,7 @@ extension SettingsView {
                                     Spacer()
                                     if settings.lastImportRollbackSnapshot != nil {
                                         Button(localization.text(ConfigurationImportNoticeText.rollbackKey)) {
-                                            settings.rollbackLastImport()
+                                            rollbackConfiguration()
                                             self.configurationStatus = nil
                                         }
                                         .compatibilityButtonStyle(.standard)

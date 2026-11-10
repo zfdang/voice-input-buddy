@@ -119,4 +119,33 @@ struct LocalDiagnosticTests {
         #expect(snapshot.summary.contains("~/Library/Logs/RemoteBuddy/remotebuddy.log"))
     }
 
+    @Test func diagnosticRedactorPreservesFactoryNamesAndMasksCustomNamesDeterministically() {
+        // Factory names preserved
+        #expect(DiagnosticRedactor.redactedDeviceName("Siri Remote") == "Siri Remote")
+        #expect(DiagnosticRedactor.redactedDeviceName("MI RC") == "MI RC")
+        #expect(DiagnosticRedactor.redactedDeviceName("Apple TV Remote") == "Apple TV Remote")
+        #expect(DiagnosticRedactor.redactedDeviceName("MacBook Pro Speakers") == "MacBook Pro Speakers")
+
+        // Personalized names with factory fragments must NOT bypass redaction
+        let personalized1 = DiagnosticRedactor.redactedDeviceName("Living Room Siri Remote")
+        #expect(personalized1.hasPrefix("device_"))
+        #expect(!personalized1.contains("Siri Remote"))
+
+        let personalized2 = DiagnosticRedactor.redactedDeviceName("Bob's MI RC")
+        #expect(personalized2.hasPrefix("device_"))
+        #expect(!personalized2.contains("MI RC"))
+
+        // Pure custom names are redacted to deterministic SHA256 hex
+        let customA1 = DiagnosticRedactor.redactedDeviceName("My Bedroom Remote")
+        let customA2 = DiagnosticRedactor.redactedDeviceName("My Bedroom Remote")
+        #expect(customA1 == customA2)
+        #expect(customA1.hasPrefix("device_"))
+        #expect(customA1.count == 15) // "device_" (7) + 8 hex chars (prefix 4 bytes) = 15
+
+        // Empty/whitespace/nil
+        #expect(DiagnosticRedactor.redactedDeviceName(nil) == "unknown")
+        #expect(DiagnosticRedactor.redactedDeviceName("") == "unknown")
+        #expect(DiagnosticRedactor.redactedDeviceName("   ") == "unknown")
+    }
+
 }

@@ -103,7 +103,7 @@ enum CoreAudioDeviceCatalog {
 
     static func deviceDiagnostic(_ device: AudioDeviceInfo?) -> String {
         guard let device else { return "none" }
-        return "name=\(device.name) id=\(device.id)"
+        return "name=\(DiagnosticRedactor.redactedDeviceName(device.name)) id=\(device.id)"
     }
 
     static func virtualAudioAudibilitySnapshot(

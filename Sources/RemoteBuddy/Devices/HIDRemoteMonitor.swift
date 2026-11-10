@@ -4,7 +4,7 @@ import Foundation
 import IOKit.hid
 import IOKit.hidsystem
 
-private final class HIDMonitorContext {
+final class HIDMonitorContext {
     weak var monitor: HIDRemoteMonitor?
     init(_ monitor: HIDRemoteMonitor) {
         self.monitor = monitor

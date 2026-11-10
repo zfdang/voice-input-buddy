@@ -52,6 +52,5 @@ struct VoiceToolUserBinding: Codable, Equatable {
 
 enum OnboardingVoiceBindingPreference: String, Codable {
     case documentedDefault = "documented_default"
-    case learnCurrent = "learn_current"
 }
 

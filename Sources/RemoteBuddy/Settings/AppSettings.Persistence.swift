@@ -2,12 +2,22 @@ import Combine
 import Foundation
 
 extension AppSettings {
+    static func describeEncodingError(_ error: Error) -> String {
+        if let encodingError = error as? EncodingError {
+            switch encodingError {
+            case .invalidValue: return "EncodingError.invalidValue"
+            @unknown default: return "EncodingError"
+            }
+        }
+        return String(describing: type(of: error))
+    }
+
     func encodeAndSave<T: Encodable>(_ value: T, forKey key: String) {
         do {
             let data = try JSONEncoder().encode(value)
             defaults.set(data, forKey: key)
         } catch {
-            AppLogger.shared.write("SETTINGS ERROR save failed for \(key): \(error)")
+            AppLogger.shared.write("SETTINGS ERROR save failed for \(key): \(Self.describeEncodingError(error))")
         }
     }
 

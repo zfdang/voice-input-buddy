@@ -112,12 +112,29 @@ enum UpdateFeedResolver {
         request.cachePolicy = .reloadIgnoringLocalCacheData
         request.timeoutInterval = 30
         request.setValue("RemoteBuddy", forHTTPHeaderField: "User-Agent")
-        let (data, response) = try await session.data(for: request)
+        let (bytes, response) = try await session.bytes(for: request)
+        defer { bytes.task.cancel() }
         guard let response = response as? HTTPURLResponse,
               response.statusCode == 200,
-              response.expectedContentLength <= Int64(maximumFeedSize),
-              data.count <= maximumFeedSize
+              response.expectedContentLength <= Int64(maximumFeedSize)
         else { throw UpdateFeedResolutionError.invalidResponse }
+        var data = Data()
+        var buffer: [UInt8] = []
+        buffer.reserveCapacity(4096)
+        for try await byte in bytes {
+            if data.count + buffer.count >= maximumFeedSize {
+                throw UpdateFeedResolutionError.invalidResponse
+            }
+            buffer.append(byte)
+            if buffer.count == 4096 {
+                data.append(contentsOf: buffer)
+                buffer.removeAll(keepingCapacity: true)
+                try Task.checkCancellation()
+            }
+        }
+        if !buffer.isEmpty {
+            data.append(contentsOf: buffer)
+        }
         try Task.checkCancellation()
         return data
     }

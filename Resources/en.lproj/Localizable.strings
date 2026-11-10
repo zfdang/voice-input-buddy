@@ -656,10 +656,8 @@
 "onboarding.voice_tool.status.unknown" = "Open the tool to continue";
 "onboarding.voice_tool.binding.title" = "Shortcut configuration";
 "onboarding.voice_tool.binding.recommended" = "Use Recommended";
-"onboarding.voice_tool.binding.learn" = "I Changed the Shortcut";
 "onboarding.voice_tool.binding.recommended_detail" = "Remote Buddy builds a configuration from the controller and documented tool defaults, then saves it only after real text appears.";
-"onboarding.voice_tool.binding.learn_detail" = "After permissions are granted, press the voice shortcut you currently use in that tool and Remote Buddy will learn it.";
-"onboarding.voice_tool.binding.no_documented_default" = "There is no safe documented default. Learn the current shortcut instead.";
+"onboarding.voice_tool.binding.no_documented_default" = "There is no safe documented default.";
 "onboarding.voice_tool.binding.evidence_verified" = "Recommended";
 "onboarding.voice_tool.binding.evidence_pending" = "Saved after testing";
 "onboarding.control_source.title" = "Choose How to Control Your Mac";

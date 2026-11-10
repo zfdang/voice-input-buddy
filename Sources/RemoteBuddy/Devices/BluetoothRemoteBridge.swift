@@ -703,7 +703,7 @@ final class BluetoothRemoteBridge: NSObject {
                 if !candidates.isEmpty {
                     AppLogger.shared.write(
                         "BLE SYSTEM CONNECTED CANDIDATES count=\(candidates.count) names=" +
-                            candidates.map { $0.name ?? "unknown" }.joined(separator: ",")
+                            candidates.map { DiagnosticRedactor.redactedDeviceName($0.name) }.joined(separator: ",")
                     )
                 }
                 return candidates

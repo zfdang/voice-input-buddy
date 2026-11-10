@@ -70,7 +70,7 @@ final class AppSettings: ObservableObject {
                 let data = try JSONEncoder().encode(unifiedBaseBindings)
                 defaults.set(data, forKey: "unifiedBaseBindings")
             } catch {
-                AppLogger.shared.write("SETTINGS ERROR encode unifiedBaseBindings failed: \(error)")
+                AppLogger.shared.write("SETTINGS ERROR encode unifiedBaseBindings failed: \(Self.describeEncodingError(error))")
             }
         }
     }
