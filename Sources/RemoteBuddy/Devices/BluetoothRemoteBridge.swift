@@ -1348,11 +1348,20 @@ final class BluetoothRemoteBridge: NSObject {
         microphoneKeepalive = nil
         guard streaming else { return }
         let partialFrameBytes = audioDecoder.pendingByteCount
-        audioDecoder.endStream { [weak self] in
-            guard let self else { return }
-            self.voiceStartNotified = false
-            self.delegate?.bluetoothBridgeDidStopVoice(self)
-        }
+        let gain = settings.gainDB(forBluetoothIdentifier: deviceIdentifier)
+        audioDecoder.endStream(
+            frameSize: capabilities.frameSize,
+            gainDB: gain,
+            onDecoded: { [weak self] samples in
+                guard let self else { return }
+                self.delegate?.bluetoothBridge(self, didDecode: samples)
+            },
+            onStop: { [weak self] in
+                guard let self else { return }
+                self.voiceStartNotified = false
+                self.delegate?.bluetoothBridgeDidStopVoice(self)
+            }
+        )
         lastStopAt = ProcessInfo.processInfo.systemUptime
         AppLogger.shared.write(
             "ATVV STREAM STOP session=\(sessionID) partial_frame_bytes=\(partialFrameBytes)"

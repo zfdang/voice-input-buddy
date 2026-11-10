@@ -3,8 +3,14 @@ set -euo pipefail
 source "$(dirname "$0")/installation-common.sh"
 volume="${3:-/}"
 buddy_check_install_target "${volume%/}/Applications/Remote Buddy.app" com.zfdang.remote-buddy
-buddy_check_install_target "${volume%/}/Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver" com.zfdang.remote-buddy.mic
+driver="${volume%/}/Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver"
+buddy_check_install_target "$driver" com.zfdang.remote-buddy.mic
 # Installer gives both scripts the same private, temporary scripts directory.
 # Always replace the snapshot, including when the old driver is absent or invalid.
-buddy_driver_fingerprint "${volume%/}/Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver" \
+buddy_driver_fingerprint "$driver" \
     > "$(dirname "$0")/driver-before-install.cdhash" || true
+backup="$(dirname "$0")/driver-backup.tar.gz"
+/bin/rm -f "$backup"
+if [[ -d "$driver" ]]; then
+    /usr/bin/tar -czf "$backup" -C "$(dirname "$driver")" "$(basename "$driver")" 2>/dev/null || true
+fi

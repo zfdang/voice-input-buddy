@@ -210,6 +210,15 @@ final class ATVVAudioDecoder {
             return postprocessor.process(decoder.decode(frame), gainDB: gainDB)
         }
     }
+
+    func flush(frameSize: Int, gainDB: Double) -> [Int16]? {
+        guard let frame = accumulator.flush(frameSize: frameSize) else { return nil }
+        if let sync = pendingSync, framesBeforeSync == 0 {
+            decoder.reset(predictor: sync.predictor, stepIndex: sync.stepIndex)
+            pendingSync = nil
+        }
+        return postprocessor.process(decoder.decode(frame), gainDB: gainDB)
+    }
 }
 
 struct FrameAccumulator {
@@ -230,6 +239,20 @@ struct FrameAccumulator {
         // intermediate Array or retaining the consumed batch's storage.
         pending = offset == pending.endIndex ? Data() : pending.subdata(in: offset..<pending.endIndex)
         return frames
+    }
+
+    mutating func flush(frameSize: Int) -> Data? {
+        guard !pending.isEmpty else { return nil }
+        guard ATVVProtocol.supportsFrameSize(frameSize) else {
+            pending = Data()
+            return nil
+        }
+        var frame = pending
+        pending = Data()
+        if frame.count < frameSize {
+            frame.append(Data(repeating: 0, count: frameSize - frame.count))
+        }
+        return frame
     }
 
     mutating func reset() {

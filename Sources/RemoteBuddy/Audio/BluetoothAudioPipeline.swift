@@ -51,7 +51,12 @@ final class BluetoothAudioPipeline: @unchecked Sendable {
         return true
     }
 
-    func endStream(onStop: @escaping @MainActor @Sendable () -> Void) {
+    func endStream(
+        frameSize: Int = 120,
+        gainDB: Double = 10,
+        onDecoded: (@MainActor @Sendable ([Int16]) -> Void)? = nil,
+        onStop: @escaping @MainActor @Sendable () -> Void
+    ) {
         lock.lock()
         guard active else { lock.unlock(); return }
         active = false
@@ -60,10 +65,14 @@ final class BluetoothAudioPipeline: @unchecked Sendable {
         lock.unlock()
         queue.async { [self] in
             guard isCurrent(token) else { return }
+            let tailSamples = decoder.flush(frameSize: frameSize, gainDB: gainDB)
             decoder.reset()
             lock.withLock { if generation == token { fragmentBytes = 0 } }
             deliver { [self] in
                 guard finishStreamEvent(token) else { return }
+                if let tailSamples, let onDecoded {
+                    onDecoded(tailSamples)
+                }
                 onStop()
             }
         }

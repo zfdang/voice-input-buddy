@@ -105,4 +105,28 @@ struct BluetoothAudioPipelineTests {
         queue.sync {}
         deliveries.run()
     }
+
+    @Test func endStreamFlushesResidualPartialFrame() {
+        let queue = DispatchQueue(label: "test.audio.tail")
+        let deliveries = AudioDeliveries()
+        let pipeline = BluetoothAudioPipeline(queue: queue, deliver: { deliveries.enqueue($0) })
+        var decodedSamples: [[Int16]] = []
+        var stopped = false
+        // Send 50 bytes (less than 120 bytes frameSize)
+        let bytes = Data(repeating: 0x55, count: 50)
+        #expect(pipeline.beginStream {})
+        #expect(pipeline.append(bytes, frameSize: 120, gainDB: 0) { decodedSamples.append($0) })
+        queue.sync {}
+        #expect(pipeline.pendingByteCount == 50)
+        pipeline.endStream(frameSize: 120, gainDB: 0, onDecoded: { samples in
+            decodedSamples.append(samples)
+        }, onStop: {
+            stopped = true
+        })
+        queue.sync {}
+        deliveries.run()
+        #expect(stopped)
+        #expect(decodedSamples.count == 1)
+        #expect(pipeline.pendingByteCount == 0)
+    }
 }
