@@ -135,16 +135,14 @@ struct SessionRecoveryRegressionTests {
         monitor.disconnectSimulatedDevice()
     }
 
-    @Test(arguments: [ButtonAction.arrowRight, .commandCopy])
-    func everyHeldUsageExpiresEvenForRepeatsAndGestures(action: ButtonAction) {
+    @Test func nonRepeatingGestureExpiresAfterSilence() {
+        let action = ButtonAction.commandCopy
         let clock = ControlledTestScheduler()
         let prefs = defaults()
         let settings = AppSettings(defaults: prefs)
         settings.customMappingEnabled = true
         settings.setAction(action, for: .right)
-        if action == .commandCopy {
-            settings.setBaseBinding(.init(action: .commandCopy, shortcut: nil), for: .right, trigger: .longPress, profileID: nil)
-        }
+        settings.setBaseBinding(.init(action: .commandCopy, shortcut: nil), for: .right, trigger: .longPress, profileID: nil)
         let profile = UUID()
         var presses = 0, releases = 0
         let monitor = HIDRemoteMonitor(settings: settings, profileID: profile, scheduler: clock,
@@ -162,6 +160,102 @@ struct SessionRecoveryRegressionTests {
         monitor.handleSimulatedReport(reportID: 1, data: report)
         #expect(presses == 2)
         monitor.disconnectSimulatedDevice()
+    }
+
+    @Test(arguments: [ButtonAction.deleteBackward, .arrowUp])
+    func silentRepeatingHoldSurvivesWatchdogAndStopsAtHardCeiling(action: ButtonAction) {
+        let clock = ControlledTestScheduler()
+        let settings = AppSettings(defaults: defaults())
+        settings.customMappingEnabled = true
+        settings.setAction(action, for: .power)
+        settings.setAction(.repeatSingleClick, for: .power, trigger: .longPress)
+        let profile = UUID()
+        var actions = 0, releases = 0
+        let monitor = HIDRemoteMonitor(settings: settings, profileID: profile, scheduler: clock,
+            runtimePermissions: { true }, actionPerformer: { _, _, _ in actions += 1; return true },
+            diagnosticLogger: { _ in })
+        monitor.onRuntimeButton = { _, _, phase in
+            if phase == .release { releases += 1 }
+            return false
+        }
+        monitor.connectSimulatedDevice(fingerprint: "silent-hold", profileID: profile, isSeized: true)
+        let usage = RemoteButton.power.hidUsage
+        monitor.handleSimulatedReport(reportID: 1, data: Data([UInt8(usage & 255), UInt8(usage >> 8)]))
+        let timeout = HIDRemoteTiming.missingReleaseTimeoutMilliseconds
+        let ceiling = action == .deleteBackward ? HIDRemoteTiming.maximumDeleteHoldMilliseconds : HIDRemoteTiming.maximumContinuousHoldMilliseconds
+        clock.advance(to: timeout)
+        let countAtEightSeconds = actions
+        clock.advance(to: timeout + 1000)
+        #expect(actions > countAtEightSeconds)
+        #expect(releases == 0)
+        clock.advance(to: ceiling)
+        #expect(releases == 1)
+        let countAtCeiling = actions
+        clock.advance(to: ceiling + 1000)
+        #expect(actions == countAtCeiling)
+        monitor.handleSimulatedReport(reportID: 1, data: Data([0, 0]))
+        monitor.handleSimulatedReport(reportID: 1, data: Data([UInt8(usage & 255), UInt8(usage >> 8)]))
+        clock.advance(to: ceiling + 2000)
+        #expect(actions > countAtCeiling)
+        monitor.stop()
+    }
+
+    @Test func silentNativePassthroughSurvivesWatchdogAndReleasesAtCeiling() {
+        let clock = ControlledTestScheduler()
+        let settings = AppSettings(defaults: defaults())
+        settings.customMappingEnabled = true
+        let profile = UUID()
+        var releases = 0, keyUps = 0
+        let monitor = HIDRemoteMonitor(settings: settings, profileID: profile, scheduler: clock,
+            runtimePermissions: { true }, frontmostBundleIdentifier: { "test.editor" },
+            diagnosticLogger: { _ in }, appSwitcherKeyStatePoster: { _, down, _ in
+                if !down { keyUps += 1 }; return true
+            })
+        monitor.onRuntimeButton = { _, _, phase in
+            if phase == .release { releases += 1 }; return false
+        }
+        monitor.connectSimulatedDevice(fingerprint: "native-hold", profileID: profile, isSeized: false)
+        let usage = RemoteButton.right.hidUsage
+        monitor.handleSimulatedReport(reportID: 1, data: Data([UInt8(usage & 255), UInt8(usage >> 8)]))
+        clock.advance(to: HIDRemoteTiming.missingReleaseTimeoutMilliseconds + 1)
+        #expect(releases == 0)
+        #expect(keyUps == 0)
+        clock.advance(to: HIDRemoteTiming.maximumContinuousHoldMilliseconds)
+        #expect(releases == 1)
+        #expect(keyUps == 1)
+        monitor.handleSimulatedReport(reportID: 1, data: Data([0, 0]))
+        monitor.stop()
+    }
+
+    @Test func stoppedRepeatRecoversOnNextSilenceCheck() {
+        let clock = ControlledTestScheduler()
+        let settings = AppSettings(defaults: defaults())
+        settings.customMappingEnabled = true
+        settings.setAction(.arrowUp, for: .power)
+        settings.setAction(.repeatSingleClick, for: .power, trigger: .longPress)
+        let profile = UUID()
+        var failActions = false, releases = 0
+        let monitor = HIDRemoteMonitor(settings: settings, profileID: profile, scheduler: clock,
+            runtimePermissions: { true }, actionPerformer: { _, _, _ in !failActions }, diagnosticLogger: { _ in })
+        monitor.onRuntimeButton = { _, _, phase in
+            if phase == .release { releases += 1 }; return false
+        }
+        monitor.connectSimulatedDevice(fingerprint: "stopped-repeat", profileID: profile, isSeized: true)
+        let usage = RemoteButton.power.hidUsage
+        let report = Data([UInt8(usage & 255), UInt8(usage >> 8)])
+        monitor.handleSimulatedReport(reportID: 1, data: report)
+        let timeout = HIDRemoteTiming.missingReleaseTimeoutMilliseconds
+        clock.advance(to: timeout)
+        failActions = true
+        clock.advance(to: timeout + 1000)
+        #expect(releases == 0)
+        clock.advance(to: timeout * 2)
+        #expect(releases == 1)
+        failActions = false
+        monitor.handleSimulatedReport(reportID: 1, data: report)
+        clock.advance(to: timeout * 2 + 1000)
+        #expect(releases == 1)
+        monitor.stop()
     }
 
     @Test func repeatedReportsWhileHeldDoNotInterruptHeldButton() {
