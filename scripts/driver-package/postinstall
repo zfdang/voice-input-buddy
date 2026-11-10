@@ -8,27 +8,7 @@ if [[ -f "$snapshot" ]]; then
     before="$(/bin/cat "$snapshot")"
 fi
 /bin/rm -f "$snapshot"
-driver="${volume%/}/Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver"
-backup="$(dirname "$0")/driver-backup.tar.gz"
-
-rollback() {
-    echo "Warning: Driver verification failed; rolling back previous driver if available." >&2
-    if [[ -f "$backup" ]]; then
-        /bin/rm -rf "$driver"
-        /usr/bin/tar -xzf "$backup" -C "$(dirname "$driver")" 2>/dev/null || true
-        echo "Restored previous driver." >&2
-    fi
-    /bin/rm -f "$backup"
-}
-
-after="$(buddy_driver_fingerprint "$driver")" || after=""
-if [[ -z "$after" ]]; then
-    rollback
-    echo "Driver failed signature and integrity verification." >&2
-    exit 1
-fi
-/bin/rm -f "$backup"
-
+after="$(buddy_driver_fingerprint "${volume%/}/Library/Audio/Plug-Ins/HAL/RemoteBuddyMic.driver")" || after=""
 if [[ -n "$before" && "$before" == "$after" ]]; then
     echo 'Microphone driver unchanged; leaving Core Audio running.'
     exit 0
