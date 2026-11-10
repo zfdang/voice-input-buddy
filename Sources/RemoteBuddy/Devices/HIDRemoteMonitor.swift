@@ -900,11 +900,11 @@ final class HIDRemoteMonitor {
         }
     }
 
-    private func scheduleHardCeiling(for usage: UInt16) {
+    private func scheduleHardCeiling(for usage: UInt16, afterMilliseconds: UInt64 = HIDRemoteTiming.maximumContinuousHoldMilliseconds) {
         usageHardCeilingTimers.removeValue(forKey: usage)?.cancel()
         guard RemoteButton.usageMap[usage] != nil else { return }
         usageHardCeilingTimers[usage] = scheduler.schedule(
-            afterMilliseconds: HIDRemoteTiming.maximumContinuousHoldMilliseconds,
+            afterMilliseconds: afterMilliseconds,
             repeatingEveryMilliseconds: nil
         ) { [weak self] in
             self?.recoverHardCeilingHold(for: usage)
@@ -965,9 +965,12 @@ final class HIDRemoteMonitor {
     }
 
     private func recoverMissingRelease(for usage: UInt16) {
-        // Some remotes send no reports between press and release. A repeating
-        // hold remains active until its release or the independent hard ceiling.
-        guard repeatTimers[usage] == nil, !nativePassthroughUsages.contains(usage) else { return }
+        // Some remotes send no reports during a repeat or native passthrough hold.
+        // Check again in case repeat stops before the independent hard ceiling.
+        if repeatTimers[usage] != nil || nativePassthroughUsages.contains(usage) {
+            refreshUsageExpiry(usage)
+            return
+        }
         suppressedUsageExpiryTimers.removeValue(forKey: usage)?.cancel()
         suppressedUntilReleasedUsages.remove(usage)
         synthesizeReleaseState(for: usage, reason: "missing_release")
@@ -1285,6 +1288,9 @@ final class HIDRemoteMonitor {
         else { return }
 
         cancelRepeat(for: usage)
+        if action == .deleteBackward {
+            scheduleHardCeiling(for: usage, afterMilliseconds: HIDRemoteTiming.maximumDeleteHoldMilliseconds)
+        }
         let token = UUID()
         repeatTokens[usage] = token
         let timer = scheduler.schedule(
