@@ -124,7 +124,6 @@ extension SettingsView {
                             Color.clear
                                 .frame(height: 0)
                                 .id("mapping-page-top")
-                            configurationImportBanner
                             corruptedSettingsBanner
 
                             hardwareCanvas()
@@ -149,6 +148,8 @@ extension SettingsView {
                     mappingEditingTarget = nil
                     shortcutCaptureTarget = nil
                     applicationShortcutCaptureProfileID = nil
+                    shortcutCaptureFeedback = nil
+                    mappingActionFilter = .basicKeys
                     DispatchQueue.main.async {
                         proxy.scrollTo("mapping-page-top", anchor: .top)
                     }
@@ -166,49 +167,6 @@ extension SettingsView {
                             proxy.scrollTo("mapping-action-editor", anchor: .top)
                         }
                     }
-                }
-            }
-        }
-    }
-
-    /// Inline on purpose: an import that quietly dropped an entry must leave a trace the user
-    /// can still read afterwards, and the repository's interface rules keep page-level notices
-    /// flat inside the page rather than behind a sheet. Renders nothing when the last import
-    /// adopted everything, so a clean import keeps the page's layout.
-    @ViewBuilder
-    private var configurationImportBanner: some View {
-        if let notice = settings.configurationImportNotice {
-            let rejected = ConfigurationImportNoticeText.rejectedSummary(
-                for: notice.rejectedEntryStorageKeys,
-                localize: localization.text
-            )
-            let missing = ConfigurationImportNoticeText.missingApplicationSummary(
-                for: notice.applicationsMissingOnThisMac,
-                localize: localization.text
-            )
-            GlassPanel {
-                HStack(alignment: .top, spacing: 11) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.orange)
-                        .frame(width: 22)
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(localization.text(ConfigurationImportNoticeText.titleKey))
-                            .font(.system(size: 12, weight: .semibold))
-                        if let rejected {
-                            Text(rejected)
-                                .font(.system(size: 12))
-                        }
-                        if let missing {
-                            Text(missing)
-                                .font(.system(size: 12))
-                        }
-                        Text(localization.text(ConfigurationImportNoticeText.nextStepKey))
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
-                    }
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         }
@@ -327,7 +285,17 @@ extension SettingsView {
             VStack(alignment: .leading, spacing: 12) {
                 mappingHIDStatus
                 Divider()
-                mappingSelectionLockControl
+                HStack {
+                    mappingSelectionLockControl
+                    Spacer()
+                    Button {
+                        selectedSection = .commonPhrases
+                    } label: {
+                        Label(localization.text("common_phrases.adjust"), systemImage: "text.quote")
+                    }
+                    .compatibilityButtonStyle(.standard)
+                    .font(.system(size: 12))
+                }
             }
         }
     }
@@ -440,6 +408,8 @@ extension SettingsView {
                 mappingEditingTarget = nil
                 shortcutCaptureTarget = nil
                 applicationShortcutCaptureProfileID = nil
+                shortcutCaptureFeedback = nil
+                mappingActionFilter = .basicKeys
             }
             Button(localization.text("common.action.cancel"), role: .cancel) {}
         } message: {

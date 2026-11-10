@@ -184,6 +184,7 @@
 "action.system_volume_down" = "Decrease System Volume";
 "action.system_volume_up_short" = "Vol+";
 "action.system_volume_down_short" = "Vol-";
+"action.system_volume_mute_short" = "Mute";
 "action.system_mute" = "Mute System Audio";
 "action.play_pause" = "Play/Pause";
 "action.previous_command_left" = "Previous Track (System Media)";
@@ -307,7 +308,6 @@
 "audio.gain.help" = "0 dB keeps the original volume. Higher values make the voice louder and also amplify background noise. Start with 6–12 dB.";
 "audio.status.title" = "Audio status";
 "audio.action.refresh_devices" = "Refresh Devices";
-"audio.action.learn_virtual_microphones" = "Get BlackHole";
 "audio.action.send_test_tone" = "Play Test Sound";
 "audio.output.privacy_help" = "Remote audio is sent only to the selected device. Disconnecting, stopping, quitting or reconfiguring Remote Buddy does not change the system default microphone or speakers. Select the same virtual microphone in your voice input tool.";
 "audio.compatibility.title" = "Compatible Audio Device";
@@ -491,12 +491,6 @@
 "about.page.hero_subtitle" = "Version, preferences, and support for your wireless voice workspace";
 "about.page.hero_description" = "Turn your remote into an always-ready voice and shortcut controller for your Mac.";
 "about.privacy.local_only" = "Data stays on this Mac";
-"about.configuration.title" = "Your Settings";
-"about.configuration.description" = "Transfer audio, button, shortcut, language, appearance, startup, and update settings to another Mac.";
-"about.configuration.export" = "Export Configuration…";
-"about.configuration.export_description" = "Save the current settings to a file.";
-"about.configuration.import" = "Import Configuration…";
-"about.configuration.import_description" = "Restore settings from a previously exported file.";
 "about.preferences.title" = "App Preferences";
 "about.support.title" = "Updates & Support";
 "about.version.title" = "Version & Updates";
@@ -560,16 +554,6 @@
 "update.completed.message" = "Successfully updated to version %1$@.";
 "update.prerelease.feed_unavailable.title" = "Unable to Check Pre-release Updates";
 "update.prerelease.feed_unavailable.message" = "The latest candidate information is unavailable. Check your network and try again. Stable updates are unaffected.";
-"configuration.export.panel_title" = "Export Settings";
-"configuration.export.prompt" = "Export";
-"configuration.export.success" = "Configuration exported";
-"configuration.export.write_failed" = "Export failed: the file could not be written";
-"configuration.import.panel_title" = "Import Settings";
-"configuration.import.prompt" = "Import";
-"configuration.import.success" = "Configuration imported and applied";
-"configuration.import.unsupported_version" = "Import failed: this configuration version is not supported";
-"configuration.import.voice_key_busy" = "Import failed: the voice button is active or could not be released safely. End voice input and try again.";
-"configuration.import.invalid_file" = "Import failed: the configuration file is invalid";
 "onboarding.phase.prepare" = "Prepare";
 "onboarding.phase.setup" = "Set Up";
 "onboarding.phase.try_it" = "Try It";
@@ -655,10 +639,8 @@
 "onboarding.voice_tool.status.unknown" = "Open the tool to continue";
 "onboarding.voice_tool.binding.title" = "Shortcut configuration";
 "onboarding.voice_tool.binding.recommended" = "Use Recommended";
-"onboarding.voice_tool.binding.learn" = "I Changed the Shortcut";
 "onboarding.voice_tool.binding.recommended_detail" = "Remote Buddy builds a configuration from the controller and documented tool defaults, then saves it only after real text appears.";
-"onboarding.voice_tool.binding.learn_detail" = "After permissions are granted, press the voice shortcut you currently use in that tool and Remote Buddy will learn it.";
-"onboarding.voice_tool.binding.no_documented_default" = "There is no safe documented default. Learn the current shortcut instead.";
+"onboarding.voice_tool.binding.no_documented_default" = "There is no safe documented default.";
 "onboarding.voice_tool.binding.evidence_verified" = "Recommended";
 "onboarding.voice_tool.binding.evidence_pending" = "Saved after testing";
 "onboarding.control_source.title" = "Choose How to Control Your Mac";
@@ -685,8 +667,6 @@
 "onboarding.pairing_plan.fn_tap_on" = "Fn tap conversion on";
 "onboarding.pairing_plan.fn_tap_off" = "Fn tap conversion off";
 "onboarding.pairing_plan.pending_evidence" = "This setup is saved after the voice-and-text test passes.";
-"onboarding.pairing_plan.needs_learning" = "Learn the current shortcut";
-"onboarding.pairing_plan.needs_learning_detail" = "No safe documented combination is available. Choose “I Changed It,” then press the actual shortcut after granting permissions.";
 "onboarding.shortcut_learning.title" = "Learn your current voice shortcut";
 "onboarding.shortcut_learning.detail" = "Choose hold or toggle, start learning, then press the complete shortcut. Remote Buddy does not read private settings from another app.";
 "onboarding.shortcut_learning.start" = "Start Learning";
@@ -892,16 +872,6 @@
 "about.preferences.restart_onboarding_action" = "Run Again";
 "common.action.copy" = "Copy";
 
-"settings.import_notice.title" = "Some Settings Were Skipped During Import";
-"settings.import_notice.rejected" = "These settings did not pass validation: %1$@.";
-"settings.import_notice.missing_app" = "These applications are not installed on this Mac, so buttons pointing to them will not work yet: %1$@.";
-"settings.import_notice.next_step" = "Set the skipped items again to use them; this notice clears on relaunch.";
-"settings.import_notice.separator" = ", ";
-"settings.import_notice.item.button_mapping" = "remote button mappings";
-"settings.import_notice.item.custom_application" = "custom application actions";
-"settings.import_notice.item.audio_gain" = "device gain";
-"settings.import_notice.item.other" = "other settings";
-"configuration.import.partial" = "Settings imported. Some items were skipped; see the Button Mapping page.";
 "settings.corrupted.title" = "Some settings could not be read and were reset to defaults";
 "settings.corrupted.summary" = "Affected: %1$@.";
 "settings.corrupted.recovery" = "Your saved content was not deleted; it is still in the settings file. Contact us if you need help recovering it.";
@@ -927,8 +897,6 @@
 "button_mapping.search_macros" = "Search action sequences";
 
 "button_mapping.manage_macros" = "Manage action sequences";
-
-"button_mapping.macro_unavailable" = "Action unavailable. Choose another action.";
 
 
 "button_mapping.macro_step_count" = "%d-step sequence";
@@ -982,9 +950,6 @@
 "common_phrases.error.cancelled" = "Insertion cancelled.";
 "custom_application.accessibility.test" = "Test input field";
 
-"custom_application.accessibility.needs_verification" = "Needs learning or verification";
-
-"settings.portable_configuration.title" = "Combination actions, app configurations and button profiles";
 "onboarding.voice_tool.guide.screenshot.doubao_menu" = "In the input menu, choose Doubao (豆包输入法), then Settings (设置).";
 "onboarding.voice_tool.guide.screenshot.doubao_settings" = "In Voice Input (语音输入), set the matching mode’s shortcut to Fn. The image shows Hold mode (长按模式). Enable global voice input (全局唤起语音) and select Remote Buddy as the microphone (麦克风选择).";
 "onboarding.voice_tool.guide.screenshot.weixin_input_menu" = "In the input menu, choose WeType (微信输入法), then Settings (设置).";
@@ -1160,9 +1125,9 @@
 
 "common_phrases.inserted" = "Phrase inserted.";
 
-"button_mapping.editor.confirm" = "OK";
+"button_mapping.editor.confirm" = "Done";
 
-"button_mapping.action.restore_default" = "Restore Default";
+"button_mapping.action.restore_default" = "Restore This Trigger";
 "button_mapping.action.restore_default_help" = "Restore the factory default action for this trigger.";
 "button_mapping.action.restore_all_defaults" = "Restore All Button Defaults";
 "button_mapping.restore_all.title" = "Restore All Defaults";

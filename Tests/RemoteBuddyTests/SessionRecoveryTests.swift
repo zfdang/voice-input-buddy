@@ -176,30 +176,6 @@ struct SessionRecoveryTests {
         #expect(writes == before)
     }
 
-    @Test func partialImportPreservesApplicationLibraryButReplacesMappingOverrides() throws {
-        let (values, name) = defaults()
-        defer { values.removePersistentDomain(forName: name) }
-        let settings = AppSettings(defaults: values)
-        let profile = CustomApplicationProfile(displayName: "Example", bundleIdentifier: "example.test", applicationPath: "/Applications/Example.app")
-        _ = settings.addCustomApplicationProfile(profile)
-        let binding = UnifiedButtonBinding(remoteProfileID: nil, button: .left, trigger: .singleClick,
-            configured: .init(action: .arrowLeft, shortcut: nil))
-        settings.unifiedBaseBindings = [binding]
-        var object = try #require(JSONSerialization.jsonObject(with: settings.exportedConfigurationData()) as? [String: Any])
-        object.removeValue(forKey: "customApplicationProfiles")
-        object.removeValue(forKey: "unifiedBaseBindings")
-        try settings.importConfiguration(from: JSONSerialization.data(withJSONObject: object))
-        #expect(settings.customApplicationProfiles == [profile])
-        #expect(settings.unifiedBaseBindings.isEmpty)
-        object["customApplicationProfiles"] = []
-        object["unifiedBaseBindings"] = []
-        try settings.importConfiguration(from: JSONSerialization.data(withJSONObject: object))
-        #expect(settings.customApplicationProfiles.isEmpty)
-        #expect(settings.unifiedBaseBindings.isEmpty)
-    }
-
-
-
     @Test func environmentDiagnosticsStillCheckPermissions() {
         let context = FirstUseDiagnosticContext(step: .permissions, capabilities: .init(), hasSelectedAudioUID: false)
         #expect(context.failureReason == .bluetoothPermissionDenied)

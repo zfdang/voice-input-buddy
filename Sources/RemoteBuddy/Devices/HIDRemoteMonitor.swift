@@ -4,6 +4,13 @@ import Foundation
 import IOKit.hid
 import IOKit.hidsystem
 
+final class HIDMonitorContext {
+    weak var monitor: HIDRemoteMonitor?
+    init(_ monitor: HIDRemoteMonitor) {
+        self.monitor = monitor
+    }
+}
+
 private func hidDeviceMatched(
     context: UnsafeMutableRawPointer?,
     result: IOReturn,
@@ -13,7 +20,8 @@ private func hidDeviceMatched(
     // IOHID callbacks are scheduled on CFRunLoopGetMain().
     MainActor.assumeIsolated {
         guard let context else { return }
-        let monitor = Unmanaged<HIDRemoteMonitor>.fromOpaque(context).takeUnretainedValue()
+        let holder = Unmanaged<HIDMonitorContext>.fromOpaque(context).takeUnretainedValue()
+        guard let monitor = holder.monitor else { return }
         monitor.deviceDidMatch(result: result, device: device)
     }
 }
@@ -27,7 +35,8 @@ private func hidDeviceRemoved(
     // IOHID callbacks are scheduled on CFRunLoopGetMain().
     MainActor.assumeIsolated {
         guard let context else { return }
-        let monitor = Unmanaged<HIDRemoteMonitor>.fromOpaque(context).takeUnretainedValue()
+        let holder = Unmanaged<HIDMonitorContext>.fromOpaque(context).takeUnretainedValue()
+        guard let monitor = holder.monitor else { return }
         monitor.deviceDidRemove(device: device)
     }
 }
@@ -44,7 +53,8 @@ private func hidInputReport(
     // IOHID callbacks are scheduled on CFRunLoopGetMain().
     MainActor.assumeIsolated {
         guard let context else { return }
-        let monitor = Unmanaged<HIDRemoteMonitor>.fromOpaque(context).takeUnretainedValue()
+        let holder = Unmanaged<HIDMonitorContext>.fromOpaque(context).takeUnretainedValue()
+        guard let monitor = holder.monitor else { return }
         guard result == kIOReturnSuccess else {
             monitor.reportCallbackRejected(reason: "io_error", result: result, reportLength: reportLength)
             return
@@ -98,6 +108,8 @@ final class HIDRemoteMonitor {
     private var allowedLocationIDs: Set<UInt32>?
     private var backOnlyMode = false
     private var manager: IOHIDManager?
+    private var callbackContext: HIDMonitorContext?
+    private var callbackOpaqueContext: Unmanaged<HIDMonitorContext>?
     private var activeDevice: IOHIDDevice?
     private var probedDevices: [IOHIDDevice] = []
     private(set) var deviceFingerprint: String?
@@ -105,7 +117,11 @@ final class HIDRemoteMonitor {
     private var activeDeviceIsSeized = false
     private var activeUsages = Set<UInt16>()
     private var nativePassthroughUsages = Set<UInt16>()
+    private var suppressedUntilReleasedUsages = Set<UInt16>()
+    private var suppressedUsageExpiryTimers: [UInt16: HIDRemoteScheduledTask] = [:]
     private var usageExpiryTimers: [UInt16: HIDRemoteScheduledTask] = [:]
+    private var usageHardCeilingTimers: [UInt16: HIDRemoteScheduledTask] = [:]
+    private var usageExpiryTokens: [UInt16: UUID] = [:]
     private var repeatTimers: [UInt16: HIDRemoteScheduledTask] = [:]
     private var repeatTokens: [UInt16: UUID] = [:]
     private var nonRepeatablePressedButtons = Set<RemoteButton>()
@@ -258,7 +274,11 @@ final class HIDRemoteMonitor {
         }
 
         let manager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
-        let context = Unmanaged.passUnretained(self).toOpaque()
+        let holder = HIDMonitorContext(self)
+        self.callbackContext = holder
+        let unmanaged = Unmanaged.passRetained(holder)
+        self.callbackOpaqueContext = unmanaged
+        let context = unmanaged.toOpaque()
         IOHIDManagerRegisterDeviceMatchingCallback(manager, hidDeviceMatched, context)
         IOHIDManagerRegisterDeviceRemovalCallback(manager, hidDeviceRemoved, context)
         IOHIDManagerRegisterInputReportCallback(manager, hidInputReport, context)
@@ -293,6 +313,12 @@ final class HIDRemoteMonitor {
             IOHIDManagerUnscheduleFromRunLoop(
                 manager, CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue
             )
+        }
+        callbackContext?.monitor = nil
+        callbackContext = nil
+        if let opaque = callbackOpaqueContext {
+            opaque.release()
+            callbackOpaqueContext = nil
         }
         resetInputState()
         let closingDeviceCount = probedDevices.count + (activeDevice == nil ? 0 : 1)
@@ -705,7 +731,12 @@ final class HIDRemoteMonitor {
         activeDeviceIsSeized = false
     }
 
-    private func process(usages: Set<UInt16>) {
+    private func process(usages rawUsages: Set<UInt16>) {
+        suppressedUntilReleasedUsages = suppressedUntilReleasedUsages.intersection(rawUsages)
+        for usage in suppressedUntilReleasedUsages {
+            refreshSuppressedUsageExpiry(usage)
+        }
+        let usages = rawUsages.subtracting(suppressedUntilReleasedUsages)
         let pressed = usages.subtracting(activeUsages)
         let released = activeUsages.subtracting(usages)
         if !pressed.isEmpty || !released.isEmpty {
@@ -715,7 +746,16 @@ final class HIDRemoteMonitor {
             )
         }
         activeUsages = usages
-        for usage in released { usageExpiryTimers.removeValue(forKey: usage)?.cancel() }
+        for usage in released {
+            usageExpiryTokens.removeValue(forKey: usage)
+            usageExpiryTimers.removeValue(forKey: usage)?.cancel()
+            usageHardCeilingTimers.removeValue(forKey: usage)?.cancel()
+            suppressedUsageExpiryTimers.removeValue(forKey: usage)?.cancel()
+            suppressedUntilReleasedUsages.remove(usage)
+        }
+        for usage in pressed {
+            scheduleHardCeiling(for: usage)
+        }
         for usage in usages { refreshUsageExpiry(usage) }
         onActiveButtons?(profileID, RemoteButton.buttons(for: usages))
 
@@ -841,6 +881,10 @@ final class HIDRemoteMonitor {
             startRepeatIfNeeded(usage: usage, button: button, action: action)
         }
 
+        processReleases(for: released)
+    }
+
+    private func processReleases(for released: Set<UInt16>) {
         for usage in released {
             let usedNativePassthrough = nativePassthroughUsages.remove(usage) != nil
             if !activeDeviceIsSeized, !usedNativePassthrough,
@@ -856,40 +900,106 @@ final class HIDRemoteMonitor {
         }
     }
 
+    private func scheduleHardCeiling(for usage: UInt16) {
+        usageHardCeilingTimers.removeValue(forKey: usage)?.cancel()
+        guard RemoteButton.usageMap[usage] != nil else { return }
+        usageHardCeilingTimers[usage] = scheduler.schedule(
+            afterMilliseconds: HIDRemoteTiming.maximumContinuousHoldMilliseconds,
+            repeatingEveryMilliseconds: nil
+        ) { [weak self] in
+            self?.recoverHardCeilingHold(for: usage)
+        }
+    }
+
     private func refreshUsageExpiry(_ usage: UInt16) {
+        usageExpiryTokens.removeValue(forKey: usage)
         usageExpiryTimers.removeValue(forKey: usage)?.cancel()
-        guard let button = RemoteButton.usageMap[usage] else { return }
+        guard RemoteButton.usageMap[usage] != nil else { return }
+        let token = UUID()
+        usageExpiryTokens[usage] = token
         usageExpiryTimers[usage] = scheduler.schedule(
             afterMilliseconds: HIDRemoteTiming.missingReleaseTimeoutMilliseconds,
             repeatingEveryMilliseconds: nil
         ) { [weak self] in
-            guard let self else { return }
-            self.usageExpiryTimers.removeValue(forKey: usage)?.cancel()
-            guard self.activeUsages.contains(usage) || self.nonRepeatablePressedButtons.contains(button) else { return }
-            self.diagnosticLogger("HID BUTTON recovered reason=missing_release button=\(button.rawValue)")
-            self.cancelRepeat(for: usage)
-            self.doubleClickTimers.removeValue(forKey: button)?.cancel()
-            self.longPressTimers.removeValue(forKey: button)?.cancel()
-            self.gestureRecognizer.cancel(button)
-            self.finishNonRepeatablePress(button)
-            if self.nativePassthroughUsages.remove(usage) != nil {
-                for event in button.nativeEvents {
-                    if case .keyboard(let code) = event {
-                        _ = self.nativeKeyStatePoster(code, false, [])
-                    }
-                }
-            } else if !self.activeDeviceIsSeized {
-                self.eventSuppressor.arm(button: button, edge: .up)
-            }
-            self.activeUsages.remove(usage)
-            _ = self.onRuntimeButton?(self.profileID, button, .release)
-            self.onActiveButtons?(self.profileID, RemoteButton.buttons(for: self.activeUsages))
+            guard let self, self.usageExpiryTokens[usage] == token else { return }
+            self.recoverMissingRelease(for: usage)
         }
     }
 
-    private func processBackOnly(usages: Set<UInt16>) {
+    private func refreshSuppressedUsageExpiry(_ usage: UInt16) {
+        suppressedUsageExpiryTimers.removeValue(forKey: usage)?.cancel()
+        suppressedUsageExpiryTimers[usage] = scheduler.schedule(
+            afterMilliseconds: HIDRemoteTiming.missingReleaseTimeoutMilliseconds,
+            repeatingEveryMilliseconds: nil
+        ) { [weak self] in
+            guard let self else { return }
+            self.suppressedUntilReleasedUsages.remove(usage)
+            self.suppressedUsageExpiryTimers.removeValue(forKey: usage)
+        }
+    }
+
+    private func synthesizeReleaseState(for usage: UInt16, reason: String) {
+        usageExpiryTokens.removeValue(forKey: usage)
+        usageExpiryTimers.removeValue(forKey: usage)?.cancel()
+        usageHardCeilingTimers.removeValue(forKey: usage)?.cancel()
+        guard let button = RemoteButton.usageMap[usage] else { return }
+        guard activeUsages.contains(usage) || nonRepeatablePressedButtons.contains(button) else { return }
+        diagnosticLogger("HID BUTTON recovered reason=\(reason) button=\(button.rawValue)")
+        cancelRepeat(for: usage)
+        doubleClickTimers.removeValue(forKey: button)?.cancel()
+        longPressTimers.removeValue(forKey: button)?.cancel()
+        gestureRecognizer.cancel(button)
+        finishNonRepeatablePress(button)
+        if nativePassthroughUsages.remove(usage) != nil {
+            for event in button.nativeEvents {
+                if case .keyboard(let code) = event {
+                    _ = nativeKeyStatePoster(code, false, [])
+                }
+            }
+        } else if !activeDeviceIsSeized {
+            eventSuppressor.arm(button: button, edge: .up)
+        }
+        activeUsages.remove(usage)
+        _ = onRuntimeButton?(profileID, button, .release)
+        onActiveButtons?(profileID, RemoteButton.buttons(for: activeUsages))
+    }
+
+    private func recoverMissingRelease(for usage: UInt16) {
+        suppressedUsageExpiryTimers.removeValue(forKey: usage)?.cancel()
+        suppressedUntilReleasedUsages.remove(usage)
+        synthesizeReleaseState(for: usage, reason: "missing_release")
+    }
+
+    private func recoverHardCeilingHold(for usage: UInt16) {
+        suppressedUntilReleasedUsages.insert(usage)
+        refreshSuppressedUsageExpiry(usage)
+        synthesizeReleaseState(for: usage, reason: "hard_ceiling")
+    }
+
+    private func processBackOnly(usages rawUsages: Set<UInt16>) {
+        suppressedUntilReleasedUsages = suppressedUntilReleasedUsages.intersection(rawUsages)
+        for usage in suppressedUntilReleasedUsages {
+            refreshSuppressedUsageExpiry(usage)
+        }
+        let usages = rawUsages.subtracting(suppressedUntilReleasedUsages)
         let pressed = usages.subtracting(activeUsages)
-        for usage in activeUsages.subtracting(usages) { usageExpiryTimers.removeValue(forKey: usage)?.cancel() }
+        let released = activeUsages.subtracting(usages)
+        for usage in released {
+            usageExpiryTokens.removeValue(forKey: usage)
+            usageExpiryTimers.removeValue(forKey: usage)?.cancel()
+            usageHardCeilingTimers.removeValue(forKey: usage)?.cancel()
+            suppressedUsageExpiryTimers.removeValue(forKey: usage)?.cancel()
+            suppressedUntilReleasedUsages.remove(usage)
+            if let button = RemoteButton.usageMap[usage] {
+                _ = onRuntimeButton?(profileID, button, .release)
+            }
+        }
+        for usage in pressed {
+            scheduleHardCeiling(for: usage)
+            if let button = RemoteButton.usageMap[usage] {
+                _ = onRuntimeButton?(profileID, button, .press)
+            }
+        }
         activeUsages = usages
         for usage in usages { refreshUsageExpiry(usage) }
         onActiveButtons?(profileID, RemoteButton.buttons(for: usages))
@@ -1479,8 +1589,14 @@ final class HIDRemoteMonitor {
         repeatTimers.removeAll()
         repeatTokens.removeAll()
         nativePassthroughUsages.removeAll()
+        usageExpiryTokens.removeAll()
         usageExpiryTimers.values.forEach { $0.cancel() }
         usageExpiryTimers.removeAll()
+        usageHardCeilingTimers.values.forEach { $0.cancel() }
+        usageHardCeilingTimers.removeAll()
+        suppressedUntilReleasedUsages.removeAll()
+        suppressedUsageExpiryTimers.values.forEach { $0.cancel() }
+        suppressedUsageExpiryTimers.removeAll()
         nonRepeatableReleaseTimers.values.forEach { $0.cancel() }
         nonRepeatableReleaseTimers.removeAll()
         nonRepeatablePressedButtons.removeAll()

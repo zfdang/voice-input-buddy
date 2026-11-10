@@ -67,13 +67,14 @@ class FeedDeploymentTests(unittest.TestCase):
         self.release['tagName'] = 'v26-10-12.044'
         with self.assertRaises(ValueError): feeds.verify(self.root, self.release)
 
-    def test_previous_repository_url_is_accepted_for_existing_release(self):
+    def test_legacy_repository_url_is_rejected(self):
         for path in self.root.glob('appcast-*.xml'):
             tree = ET.parse(path)
             enclosure = tree.find('channel/item/enclosure')
             enclosure.set('url', enclosure.get('url').replace('/remote-buddy/', '/voice-input-buddy/'))
             tree.write(path)
-        feeds.verify(self.root, self.release)
+        with self.assertRaises(ValueError):
+            feeds.verify(self.root, self.release)
 
     def test_unknown_or_unsigned_package_is_rejected(self):
         path = self.root / 'appcast-intel.xml'

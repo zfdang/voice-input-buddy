@@ -72,7 +72,6 @@ extension SettingsView {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .compatibilityFocusEffectDisabled()
         .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
         .background(isSelected ? Color.accentColor.opacity(0.10) : Color.clear)
         .accessibilityAddTraits(isSelected ? .isSelected : [])

@@ -49,13 +49,6 @@ struct RemoteGainAndDriverTests {
         #expect(restored.gainDB(for: first) == 6)
         #expect(restored.gainDB(for: second) == 12)
         #expect(restored.gainDB == 12)
-        let exported = try settings.exportedConfigurationData()
-        restored.setGainDB(0, for: first)
-        restored.setGainDB(0, for: second)
-        try restored.importConfiguration(from: exported)
-        #expect(restored.gainDB(for: first) == 6)
-        #expect(restored.gainDB(for: second) == 12)
-        #expect(restored.configurationImportNotice == nil)
     }
 
     @Test func firstRemoteAdoptsThePreparedGainWithoutChangingLaterDeviceDefaults() throws {
@@ -73,18 +66,13 @@ struct RemoteGainAndDriverTests {
         #expect(settings.gainDB(for: first) == 18)
     }
 
-    @Test func fixedOutputCannotBeOverriddenByStoredOrImportedSelection() throws {
+    @Test func fixedOutputCannotBeOverriddenByStoredSelection() throws {
         let suite = "fixed-output-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         defaults.set("speaker", forKey: "selectedAudioDeviceUID")
         defaults.set("BlackHole2ch_UID", forKey: "lastKnownAudioDeviceUID")
         let settings = AppSettings(defaults: defaults)
-        #expect(settings.selectedAudioDeviceUID == BuddyMicrophoneDevicePolicy.deviceUID)
-        var payload = try #require(JSONSerialization.jsonObject(with: settings.exportedConfigurationData()) as? [String: Any])
-        #expect(payload["selectedAudioDeviceUID"] == nil)
-        payload["selectedAudioDeviceUID"] = "speaker"
-        try settings.importConfiguration(from: JSONSerialization.data(withJSONObject: payload))
         #expect(settings.selectedAudioDeviceUID == BuddyMicrophoneDevicePolicy.deviceUID)
         #expect(!OnboardingAudioSelectionPolicy.isSupportedDevice(uid: "speaker", name: BuddyMicrophoneDevicePolicy.deviceName))
         #expect(!OnboardingAudioSelectionPolicy.isSupportedDevice(uid: "BlackHole2ch_UID", name: "BlackHole 2ch"))

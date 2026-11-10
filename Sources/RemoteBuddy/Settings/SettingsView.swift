@@ -16,7 +16,6 @@ struct SettingsView: View {
     let refreshUpdateInformation: () -> Void
     let setDockIconVisible: (Bool) -> Void
     let setStatusBarIconVisible: (Bool) -> Void
-    let syncEntryPointVisibility: () -> Void
     let appIconCatalog: AppIconCatalog
     private let minimumContentSize: CGSize
     let initialShortcutPickerShowsKeyboard: Bool
@@ -40,7 +39,6 @@ struct SettingsView: View {
     @State var bluetoothAuthorization: CBManagerAuthorization
     @State var inputMonitoringGranted: Bool
     @State var accessibilityGranted: Bool
-    @State var configurationStatus: ConfigurationStatus?
     @State var isRepositoryLinkCopied = false
     @State var isMappingPermissionAlertPresented = false
     @State var isWaitingForMappingPermissions = false
@@ -53,7 +51,6 @@ struct SettingsView: View {
         refreshUpdateInformation: @escaping () -> Void = {},
         setDockIconVisible: @escaping (Bool) -> Void = { _ in },
         setStatusBarIconVisible: @escaping (Bool) -> Void = { _ in },
-        syncEntryPointVisibility: @escaping () -> Void = {},
         appIconCatalog: AppIconCatalog? = nil,
         initialSection: SettingsSection? = nil,
         initialMappingEditingButton: RemoteButton? = nil,
@@ -71,7 +68,6 @@ struct SettingsView: View {
         self.refreshUpdateInformation = refreshUpdateInformation
         self.setDockIconVisible = setDockIconVisible
         self.setStatusBarIconVisible = setStatusBarIconVisible
-        self.syncEntryPointVisibility = syncEntryPointVisibility
         self.appIconCatalog = appIconCatalog ?? .live()
         self.minimumContentSize = minimumContentSize
         self.initialShortcutPickerShowsKeyboard = initialShortcutPickerShowsKeyboard

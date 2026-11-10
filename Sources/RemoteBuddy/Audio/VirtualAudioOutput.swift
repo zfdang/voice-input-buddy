@@ -45,6 +45,39 @@ enum VirtualAudioDrainOutcome: String, Equatable {
 }
 
 
+/// Protects cache state without holding a lock during CoreAudio calls.
+final class AudibilityCache: @unchecked Sendable {
+    private let lock = NSLock()
+    private var generation: UInt64 = 0
+    private var cached: (deviceID: AudioObjectID, checkTime: TimeInterval, healthy: Bool)?
+
+    func invalidate() {
+        lock.withLock {
+            generation &+= 1
+            cached = nil
+        }
+    }
+
+    func value(for deviceID: AudioObjectID, at time: TimeInterval, query: () -> Bool) -> Bool {
+        while true {
+            let state = lock.withLock { () -> (Bool?, UInt64) in
+                if let cached, cached.deviceID == deviceID, time - cached.checkTime < 2.0 {
+                    return (cached.healthy, generation)
+                }
+                return (nil, generation)
+            }
+            if let value = state.0 { return value }
+            let value = query()
+            let accepted = lock.withLock { () -> Bool in
+                guard generation == state.1 else { return false }
+                cached = (deviceID, time, value)
+                return true
+            }
+            if accepted { return value }
+        }
+    }
+}
+
 final class VirtualAudioOutput {
     private struct OutputState {
         var ready = false
@@ -87,6 +120,7 @@ final class VirtualAudioOutput {
     private var playbackCounters = VirtualAudioPlaybackCounters()
     private var playbackCountersByDeliveryGeneration: [Int: VirtualAudioPlaybackCounters] = [:]
     private var pendingByDeliveryGeneration: [Int: PendingDeliveryCounters] = [:]
+    private let audibilityCache = AudibilityCache()
     private var pendingDrainLogContexts: [String] = []
     private var drainRequests: [DrainRequest] = []
     private var drainGeneration: UInt64 = 0
@@ -108,8 +142,13 @@ final class VirtualAudioOutput {
     // This lock protects values only. Never hold it across AVAudioEngine or HAL calls.
     private func updateOutputState(_ update: (inout OutputState) -> Void) {
         outputStateLock.lock()
+        let previousID = outputState.selectedDevice?.id
         update(&outputState)
+        let newID = outputState.selectedDevice?.id
         outputStateLock.unlock()
+        if previousID != newID {
+            invalidateAudibilityCache()
+        }
     }
     private let sourceFormat = AVAudioFormat(
         commonFormat: .pcmFormatFloat32,
@@ -243,6 +282,7 @@ final class VirtualAudioOutput {
 
         logStage("repair_audibility")
         let audibilityRepair = CoreAudioDeviceCatalog.ensureVirtualAudioDeviceAudible(device)
+        invalidateAudibilityCache()
         if audibilityRepair.applicable {
             logger(
                 "AUDIO AUDIBILITY repair " +
@@ -710,7 +750,12 @@ final class VirtualAudioOutput {
         }
     }
 
+    func invalidateAudibilityCache() {
+        audibilityCache.invalidate()
+    }
+
     private func stopOnEngineQueue() {
+        invalidateAudibilityCache()
         updateOutputState { $0.ready = false; $0.healthy = false; $0.engineRunning = false; $0.playerPlaying = false }
         playbackLock.lock()
         let interruptedContexts = pendingVoiceBufferCount > 0 ? pendingDrainLogContexts : []
@@ -991,14 +1036,22 @@ final class VirtualAudioOutput {
             counters = playbackCounters
         }
         playbackLock.unlock()
-        let audibility = CoreAudioDeviceCatalog.virtualAudioAudibilitySnapshot(for: state.selectedDevice)
+        let now = uptime()
+        let audibilityHealthy: Bool
+        if let selected = state.selectedDevice {
+            audibilityHealthy = audibilityCache.value(for: selected.id, at: now) {
+                !CoreAudioDeviceCatalog.virtualAudioAudibilitySnapshot(for: selected).requiresAudibilityRepair
+            }
+        } else {
+            audibilityHealthy = true
+        }
         return VirtualAudioOutputDiagnosticSnapshot(
             selectedDeviceKind: .classify(state.selectedDevice),
             actualDeviceKind: .classify(state.actualDevice),
             engineRunning: state.engineRunning,
             playerPlaying: state.playerPlaying,
             boundToSelectedDevice: boundToSelected,
-            audibilityHealthy: !audibility.requiresAudibilityRepair,
+            audibilityHealthy: audibilityHealthy,
             pendingBuffers: pendingBuffers,
             pendingSamples: pendingSamples,
             counters: counters

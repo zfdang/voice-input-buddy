@@ -23,6 +23,19 @@ enum BluetoothBridgeState: Equatable {
         case .failed(let reason): return reason
         }
     }
+
+    var logDescription: String {
+        switch self {
+        case .stopped: return "stopped"
+        case .bluetoothUnavailable(let reason): return "bluetooth_unavailable(\(reason.key))"
+        case .scanning: return "scanning"
+        case .connecting: return "connecting"
+        case .discovering: return "discovering"
+        case .ready(let name): return "ready(\(DiagnosticRedactor.redactedDeviceName(name)))"
+        case .reconnecting: return "reconnecting"
+        case .failed(let reason): return "failed(\(reason.key))"
+        }
+    }
 }
 
 @MainActor
@@ -431,7 +444,7 @@ final class BluetoothRemoteBridge: NSObject {
         }
         let centralState = central.map { String($0.state.rawValue) } ?? "none"
         AppLogger.shared.write(
-            "BLE RECOVERY phase=requested trigger=\(reason) state=\(String(describing: state)) " +
+            "BLE RECOVERY phase=requested trigger=\(reason) state=\(state.logDescription) " +
                 "lifecycle=\(String(describing: lifecycle)) " +
                 "central_state=\(centralState) " +
                 "generation=\(generationCounter)"
@@ -703,7 +716,7 @@ final class BluetoothRemoteBridge: NSObject {
                 if !candidates.isEmpty {
                     AppLogger.shared.write(
                         "BLE SYSTEM CONNECTED CANDIDATES count=\(candidates.count) names=" +
-                            candidates.map { $0.name ?? "unknown" }.joined(separator: ",")
+                            candidates.map { DiagnosticRedactor.redactedDeviceName($0.name) }.joined(separator: ",")
                     )
                 }
                 return candidates
@@ -809,7 +822,7 @@ final class BluetoothRemoteBridge: NSObject {
     private func reject(_ candidate: CBPeripheral, reason: String, source: String) {
         guard rejectedIdentifiers.insert(candidate.identifier).inserted else { return }
         AppLogger.shared.write(
-            "BLE REJECTED reason=\(reason) source=\(source) name=\(candidate.name ?? "unknown")"
+            "BLE REJECTED reason=\(reason) source=\(source) name=\(DiagnosticRedactor.redactedDeviceName(candidate.name))"
         )
     }
 
@@ -836,7 +849,7 @@ final class BluetoothRemoteBridge: NSObject {
         state = .connecting
         startConnectionTimeout(generation: generation)
         central.connect(candidate, options: nil)
-        AppLogger.shared.write("BLE CONNECTING source=\(source) name=\(candidate.name ?? "unknown")")
+        AppLogger.shared.write("BLE CONNECTING source=\(source) name=\(DiagnosticRedactor.redactedDeviceName(candidate.name))")
     }
 
     private func resetPeripheral() {
@@ -1100,7 +1113,7 @@ final class BluetoothRemoteBridge: NSObject {
         write(ATVVProtocol.getCapabilitiesV10)
         lifecycle = .awaitingCapabilities(generation)
         state = .discovering
-        AppLogger.shared.write("ATVV CAPABILITIES requested name=\(peripheral.name ?? "MI RC")")
+        AppLogger.shared.write("ATVV CAPABILITIES requested name=\(DiagnosticRedactor.redactedDeviceName(peripheral.name ?? "MI RC"))")
     }
 
     private func updateBatteryPollingSchedule(generation: UInt64) {
@@ -1348,11 +1361,20 @@ final class BluetoothRemoteBridge: NSObject {
         microphoneKeepalive = nil
         guard streaming else { return }
         let partialFrameBytes = audioDecoder.pendingByteCount
-        audioDecoder.endStream { [weak self] in
-            guard let self else { return }
-            self.voiceStartNotified = false
-            self.delegate?.bluetoothBridgeDidStopVoice(self)
-        }
+        let gain = settings.gainDB(forBluetoothIdentifier: deviceIdentifier)
+        audioDecoder.endStream(
+            frameSize: capabilities.frameSize,
+            gainDB: gain,
+            onDecoded: { [weak self] samples in
+                guard let self else { return }
+                self.delegate?.bluetoothBridge(self, didDecode: samples)
+            },
+            onStop: { [weak self] in
+                guard let self else { return }
+                self.voiceStartNotified = false
+                self.delegate?.bluetoothBridgeDidStopVoice(self)
+            }
+        )
         lastStopAt = ProcessInfo.processInfo.systemUptime
         AppLogger.shared.write(
             "ATVV STREAM STOP session=\(sessionID) partial_frame_bytes=\(partialFrameBytes)"
@@ -1577,7 +1599,7 @@ extension BluetoothRemoteBridge: @preconcurrency CBCentralManagerDelegate {
             batteryServiceUUID,
             deviceInformationServiceUUID,
         ])
-        AppLogger.shared.write("BLE CONNECTED name=\(peripheral.name ?? "unknown")")
+        AppLogger.shared.write("BLE CONNECTED name=\(DiagnosticRedactor.redactedDeviceName(peripheral.name))")
     }
 
     func centralManager(

@@ -14,7 +14,7 @@
 "audio.test_tone.cancelled_device_changed" = "设备已更新，测试音已取消";
 "audio.test_tone.ready" = "可发送测试音";
 "audio.output.none_or_unavailable" = "未选择语音输出设备或设备不可用";
-"audio.test_tone.blocked_voice_active" = "小米蓝牙遥控器 2 Pro 正在传输语音，暂时无法播放测试音";
+"audio.test_tone.blocked_voice_active" = "遥控器正在传输语音，暂时无法播放测试音";
 "audio.test_tone.already_playing" = "测试音正在播放中";
 "audio.test_tone.device_not_ready" = "测试音发送失败：设备未就绪";
 "audio.test_tone.playing" = "正在播放约 1 秒测试音";
@@ -184,6 +184,7 @@
 "action.system_volume_down" = "系统音量 -";
 "action.system_volume_up_short" = "Vol+";
 "action.system_volume_down_short" = "Vol-";
+"action.system_volume_mute_short" = "静音";
 "action.system_mute" = "系统静音";
 "action.play_pause" = "播放 / 暂停";
 "action.previous_command_left" = "上一首（系统媒体）";
@@ -307,7 +308,6 @@
 "audio.gain.help" = "0 dB 保持原始音量；数值越大声音越响，也会放大环境噪声。建议先从 6–12 dB 开始。";
 "audio.status.title" = "音频状态";
 "audio.action.refresh_devices" = "刷新音频设备";
-"audio.action.learn_virtual_microphones" = "获取 BlackHole";
 "audio.action.send_test_tone" = "发送 1 秒测试音";
 "audio.output.privacy_help" = "应用只把遥控器语音写到所选设备。遥控器断开、应用停止、退出或重新配置时，都不会修改系统默认麦克风和扬声器。请在语音输入工具中选择同一个虚拟麦克风。";
 "audio.compatibility.title" = "兼容音频设备";
@@ -491,12 +491,6 @@
 "about.page.hero_subtitle" = "集中查看无线语音工作台的版本、偏好与支持信息";
 "about.page.hero_description" = "让遥控器成为随手可用的 Mac 语音与快捷操作入口。";
 "about.privacy.local_only" = "数据仅存本机";
-"about.configuration.title" = "个性化配置";
-"about.configuration.description" = "迁移增益、音频设备、按键映射、快捷键、语言、Dock 显示、启动与更新通道设置。";
-"about.configuration.export" = "导出配置…";
-"about.configuration.export_description" = "将当前设置导出到文件。";
-"about.configuration.import" = "导入配置…";
-"about.configuration.import_description" = "从之前导出的文件恢复设置。";
 "about.preferences.title" = "应用偏好";
 "about.support.title" = "更新与支持";
 "about.version.title" = "版本与更新";
@@ -560,16 +554,6 @@
 "update.completed.message" = "已成功更新到版本 %1$@。";
 "update.prerelease.feed_unavailable.title" = "暂时无法检查预发布版本";
 "update.prerelease.feed_unavailable.message" = "无法取得最新候选版本信息，请检查网络后重试。稳定版更新源不受影响。";
-"configuration.export.panel_title" = "导出个性化配置";
-"configuration.export.prompt" = "导出";
-"configuration.export.success" = "配置已导出";
-"configuration.export.write_failed" = "导出失败：无法写入文件";
-"configuration.import.panel_title" = "导入个性化配置";
-"configuration.import.prompt" = "导入";
-"configuration.import.success" = "配置已导入并应用";
-"configuration.import.unsupported_version" = "导入失败：不支持此配置版本";
-"configuration.import.voice_key_busy" = "导入失败：语音键正在使用或无法安全释放，请结束语音输入后重试";
-"configuration.import.invalid_file" = "导入失败：配置文件无效";
 "onboarding.phase.prepare" = "准备";
 "onboarding.phase.setup" = "设置";
 "onboarding.phase.try_it" = "试一下";
@@ -654,10 +638,8 @@
 "onboarding.voice_tool.status.unknown" = "请打开工具后继续";
 "onboarding.voice_tool.binding.title" = "快捷键配置来源";
 "onboarding.voice_tool.binding.recommended" = "使用推荐配置";
-"onboarding.voice_tool.binding.learn" = "我修改过快捷键";
 "onboarding.voice_tool.binding.recommended_detail" = "遥控搭子会根据控制设备和已记录的工具默认值生成配置，真实文字测试通过后才保存。";
-"onboarding.voice_tool.binding.learn_detail" = "完成系统权限后，直接按一次你在该工具里正在使用的语音快捷键，遥控搭子会学习并适配。";
-"onboarding.voice_tool.binding.no_documented_default" = "没有可安全自动采用的默认快捷键，请学习当前快捷键。";
+"onboarding.voice_tool.binding.no_documented_default" = "没有可安全自动采用的默认快捷键。";
 "onboarding.voice_tool.binding.evidence_verified" = "推荐";
 "onboarding.voice_tool.binding.evidence_pending" = "测试通过后保存";
 "onboarding.control_source.title" = "选择控制设备";
@@ -684,8 +666,6 @@
 "onboarding.pairing_plan.fn_tap_on" = "已启用 Fn 点按转换";
 "onboarding.pairing_plan.fn_tap_off" = "无需 Fn 点按转换";
 "onboarding.pairing_plan.pending_evidence" = "语音文字测试通过后保存这套设置。";
-"onboarding.pairing_plan.needs_learning" = "需要学习当前快捷键";
-"onboarding.pairing_plan.needs_learning_detail" = "当前工具没有可安全采用的默认组合。请选择“我修改过快捷键”，权限完成后按下实际快捷键。";
 "onboarding.shortcut_learning.title" = "学习你当前的语音快捷键";
 "onboarding.shortcut_learning.detail" = "先选择按住或按一次，再点击开始并完整按下当前工具的快捷键。遥控搭子不会读取第三方工具的私有设置。";
 "onboarding.shortcut_learning.start" = "开始学习快捷键";
@@ -889,16 +869,6 @@
 "about.preferences.restart_onboarding_action" = "重新运行";
 "common.action.copy" = "复制";
 
-"settings.import_notice.title" = "导入的配置里有内容没有通过检查";
-"settings.import_notice.rejected" = "未通过检查已跳过：%1$@。";
-"settings.import_notice.missing_app" = "以下应用在这台 Mac 上未安装，相关按键暂时不会生效：%1$@。";
-"settings.import_notice.next_step" = "重新设置一次被跳过的内容即可；这条提示只保留到本次退出。";
-"settings.import_notice.separator" = "、";
-"settings.import_notice.item.button_mapping" = "遥控器按键映射";
-"settings.import_notice.item.custom_application" = "自定义应用动作";
-"settings.import_notice.item.audio_gain" = "设备增益";
-"settings.import_notice.item.other" = "其他设置";
-"configuration.import.partial" = "已导入，部分内容未通过检查（详见「按键映射」页提示）";
 "settings.corrupted.title" = "部分设置读不出来，已经暂时换回默认设置";
 "settings.corrupted.summary" = "受影响的是：%1$@。";
 "settings.corrupted.recovery" = "你原来保存的内容没有被删掉，还留在设置文件里，需要时可以联系我们帮你找回。";
@@ -925,7 +895,6 @@
 
 "button_mapping.manage_macros" = "管理组合动作";
 
-"button_mapping.macro_unavailable" = "组合动作不可用，请重新选择";
 
 
 "button_mapping.macro_step_count" = "%d 个步骤";
@@ -979,9 +948,6 @@
 "common_phrases.error.cancelled" = "插入已取消。";
 "custom_application.accessibility.test" = "测试输入框";
 
-"custom_application.accessibility.needs_verification" = "待学习或验证";
-
-"settings.portable_configuration.title" = "组合动作、App 配置与键位方案";
 "onboarding.voice_tool.guide.screenshot.doubao_menu" = "在输入法菜单中选择豆包输入法，再打开设置。";
 "onboarding.voice_tool.guide.screenshot.doubao_settings" = "在语音输入中，将匹配模式的快捷键设为 Fn。图中为长按模式。开启全局唤起语音，并在麦克风选择中选择 Remote Buddy。";
 "onboarding.voice_tool.guide.screenshot.weixin_input_menu" = "在输入法菜单中选择微信输入法，再打开设置。";
@@ -1161,10 +1127,10 @@
 
 "common_phrases.inserted" = "常用语已插入。";
 
-"button_mapping.editor.confirm" = "确定";
+"button_mapping.editor.confirm" = "完成";
 
-"button_mapping.action.restore_default" = "恢复默认";
-"button_mapping.action.restore_default_help" = "将当前动作恢复为出厂默认设置。";
+"button_mapping.action.restore_default" = "恢复此项默认";
+"button_mapping.action.restore_default_help" = "将当前触发条件的动作恢复为出厂默认设置。";
 "button_mapping.action.restore_all_defaults" = "恢复所有按键的默认设置";
 "button_mapping.restore_all.title" = "恢复所有按键默认设置";
 "button_mapping.restore_all.hint" = "将当前遥控器的所有按键单击、双击、长按及自定义快捷键全部恢复为出厂默认设置。";

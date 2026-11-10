@@ -8,7 +8,6 @@ struct RemoteBuddyRootView: View {
     let refreshUpdateInformation: () -> Void
     let setDockIconVisible: (Bool) -> Void
     let setStatusBarIconVisible: (Bool) -> Void
-    let syncEntryPointVisibility: () -> Void
     private let initialSettingsSection: SettingsSection?
     private let completedUpdateVersion: String?
 
@@ -19,7 +18,6 @@ struct RemoteBuddyRootView: View {
         refreshUpdateInformation: @escaping () -> Void,
         setDockIconVisible: @escaping (Bool) -> Void,
         setStatusBarIconVisible: @escaping (Bool) -> Void,
-        syncEntryPointVisibility: @escaping () -> Void,
         initialSettingsSection: SettingsSection? = nil,
         completedUpdateVersion: String? = nil
     ) {
@@ -30,7 +28,6 @@ struct RemoteBuddyRootView: View {
         self.refreshUpdateInformation = refreshUpdateInformation
         self.setDockIconVisible = setDockIconVisible
         self.setStatusBarIconVisible = setStatusBarIconVisible
-        self.syncEntryPointVisibility = syncEntryPointVisibility
         self.initialSettingsSection = initialSettingsSection
         self.completedUpdateVersion = completedUpdateVersion
     }
@@ -45,7 +42,6 @@ struct RemoteBuddyRootView: View {
                     refreshUpdateInformation: refreshUpdateInformation,
                     setDockIconVisible: setDockIconVisible,
                     setStatusBarIconVisible: setStatusBarIconVisible,
-                    syncEntryPointVisibility: syncEntryPointVisibility,
                     initialSection: initialSettingsSection
                 )
             } else {

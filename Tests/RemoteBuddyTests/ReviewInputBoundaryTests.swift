@@ -40,7 +40,7 @@ struct ReviewInputBoundaryTests {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: url) }
         try Data(repeating: 32, count: CommonPhraseStore.maximumImportBytes + 1).write(to: url)
-        #expect(throws: AppConfigurationError.self) { try CommonPhraseStore.readImport(from: url) }
+        #expect(throws: CommonPhraseFileReader.ReadError.self) { try CommonPhraseStore.readImport(from: url) }
         let archive = CommonPhraseArchive(entries: [CommonPhrase(id: "test", text: "测试",
             label: "测试")], bindings: ["ok": "test"])
         try JSONEncoder().encode(archive).write(to: url)
@@ -53,65 +53,8 @@ struct ReviewInputBoundaryTests {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: url) }
         try Data(repeating: 7, count: 128).write(to: url)
-        #expect(try ConfigurationFileReader.read(from: url, maximumBytes: 128).count == 128)
-        #expect(throws: AppConfigurationError.self) { try ConfigurationFileReader.read(from: url, maximumBytes: 127) }
-    }
-
-    @Test @MainActor func duplicateApplicationIDsRejectImportWithoutChangingSettings() throws {
-        let name = "review-input-" + UUID().uuidString
-        let defaults = try #require(UserDefaults(suiteName: name))
-        defer { defaults.removePersistentDomain(forName: name) }
-        let settings = AppSettings(defaults: defaults)
-        let profile = CustomApplicationProfile(displayName: "First", bundleIdentifier: "review.first",
-            applicationPath: "/Applications/First.app")
-        _ = settings.addCustomApplicationProfile(profile)
-        settings.buttonApplicationProfileIDs[.left] = profile.id
-        let original = try settings.exportedConfigurationData()
-        var object = try #require(JSONSerialization.jsonObject(with: original) as? [String: Any])
-        var profiles = try #require(object["customApplicationProfiles"] as? [[String: Any]])
-        var duplicate = try #require(profiles.first)
-        duplicate["displayName"] = "Second"
-        duplicate["bundleIdentifier"] = "review.second"
-        profiles.append(duplicate)
-        object["customApplicationProfiles"] = profiles
-        object["gainDB"] = 23
-        let invalid = try JSONSerialization.data(withJSONObject: object)
-        #expect(throws: AppConfigurationError.self) { try settings.importConfiguration(from: invalid) }
-        #expect(try settings.exportedConfigurationData() == original)
-        profiles[1] = profiles[0]
-        object["customApplicationProfiles"] = profiles
-        #expect(throws: AppConfigurationError.self) {
-            try settings.importConfiguration(from: JSONSerialization.data(withJSONObject: object))
-        }
-        #expect(try settings.exportedConfigurationData() == original)
-        // A unique ID must still be accepted, including an app absent from this Mac.
-        profiles[1]["id"] = UUID().uuidString
-        object["customApplicationProfiles"] = profiles
-        try settings.importConfiguration(from: JSONSerialization.data(withJSONObject: object))
-        #expect(settings.customApplicationProfiles.count == 2)
-        #expect(settings.gainDB == 23)
-        #expect(settings.applicationProfileID(for: .left) == profile.id)
-        #expect(settings.customApplicationProfile(id: settings.applicationProfileID(for: .left))?.bundleIdentifier == "review.first")
-    }
-
-    @Test @MainActor func danglingApplicationReferencesAreReportedAndValidReferencesSurvive() throws {
-        let name = "review-references-" + UUID().uuidString
-        let defaults = try #require(UserDefaults(suiteName: name))
-        defer { defaults.removePersistentDomain(forName: name) }
-        let settings = AppSettings(defaults: defaults)
-        let profile = CustomApplicationProfile(displayName: "Editor", bundleIdentifier: "example.editor",
-            applicationPath: "/Applications/Editor.app")
-        _ = settings.addCustomApplicationProfile(profile)
-        var object = try #require(JSONSerialization.jsonObject(with: settings.exportedConfigurationData()) as? [String: Any])
-        object["buttonApplicationProfileIDs"] = ["left": profile.id.uuidString, "right": UUID().uuidString]
-        try settings.importConfiguration(from: JSONSerialization.data(withJSONObject: object))
-        #expect(settings.buttonApplicationProfileIDs[.left] == profile.id)
-        #expect(settings.buttonApplicationProfileIDs[.right] == nil)
-        #expect(settings.configurationImportNotice?.rejectedEntryStorageKeys.contains("buttonApplicationProfileIDs") == true)
-        // An explicit empty profile list replaces local profiles; it is not a union.
-        object["customApplicationProfiles"] = []
-        try settings.importConfiguration(from: JSONSerialization.data(withJSONObject: object))
-        #expect(settings.buttonApplicationProfileIDs.isEmpty)
+        #expect(try CommonPhraseFileReader.read(from: url, maximumBytes: 128).count == 128)
+        #expect(throws: CommonPhraseFileReader.ReadError.self) { try CommonPhraseFileReader.read(from: url, maximumBytes: 127) }
     }
 
     @Test @MainActor func corruptGainCannotReachIntegerFormatting() throws {
@@ -137,67 +80,22 @@ struct ReviewInputBoundaryTests {
         }
     }
 
-    @Test @MainActor func backupBindingsCannotReintroduceDanglingApplications() throws {
-        let name = UUID().uuidString
-        let defaults = try #require(UserDefaults(suiteName: name))
-        defer { defaults.removePersistentDomain(forName: name) }
-        let settings = AppSettings(defaults: defaults)
-        var object = try #require(JSONSerialization.jsonObject(with: settings.exportedConfigurationData()) as? [String: Any])
-        object["continuousRecordingPowerBindingBackup"] = ["action": "openCustomApplication", "applicationProfileID": UUID().uuidString]
-        try settings.importConfiguration(from: JSONSerialization.data(withJSONObject: object))
-        #expect(settings.configurationImportNotice?.rejectedEntryStorageKeys.contains("continuousRecordingPowerBindingBackup") == true)
-        #expect(settings.applicationProfileID(for: .power) == nil)
-    }
-
-    @Test @MainActor func configurationImportWithRetiredExperimentPreservesPowerMappingAndEditability() throws {
-        let name = "retired-experiment-" + UUID().uuidString
+    @Test @MainActor func powerMappingRemainsFreelyEditableAndResettable() throws {
+        let name = "power-mapping-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: name))
         defer { defaults.removePersistentDomain(forName: name) }
         let settings = AppSettings(defaults: defaults)
 
-        var object = try #require(JSONSerialization.jsonObject(with: settings.exportedConfigurationData()) as? [String: Any])
-        var bindings = (object["buttonBindings"] as? [String: String]) ?? [:]
-        bindings["power"] = ButtonAction.commandReturn.rawValue
-        object["buttonBindings"] = bindings
-        object["experimentalContinuousRecordingEnabled"] = true
-        object["continuousRecordingPowerBindingBackup"] = [
-            "action": ButtonAction.volumeMute.rawValue,
-            "shortcut": NSNull()
-        ]
+        settings.setAction(.commandReturn, for: .power, trigger: .singleClick)
+        let reloaded = AppSettings(defaults: defaults)
+        #expect(reloaded.action(for: .power) == .commandReturn)
 
-        let importData = try JSONSerialization.data(withJSONObject: object)
-        try settings.importConfiguration(from: importData)
-
-        // 1. Power mapping matches the imported binding, not locked or forced to toggleLongRecording
-        #expect(settings.action(for: .power) == .commandReturn)
-        #expect(settings.configurationImportNotice?.rejectedEntryStorageKeys.contains("continuousRecordingPowerBindingBackup") == true)
-
-        // 2. Power mapping remains freely editable
         settings.setAction(.escape, for: .power, trigger: .singleClick)
         #expect(settings.action(for: .power) == .escape)
 
-        // 3. Resetting bindings restores defaults without forcing power back to continuous recording
         settings.resetBindings()
         #expect(settings.action(for: .power) == AppSettings.defaultBindings[.power])
         #expect(settings.action(for: .power) != .toggleLongRecording)
-
-        // 4. Exported configuration does not re-emit retired experiment fields
-        let reExported = try #require(JSONSerialization.jsonObject(with: settings.exportedConfigurationData()) as? [String: Any])
-        #expect(reExported["experimentalContinuousRecordingEnabled"] == nil)
-        #expect(reExported["continuousRecordingPowerBindingBackup"] == nil)
-    }
-
-    @Test @MainActor func failedImportClearsThePreviousFilteringNotice() throws {
-        let name = UUID().uuidString
-        let defaults = try #require(UserDefaults(suiteName: name))
-        defer { defaults.removePersistentDomain(forName: name) }
-        let settings = AppSettings(defaults: defaults)
-        var object = try #require(JSONSerialization.jsonObject(with: settings.exportedConfigurationData()) as? [String: Any])
-        object["buttonApplicationProfileIDs"] = ["left": UUID().uuidString]
-        try settings.importConfiguration(from: JSONSerialization.data(withJSONObject: object))
-        #expect(settings.configurationImportNotice != nil)
-        #expect(throws: Error.self) { try settings.importConfiguration(from: Data("invalid".utf8)) }
-        #expect(settings.configurationImportNotice == nil)
     }
 
     #if DEBUG

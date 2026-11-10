@@ -119,11 +119,21 @@ enum UpdateFeedResolver {
               response.expectedContentLength <= Int64(maximumFeedSize)
         else { throw UpdateFeedResolutionError.invalidResponse }
         var data = Data()
+        var buffer: [UInt8] = []
+        buffer.reserveCapacity(4096)
         for try await byte in bytes {
-            guard data.count < maximumFeedSize else {
+            if data.count + buffer.count >= maximumFeedSize {
                 throw UpdateFeedResolutionError.invalidResponse
             }
-            data.append(byte)
+            buffer.append(byte)
+            if buffer.count == 4096 {
+                data.append(contentsOf: buffer)
+                buffer.removeAll(keepingCapacity: true)
+                try Task.checkCancellation()
+            }
+        }
+        if !buffer.isEmpty {
+            data.append(contentsOf: buffer)
         }
         try Task.checkCancellation()
         return data

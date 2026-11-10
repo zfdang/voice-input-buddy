@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 BUILD_ARCH="${BUILD_ARCH:-$(uname -m)}"
 case "$BUILD_ARCH" in
     arm64) RELEASE_ARCH_LABEL=arm64 ;;

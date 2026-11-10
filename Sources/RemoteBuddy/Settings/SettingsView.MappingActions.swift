@@ -46,7 +46,6 @@ extension SettingsView {
                 Button(localization.text("custom_application.accessibility.test")) {
                     KeyboardInjector.testCustomApplicationInput(profile) { success in
                         DispatchQueue.main.async {
-                            if success { settings.markPortableApplicationVerified(profile.id) }
                             customApplicationLearningStates[profile.id] = success ? .succeeded : .failed
                         }
                     }
@@ -54,9 +53,7 @@ extension SettingsView {
                 .compatibilityButtonStyle(.standard)
                 .disabled(profile.accessibilityTarget == nil)
                 Text(
-                    settings.portablePendingApplications.contains(profile.id.uuidString)
-                        ? localization.text("custom_application.accessibility.needs_verification")
-                        : profile.accessibilityTarget == nil
+                    profile.accessibilityTarget == nil
                         ? localization.text("custom_application.accessibility.not_recorded")
                         : localization.text("custom_application.accessibility.recorded")
                 )
@@ -151,7 +148,6 @@ extension SettingsView {
                         updated.accessibilityTarget = target
                         updated.focusStrategy = .recordedAccessibility
                         settings.updateCustomApplicationProfile(updated)
-                        settings.markPortableApplicationVerified(updated.id)
                     }
                     customApplicationLearningStates[profileID] = target == nil ? .failed : .succeeded
                     NSApp.activate()
@@ -181,23 +177,9 @@ extension SettingsView {
         case .deleteBackward: return "⌫"
         case .volumeUp: return localization.text("action.system_volume_up_short")
         case .volumeDown: return localization.text("action.system_volume_down_short")
-        case .volumeMute: return "Mute"
+        case .volumeMute: return localization.text("action.system_volume_mute_short")
         default: break
         }
         return configured.action.displayName(using: localization)
-    }
-
-    private func buttonProfileSystemImage(for action: ButtonAction) -> String {
-        if action.presetApplication != nil { return "app" }
-        switch action {
-        case .openCommonPhrases: return "text.quote"
-        case .focusInput: return "scope"
-        case .showDesktop: return "macwindow"
-        case .appSwitcher: return "command"
-        case .volumeUp, .volumeDown, .volumeMute: return "speaker.wave.2"
-        case .playPause, .previousCommandLeft, .nextCommandRight: return "play.circle"
-        case .toggleLongRecording: return "record.circle"
-        default: return "keyboard"
-        }
     }
 }

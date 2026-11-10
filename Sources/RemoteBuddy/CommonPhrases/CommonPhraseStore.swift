@@ -165,7 +165,7 @@ final class CommonPhraseStore: ObservableObject {
     }
 
     static func readImport(from url: URL) throws -> CommonPhraseArchive {
-        try decodedImport(ConfigurationFileReader.read(from: url, maximumBytes: maximumImportBytes))
+        try decodedImport(CommonPhraseFileReader.read(from: url, maximumBytes: maximumImportBytes))
     }
 
     func importData(_ data: Data) throws {

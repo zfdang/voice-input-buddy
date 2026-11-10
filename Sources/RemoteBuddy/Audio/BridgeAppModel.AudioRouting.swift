@@ -232,6 +232,7 @@ extension BridgeAppModel {
         audio.configurationGeneration &+= 1
         let generation = audio.configurationGeneration
         let deviceUID = settings.selectedAudioDeviceUID
+        audio.output.invalidateAudibilityCache()
         AppLogger.shared.write("AUDIO REBIND begin reason=\(reason) state={\(audio.output.diagnosticState())}")
         if reason != "test_tone" {
             cancelTestToneIfNeeded(
@@ -528,6 +529,7 @@ extension BridgeAppModel {
                 "detail=\(details) coalesced_events=\(coalesced.count) " +
                 "includes_hardware_change=\(coalesced.includesHardwareChange)"
         )
+        self.audio.output.invalidateAudibilityCache()
         if selectedDeviceAvailable {
             let snapshot = outputSnapshot ?? self.audio.output.diagnosticSnapshot()
             let deviceForAudibility = self.audio.output.actualDevice

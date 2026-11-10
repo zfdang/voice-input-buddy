@@ -90,6 +90,8 @@ extension OnboardingView {
         .padding(.horizontal, 10)
         .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
         .background(Color.primary.opacity(0.055), in: RoundedRectangle(cornerRadius: 9))
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(localization.text(isComplete ? "permission.status.enabled" : "permission.status.pending"))
     }
 
     func onboardingActionButton<Label: View>(
@@ -187,6 +189,8 @@ extension OnboardingView {
             .contentShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(localization.text(granted ? "permission.status.enabled" : "permission.status.pending"))
     }
 
     func statusCard(

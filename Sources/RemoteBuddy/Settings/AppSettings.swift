@@ -24,7 +24,6 @@ final class AppSettings: ObservableObject {
         static let voiceFnTapModeEnabled = "voiceFnTapModeEnabled"
         static let voiceKeyMode = "voiceKeyMode"
         static let chromecastVoiceMode = "chromecast.voiceMode"
-        static let continuousRecordingPowerBindingBackup = "continuousRecordingPowerBindingBackup"
         static let lastLaunchedBuild = "launch.lastLaunchedBuild"
         static let onboardingPurpose = "onboarding.purpose"
         static let onboardingCompletedVersion = "onboarding.completedVersion"
@@ -34,7 +33,6 @@ final class AppSettings: ObservableObject {
         static let onboardingDevice = "onboarding.device"
         static let onboardingAppleRemoteGeneration = "onboarding.appleRemoteGeneration"
         static let onboardingVoiceTool = "onboarding.voiceTool"
-        static let onboardingVoiceBindingPreference = "onboarding.voiceBindingPreference"
         static let onboardingPreferredGesture = "onboarding.preferredGesture"
         static let onboardingVerifiedVoiceBinding = "onboarding.verifiedVoiceBinding"
         static let onboardingStagedVoiceBinding = "onboarding.stagedVoiceBinding"
@@ -66,8 +64,12 @@ final class AppSettings: ObservableObject {
 
     @Published var unifiedBaseBindings: [UnifiedButtonBinding] = [] {
         didSet {
-            if !isResettingBindings, let data = try? JSONEncoder().encode(unifiedBaseBindings) {
+            guard !isResettingBindings else { return }
+            do {
+                let data = try JSONEncoder().encode(unifiedBaseBindings)
                 defaults.set(data, forKey: "unifiedBaseBindings")
+            } catch {
+                AppLogger.shared.write("SETTINGS ERROR encode unifiedBaseBindings failed: \(Self.describeEncodingError(error))")
             }
         }
     }
@@ -79,6 +81,58 @@ final class AppSettings: ObservableObject {
         bindings.append(UnifiedButtonBinding(remoteProfileID: profileID, button: button,
                                             trigger: trigger, configured: configured))
         unifiedBaseBindings = bindings
+
+        if let profileID {
+            if let index = remoteDeviceProfiles.firstIndex(where: { $0.id == profileID }) {
+                let mappings = remoteDeviceProfiles[index].mappings
+                var parsedBindings = mappings.parsedButtonBindings
+                var parsedShortcuts = mappings.parsedButtonShortcuts
+                var parsedAppIDs = mappings.parsedButtonApplicationProfileIDs
+                var parsedSecondary = mappings.parsedSecondaryButtonBindings
+                if trigger == .singleClick {
+                    parsedBindings[button] = configured.action
+                    if let shortcut = configured.shortcut {
+                        parsedShortcuts[button] = shortcut
+                    } else {
+                        parsedShortcuts.removeValue(forKey: button)
+                    }
+                    if let appID = configured.applicationProfileID {
+                        parsedAppIDs[button] = appID
+                    } else {
+                        parsedAppIDs.removeValue(forKey: button)
+                    }
+                } else {
+                    var secondary = parsedSecondary[button] ?? [:]
+                    secondary[trigger] = configured
+                    parsedSecondary[button] = secondary
+                }
+                remoteDeviceProfiles[index].mappings = RemoteDeviceMappings(
+                    buttonBindings: parsedBindings,
+                    buttonShortcuts: parsedShortcuts,
+                    buttonApplicationProfileIDs: parsedAppIDs,
+                    secondaryButtonBindings: parsedSecondary
+                )
+                saveRemoteDeviceProfiles()
+            }
+        } else {
+            if trigger == .singleClick {
+                buttonBindings[button] = configured.action
+                if let shortcut = configured.shortcut {
+                    buttonShortcuts[button] = shortcut
+                } else {
+                    buttonShortcuts.removeValue(forKey: button)
+                }
+                if let appID = configured.applicationProfileID {
+                    buttonApplicationProfileIDs[button] = appID
+                } else {
+                    buttonApplicationProfileIDs.removeValue(forKey: button)
+                }
+            } else {
+                var secondary = secondaryButtonBindings[button] ?? [:]
+                secondary[trigger] = configured
+                secondaryButtonBindings[button] = secondary
+            }
+        }
     }
 
     @Published var buttonBindings: [RemoteButton: ButtonAction] {
@@ -172,8 +226,20 @@ final class AppSettings: ObservableObject {
         }
     }
 
-    var isLoadingRemoteProfile = false
-    var isResettingBindings = false
+    private(set) var isLoadingRemoteProfile = false
+    private(set) var isResettingBindings = false
+
+    func withLoadingRemoteProfile<T>(_ block: () throws -> T) rethrows -> T {
+        isLoadingRemoteProfile = true
+        defer { isLoadingRemoteProfile = false }
+        return try block()
+    }
+
+    func withResettingBindings<T>(_ block: () throws -> T) rethrows -> T {
+        isResettingBindings = true
+        defer { isResettingBindings = false }
+        return try block()
+    }
 
     @Published var onboardingPurpose: OnboardingPurpose {
         didSet { defaults.set(onboardingPurpose.rawValue, forKey: Keys.onboardingPurpose) }
@@ -223,15 +289,6 @@ final class AppSettings: ObservableObject {
 
     @Published var onboardingVoiceTool: OnboardingVoiceTool {
         didSet { defaults.set(onboardingVoiceTool.rawValue, forKey: Keys.onboardingVoiceTool) }
-    }
-
-    @Published var onboardingVoiceBindingPreference: OnboardingVoiceBindingPreference {
-        didSet {
-            defaults.set(
-                onboardingVoiceBindingPreference.rawValue,
-                forKey: Keys.onboardingVoiceBindingPreference
-            )
-        }
     }
 
     @Published var onboardingPreferredGesture: VoiceGestureMode? {
@@ -441,11 +498,6 @@ final class AppSettings: ObservableObject {
         onboardingRemoteAvailability = persistedControlSource == .unselected ? .unselected : .hasRemote
         onboardingVoiceTool = defaults.string(forKey: Keys.onboardingVoiceTool)
             .flatMap(OnboardingVoiceTool.init(rawValue:)) ?? .unselected
-        onboardingVoiceBindingPreference = defaults.string(
-            forKey: Keys.onboardingVoiceBindingPreference
-        )
-            .flatMap(OnboardingVoiceBindingPreference.init(rawValue:))
-            ?? .documentedDefault
         onboardingPreferredGesture = defaults.string(forKey: Keys.onboardingPreferredGesture)
             .flatMap(VoiceGestureMode.init(rawValue:))
         verifiedVoiceToolBinding = Self.decodeSetting(
@@ -495,25 +547,5 @@ final class AppSettings: ObservableObject {
         ) ?? []
         corruptedSettingKeys = corruptedKeys
         if shouldSeedSecondaryBindings { saveSecondaryBindings() }
-    }
-
-    /// What the last import in this session refused to adopt, or `nil` when it adopted
-    /// everything. In memory only: it describes one user action, not stored state, and it must
-    /// not outlive the session in which the user imported the file.
-    @Published var configurationImportNotice: ConfigurationImportReport?
-
-    /// Bundle identifiers, audio device identifiers and display names are matched or displayed,
-    /// never executed, so a length bound is the whole requirement for them.
-    static let maximumImportedIdentifierLength = 256
-    static let maximumImportedPathLength = 1_024
-    static let maximumImportedKeyLabelLength = 64
-    /// macOS virtual key codes are 7-bit; this app's own label table stops at 126 and
-    /// `RemoteButton.nativeEvent` never exceeds it. A larger code is not a key.
-    static let maximumImportedKeyCode: UInt16 = 127
-
-    enum ImportedApplicationProfile {
-        case usable(CustomApplicationProfile)
-        case notInstalledOnThisMac(CustomApplicationProfile)
-        case rejected
     }
 }

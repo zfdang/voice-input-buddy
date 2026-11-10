@@ -13,7 +13,6 @@ extension BridgeAppModel {
         )
         if configured.action == .openCustomApplication {
             guard let profile = applicationProfile,
-                !settings.portableApplicationRequiresVerification(profile),
                 NSWorkspace.shared.urlForApplication(withBundleIdentifier: profile.bundleIdentifier) != nil
             else { return false }
         }

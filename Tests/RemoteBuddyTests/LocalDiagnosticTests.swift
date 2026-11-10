@@ -119,4 +119,61 @@ struct LocalDiagnosticTests {
         #expect(snapshot.summary.contains("~/Library/Logs/RemoteBuddy/remotebuddy.log"))
     }
 
+    @Test func diagnosticRedactorPreservesFactoryNamesAndMasksCustomNamesDeterministically() {
+        // Factory names preserved
+        #expect(DiagnosticRedactor.redactedDeviceName("Siri Remote") == "Siri Remote")
+        #expect(DiagnosticRedactor.redactedDeviceName("MI RC") == "MI RC")
+        #expect(DiagnosticRedactor.redactedDeviceName("Apple TV Remote") == "Apple TV Remote")
+        #expect(DiagnosticRedactor.redactedDeviceName("MacBook Pro Speakers") == "MacBook Pro Speakers")
+
+        // Personalized names with factory fragments must NOT bypass redaction
+        let personalized1 = DiagnosticRedactor.redactedDeviceName("Living Room Siri Remote")
+        #expect(personalized1.hasPrefix("device_"))
+        #expect(!personalized1.contains("Siri Remote"))
+
+        let personalized2 = DiagnosticRedactor.redactedDeviceName("Bob's MI RC")
+        #expect(personalized2.hasPrefix("device_"))
+        #expect(!personalized2.contains("MI RC"))
+
+        // Pure custom names are redacted to deterministic SHA256 hex
+        let customA1 = DiagnosticRedactor.redactedDeviceName("My Bedroom Remote")
+        let customA2 = DiagnosticRedactor.redactedDeviceName("My Bedroom Remote")
+        #expect(customA1 == customA2)
+        #expect(customA1.hasPrefix("device_"))
+        #expect(customA1.count == 15) // "device_" (7) + 8 hex chars (prefix 4 bytes) = 15
+
+        // Empty/whitespace/nil
+        #expect(DiagnosticRedactor.redactedDeviceName(nil) == "unknown")
+        #expect(DiagnosticRedactor.redactedDeviceName("") == "unknown")
+        #expect(DiagnosticRedactor.redactedDeviceName("   ") == "unknown")
+    }
+
+    @Test func bluetoothBridgeStateLogDescriptionRedactsDeviceName() {
+        #expect(BluetoothBridgeState.ready("Siri Remote").logDescription == "ready(Siri Remote)")
+        #expect(BluetoothBridgeState.ready("MI RC").logDescription == "ready(MI RC)")
+        let customDesc = BluetoothBridgeState.ready("Living Room Siri Remote").logDescription
+        #expect(customDesc.hasPrefix("ready(device_"))
+        #expect(!customDesc.contains("Siri Remote"))
+        #expect(BluetoothBridgeState.scanning.logDescription == "scanning")
+        #expect(BluetoothBridgeState.stopped.logDescription == "stopped")
+        #expect(BluetoothBridgeState.failed(LocalizedMessage("test.failure")).logDescription == "failed(test.failure)")
+        #expect(BluetoothBridgeState.bluetoothUnavailable(LocalizedMessage("test.unavailable")).logDescription == "bluetooth_unavailable(test.unavailable)")
+    }
+
+    @Test @MainActor func bridgeStateRecoveryLogOutputNeverContainsCustomDeviceName() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let logURL = directory.appendingPathComponent("bridge-audit.log")
+        let logger = AppLogger(logURL: logURL, reportFailure: { _ in })
+
+        let state = BluetoothBridgeState.ready("Alice's Secret Living Room Siri Remote")
+        let line = "BLE RECOVERY phase=requested trigger=test state=\(state.logDescription) lifecycle=idle central_state=5 generation=1"
+        logger.writeSynchronously(line, at: Date())
+        logger.flush()
+
+        let contents = try String(contentsOf: logURL, encoding: .utf8)
+        #expect(contents.contains("state=ready(device_"))
+        #expect(!contents.contains("Alice's Secret Living Room Siri Remote"))
+        #expect(!contents.contains("Siri Remote"))
+    }
 }

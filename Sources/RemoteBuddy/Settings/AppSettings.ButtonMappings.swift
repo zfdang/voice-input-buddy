@@ -32,13 +32,13 @@ extension AppSettings {
                 selectRemoteProfile(replacement.id)
             } else {
                 selectedRemoteProfileID = nil
-                isLoadingRemoteProfile = true
-                gainDB = 10
-                buttonBindings = Self.defaultBindings
-                buttonShortcuts = [:]
-                buttonApplicationProfileIDs = [:]
-                secondaryButtonBindings = [:]
-                isLoadingRemoteProfile = false
+                withLoadingRemoteProfile {
+                    gainDB = 10
+                    buttonBindings = Self.defaultBindings
+                    buttonShortcuts = [:]
+                    buttonApplicationProfileIDs = [:]
+                    secondaryButtonBindings = [:]
+                }
             }
         }
         unifiedBaseBindings.removeAll { $0.remoteProfileID == profileID }
@@ -129,32 +129,14 @@ extension AppSettings {
         guard let index = customApplicationProfiles.firstIndex(where: { $0.id == profile.id }) else {
             return
         }
-        let previous = customApplicationProfiles[index]
         customApplicationProfiles[index] = profile
-        if profile.accessibilityTarget != nil && profile.accessibilityTarget != previous.accessibilityTarget {
-            markPortableApplicationVerified(profile.id)
-        }
     }
 
     func configuredBaseAction(
         for button: RemoteButton,
         trigger: ButtonTrigger
     ) -> ConfiguredButtonAction {
-        if let binding = unifiedBaseBindings.first(where: {
-            $0.remoteProfileID == selectedRemoteProfileID && $0.button == button && $0.trigger == trigger
-        }) { return binding.configured }
-        if let binding = unifiedBaseBindings.first(where: {
-            $0.remoteProfileID == nil && $0.button == button && $0.trigger == trigger
-        }) { return binding.configured }
-        if trigger == .singleClick {
-            return ConfiguredButtonAction(
-                action: buttonBindings[button] ?? .disabled,
-                shortcut: buttonShortcuts[button],
-                applicationProfileID: applicationProfileID(for: button)
-            )
-        }
-        return secondaryButtonBindings[button]?[trigger] ??
-            defaultSecondaryAction(for: button, trigger: trigger)
+        configuredBaseAction(for: button, trigger: trigger, profileID: selectedRemoteProfileID)
     }
 
     func configuredBaseAction(
@@ -168,19 +150,31 @@ extension AppSettings {
         if let binding = unifiedBaseBindings.first(where: {
             $0.remoteProfileID == nil && $0.button == button && $0.trigger == trigger
         }) { return binding.configured }
-        guard let profileID, profileID != selectedRemoteProfileID,
-              let profile = remoteDeviceProfiles.first(where: { $0.id == profileID })
-        else { return configuredBaseAction(for: button, trigger: trigger) }
-        let bindings = profile.mappings.parsedButtonBindings
-        let shortcuts = profile.mappings.parsedButtonShortcuts
+
+        if let profileID,
+           profileID != selectedRemoteProfileID,
+           let profile = remoteDeviceProfiles.first(where: { $0.id == profileID }) {
+            let bindings = profile.mappings.parsedButtonBindings
+            let shortcuts = profile.mappings.parsedButtonShortcuts
+            if trigger == .singleClick {
+                return ConfiguredButtonAction(
+                    action: bindings[button] ?? .disabled,
+                    shortcut: shortcuts[button],
+                    applicationProfileID: profile.mappings.parsedButtonApplicationProfileIDs[button]
+                )
+            }
+            return profile.mappings.parsedSecondaryButtonBindings[button]?[trigger] ??
+                defaultSecondaryAction(for: button, trigger: trigger)
+        }
+
         if trigger == .singleClick {
             return ConfiguredButtonAction(
-                action: bindings[button] ?? Self.defaultBindings[button] ?? .disabled,
-                shortcut: shortcuts[button],
-                applicationProfileID: profile.mappings.parsedButtonApplicationProfileIDs[button]
+                action: buttonBindings[button] ?? .disabled,
+                shortcut: buttonShortcuts[button],
+                applicationProfileID: applicationProfileID(for: button)
             )
         }
-        return profile.mappings.parsedSecondaryButtonBindings[button]?[trigger] ??
+        return secondaryButtonBindings[button]?[trigger] ??
             defaultSecondaryAction(for: button, trigger: trigger)
     }
 
@@ -206,16 +200,16 @@ extension AppSettings {
         else { return }
         let nextGain = profile.gainDB ?? (selectedRemoteProfileID == nil ? gainDB : 10)
         saveSelectedRemoteGain()
-        isLoadingRemoteProfile = true
-        selectedRemoteProfileID = profileID
-        gainDB = Self.normalizedGain(nextGain)
-        buttonBindings = Self.defaultBindings.merging(profile.mappings.parsedButtonBindings) {
-            _, saved in saved
+        withLoadingRemoteProfile {
+            selectedRemoteProfileID = profileID
+            gainDB = Self.normalizedGain(nextGain)
+            buttonBindings = Self.defaultBindings.merging(profile.mappings.parsedButtonBindings) {
+                _, saved in saved
+            }
+            buttonShortcuts = profile.mappings.parsedButtonShortcuts
+            buttonApplicationProfileIDs = profile.mappings.parsedButtonApplicationProfileIDs
+            secondaryButtonBindings = profile.mappings.parsedSecondaryButtonBindings
         }
-        buttonShortcuts = profile.mappings.parsedButtonShortcuts
-        buttonApplicationProfileIDs = profile.mappings.parsedButtonApplicationProfileIDs
-        secondaryButtonBindings = profile.mappings.parsedSecondaryButtonBindings
-        isLoadingRemoteProfile = false
     }
 
     func gainDB(for profileID: UUID) -> Double {
@@ -311,6 +305,7 @@ extension AppSettings {
             mappings: mappingsForNewRemote()
         )
         remoteDeviceProfiles.append(profile)
+        inheritUnifiedBindings(from: selectedRemoteProfileID, to: profile.id)
         return profile.id
     }
 
@@ -331,6 +326,7 @@ extension AppSettings {
             let profile = RemoteDeviceProfile(model: model, hidFingerprint: fingerprint,
                                               mappings: mappingsForNewRemote())
             remoteDeviceProfiles.append(profile)
+            inheritUnifiedBindings(from: selectedRemoteProfileID, to: profile.id)
             return profile.id
         }
         let candidates = remoteDeviceProfiles.indices.filter {
@@ -364,7 +360,16 @@ extension AppSettings {
             mappings: mappingsForNewRemote()
         )
         remoteDeviceProfiles.append(profile)
+        inheritUnifiedBindings(from: selectedRemoteProfileID, to: profile.id)
         return profile.id
+    }
+
+    private func inheritUnifiedBindings(from sourceID: UUID?, to targetID: UUID) {
+        guard let sourceID else { return }
+        let toCopy = unifiedBaseBindings.filter { $0.remoteProfileID == sourceID }
+        for binding in toCopy {
+            setBaseBinding(binding.configured, for: binding.button, trigger: binding.trigger, profileID: targetID)
+        }
     }
 
     func profileID(forBluetoothIdentifier identifier: UUID) -> UUID? {
@@ -479,30 +484,26 @@ extension AppSettings {
     }
 
     func resetBindings() {
-        isResettingBindings = true
-        defer {
-            isResettingBindings = false
-            saveSelectedRemoteProfileMappings()
-            if let data = try? JSONEncoder().encode(unifiedBaseBindings) {
-                defaults.set(data, forKey: "unifiedBaseBindings")
+        withResettingBindings {
+            buttonBindings = Self.defaultBindings
+            buttonShortcuts = [:]
+            unifiedBaseBindings.removeAll { $0.remoteProfileID == selectedRemoteProfileID }
+            // Override inherited bindings only for the selected device.
+            if let device = selectedRemoteProfileID {
+                for inherited in unifiedBaseBindings.filter({ $0.remoteProfileID == nil }) {
+                    setBaseBinding(
+                        defaultAction(for: inherited.button, trigger: inherited.trigger),
+                        for: inherited.button,
+                        trigger: inherited.trigger,
+                        profileID: device
+                    )
+                }
             }
+            buttonApplicationProfileIDs = [:]
+            secondaryButtonBindings = Self.defaultSecondaryBindings
         }
-        buttonBindings = Self.defaultBindings
-        buttonShortcuts = [:]
-        unifiedBaseBindings.removeAll { $0.remoteProfileID == selectedRemoteProfileID }
-        // Override inherited bindings only for the selected device.
-        if let device = selectedRemoteProfileID {
-            for inherited in unifiedBaseBindings.filter({ $0.remoteProfileID == nil }) {
-                setBaseBinding(
-                    defaultAction(for: inherited.button, trigger: inherited.trigger),
-                    for: inherited.button,
-                    trigger: inherited.trigger,
-                    profileID: device
-                )
-            }
-        }
-        buttonApplicationProfileIDs = [:]
-        secondaryButtonBindings = Self.defaultSecondaryBindings
+        saveSelectedRemoteProfileMappings()
+        encodeAndSave(unifiedBaseBindings, forKey: "unifiedBaseBindings")
     }
 }
 

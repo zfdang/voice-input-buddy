@@ -67,26 +67,6 @@ extension BridgeAppModel {
         return isVoiceKeyMappingUnavailable && karabinerRunning ? .karabiner : nil
     }
 
-    @discardableResult
-    static func importConfiguration(
-        from data: Data,
-        into settings: AppSettings,
-        isStreaming: Bool,
-        releaseVoiceKey: () -> Bool
-    ) throws -> Bool {
-        let importedVoiceKeyConfiguration = try settings.voiceKeyConfigurationState(in: data)
-        let changesVoiceKeyConfiguration =
-            importedVoiceKeyConfiguration != settings.voiceKeyConfigurationState
-        guard !isStreaming else { throw AppConfigurationError.unsafeVoiceKeyChange }
-        if changesVoiceKeyConfiguration {
-            guard releaseVoiceKey() else {
-                throw AppConfigurationError.unsafeVoiceKeyChange
-            }
-        }
-        try settings.importConfiguration(from: data)
-        return changesVoiceKeyConfiguration
-    }
-
     func recoverHIDAfterCompletedUpdate(delay: TimeInterval = 2) {
         guard started, settings.customMappingEnabled else { return }
         completedUpdateHIDRecoveryWorkItem?.cancel()

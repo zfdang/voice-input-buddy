@@ -18,15 +18,13 @@ def verify(directory, release):
         item = ET.parse(path).find('channel/item')
         candidate_packages = [
             f'Remote_Buddy_{tag}_macOS_{architecture}.pkg',
-            f'Voice_Input_Buddy_{tag}_macOS_{architecture}.pkg',
         ]
         package = next((pkg for pkg in candidate_packages if pkg in names), None)
         if item is None or item.findtext('title') != tag or not package:
             raise ValueError('Feed does not match the latest release')
         enclosure = item.find('enclosure')
         expected = {
-            f'https://github.com/zfdang/{repo}/releases/download/{tag}/{package}'
-            for repo in ('remote-buddy', 'voice-input-buddy')
+            f'https://github.com/zfdang/remote-buddy/releases/download/{tag}/{package}'
         }
         if enclosure is None or enclosure.get('url') not in expected:
             raise ValueError('Unexpected package destination')

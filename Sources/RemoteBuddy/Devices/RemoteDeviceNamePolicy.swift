@@ -117,7 +117,7 @@ enum RemoteDeviceNamePolicy {
             .joined(separator: " ")
     }
 
-    private static func isFactoryName(_ name: String, model: RemoteModel) -> Bool {
+    static func isFactoryName(_ name: String, model: RemoteModel) -> Bool {
         let lowercased = name.lowercased()
         switch model {
         case .rc001, .rc003:

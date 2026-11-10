@@ -164,6 +164,105 @@ struct SessionRecoveryRegressionTests {
         monitor.disconnectSimulatedDevice()
     }
 
+    @Test func repeatedReportsWhileHeldDoNotInterruptHeldButton() {
+        let clock = ControlledTestScheduler()
+        let prefs = defaults()
+        let settings = AppSettings(defaults: prefs)
+        settings.customMappingEnabled = true
+        let profile = UUID()
+        var presses = 0, releases = 0
+        let monitor = HIDRemoteMonitor(settings: settings, profileID: profile, scheduler: clock,
+            runtimePermissions: { true }, actionPerformer: { _, _, _ in true }, diagnosticLogger: { _ in })
+        monitor.onRuntimeButton = { _, _, phase in
+            if phase == .press { presses += 1 } else { releases += 1 }
+            return false
+        }
+        monitor.connectSimulatedDevice(fingerprint: "hold-test", profileID: profile)
+        let usage = RemoteButton.ok.hidUsage
+        let report = Data([UInt8(usage & 255), UInt8(usage >> 8)])
+        // Initial press
+        monitor.handleSimulatedReport(reportID: 1, data: report)
+        #expect(presses == 1)
+        #expect(releases == 0)
+        // Advance clock while remote continues sending held reports
+        clock.advance(to: 500)
+        monitor.handleSimulatedReport(reportID: 1, data: report)
+        clock.advance(to: 1000)
+        monitor.handleSimulatedReport(reportID: 1, data: report)
+        // Must NOT emit spurious release or new press edges during hold
+        #expect(presses == 1)
+        #expect(releases == 0)
+        // Physical release report arrives
+        monitor.handleSimulatedReport(reportID: 1, data: Data([0, 0]))
+        #expect(presses == 1)
+        #expect(releases == 1)
+        monitor.disconnectSimulatedDevice()
+    }
+
+    @Test func staleUsageExpiryTimerDoesNotCancelSubsequentPressToken() {
+        let clock = ControlledTestScheduler()
+        let prefs = defaults()
+        let settings = AppSettings(defaults: prefs)
+        settings.customMappingEnabled = true
+        let profile = UUID()
+        var presses = 0, releases = 0
+        let monitor = HIDRemoteMonitor(settings: settings, profileID: profile, scheduler: clock,
+            runtimePermissions: { true }, actionPerformer: { _, _, _ in true }, diagnosticLogger: { _ in })
+        monitor.onRuntimeButton = { _, _, phase in
+            if phase == .press { presses += 1 } else { releases += 1 }
+            return false
+        }
+        monitor.connectSimulatedDevice(fingerprint: "token-expiry-test", profileID: profile)
+        let usage = RemoteButton.ok.hidUsage
+        let report = Data([UInt8(usage & 255), UInt8(usage >> 8)])
+
+        // First press at t=0 (expiry scheduled for t=8000)
+        monitor.handleSimulatedReport(reportID: 1, data: report)
+        #expect(presses == 1)
+        #expect(releases == 0)
+
+        // Advance to t=7000 and release button
+        clock.advance(to: 7000)
+        monitor.handleSimulatedReport(reportID: 1, data: Data([0, 0]))
+        #expect(presses == 1)
+        #expect(releases == 1)
+
+        // Second press at t=7500 (new token issued, new expiry scheduled for t=15500)
+        clock.advance(to: 7500)
+        monitor.handleSimulatedReport(reportID: 1, data: report)
+        #expect(presses == 2)
+        #expect(releases == 1)
+
+        // Advance to t=8500 (where the first timer would have fired at t=8000)
+        clock.advance(to: 8500)
+        // Must NOT expire the second press because token was updated
+        #expect(presses == 2)
+        #expect(releases == 1)
+
+        // Advance to t=15500: the second press's timer expires
+        clock.advance(to: 15500)
+        #expect(presses == 2)
+        #expect(releases == 2)
+
+        monitor.disconnectSimulatedDevice()
+    }
+
+    @Test func hidMonitorContextWeakBoxGuardsAgainstDeallocatedMonitorCallback() {
+        var monitor: HIDRemoteMonitor? = HIDRemoteMonitor(
+            settings: AppSettings(defaults: defaults()),
+            profileID: UUID(),
+            scheduler: ControlledTestScheduler(),
+            runtimePermissions: { true },
+            actionPerformer: { _, _, _ in true },
+            diagnosticLogger: { _ in }
+        )
+        let context = HIDMonitorContext(monitor!)
+        #expect(context.monitor != nil)
+        monitor = nil
+        // After deallocation of monitor, weak reference is safely cleared
+        #expect(context.monitor == nil)
+    }
+
     @Test func rejectedVoiceRequestsLogTheirActualReason() {
         let clock = ControlledTestScheduler()
         var logs: [String] = []
@@ -238,6 +337,295 @@ struct SessionRecoveryRegressionTests {
         #expect(!monitor.shouldAcceptRawPress(button: .power, action: .commandCopy))
         clock.advance(to: 8000)
         #expect(monitor.shouldAcceptRawPress(button: .power, action: .commandCopy))
+        monitor.stop()
+    }
+
+    @Test func continuousHeldReportsSurviveBeyondEightSecondsAndRecoverAfterLossOfSignal() {
+        let clock = ControlledTestScheduler()
+        let prefs = defaults()
+        let settings = AppSettings(defaults: prefs)
+        settings.customMappingEnabled = true
+        var releaseCount = 0
+        let profile = UUID()
+        let monitor = HIDRemoteMonitor(settings: settings, profileID: profile, scheduler: clock,
+            runtimePermissions: { true }, diagnosticLogger: { _ in })
+        monitor.onRuntimeButton = { _, _, phase in
+            if phase == .release { releaseCount += 1 }
+            return true
+        }
+        monitor.connectSimulatedDevice(fingerprint: "test-device", profileID: profile, isSeized: true)
+        let usage = RemoteButton.power.hidUsage
+        let reportData = Data([UInt8(usage & 255), UInt8(usage >> 8)])
+
+        // Initial press at t=0
+        monitor.handleSimulatedReport(reportID: 1, data: reportData)
+        #expect(releaseCount == 0)
+
+        // Continuous reports received past 8 seconds up to 10 seconds
+        for time: UInt64 in [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000] {
+            clock.advance(to: time)
+            monitor.handleSimulatedReport(reportID: 1, data: reportData)
+            #expect(releaseCount == 0, "Hold must not be prematurely interrupted at t=\(time)")
+        }
+
+        // Past 10s, remote goes silent (loss of signal / dropped release)
+        clock.advance(to: 17999)
+        #expect(releaseCount == 0, "Recovery must wait full 8000ms after last received report")
+
+        // At 18000ms (10000 + 8000ms), missing-release recovery triggers cleanly
+        clock.advance(to: 18000)
+        #expect(releaseCount == 1)
+        monitor.stop()
+    }
+
+    @Test func continuousHeldReportsSurviveBeyondEightSecondsAndReleasePromptly() {
+        let clock = ControlledTestScheduler()
+        let prefs = defaults()
+        let settings = AppSettings(defaults: prefs)
+        settings.customMappingEnabled = true
+        var releaseCount = 0
+        let profile = UUID()
+        let monitor = HIDRemoteMonitor(settings: settings, profileID: profile, scheduler: clock,
+            runtimePermissions: { true }, diagnosticLogger: { _ in })
+        monitor.onRuntimeButton = { _, _, phase in
+            if phase == .release { releaseCount += 1 }
+            return true
+        }
+        monitor.connectSimulatedDevice(fingerprint: "test-device", profileID: profile, isSeized: true)
+        let usage = RemoteButton.power.hidUsage
+        let reportData = Data([UInt8(usage & 255), UInt8(usage >> 8)])
+
+        // Initial press
+        monitor.handleSimulatedReport(reportID: 1, data: reportData)
+        #expect(releaseCount == 0)
+
+        // Continuous reports past 8 seconds
+        for time: UInt64 in [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000] {
+            clock.advance(to: time)
+            monitor.handleSimulatedReport(reportID: 1, data: reportData)
+            #expect(releaseCount == 0)
+        }
+
+        // Explicit physical release arrives at 10500ms
+        clock.advance(to: 10500)
+        monitor.handleSimulatedReport(reportID: 1, data: Data([0, 0]))
+        #expect(releaseCount == 1)
+
+        // Advance to 25000ms; verify no duplicate synthetic release
+        clock.advance(to: 25000)
+        #expect(releaseCount == 1)
+        monitor.stop()
+    }
+
+    @Test func pressAfterLostReleaseRecoveryIsAcceptedPromptlyWithoutIntermediateReleaseReport() {
+        let clock = ControlledTestScheduler()
+        let prefs = defaults()
+        let settings = AppSettings(defaults: prefs)
+        settings.customMappingEnabled = true
+        var pressCount = 0
+        var releaseCount = 0
+        let profile = UUID()
+        let monitor = HIDRemoteMonitor(settings: settings, profileID: profile, scheduler: clock,
+            runtimePermissions: { true }, diagnosticLogger: { _ in })
+        monitor.onRuntimeButton = { _, _, phase in
+            if phase == .press { pressCount += 1 }
+            if phase == .release { releaseCount += 1 }
+            return true
+        }
+        monitor.connectSimulatedDevice(fingerprint: "test-device", profileID: profile, isSeized: true)
+        let usage = RemoteButton.power.hidUsage
+        let reportData = Data([UInt8(usage & 255), UInt8(usage >> 8)])
+
+        // 1. Initial physical press at t=0
+        monitor.handleSimulatedReport(reportID: 1, data: reportData)
+        #expect(pressCount == 1)
+        #expect(releaseCount == 0)
+
+        // 2. Physical release report is permanently lost in transmission over Bluetooth.
+        // Remote is silent. Clock advances past 8000ms.
+        clock.advance(to: HIDRemoteTiming.missingReleaseTimeoutMilliseconds)
+        #expect(pressCount == 1)
+        #expect(releaseCount == 1, "Missing release watchdog must synthesize key-up on silence timeout")
+
+        // 3. User presses the same button again. No intermediate empty report was ever received!
+        clock.advance(to: HIDRemoteTiming.missingReleaseTimeoutMilliseconds + 1000)
+        monitor.handleSimulatedReport(reportID: 1, data: reportData)
+        #expect(pressCount == 2, "Second press must NOT be swallowed even when the previous release report was permanently lost")
+        #expect(releaseCount == 1)
+
+        // 4. User releases the button normally
+        clock.advance(to: HIDRemoteTiming.missingReleaseTimeoutMilliseconds + 1200)
+        monitor.handleSimulatedReport(reportID: 1, data: Data([0, 0]))
+        #expect(pressCount == 2)
+        #expect(releaseCount == 2)
+
+        monitor.stop()
+    }
+
+    @Test func continuousHeldReportsExceedingHardCeilingAreForceReleasedAndSuppressed() {
+        let clock = ControlledTestScheduler()
+        let prefs = defaults()
+        let settings = AppSettings(defaults: prefs)
+        settings.customMappingEnabled = true
+        var pressCount = 0
+        var releaseCount = 0
+        let profile = UUID()
+        let monitor = HIDRemoteMonitor(settings: settings, profileID: profile, scheduler: clock,
+            runtimePermissions: { true }, diagnosticLogger: { _ in })
+        monitor.onRuntimeButton = { _, _, phase in
+            if phase == .press { pressCount += 1 }
+            if phase == .release { releaseCount += 1 }
+            return true
+        }
+        monitor.connectSimulatedDevice(fingerprint: "test-device", profileID: profile, isSeized: true)
+        let usage = RemoteButton.power.hidUsage
+        let reportData = Data([UInt8(usage & 255), UInt8(usage >> 8)])
+
+        // Press at t=0
+        monitor.handleSimulatedReport(reportID: 1, data: reportData)
+        #expect(pressCount == 1)
+        #expect(releaseCount == 0)
+
+        // Continuous reports arriving every 5s up to 55s
+        for time: UInt64 in stride(from: 5000, through: 55000, by: 5000) {
+            clock.advance(to: time)
+            monitor.handleSimulatedReport(reportID: 1, data: reportData)
+            #expect(pressCount == 1)
+            #expect(releaseCount == 0, "Hold must not be prematurely released at t=\(time)")
+        }
+
+        // Advance to 60000ms: hard ceiling (60s) triggers force recovery
+        clock.advance(to: 60000)
+        #expect(pressCount == 1)
+        #expect(releaseCount == 1, "Hard ceiling watchdog must fire at 60s")
+
+        // Continued stuck reports beyond 60s must be suppressed (no new press)
+        clock.advance(to: 61000)
+        monitor.handleSimulatedReport(reportID: 1, data: reportData)
+        #expect(pressCount == 1, "Continuous reports from jammed button after hard ceiling must be suppressed")
+        #expect(releaseCount == 1)
+
+        // Physical release clears suppression
+        clock.advance(to: 62000)
+        monitor.handleSimulatedReport(reportID: 1, data: Data([0, 0]))
+        #expect(pressCount == 1)
+        #expect(releaseCount == 1)
+
+        // New press after physical release is accepted
+        clock.advance(to: 63000)
+        monitor.handleSimulatedReport(reportID: 1, data: reportData)
+        #expect(pressCount == 2)
+        #expect(releaseCount == 1)
+
+        monitor.stop()
+    }
+
+    @Test func hardCeilingSuppressionExpiresAfterSilenceEvenIfReleaseReportWasLost() {
+        let clock = ControlledTestScheduler()
+        let prefs = defaults()
+        let settings = AppSettings(defaults: prefs)
+        settings.customMappingEnabled = true
+        var pressCount = 0
+        var releaseCount = 0
+        let profile = UUID()
+        let monitor = HIDRemoteMonitor(settings: settings, profileID: profile, scheduler: clock,
+            runtimePermissions: { true }, diagnosticLogger: { _ in })
+        monitor.onRuntimeButton = { _, _, phase in
+            if phase == .press { pressCount += 1 }
+            if phase == .release { releaseCount += 1 }
+            return true
+        }
+        monitor.connectSimulatedDevice(fingerprint: "test-device", profileID: profile, isSeized: true)
+        let usage = RemoteButton.power.hidUsage
+        let reportData = Data([UInt8(usage & 255), UInt8(usage >> 8)])
+
+        // 1. Continuous reports up to 60s
+        monitor.handleSimulatedReport(reportID: 1, data: reportData)
+        for time: UInt64 in stride(from: 5000, through: 55000, by: 5000) {
+            clock.advance(to: time)
+            monitor.handleSimulatedReport(reportID: 1, data: reportData)
+        }
+        clock.advance(to: 60000)
+        #expect(releaseCount == 1)
+
+        // 2. Jammed report at 61000ms is suppressed
+        clock.advance(to: 61000)
+        monitor.handleSimulatedReport(reportID: 1, data: reportData)
+        #expect(pressCount == 1)
+
+        // 3. Jam is removed, BUT release report was lost in air.
+        // Remote goes completely silent from 61000ms.
+        // Advance clock past 8000ms silence timeout (to 69001ms).
+        clock.advance(to: 69001)
+
+        // 4. User presses the button again at 70000ms.
+        // Hard-ceiling suppression must have expired with silence, so the press is accepted!
+        clock.advance(to: 70000)
+        monitor.handleSimulatedReport(reportID: 1, data: reportData)
+        #expect(pressCount == 2, "Press after silence must be accepted even after hard ceiling without release report")
+
+        monitor.stop()
+    }
+
+    @Test func backOnlyModeSustainsContinuousHoldAndRecoversAfterSilence() {
+        let clock = ControlledTestScheduler()
+        let prefs = defaults()
+        let settings = AppSettings(defaults: prefs)
+        settings.customMappingEnabled = false
+        var performedActions: [ConfiguredButtonAction] = []
+        var releaseCount = 0
+        let profile = UUID()
+        let monitor = HIDRemoteMonitor(
+            settings: settings,
+            profileID: profile,
+            scheduler: clock,
+            runtimePermissions: { true },
+            actionPerformer: { button, trigger, action in
+                if button == .back && trigger == .singleClick {
+                    performedActions.append(action)
+                }
+                return true
+            },
+            diagnosticLogger: { _ in }
+        )
+        monitor.onRuntimeButton = { _, _, phase in
+            if phase == .release { releaseCount += 1 }
+            return true
+        }
+        monitor.connectSimulatedDevice(fingerprint: "test-device", profileID: profile, isSeized: true)
+        let usage = RemoteButton.back.hidUsage
+        let reportData = Data([UInt8(usage & 255), UInt8(usage >> 8)])
+
+        // First press in back-only mode
+        monitor.handleSimulatedBackOnlyReport(reportID: 1, data: reportData)
+        #expect(performedActions.count == 1)
+        #expect(performedActions.first?.action == .deleteBackward)
+        #expect(releaseCount == 0)
+
+        // Continuous reports past 8 seconds up to 10 seconds
+        for time: UInt64 in [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000] {
+            clock.advance(to: time)
+            monitor.handleSimulatedBackOnlyReport(reportID: 1, data: reportData)
+            #expect(performedActions.count == 1, "Repeated held back-only report must not duplicate delete action")
+            #expect(releaseCount == 0, "Back-only hold must survive beyond 8 seconds with continuous reports")
+        }
+
+        // Silent for 8000ms after last report at 10000ms
+        clock.advance(to: 18000)
+        #expect(releaseCount == 1, "Missing release recovery must fire 8000ms after silence")
+
+        // User presses Back again after lost release - must be accepted promptly without needing an intermediate release report!
+        clock.advance(to: 19000)
+        monitor.handleSimulatedBackOnlyReport(reportID: 1, data: reportData)
+        #expect(performedActions.count == 2, "Back button press after missing release must NOT be swallowed")
+        #expect(releaseCount == 1)
+
+        // Physical release arrives
+        clock.advance(to: 20000)
+        monitor.handleSimulatedBackOnlyReport(reportID: 1, data: Data([0, 0]))
+        #expect(performedActions.count == 2)
+        #expect(releaseCount == 2)
+
         monitor.stop()
     }
 

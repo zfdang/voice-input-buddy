@@ -413,12 +413,6 @@ enum CustomApplicationLearningState: Equatable {
     }
 }
 
-struct ConfigurationStatus {
-    let message: LocalizedMessage
-    let tint: Color
-    let systemImage: String
-}
-
 enum MappingActionFilter: String, CaseIterable, Identifiable {
     case basicKeys
     case systemAndMedia
@@ -460,10 +454,6 @@ enum MappingActionFilter: String, CaseIterable, Identifiable {
         case .commonPhrases: self = .commonPhrases
         case .custom: self = .custom
         }
-    }
-
-    func includes(_ category: ButtonActionCategory) -> Bool {
-        self.category == category
     }
 }
 

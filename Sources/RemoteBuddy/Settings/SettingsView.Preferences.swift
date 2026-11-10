@@ -37,45 +37,6 @@ extension SettingsView {
                     Group {
                         VStack(spacing: 0) {
                             HStack(spacing: 14) {
-                                Image(systemName: "arrow.up.arrow.down")
-                                    .font(.title3)
-                                    .foregroundStyle(Color.accentColor)
-                                    .frame(width: 34)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(localization.text("about.configuration.title"))
-                                        .font(.subheadline.weight(.semibold))
-                                    Text(localization.text("about.configuration.export_description"))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer(minLength: 16)
-                                Button(localization.text("about.configuration.export"), action: exportConfiguration)
-                                    .compatibilityButtonStyle(.standard)
-                                    .fixedSize(horizontal: true, vertical: false)
-                                    .frame(width: 150)
-                                Button(localization.text("about.configuration.import"), action: importConfiguration)
-                                    .disabled(model.isVoiceConfigurationBusy)
-                                    .compatibilityButtonStyle(.standard)
-                                    .fixedSize(horizontal: true, vertical: false)
-                                    .frame(width: 150)
-                            }
-                            .padding(.vertical, 8)
-
-                            if let configurationStatus {
-                                Divider()
-                                Label(
-                                    configurationStatus.message.text(using: localization),
-                                    systemImage: configurationStatus.systemImage
-                                )
-                                .font(.caption)
-                                .foregroundStyle(configurationStatus.tint)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.vertical, 8)
-                            }
-
-                            Divider()
-
-                            HStack(spacing: 14) {
                                 Image(systemName: "dock.rectangle")
                                     .font(.title3)
                                     .foregroundStyle(Color.accentColor)
@@ -93,6 +54,7 @@ extension SettingsView {
                                     set: { setDockIconVisible($0) }
                                 ))
                                 .labelsHidden()
+                                .accessibilityLabel(localization.text("about.preferences.show_dock_icon"))
                                 .toggleStyle(.switch)
                             }
                             .padding(.vertical, 8)
@@ -123,6 +85,7 @@ extension SettingsView {
                                     set: { setStatusBarIconVisible($0) }
                                 ))
                                 .labelsHidden()
+                                .accessibilityLabel(localization.text("about.preferences.show_status_bar_icon"))
                                 .toggleStyle(.switch)
                             }
                             .padding(.vertical, 8)
@@ -152,6 +115,7 @@ extension SettingsView {
                                             set: { loginItemService.setEnabled($0) }
                                         ))
                                         .labelsHidden()
+                                        .accessibilityLabel(localization.text("about.preferences.launch_at_login"))
                                         .toggleStyle(.switch)
                                     }
 
@@ -163,6 +127,7 @@ extension SettingsView {
                                             .font(.system(size: 12, weight: .medium))
                                         Toggle("", isOn: $settings.openMainWindowAtLaunch)
                                             .labelsHidden()
+                                            .accessibilityLabel(localization.text("about.preferences.open_main_window_at_launch"))
                                             .toggleStyle(.switch)
                                     }
                                 }
@@ -177,7 +142,7 @@ extension SettingsView {
                                     .frame(maxWidth: .infinity, alignment: .trailing)
                                     .padding(.bottom, 8)
                                 Button(
-                                    "about.preferences.launch_at_login_open_system_settings",
+                                    localization.text("about.preferences.launch_at_login_open_system_settings"),
                                     action: loginItemService.openLoginItemsSettings
                                 )
                                 .compatibilityButtonStyle(.standard)
@@ -324,7 +289,7 @@ extension SettingsView {
                     Spacer(minLength: 16)
 
                     Toggle(
-                        "about.version.check_prerelease",
+                        localization.text("about.version.check_prerelease"),
                         isOn: $settings.checksForPreReleaseUpdates
                     )
                     .toggleStyle(.switch)
@@ -332,7 +297,7 @@ extension SettingsView {
 
                     Button(action: checkForUpdates) {
                         Label(
-                            "menu.check_for_updates",
+                            localization.text("menu.check_for_updates"),
                             systemImage: "arrow.triangle.2.circlepath"
                         )
                     }

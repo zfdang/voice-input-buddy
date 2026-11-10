@@ -62,37 +62,6 @@ struct RuntimeBoundaryTests {
         monitor.disconnectSimulatedDevice()
     }
 
-    @Test func currentImportWithoutUnifiedBindingsClearsExistingOverrides() throws {
-        let (defaults, name) = values()
-        defer { defaults.removePersistentDomain(forName: name) }
-        let settings = AppSettings(defaults: defaults)
-        var object = try #require(JSONSerialization.jsonObject(with: settings.exportedConfigurationData()) as? [String: Any])
-        object.removeValue(forKey: "unifiedBaseBindings")
-        settings.setBaseBinding(ConfiguredButtonAction(action: .commandQuit, shortcut: nil), for: .right, trigger: .singleClick, profileID: nil)
-        #expect(settings.configuredBaseAction(for: .right, trigger: .singleClick).action == .commandQuit)
-        try settings.importConfiguration(from: JSONSerialization.data(withJSONObject: object))
-        #expect(settings.unifiedBaseBindings.isEmpty)
-        #expect(settings.configuredBaseAction(for: .right, trigger: .singleClick).action == .arrowRight)
-    }
-
-    @Test func configurationUsesOneFormatAndRejectsOtherVersionsBeforeMutation() throws {
-        let (defaults, name) = values()
-        defer { defaults.removePersistentDomain(forName: name) }
-        let settings = AppSettings(defaults: defaults)
-        var object = try #require(JSONSerialization.jsonObject(with: settings.exportedConfigurationData()) as? [String: Any])
-        #expect(object["formatVersion"] as? Int == PersonalizedConfiguration.currentFormatVersion)
-        settings.gainDB = 12
-        for version in [1, 3] {
-            object["formatVersion"] = version
-            do {
-                try settings.importConfiguration(from: JSONSerialization.data(withJSONObject: object))
-                Issue.record("Unsupported format was accepted")
-            } catch AppConfigurationError.unsupportedVersion {
-                #expect(settings.gainDB == 12)
-            }
-        }
-    }
-
     @Test(arguments: [ButtonTrigger.singleClick, .doubleClick, .longPress])
     func clearingGesturePersistsWithoutChangingOtherGestures(trigger: ButtonTrigger) {
         let (defaults, name) = values()
@@ -160,15 +129,14 @@ struct RuntimeBoundaryTests {
         }
     }
 
-    @Test func oversizedConfigurationIsRejectedBeforeReadingOrDecoding() throws {
+    @Test func oversizedFileIsRejectedBeforeReading() throws {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: file) }
-        let data = Data(repeating: 32, count: ConfigurationFileReader.maximumBytes + 1)
+        let data = Data(repeating: 32, count: CommonPhraseFileReader.maximumBytes + 1)
         try data.write(to: file)
-        #expect(throws: AppConfigurationError.self) { try ConfigurationFileReader.read(from: file) }
-        #expect(throws: AppConfigurationError.self) { try AppSettings.validatedConfiguration(from: data) }
+        #expect(throws: CommonPhraseFileReader.ReadError.self) { try CommonPhraseFileReader.read(from: file) }
         try Data("small".utf8).write(to: file)
-        #expect(try ConfigurationFileReader.read(from: file) == Data("small".utf8))
+        #expect(try CommonPhraseFileReader.read(from: file) == Data("small".utf8))
     }
     @Test func focusInputWaitsForActualFocusCompletionEvenIfOldFieldWasEditable() {
         let snapshot = VoiceInputDestinationSnapshot(bundleIdentifier: "example.editor", role: "AXTextArea", subrole: "", enabled: true, editable: true, protectedContent: false, semanticText: "Composer", focusIdentity: "old")

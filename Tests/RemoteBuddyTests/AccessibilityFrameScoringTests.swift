@@ -31,20 +31,15 @@ struct AccessibilityFrameScoringTests {
     }
 
     @Test(arguments: [1e300, -1e300, Double.greatestFiniteMagnitude])
-    func importedExtremeFramesCannotCrashSemanticMatching(coordinate: Double) throws {
-        let name = "frame-scoring-" + UUID().uuidString
-        let defaults = try #require(UserDefaults(suiteName: name))
-        defer { defaults.removePersistentDomain(forName: name) }
-        let settings = AppSettings(defaults: defaults)
+    func serializedExtremeFramesCannotCrashSemanticMatching(coordinate: Double) throws {
         let profile = CustomApplicationProfile(displayName: "Example", bundleIdentifier: "com.example.editor",
             applicationPath: "", focusStrategy: .recordedAccessibility,
             accessibilityTarget: target(.init(x: coordinate, y: coordinate, width: 0.5, height: 0.2)))
-        settings.customApplicationProfiles = [profile]
-        let exported = try settings.exportedConfigurationData()
-        try settings.importConfiguration(from: exported)
-        let imported = try #require(settings.customApplicationProfiles.first?.accessibilityTarget)
+        let encoded = try JSONEncoder().encode(profile)
+        let decoded = try JSONDecoder().decode(CustomApplicationProfile.self, from: encoded)
+        let restored = try #require(decoded.accessibilityTarget)
         #expect(KeyboardInjector.recordedAccessibilityCandidateScore(candidate,
-            target: imported, windowTitle: "", windowFrame: window) == 500)
+            target: restored, windowTitle: "", windowFrame: window) == 500)
     }
 
     @Test func normalFrameRankingRetainsItsGeometryBonus() {

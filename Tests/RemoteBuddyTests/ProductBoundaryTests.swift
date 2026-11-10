@@ -116,20 +116,17 @@ struct ProductBoundaryTests {
         }
     }
 
-    @Test @MainActor func configurationOperationsPersistPreferencesWithoutUsageData() throws {
+    @Test @MainActor func settingsPersistPreferencesWithoutUsageData() throws {
         let suite = "remote-buddy.tests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let settings = AppSettings(defaults: defaults)
         settings.setAction(.commandCopy, for: .right)
         settings.gainDB = 12
-        try settings.importConfiguration(from: settings.exportedConfigurationData())
         _ = settings.recordLaunchAndDetectCompletedUpdate(currentBuild: "80", sparkleHadLaunchedBefore: false)
         let persisted = defaults.persistentDomain(forName: suite) ?? [:]
         #expect(!persisted.isEmpty)
         #expect(persisted.keys.allSatisfy { !$0.hasPrefix("usage.") })
-        let exported = try #require(JSONSerialization.jsonObject(with: settings.exportedConfigurationData()) as? [String: Any])
-        #expect(exported.keys.allSatisfy { !$0.hasPrefix("usage.") })
     }
 
     @Test @MainActor func everySetupScreenshotAndRemoteIllustrationDecodes() throws {

@@ -34,7 +34,6 @@ struct BluetoothAudioPipelineTests {
         #expect(!model.canAcceptNewVoiceSession(from: .chromecast))
         #expect(model.canAcceptNewVoiceSession(from: .bluetooth))
         #expect(model.shouldKeepVirtualAudioActive)
-        #expect(throws: AppConfigurationError.self) { try model.importConfiguration(from: Data()) }
         deliveries.run()
         #expect(!pipeline.hasPendingVoiceWork)
         #expect(!model.isVoiceConfigurationBusy)
@@ -104,5 +103,73 @@ struct BluetoothAudioPipelineTests {
         #expect(pipeline.append(bytes, frameSize: 120, gainDB: 0) { _ in })
         queue.sync {}
         deliveries.run()
+    }
+
+    @Test func endStreamFlushesResidualPartialFrame() {
+        let queue = DispatchQueue(label: "test.audio.tail")
+        let deliveries = AudioDeliveries()
+        let pipeline = BluetoothAudioPipeline(queue: queue, deliver: { deliveries.enqueue($0) })
+        var decodedSamples: [[Int16]] = []
+        var stopped = false
+        // Send 50 bytes (less than 120 bytes frameSize)
+        let bytes = Data(repeating: 0x55, count: 50)
+        #expect(pipeline.beginStream {})
+        #expect(pipeline.append(bytes, frameSize: 120, gainDB: 0) { decodedSamples.append($0) })
+        queue.sync {}
+        #expect(pipeline.pendingByteCount == 50)
+        pipeline.endStream(frameSize: 120, gainDB: 0, onDecoded: { samples in
+            decodedSamples.append(samples)
+        }, onStop: {
+            stopped = true
+        })
+        queue.sync {}
+        deliveries.run()
+        #expect(stopped)
+        #expect(decodedSamples.count == 1)
+        #expect(decodedSamples.first?.count == 100) // 50 bytes decoded without zero-padding distortion
+        #expect(pipeline.pendingByteCount == 0)
+
+        // Second endStream invocation is a no-op and does not decode residual audio again
+        var secondStop = false
+        pipeline.endStream(frameSize: 120, gainDB: 0, onDecoded: { _ in
+            #expect(Bool(false), "Second endStream should not yield decoded samples")
+        }, onStop: {
+            secondStop = true
+        })
+        queue.sync {}
+        deliveries.run()
+        #expect(!secondStop)
+    }
+
+    @Test func tailFramePartialDecodingProducesBoundedNonSaturatingSamples() {
+        let queue = DispatchQueue(label: "test.audio.tail.saturation")
+        let deliveries = AudioDeliveries()
+        let pipeline = BluetoothAudioPipeline(queue: queue, deliver: { deliveries.enqueue($0) })
+        var decodedSamples: [[Int16]] = []
+
+        // Feed arbitrary partial frame with extreme nibbles
+        let pattern = Data([0xFF, 0x00, 0xAA, 0x55, 0x77, 0x88, 0x11, 0xEE, 0x44, 0x99])
+        #expect(pipeline.beginStream {})
+        #expect(pipeline.append(pattern, frameSize: 120, gainDB: 12) { decodedSamples.append($0) })
+        queue.sync {}
+        #expect(pipeline.pendingByteCount == pattern.count)
+
+        pipeline.endStream(frameSize: 120, gainDB: 12, onDecoded: { samples in
+            decodedSamples.append(samples)
+        }, onStop: {})
+        queue.sync {}
+        deliveries.run()
+
+        #expect(decodedSamples.count == 1)
+        guard let samples = decodedSamples.first else {
+            Issue.record("Expected tail samples")
+            return
+        }
+        #expect(samples.count == pattern.count * 2)
+        let reference = ATVVAudioDecoder().append(pattern, frameSize: pattern.count, gainDB: 12).flatMap { $0 }
+        #expect(samples == reference)
+        let peak = samples.map { abs(Int32($0)) }.max() ?? 0
+        #expect(peak > 0)
+        #expect(peak < Int32(Int16.max))
     }
 }

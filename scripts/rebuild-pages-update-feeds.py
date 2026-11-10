@@ -275,14 +275,7 @@ def rebuild(
     try:
         # Resolve package paths first (downloading if necessary)
         for arch in ["arm64", "intel"]:
-            candidate_names = [
-                f"Remote_Buddy_{tag}_macOS_{arch}.pkg",
-                f"Voice_Input_Buddy_{tag}_macOS_{arch}.pkg",
-            ]
-            pkg_name = next(
-                (name for name in candidate_names if any(a.get("name") == name for a in release_metadata.get("assets", []))),
-                candidate_names[0]
-            )
+            pkg_name = f"Remote_Buddy_{tag}_macOS_{arch}.pkg"
             pkg_path = packages[arch]
             if pkg_path is None or not Path(pkg_path).exists():
                 local_candidate = download_dir / pkg_name
