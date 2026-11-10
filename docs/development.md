@@ -76,7 +76,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test -c release -
 
 App 打包先在临时目录组装全新的 bundle，资源检查和签名成功后再替换 `dist` 中的 App。重复构建不会保留已移除的资源或框架；打包失败时保留上一份 App。可运行 `python3 scripts/test-app-bundle.py` 验证这两条行为。
 
-配置导入保留本机已有的设备档案映射。跨 Mac 导入时，导出文件中当前选中设备的按键映射会应用到本机当前选中设备；尚未配对时作为默认映射保存。其他无法对应到本机设备的映射会显示导入提示，不会悄悄接受后失效。导出统一使用当前格式 2，不读取旧格式；缺少选择信息时不猜测未知设备档案的对应关系。
+应用的设置简单，且专注于本机单机配置。配置直接通过 UserDefaults 本地持久化，不提供配置文件的导入与导出功能；按键映射与设备增益按设备档案独立保存。
 
 已删除停用的上游硬件公告数据层、占位服务地址和空面板；新增设备支持通过本项目的发行说明公布。
 
@@ -116,13 +116,13 @@ HID 设备发现仅用受支持的 VendorID／ProductID 组合。IOHIDManager �
 | Input | 按键注入、映射、快捷键与输入目标 |
 | Integrations | 输入工具能力、输入源和 deep link |
 | Onboarding | 向导各步骤、输入工具指南、测试状态机及原生文本编辑器 |
-| Settings | 配置持久化、导入校验、设置页面及共享呈现组件 |
+| Settings | 配置持久化、设置页面及共享呈现组件 |
 | CommonPhrases | 常用语存储、插入、设置及浮层 |
 | Updates | 更新信息与本地化更新界面 |
 | Diagnostics | 本地日志与诊断；没有历史统计数据模型或上传队列 |
 | Support | 本地化、链接；UnavailableFeatures 仅保留计划中的 Siri Remote 能力边界 |
 
-`BridgeAppModel` 保留唯一的应用状态和初始化入口，行为按连接、音频、按键和权限分入同一类型的功能扩展。`AppSettings` 保留唯一的 UserDefaults 所有者，向导配置、按键映射、导入校验和持久化各自组织。`SettingsView` 与 `OnboardingView` 保留原来的 SwiftUI 状态及 view identity，页面、指南、生命周期和呈现组件分开维护；没有创建重复的状态对象。
+`BridgeAppModel` 保留唯一的应用状态和初始化入口，行为按连接、音频、按键和权限分入同一类型的功能扩展。`AppSettings` 保留唯一的 UserDefaults 所有者，向导配置、按键映射和持久化各自组织。`SettingsView` 与 `OnboardingView` 保留原来的 SwiftUI 状态及 view identity，页面、指南、生命周期和呈现组件分开维护；没有创建重复的状态对象。
 
 跨文件扩展需要的成员使用模块内部可见性，文件内独用的辅助实现仍为 private；没有新增 public API，也未增加 target 或模块依赖。新增功能应放到对应目录，避免再把页面与硬件操作混入入口文件。
 
@@ -254,8 +254,7 @@ The connection page uses one group per saved remote: identity, image, connection
 state and gain. Add new device is a prominent page-header action. Gains persist
 in the remote profile and BLE decoding resolves gain from the reporting bridge's
 Bluetooth identity, independently of the currently selected settings card.
-Portable configuration retains explicit per-profile gains, validating bounds
-and mapping the source selection to the destination selection.
+Each remote profile retains its explicit gain and validates bounds locally.
 
 All sources share the fixed `BuddyMic2ch_UID` output (Remote Buddy Mic).
 Output selection and remembered/alternate-device fallback have been removed.
@@ -292,7 +291,7 @@ rendering accepts `REMOTE_BUDDY_SETTINGS_SCREENSHOT_SIZE=720x500` and
 `REMOTE_BUDDY_SCREENSHOT_SCROLL_TO_END=1` to verify bottom/right navigation
 remains reachable. Preview fixtures do not start remote or audio hardware.
 
-Hold-to-repeat is represented by the `repeatSingleClick` action in the long-press binding, using the existing per-device binding persistence and portable configuration format. Navigation, volume, and Power buttons default to this value; Back defaults to no long-press action. Power repeats Delete, while Back sends Escape once. The mapping cards display these values explicitly. The HID runtime uses the configured hold value instead of a repeat-capable button allowlist; repeat starts at 350 ms and executes the current single-press action until release. Independent long-press actions retain the 550 ms threshold. Double-click recognition remains available and is cancelled when a held press starts repeating, avoiding a trailing click on release. Timer tokens reject stale repeat callbacks after release or reset. The repeat marker is rejected outside a long-press binding during import.
+Hold-to-repeat is represented by the `repeatSingleClick` action in the long-press binding, using the existing per-device binding persistence. Navigation, volume, and Power buttons default to this value; Back defaults to no long-press action. Power repeats Delete, while Back sends Escape once. The mapping cards display these values explicitly. The HID runtime uses the configured hold value instead of a repeat-capable button allowlist; repeat starts at 350 ms and executes the current single-press action until release. Independent long-press actions retain the 550 ms threshold. Double-click recognition remains available and is cancelled when a held press starts repeating, avoiding a trailing click on release. Timer tokens reject stale repeat callbacks after release or reset.
 
 ### G9N9N first hardware inspection (2026-10-19)
 
