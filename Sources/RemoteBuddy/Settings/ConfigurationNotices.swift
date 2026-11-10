@@ -13,6 +13,8 @@ enum ConfigurationImportNoticeText {
     static let titleKey = "settings.import_notice.title"
     static let rejectedKey = "settings.import_notice.rejected"
     static let missingApplicationKey = "settings.import_notice.missing_app"
+    static let appliedTargetKey = "settings.import_notice.applied_target"
+    static let rollbackKey = "settings.import_notice.rollback"
     static let nextStepKey = "settings.import_notice.next_step"
     static let separatorKey = "settings.import_notice.separator"
     static let buttonMappingItemKey = "settings.import_notice.item.button_mapping"

@@ -195,6 +195,10 @@ extension SettingsView {
                     VStack(alignment: .leading, spacing: 5) {
                         Text(localization.text(ConfigurationImportNoticeText.titleKey))
                             .font(.system(size: 12, weight: .semibold))
+                        if let target = notice.targetProfileName {
+                            Text(String(format: localization.text(ConfigurationImportNoticeText.appliedTargetKey), target))
+                                .font(.system(size: 12))
+                        }
                         if let rejected {
                             Text(rejected)
                                 .font(.system(size: 12))
@@ -206,6 +210,14 @@ extension SettingsView {
                         Text(localization.text(ConfigurationImportNoticeText.nextStepKey))
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
+                        if settings.lastImportRollbackSnapshot != nil {
+                            Button(localization.text(ConfigurationImportNoticeText.rollbackKey)) {
+                                settings.rollbackLastImport()
+                            }
+                            .compatibilityButtonStyle(.standard)
+                            .font(.system(size: 11))
+                            .padding(.top, 2)
+                        }
                     }
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)

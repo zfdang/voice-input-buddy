@@ -12,10 +12,21 @@ struct ConfigurationImportReport: Equatable {
     /// Custom applications that are structurally fine but absent from this Mac. They are kept
     /// so a configuration exported from a better-equipped Mac survives the trip.
     var applicationsMissingOnThisMac: [String] = []
+    /// The name of the remote profile that imported mappings were applied to.
+    var targetProfileName: String? = nil
 
     var isClean: Bool {
         rejectedEntryStorageKeys.isEmpty && applicationsMissingOnThisMac.isEmpty
     }
+}
+
+struct ConfigurationRollbackSnapshot {
+    let buttonBindings: [RemoteButton: ButtonAction]
+    let buttonShortcuts: [RemoteButton: CustomKeyboardShortcut]
+    let buttonApplicationProfileIDs: [RemoteButton: UUID]
+    let secondaryButtonBindings: [RemoteButton: [ButtonTrigger: ConfiguredButtonAction]]
+    let unifiedBaseBindings: [UnifiedButtonBinding]
+    let targetProfileID: UUID?
 }
 
 enum AppConfigurationError: Error {
@@ -61,6 +72,7 @@ struct PersonalizedConfiguration: Codable {
     var voiceTool: OnboardingVoiceTool? = nil
     let voiceFnTapModeEnabled: Bool?
     let voiceKeyMode: VoiceKeyMode?
+    var chromecastVoiceMode: ChromecastVoiceMode? = nil
     let continuousRecordingPowerBindingBackup: ConfiguredButtonAction?
 }
 

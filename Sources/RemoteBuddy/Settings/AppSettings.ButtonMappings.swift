@@ -311,6 +311,7 @@ extension AppSettings {
             mappings: mappingsForNewRemote()
         )
         remoteDeviceProfiles.append(profile)
+        inheritUnifiedBindings(from: selectedRemoteProfileID, to: profile.id)
         return profile.id
     }
 
@@ -331,6 +332,7 @@ extension AppSettings {
             let profile = RemoteDeviceProfile(model: model, hidFingerprint: fingerprint,
                                               mappings: mappingsForNewRemote())
             remoteDeviceProfiles.append(profile)
+            inheritUnifiedBindings(from: selectedRemoteProfileID, to: profile.id)
             return profile.id
         }
         let candidates = remoteDeviceProfiles.indices.filter {
@@ -364,7 +366,16 @@ extension AppSettings {
             mappings: mappingsForNewRemote()
         )
         remoteDeviceProfiles.append(profile)
+        inheritUnifiedBindings(from: selectedRemoteProfileID, to: profile.id)
         return profile.id
+    }
+
+    private func inheritUnifiedBindings(from sourceID: UUID?, to targetID: UUID) {
+        guard let sourceID else { return }
+        let toCopy = unifiedBaseBindings.filter { $0.remoteProfileID == sourceID }
+        for binding in toCopy {
+            setBaseBinding(binding.configured, for: binding.button, trigger: binding.trigger, profileID: targetID)
+        }
     }
 
     func profileID(forBluetoothIdentifier identifier: UUID) -> UUID? {

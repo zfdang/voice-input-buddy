@@ -38,6 +38,7 @@ extension AppSettings {
             voiceTool: onboardingVoiceTool,
             voiceFnTapModeEnabled: voiceFnTapModeEnabled,
             voiceKeyMode: voiceKeyMode,
+            chromecastVoiceMode: chromecastVoiceMode,
             continuousRecordingPowerBindingBackup: nil
         )
         let encoder = JSONEncoder()
@@ -188,6 +189,14 @@ extension AppSettings {
             }
         }
         customMappingEnabled = configuration.customMappingEnabled
+        lastImportRollbackSnapshot = ConfigurationRollbackSnapshot(
+            buttonBindings: buttonBindings,
+            buttonShortcuts: buttonShortcuts,
+            buttonApplicationProfileIDs: buttonApplicationProfileIDs,
+            secondaryButtonBindings: secondaryButtonBindings,
+            unifiedBaseBindings: unifiedBaseBindings,
+            targetProfileID: selectedRemoteProfileID
+        )
         buttonBindings = Self.defaultBindings.merging(importedBindings) { _, imported in imported }
         buttonShortcuts = importedShortcuts
         unifiedBaseBindings = importedUnifiedBindings(from: configuration, rejected: &rejected).map { binding in
@@ -221,13 +230,18 @@ extension AppSettings {
         if let checksForPreReleaseUpdates = configuration.checksForPreReleaseUpdates {
             self.checksForPreReleaseUpdates = checksForPreReleaseUpdates
         }
+        if let chromecastVoiceMode = configuration.chromecastVoiceMode {
+            self.chromecastVoiceMode = chromecastVoiceMode
+        }
         setOnboardingVoiceTool(importedVoiceKeyConfiguration.tool)
         voiceKeyMode = importedVoiceKeyConfiguration.mode
         voiceFnTapModeEnabled = importedVoiceKeyConfiguration.fnTapModeEnabled && voiceKeyMode == .function
 
+        let targetName = selectedRemoteProfile.map { $0.customName.isEmpty ? $0.model.rawValue : $0.customName }
         let report = ConfigurationImportReport(
             rejectedEntryStorageKeys: rejected.sorted(),
-            applicationsMissingOnThisMac: missingApplications.sorted()
+            applicationsMissingOnThisMac: missingApplications.sorted(),
+            targetProfileName: targetName
         )
         if !report.isClean {
             AppLogger.shared.write(
@@ -236,5 +250,21 @@ extension AppSettings {
             )
         }
         configurationImportNotice = report.isClean ? nil : report
+    }
+
+    @discardableResult
+    func rollbackLastImport() -> Bool {
+        guard let snapshot = lastImportRollbackSnapshot else { return false }
+        if snapshot.targetProfileID == selectedRemoteProfileID {
+            buttonBindings = snapshot.buttonBindings
+            buttonShortcuts = snapshot.buttonShortcuts
+            buttonApplicationProfileIDs = snapshot.buttonApplicationProfileIDs
+            secondaryButtonBindings = snapshot.secondaryButtonBindings
+            unifiedBaseBindings = snapshot.unifiedBaseBindings
+            saveSelectedRemoteProfileMappings()
+        }
+        lastImportRollbackSnapshot = nil
+        configurationImportNotice = nil
+        return true
     }
 }

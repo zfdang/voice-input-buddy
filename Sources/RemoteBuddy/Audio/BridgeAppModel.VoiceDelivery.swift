@@ -53,9 +53,11 @@ extension BridgeAppModel {
         voiceSession.voiceAudioDeliveryDiagnostic.route = route
         voiceSession.voiceAudioDeliveryDiagnostic.receivedBatches += 1
         voiceSession.voiceAudioDeliveryDiagnostic.receivedSamples += samples.count
-        voiceSession.voiceAudioDeliveryDiagnostic.outputAtObservation = audio.output.diagnosticSnapshot(
-            deliveryGeneration: voiceSession.voiceAudioDeliveryDiagnostic.generation
-        )
+        if voiceSession.voiceAudioDeliveryDiagnostic.receivedBatches == 1 {
+            voiceSession.voiceAudioDeliveryDiagnostic.outputAtObservation = audio.output.diagnosticSnapshot(
+                deliveryGeneration: voiceSession.voiceAudioDeliveryDiagnostic.generation
+            )
+        }
     }
 
     func recordVoiceAudioEnqueueOutcome(

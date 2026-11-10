@@ -809,7 +809,7 @@ final class BluetoothRemoteBridge: NSObject {
     private func reject(_ candidate: CBPeripheral, reason: String, source: String) {
         guard rejectedIdentifiers.insert(candidate.identifier).inserted else { return }
         AppLogger.shared.write(
-            "BLE REJECTED reason=\(reason) source=\(source) name=\(candidate.name ?? "unknown")"
+            "BLE REJECTED reason=\(reason) source=\(source) name=\(DiagnosticRedactor.redactedDeviceName(candidate.name))"
         )
     }
 
@@ -836,7 +836,7 @@ final class BluetoothRemoteBridge: NSObject {
         state = .connecting
         startConnectionTimeout(generation: generation)
         central.connect(candidate, options: nil)
-        AppLogger.shared.write("BLE CONNECTING source=\(source) name=\(candidate.name ?? "unknown")")
+        AppLogger.shared.write("BLE CONNECTING source=\(source) name=\(DiagnosticRedactor.redactedDeviceName(candidate.name))")
     }
 
     private func resetPeripheral() {
@@ -1100,7 +1100,7 @@ final class BluetoothRemoteBridge: NSObject {
         write(ATVVProtocol.getCapabilitiesV10)
         lifecycle = .awaitingCapabilities(generation)
         state = .discovering
-        AppLogger.shared.write("ATVV CAPABILITIES requested name=\(peripheral.name ?? "MI RC")")
+        AppLogger.shared.write("ATVV CAPABILITIES requested name=\(DiagnosticRedactor.redactedDeviceName(peripheral.name ?? "MI RC"))")
     }
 
     private func updateBatteryPollingSchedule(generation: UInt64) {
@@ -1577,7 +1577,7 @@ extension BluetoothRemoteBridge: @preconcurrency CBCentralManagerDelegate {
             batteryServiceUUID,
             deviceInformationServiceUUID,
         ])
-        AppLogger.shared.write("BLE CONNECTED name=\(peripheral.name ?? "unknown")")
+        AppLogger.shared.write("BLE CONNECTED name=\(DiagnosticRedactor.redactedDeviceName(peripheral.name))")
     }
 
     func centralManager(

@@ -895,6 +895,8 @@
 "settings.import_notice.title" = "Some Settings Were Skipped During Import";
 "settings.import_notice.rejected" = "These settings did not pass validation: %1$@.";
 "settings.import_notice.missing_app" = "These applications are not installed on this Mac, so buttons pointing to them will not work yet: %1$@.";
+"settings.import_notice.applied_target" = "Applied to current remote: %1$@.";
+"settings.import_notice.rollback" = "Undo this import";
 "settings.import_notice.next_step" = "Set the skipped items again to use them; this notice clears on relaunch.";
 "settings.import_notice.separator" = ", ";
 "settings.import_notice.item.button_mapping" = "remote button mappings";

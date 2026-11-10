@@ -892,6 +892,8 @@
 "settings.import_notice.title" = "导入的配置里有内容没有通过检查";
 "settings.import_notice.rejected" = "未通过检查已跳过：%1$@。";
 "settings.import_notice.missing_app" = "以下应用在这台 Mac 上未安装，相关按键暂时不会生效：%1$@。";
+"settings.import_notice.applied_target" = "已应用到当前遥控器：%1$@。";
+"settings.import_notice.rollback" = "撤销本次导入";
 "settings.import_notice.next_step" = "重新设置一次被跳过的内容即可；这条提示只保留到本次退出。";
 "settings.import_notice.separator" = "、";
 "settings.import_notice.item.button_mapping" = "遥控器按键映射";

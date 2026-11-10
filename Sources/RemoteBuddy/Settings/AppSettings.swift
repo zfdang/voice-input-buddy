@@ -79,6 +79,58 @@ final class AppSettings: ObservableObject {
         bindings.append(UnifiedButtonBinding(remoteProfileID: profileID, button: button,
                                             trigger: trigger, configured: configured))
         unifiedBaseBindings = bindings
+
+        let targetProfileID = profileID ?? selectedRemoteProfileID
+        if targetProfileID == selectedRemoteProfileID {
+            if trigger == .singleClick {
+                buttonBindings[button] = configured.action
+                if let shortcut = configured.shortcut {
+                    buttonShortcuts[button] = shortcut
+                } else {
+                    buttonShortcuts.removeValue(forKey: button)
+                }
+                if let appID = configured.applicationProfileID {
+                    buttonApplicationProfileIDs[button] = appID
+                } else {
+                    buttonApplicationProfileIDs.removeValue(forKey: button)
+                }
+            } else {
+                var secondary = secondaryButtonBindings[button] ?? [:]
+                secondary[trigger] = configured
+                secondaryButtonBindings[button] = secondary
+            }
+        } else if let targetProfileID,
+                  let index = remoteDeviceProfiles.firstIndex(where: { $0.id == targetProfileID }) {
+            let mappings = remoteDeviceProfiles[index].mappings
+            var parsedBindings = mappings.parsedButtonBindings
+            var parsedShortcuts = mappings.parsedButtonShortcuts
+            var parsedAppIDs = mappings.parsedButtonApplicationProfileIDs
+            var parsedSecondary = mappings.parsedSecondaryButtonBindings
+            if trigger == .singleClick {
+                parsedBindings[button] = configured.action
+                if let shortcut = configured.shortcut {
+                    parsedShortcuts[button] = shortcut
+                } else {
+                    parsedShortcuts.removeValue(forKey: button)
+                }
+                if let appID = configured.applicationProfileID {
+                    parsedAppIDs[button] = appID
+                } else {
+                    parsedAppIDs.removeValue(forKey: button)
+                }
+            } else {
+                var secondary = parsedSecondary[button] ?? [:]
+                secondary[trigger] = configured
+                parsedSecondary[button] = secondary
+            }
+            remoteDeviceProfiles[index].mappings = RemoteDeviceMappings(
+                buttonBindings: parsedBindings,
+                buttonShortcuts: parsedShortcuts,
+                buttonApplicationProfileIDs: parsedAppIDs,
+                secondaryButtonBindings: parsedSecondary
+            )
+            saveRemoteDeviceProfiles()
+        }
     }
 
     @Published var buttonBindings: [RemoteButton: ButtonAction] {
@@ -501,6 +553,7 @@ final class AppSettings: ObservableObject {
     /// everything. In memory only: it describes one user action, not stored state, and it must
     /// not outlive the session in which the user imported the file.
     @Published var configurationImportNotice: ConfigurationImportReport?
+    var lastImportRollbackSnapshot: ConfigurationRollbackSnapshot?
 
     /// Bundle identifiers, audio device identifiers and display names are matched or displayed,
     /// never executed, so a length bound is the whole requirement for them.

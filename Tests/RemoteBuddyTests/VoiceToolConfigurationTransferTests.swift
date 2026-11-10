@@ -68,4 +68,43 @@ struct VoiceToolConfigurationTransferTests {
         #expect(releases == 1)
         #expect(settings.onboardingVoiceTool == .macosDictation)
     }
+
+    @Test func chromecastVoiceModeRoundTripsAcrossExportAndImport() throws {
+        let sourceName = "chromecast-export-" + UUID().uuidString
+        let targetName = "chromecast-import-" + UUID().uuidString
+        let sourceDefaults = try #require(UserDefaults(suiteName: sourceName))
+        let targetDefaults = try #require(UserDefaults(suiteName: targetName))
+        defer {
+            sourceDefaults.removePersistentDomain(forName: sourceName)
+            targetDefaults.removePersistentDomain(forName: targetName)
+        }
+        let source = AppSettings(defaults: sourceDefaults)
+        source.chromecastVoiceMode = .hold
+        let target = AppSettings(defaults: targetDefaults)
+        target.chromecastVoiceMode = .toggle
+        let data = try source.exportedConfigurationData()
+        try target.importConfiguration(from: data)
+        #expect(target.chromecastVoiceMode == .hold)
+    }
+
+    @Test func importRollbackRestoresPreviousMappings() throws {
+        let name = "import-rollback-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let settings = AppSettings(defaults: defaults)
+        settings.setBaseBinding(ConfiguredButtonAction(action: .playPause, shortcut: nil), for: .ok, trigger: .singleClick, profileID: settings.selectedRemoteProfileID)
+        let initialAction = settings.configuredBaseAction(for: .ok, trigger: .singleClick).action
+        #expect(initialAction == .playPause)
+
+        let otherDefaults = try #require(UserDefaults(suiteName: name + "-other"))
+        defer { otherDefaults.removePersistentDomain(forName: name + "-other") }
+        let otherSettings = AppSettings(defaults: otherDefaults)
+        otherSettings.setBaseBinding(ConfiguredButtonAction(action: .showDesktop, shortcut: nil), for: .ok, trigger: .singleClick, profileID: otherSettings.selectedRemoteProfileID)
+        let otherData = try otherSettings.exportedConfigurationData()
+
+        try settings.importConfiguration(from: otherData)
+        #expect(settings.configuredBaseAction(for: .ok, trigger: .singleClick).action == .showDesktop)
+        #expect(settings.rollbackLastImport())
+        #expect(settings.configuredBaseAction(for: .ok, trigger: .singleClick).action == .playPause)
+    }
 }

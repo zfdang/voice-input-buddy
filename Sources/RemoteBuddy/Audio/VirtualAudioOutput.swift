@@ -87,6 +87,8 @@ final class VirtualAudioOutput {
     private var playbackCounters = VirtualAudioPlaybackCounters()
     private var playbackCountersByDeliveryGeneration: [Int: VirtualAudioPlaybackCounters] = [:]
     private var pendingByDeliveryGeneration: [Int: PendingDeliveryCounters] = [:]
+    private var lastAudibilityCheckTime: TimeInterval = 0
+    private var lastAudibilityHealthy: Bool = true
     private var pendingDrainLogContexts: [String] = []
     private var drainRequests: [DrainRequest] = []
     private var drainGeneration: UInt64 = 0
@@ -991,14 +993,23 @@ final class VirtualAudioOutput {
             counters = playbackCounters
         }
         playbackLock.unlock()
-        let audibility = CoreAudioDeviceCatalog.virtualAudioAudibilitySnapshot(for: state.selectedDevice)
+        let now = uptime()
+        let audibilityHealthy: Bool
+        if now - lastAudibilityCheckTime < 2.0 {
+            audibilityHealthy = lastAudibilityHealthy
+        } else {
+            let audibility = CoreAudioDeviceCatalog.virtualAudioAudibilitySnapshot(for: state.selectedDevice)
+            audibilityHealthy = !audibility.requiresAudibilityRepair
+            lastAudibilityHealthy = audibilityHealthy
+            lastAudibilityCheckTime = now
+        }
         return VirtualAudioOutputDiagnosticSnapshot(
             selectedDeviceKind: .classify(state.selectedDevice),
             actualDeviceKind: .classify(state.actualDevice),
             engineRunning: state.engineRunning,
             playerPlaying: state.playerPlaying,
             boundToSelectedDevice: boundToSelected,
-            audibilityHealthy: !audibility.requiresAudibilityRepair,
+            audibilityHealthy: audibilityHealthy,
             pendingBuffers: pendingBuffers,
             pendingSamples: pendingSamples,
             counters: counters
