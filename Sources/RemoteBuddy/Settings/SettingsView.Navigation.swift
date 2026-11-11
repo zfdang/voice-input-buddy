@@ -110,7 +110,11 @@ extension SettingsView {
                 mappingPage
             }
         case .commonPhrases:
-            CommonPhraseSettingsView(store: model.commonPhraseStore) {
+            CommonPhraseSettingsView(
+                store: model.commonPhraseStore,
+                phraseButtons: CommonPhraseStore.buttons(
+                    chromecast: settings.selectedRemoteProfile?.model.isChromecastRemote == true)
+            ) {
                 selectedSection = .mapping
             }
         case .permissions:

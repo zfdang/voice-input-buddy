@@ -56,7 +56,14 @@ struct CommonPhraseArchive: Codable, Equatable {
 final class CommonPhraseStore: ObservableObject {
     enum StoreError: Error { case invalidData, unavailable }
     static let maximumImportBytes = 4_000_000
-    static let buttons: [RemoteButton] = [.ok, .left, .up, .right, .down]
+    static let baseButtons: [RemoteButton] = [.ok, .left, .up, .right, .down]
+    /// Row order of the panel grid: Home | Mute, YouTube | Netflix, Power | Input,
+    /// matching the physical Chromecast remote.
+    static let chromecastButtons: [RemoteButton] = [.home, .mute, .youtube, .netflix, .power, .input]
+    static let buttons = baseButtons + chromecastButtons
+    static func buttons(chromecast: Bool) -> [RemoteButton] {
+        chromecast ? buttons : baseButtons
+    }
     static let exportWebsite = AppLinks.chineseWebsite.absoluteString
     static let exportGitHub = AppLinks.githubRepository.absoluteString
     private static let defaultsKey = "commonPhrases.archive.v2"
@@ -227,7 +234,11 @@ struct CommonPhraseRouting {
     enum Decision: Equatable { case unhandled, consumed, insert(RemoteButton), close }
     private(set) var owner: String?
     private var held = Set<Input>()
-    mutating func open(source: String) { owner = source }
+    private var phraseButtons = Set<RemoteButton>()
+    mutating func open(source: String, buttons: [RemoteButton]) {
+        owner = source
+        phraseButtons = Set(buttons)
+    }
     mutating func close() { owner = nil }
     mutating func reset(source: String) {
         if owner == source { owner = nil }
@@ -235,13 +246,13 @@ struct CommonPhraseRouting {
     }
     func claims(_ button: RemoteButton, source: String) -> Bool {
         held.contains(Input(source: source, button: button)) ||
-            (owner == source && (CommonPhraseStore.buttons.contains(button) || button == .back))
+            (owner == source && (phraseButtons.contains(button) || button == .back))
     }
     mutating func handle(_ button: RemoteButton, phase: RemoteButtonPhase, source: String) -> Decision {
         let input = Input(source: source, button: button)
         if phase == .release { return held.remove(input) != nil ? .consumed : .unhandled }
         if held.contains(input) { return .consumed }
-        guard owner == source, CommonPhraseStore.buttons.contains(button) || button == .back
+        guard owner == source, phraseButtons.contains(button) || button == .back
         else { return .unhandled }
         held.insert(input)
         owner = nil

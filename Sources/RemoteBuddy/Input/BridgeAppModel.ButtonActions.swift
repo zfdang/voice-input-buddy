@@ -60,6 +60,13 @@ extension BridgeAppModel {
         "hid:\(profileID?.uuidString ?? "unassigned")"
     }
 
+    /// The panel source a voice-key press may close: only a Chromecast remote's
+    /// own panel, and never while long recording owns the microphone.
+    static func commonPhraseVoiceKeySource(profile: RemoteDeviceProfile?, longRecordingRequested: Bool) -> String? {
+        guard !longRecordingRequested, let profile, profile.model.isChromecastRemote else { return nil }
+        return commonPhraseHIDSource(profile.id)
+    }
+
     func cancelPendingCommonPhraseButtonActions() {
         hidMonitors.values.forEach { $0.cancelPendingButtonActions() }
         discoveryHIDMonitor?.cancelPendingButtonActions()
@@ -72,7 +79,11 @@ extension BridgeAppModel {
         if action == .openCommonPhrases {
             guard Thread.isMainThread else { return false }
             return MainActor.assumeIsolated {
-                commonPhrases.open(source: source, localization: LocalizationStore(settings: settings))
+                commonPhrases.open(
+                    source: source,
+                    buttons: CommonPhraseStore.buttons(
+                        chromecast: settings.selectedRemoteProfile?.model.isChromecastRemote == true),
+                    localization: LocalizationStore(settings: settings))
             }
         }
         guard action == .toggleLongRecording else { return false }
