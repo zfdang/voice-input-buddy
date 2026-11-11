@@ -156,7 +156,9 @@ struct SystemSleepAudioTests {
         }
 
         // Typical macOS sequence: screen sleeps first, then system sleeps, then system wakes
-        // (or DarkWakes) before screen wakes.
+        // while the display is still off. HID must resume immediately because screen sleep
+        // does not suspend HID monitoring, whereas audio/Bluetooth recovery stays deferred
+        // until screenDidWake.
         send(.screenDidSleep)
         send(.systemWillSleep)
         #expect(!model.audio.pendingSystemWakeRecovery)
@@ -164,24 +166,29 @@ struct SystemSleepAudioTests {
 
         send(.systemDidWake)
         #expect(model.audio.suspensionState.isSuspended)
+        #expect(!model.audio.suspensionState.suspendsHIDMonitoring)
         #expect(model.audio.pendingSystemWakeRecovery)
-        #expect(hidRestores == 0)
+        #expect(!model.hidMonitoringInterrupted)
+        #expect(hidRestores == 1)
         #expect(btRecoveries.isEmpty)
 
-        // A DarkWake returning to sleep supersedes an unconsumed wake flag.
+        // A DarkWake returning to sleep suspends HID again and supersedes an unconsumed wake flag.
         send(.systemWillSleep)
         #expect(!model.audio.pendingSystemWakeRecovery)
+        #expect(model.hidMonitoringInterrupted)
 
-        // Next wake sequence completes once screenDidWake clears the last suspension reason.
+        // Next wake restores HID once systemSleeping clears and finishes Bluetooth recovery on screenDidWake.
         send(.systemDidWake)
         #expect(model.audio.pendingSystemWakeRecovery)
+        #expect(!model.hidMonitoringInterrupted)
+        #expect(hidRestores == 2)
         #expect(btRecoveries.isEmpty)
 
         send(.screenDidWake)
         #expect(!model.audio.suspensionState.isSuspended)
         #expect(!model.audio.pendingSystemWakeRecovery)
         #expect(!model.hidMonitoringInterrupted)
-        #expect(hidRestores == 1)
+        #expect(hidRestores == 2)
         #expect(btRecoveries == ["system_wake"])
     }
 
@@ -213,6 +220,49 @@ struct SystemSleepAudioTests {
         #expect(btRecoveries.isEmpty)
 
         send(.sessionDidBecomeActive)
+        #expect(!model.audio.suspensionState.isSuspended)
+        #expect(!model.audio.pendingSystemWakeRecovery)
+        #expect(hidRestores == 1)
+        #expect(btRecoveries == ["system_wake"])
+    }
+
+    @Test func hidResumesWhenSleepAndSessionClearEvenWhileScreenStillSleeps() throws {
+        let name = "screen-sleep-hid-resume-" + UUID().uuidString
+        let values = try #require(UserDefaults(suiteName: name))
+        defer { values.removePersistentDomain(forName: name) }
+        let settings = AppSettings(defaults: values)
+        let model = BridgeAppModel(settings: settings, initialAudioDevices: [])
+        model.started = true
+        defer { model.started = false }
+
+        var hidRestores = 0
+        var btRecoveries: [String] = []
+        let send = { (event: SystemAudioLifecycleEvent) in
+            model.handleSystemAudioLifecycle(
+                event,
+                applyHID: { hidRestores += 1; model.hidMonitoringInterrupted = false },
+                recoverBluetooth: { btRecoveries.append($0) }
+            )
+        }
+
+        send(.screenDidSleep)
+        send(.sessionDidResignActive)
+        send(.systemWillSleep)
+        send(.systemDidWake)
+        #expect(model.audio.suspensionState.suspendsHIDMonitoring)
+        #expect(hidRestores == 0)
+        #expect(btRecoveries.isEmpty)
+
+        // Clearing session inactivity while the screen is still asleep unblocks HID
+        // immediately while Bluetooth recovery stays deferred until screenDidWake.
+        send(.sessionDidBecomeActive)
+        #expect(!model.audio.suspensionState.suspendsHIDMonitoring)
+        #expect(model.audio.suspensionState.isSuspended)
+        #expect(!model.hidMonitoringInterrupted)
+        #expect(hidRestores == 1)
+        #expect(btRecoveries.isEmpty)
+
+        send(.screenDidWake)
         #expect(!model.audio.suspensionState.isSuspended)
         #expect(!model.audio.pendingSystemWakeRecovery)
         #expect(hidRestores == 1)

@@ -78,9 +78,11 @@ extension BridgeAppModel {
         publishAudioDevices(devices)
         startObservingAudioHardware()
         releaseVirtualAudioOutputIfUnused(reason: "startup_complete")
+        if !audio.suspensionState.suspendsHIDMonitoring, hidMonitoringInterrupted {
+            applyHIDSettings()
+        }
         if !audio.suspensionState.isSuspended {
             audio.pendingSystemWakeRecovery = false
-            if hidMonitoringInterrupted { applyHIDSettings() }
         }
         startBluetoothConnections()
         AppLogger.shared.write(
@@ -141,7 +143,8 @@ extension BridgeAppModel {
         )
         guard started, changed else { return }
         let restoreHIDIfNeeded = {
-            guard self.hidMonitoringInterrupted else { return }
+            guard self.hidMonitoringInterrupted,
+                  !self.audio.suspensionState.suspendsHIDMonitoring else { return }
             if let applyHID { applyHID() } else { self.applyHIDSettings() }
         }
         let triggerBluetoothRecovery = { (reason: String) in
@@ -167,6 +170,9 @@ extension BridgeAppModel {
             suspendActiveAudio(reason: event.rawValue)
             return
         }
+        if !event.isSuspending {
+            restoreHIDIfNeeded()
+        }
         guard !audio.startupPending else {
             AppLogger.shared.write(
                 "SYSTEM AUDIO lifecycle_deferred event=\(event.rawValue) cause=audio_startup_pending " +
@@ -174,7 +180,6 @@ extension BridgeAppModel {
             )
             if !audio.suspensionState.isSuspended {
                 audio.pendingSystemWakeRecovery = false
-                restoreHIDIfNeeded()
                 resumeBluetoothConnectionCyclesIfNeeded(reason: event.rawValue)
             }
             return
@@ -198,13 +203,13 @@ extension BridgeAppModel {
             AppLogger.shared.write(
                 "SYSTEM AUDIO resume_deferred event=\(event.rawValue) " +
                     "remaining_reasons=\(audio.suspensionState.diagnostic) " +
+                    "suspends_hid=\(audio.suspensionState.suspendsHIDMonitoring) " +
                     "pending_system_wake=\(audio.pendingSystemWakeRecovery)"
             )
             return
         }
         let pendingSystemWake = audio.pendingSystemWakeRecovery
         audio.pendingSystemWakeRecovery = false
-        restoreHIDIfNeeded()
         resumeVirtualAudioOutputIfNeeded(reason: "system_\(event.rawValue)")
         if BluetoothWakeRecoveryPolicy.shouldForceReconnect(
             event: event,
