@@ -30,6 +30,7 @@ final class AudioRuntime {
     var virtualAudioReleaseGeneration: UInt64 = 0
     var pendingVirtualAudioRelease: (generation: UInt64, reason: String)?
     var suspensionState = SystemAudioSuspensionState()
+    var pendingSystemWakeRecovery = false
 
     private(set) var registeredListener: AudioObjectPropertyListenerBlock?
 
@@ -70,6 +71,7 @@ final class AudioRuntime {
         recoveryCoalescingState.reset()
         virtualAudioReleaseGeneration &+= 1
         pendingVirtualAudioRelease = nil
+        pendingSystemWakeRecovery = false
     }
 
     isolated deinit {

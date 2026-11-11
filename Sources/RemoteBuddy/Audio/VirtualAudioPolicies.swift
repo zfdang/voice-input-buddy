@@ -7,6 +7,11 @@ struct SystemAudioSuspensionState {
         !reasons.isEmpty
     }
 
+    /// Whether HID monitoring should stay paused while the host is asleep or the session is inactive.
+    var suspendsHIDMonitoring: Bool {
+        reasons.contains(.sessionInactive) || reasons.contains(.systemSleeping)
+    }
+
     var diagnostic: String {
         let values = reasons.map(\.rawValue).sorted()
         return values.isEmpty ? "none" : values.joined(separator: ",")

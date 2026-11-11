@@ -10,6 +10,10 @@ extension BridgeAppModel {
         allowVoiceKeyModeFallback: Bool = true,
         restartSiriRemote: Bool = true
     ) {
+        if audio.suspensionState.suspendsHIDMonitoring {
+            suspendHIDMonitoring(reason: "system_suspended")
+            return
+        }
         let permissionSnapshot = HIDPermissionSnapshot.current
         appliedHIDPermissionSnapshot = permissionSnapshot
         if !permissionSnapshot.inputMonitoringGranted || !permissionSnapshot.accessibilityGranted {
@@ -173,6 +177,10 @@ extension BridgeAppModel {
             cancelHIDMappingRecovery(reason: "google_atvv_voice")
             return
         }
+        guard !audio.suspensionState.suspendsHIDMonitoring else {
+            cancelHIDMappingRecovery(reason: "system_suspended")
+            return
+        }
         guard hidMappingRecoveryWorkItem == nil else { return }
         guard let delay = HIDMappingRecoveryPolicy.retryDelay(
             forAttempt: hidMappingRecoveryAttempt,
@@ -200,6 +208,7 @@ extension BridgeAppModel {
             guard let self, self.hidMappingRecoveryGeneration == generation else { return }
             self.hidMappingRecoveryWorkItem = nil
             guard self.started,
+                  !self.audio.suspensionState.suspendsHIDMonitoring,
                   self.readyBluetoothBridgeCount > 0,
                   !self.voiceFunctionMapper.hasMatchingServices
             else {
@@ -268,6 +277,10 @@ extension BridgeAppModel {
             hidMonitoringInterrupted = false // No monitoring is requested by the current configuration.
             return
         }
+        guard !audio.suspensionState.suspendsHIDMonitoring else {
+            hidMonitoringInterrupted = true
+            return
+        }
         if settings.customMappingEnabled { _ = hidEventSuppressor.start() }
         for profile in settings.remoteDeviceProfiles {
             // Siri keeps a separate adapter. Xiaomi and G9N9N share the public HID engine.
@@ -307,6 +320,16 @@ extension BridgeAppModel {
         hidMonitors.removeAll()
         discoveryHIDMonitor = nil
         activeRemoteButtons = []
+    }
+
+    /// Releases HID monitors, event taps, input-source observers, and pending recovery work
+    /// while the system is sleeping or the console session is inactive.
+    func suspendHIDMonitoring(reason: String) {
+        cancelHIDMappingRecovery(reason: reason)
+        stopHIDMonitors()
+        preferredInputSourceMonitor.stop(preservingExplicitVoiceSession: false)
+        voiceFnTapSession.suspend()
+        hidMonitoringInterrupted = true
     }
 
     func startHIDDiscoveryIfNeeded(allowBackOnly: Bool = false) {
