@@ -52,12 +52,15 @@ Driver installation requires administrator authorization and briefly interrupts 
 
 | Device | Status |
 | --- | --- |
-| Xiaomi Bluetooth Remote 2 / 2 Pro | RC001 = 2; RC003 = 2 Pro. Both have ATVV and button adapters. 2 Pro buttons tested locally and audio confirmed by the user; complete Remote 2 audio acceptance is pending |
+| Xiaomi Bluetooth Remote 2 / 2 Pro | RC001 = 2; RC003 = 2 Pro. Both have ATVV and button adapters. 2 Pro buttons tested locally and audio confirmed by the user (~60s single hold limit); complete Remote 2 audio acceptance is pending |
+| T1 Air-Mouse & Keyboard Voice Remote (and compatible clones) | Verified over Bluetooth: front control button mapping, press-and-release to start / second-press to stop voice input (tested past ~2 minutes continuously), plus native air mouse and rear QWERTY keyboard passthrough. See [T1 hardware debugging notes](docs/t1-remote-hardware-debugging.md) (Chinese) |
 | Google Chromecast Voice Remote (G9N9N) | **Partial support: voice input works normally; single-button mapping is unsupported.** Single-key reports are dropped by macOS due to non-compliant lengths; OK + direction sends Enter. See the [standalone test report](docs/g9n9n-compatibility.md) (Chinese) |
 | Google TV Streamer Voice Remote (GY3LE) | Planned; adapter implementation and hardware validation pending |
 | Apple Siri Remote | Planned; adapter implementation and hardware validation pending |
 
-The device scope is limited to these four entries. Google hardware model numbers follow [Google's regulatory documentation](https://support.google.com/product-documentation/answer/4541589?hl=en). Third-party replacements require separate validation; a seller's “compatible with G9N9N” label does not establish support.
+Choosing between **Xiaomi 2 Pro** and **T1**? See our comparison guide with real photos, pricing, dimensions, and voice-input differences: [Xiaomi 2 Pro vs T1 Remote Comparison](devices/xiaomi-2pro-vs-t1-remote.md) (Chinese).
+
+The device scope is limited to these five entries. Google hardware model numbers follow [Google's regulatory documentation](https://support.google.com/product-documentation/answer/4541589?hl=en). Third-party replacements require separate validation; a seller's “compatible with G9N9N” label does not establish support.
 
 Bluetooth pairing alone does not establish compatibility: the remote must use a supported button and audio protocol.
 
