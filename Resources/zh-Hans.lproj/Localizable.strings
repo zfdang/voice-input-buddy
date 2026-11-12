@@ -320,6 +320,8 @@
 "button_mapping.page.title" = "按键映射";
 "button_mapping.page.subtitle" = "点击按键进行设置";
 "button_mapping.google.subtitle" = "G9N9N 仅支持 OK＋方向键发送 Enter，单键映射不可用";
+"button_mapping.t1.subtitle" = "点击返回、主页、菜单、静音、音量或电源键自定义；语音键按一下松开开始说话，再按一下结束（确认、方向键、飞鼠与背面全键盘直通输入）";
+"t1.remote.keyboard_airmouse_note" = "返回、主页、菜单、静音、音量与电源键支持单击、双击与长按映射；确认、方向键、空中飞鼠与背面 QWERTY 全键盘保持系统原生输入。";
 "button_mapping.google.enter.title" = "OK＋方向键 → Enter（固定）";
 "button_mapping.google.enter.detail" = "开启上方“自定义按键”并由应用独占设备时，短按 OK＋任意方向键可发送 Enter。该组合为固定动作，不受下方单键设置影响。";
 "button_mapping.google.enter.limit" = "因 G9N9N 发送的按键报文不符合 macOS 规范，单键与松开事件会被系统底层丢弃，因此下方的单键配置对该设备无效。仅 OK＋方向键可发送 Enter；长按双键可能重复输入。";
@@ -340,6 +342,7 @@
 "button_mapping.voice_button.title" = "语音键";
 "button_mapping.voice_button.fixed" = "语音触发键";
 "button_mapping.voice_button.detail" = "按住说话；可选择 Fn/地球键、左/右 Command 或左/右 Option 长按，不参与普通按键动作映射。";
+"button_mapping.voice_button.t1_detail" = "按一下松开开始说话，说完再按一下结束；可选择 Fn/地球键、左/右 Command 或左/右 Option，不参与普通按键映射。";
 "button_mapping.action.not_set" = "未设置";
 "button_mapping.single_click.help" = "按一下立即执行；设置双击后会稍等片刻再确认。";
 "button_mapping.double_click.effect" = "单击会稍等片刻以区分双击；长按仍可选择独立动作或持续连发。";
@@ -652,6 +655,8 @@
 "onboarding.control_source.unselected.detail" = "请选择一个控制设备。";
 "onboarding.control_source.xiaomi_remote.title" = "小米蓝牙遥控器 2 / 2 Pro";
 "onboarding.control_source.xiaomi_remote.detail" = "实体语音键，按住说话、松开结束。";
+"onboarding.control_source.t1_remote.title" = "T1 飞鼠键盘语音遥控器";
+"onboarding.control_source.t1_remote.detail" = "实体语音键（按一下松开开始说话，说完再按一下结束）；背面全键盘可直接打字。";
 "onboarding.control_source.siri_remote.title" = "苹果遥控器第 6 代 / 第 7 代";
 "onboarding.control_source.siri_remote.detail" = "使用实体语音键，按住说话、松开结束。";
 "onboarding.control_source.apple_remote.generation_6.title" = "苹果遥控器第 6 代";
@@ -705,6 +710,10 @@
 "onboarding.remote.chromecast_pairing.title" = "Google 遥控器配对（G9N9N / GY3LE）";
 "onboarding.remote.chromecast_pairing.first" = "打开“系统设置 → 蓝牙”，将遥控器靠近 Mac。";
 "onboarding.remote.chromecast_pairing.second" = "同时按住返回（Back）和主页（Home）约 3 秒，直到指示灯开始闪烁。";
+"onboarding.remote.t1_pairing.title" = "配对 T1 飞鼠键盘遥控器（及同款兼容版）";
+"onboarding.remote.t1_pairing.first" = "打开“系统设置 → 蓝牙”，将遥控器靠近 Mac。";
+"onboarding.remote.t1_pairing.second" = "同时长按主页（Home）+ 返回（Back）键，直到指示灯进入慢闪蓝牙配对状态。";
+"onboarding.remote.t1_pairing.third" = "在蓝牙列表中连接“T1-Remote”（或对应兼容名称），连接后短按确认键或方向键测试。";
 "onboarding.remote.connected" = "所选遥控器已连接";
 "onboarding.remote.connected_detail" = "遥控搭子已与遥控器建立可用连接。";
 "onboarding.remote.hid_connected" = "已识别实体遥控器";
@@ -752,6 +761,7 @@
 "onboarding.voice_test.placeholder" = "试着说：遥控搭子已经连接成功";
 "onboarding.voice_test.waiting_voice" = "等待你按照上方提示使用语音键…";
 "onboarding.voice_test.fn_tap_explanation" = "遥控器收音与点按转换说明：目前支持的遥控器需按住语音键才能持续收音，松开就停止。点按转换会配合收音过程：按住遥控器时发送一次 Fn 按下与抬起，让工具开始识别；松开遥控器时等剩余音频送完，再发送一次 Fn 按下与抬起结束识别。你只需正常按住说话、说完松开。";
+"onboarding.voice_test.t1_fn_tap_explanation" = "T1 遥控器点按转换说明：T1 按一下语音键松开后就会持续收音，说完后再按一下停止。点按转换会在开麦时发送一次 Fn 按下与抬起，在第二次按下停止收音且剩余音频送完后，再发送一次 Fn 按下与抬起结束识别。";
 "onboarding.voice_test.receiving" = "正在接收声音…";
 "onboarding.voice_test.waiting_text" = "已收到声音，正在等待文字出现…";
 "onboarding.voice_test.tool_not_running" = "请先打开所选语音工具，再开始测试…";
@@ -762,6 +772,7 @@
 "onboarding.controls.xiaomi.detail" = "在小米遥控器上连续按下三个不同的普通按键，例如方向、确定、返回、主页或音量。";
 "onboarding.controls.siri.detail" = "在苹果遥控器上连续按下三个不同的普通按键，例如方向、中心、返回、TV、播放或音量。";
 "onboarding.controls.chromecast.detail" = "在 Chromecast 遥控器上连续按下三个不同的普通按键，例如方向、确定、返回、主页、静音或音量。";
+"onboarding.controls.t1.detail" = "在 T1 遥控器正面连续按下三个不同的可映射按键，例如返回、主页、菜单、静音、音量或电源键。";
 "onboarding.controls.g9n9n.detail" = "G9N9N 请使用双键测试：先同时按 OK＋上，松开；再同时按返回＋上，松开。累计检测到 3 个按键即可继续。";
 "onboarding.controls.g9n9n.ready" = "已完成按键检测，可继续设置";
 "onboarding.side.g9n9n_test_enabled" = "按键测试已开启";
@@ -834,10 +845,12 @@
 "onboarding.recovery.voice.no_samples.detail" = "重试所选音频输出后，再%@。";
 "onboarding.recovery.voice.no_samples.action" = "重试语音音频";
 "onboarding.recovery.voice.session_not_ended.title" = "松开语音键才能完成";
+"onboarding.recovery.voice.session_not_ended.t1_title" = "再按一下语音键才能完成";
 "onboarding.recovery.voice.session_not_ended.detail" = "%@，才能检查结果。";
 "onboarding.recovery.voice.session_not_ended.action" = "重新开始本次检查";
 "onboarding.recovery.voice.gesture.hold" = "按住语音键说话，说完松开";
 "onboarding.recovery.voice.gesture.toggle" = "按一下语音键开始，再按一下结束";
+"onboarding.recovery.voice.gesture.t1" = "按一下语音键松开开始说话，说完再按一下结束";
 "onboarding.recovery.voice.finish.hold" = "松开语音键";
 "onboarding.recovery.voice.finish.toggle" = "再按一下语音键";
 "onboarding.recovery.voice.manual_input.title" = "键盘输入不能完成语音检查";
@@ -991,6 +1004,7 @@
 "onboarding.voice_tool.macos_dictation.title" = "macOS 听写";
 "onboarding.voice_tool.macos_dictation.detail" = "使用系统自带的听写，无需安装第三方工具。";
 "onboarding.voice_tool.dictation_fn_tap_explanation" = "按住遥控器语音键说话，说完松开。遥控搭子会连按两次 Fn 启动 macOS 听写，松开后等待剩余音频送完，再按一次 Fn 结束。软件已自动开启点按转换。";
+"onboarding.voice_tool.t1_dictation_fn_tap_explanation" = "按一下 T1 语音键并松开开始说话，说完后再按一下结束。遥控搭子会连按两次 Fn 启动 macOS 听写，第二次按下停止并等待剩余音频送完后，再按一次 Fn 结束。软件已自动开启点按转换。";
 "onboarding.voice_tool.guide.enable_dictation" = "打开 macOS 听写";
 "onboarding.voice_tool.guide.screenshot.macos_dictation_enable" = "打开“系统设置 → 键盘 → 听写”，打开听写，并确认系统隐私提示。在“语言”中加入你要说的语言；如果系统需要下载语言支持，请等待下载完成。";
 "onboarding.voice_tool.guide.configure_dictation" = "把听写快捷键设为按两下 🌐 键";
@@ -1088,8 +1102,9 @@
 "update.dialog.latest_version" = "此渠道最新版本";
 
 
-// Four-device product scope. Upcoming adapters show an inline notice on Continue.
+// Five-device product scope. Upcoming adapters show an inline notice on Continue.
 "remote.catalog.xiaomi.title" = "小米蓝牙遥控器 2 / 2 Pro";
+"remote.catalog.t1Remote.title" = "T1 飞鼠键盘语音遥控器（含同款兼容版）";
 "remote.catalog.chromecastG9N9N.title" = "Chromecast Voice Remote (G9N9N)";
 "remote.catalog.googleStreamerGY3LE.title" = "Google TV Streamer Voice Remote (GY3LE)";
 "remote.catalog.siriRemote.title" = "Apple Siri Remote";
@@ -1097,6 +1112,8 @@
 "remote.catalog.unsupported_notice" = "现在还不支持，敬请期待。";
 "google.remote.unsupported_protocol" = "此遥控器未提供受支持的 ATVV v1.0／16kHz 音频能力。按键和音频需分别验证。";
 "google.remote.unconfirmed_identity" = "无法确认蓝牙 PnP 标识为 Chromecast Remote（18D1:9450）。";
+"t1.remote.unconfirmed_identity" = "无法确认蓝牙 PnP 标识为兼容的 T1 遥控器。";
+"t1.remote.microphone_refused" = "T1 遥控器拒绝开启麦克风。请在系统蓝牙设置中重新配对后重试。";
 "google.remote.microphone_refused" = "遥控器拒绝开启麦克风。请重新配对后重试。";
 "google.remote.pairing_required" = "蓝牙认证尚未完成。请在 macOS 蓝牙设置中移除并重新配对遥控器，再重新连接。";
 "google.remote.ir_controls" = "电源和信源键收到蓝牙报文时可以映射；如果遥控器将它们配置为红外发射，应用无法收到这些按键。";
@@ -1116,6 +1133,11 @@
 "settings.driver.fixed_output_help" = "所有设备共用此虚拟麦克风，程序会自动配置语音输出。";
 
 "onboarding.audio.automatic_ready" = "驱动与语音输出已就绪，点击“继续”进入下一步。";
+"onboarding.voice_prompt.t1.fn_tap" = "按一下 T1 语音键并松开开始说话，说完后再按一下结束（已自动开启点按转换）。";
+"onboarding.voice_prompt.t1.hold" = "按一下 T1 语音键并松开开始说话，说完后再按一下结束（期间遥控搭子会全程替你按住语音键）。";
+"onboarding.voice_prompt.generic.fn_tap" = "按住语音键说话，说完松开（已自动开启点按转换）。";
+"onboarding.voice_prompt.generic.hold" = "按住语音键说话，说完松开。";
+"onboarding.voice_prompt.generic.toggle" = "按一下语音键开始说话，再按一下结束。";
 
 "onboarding.audio.checking" = "正在检查驱动与语音输出。";
 

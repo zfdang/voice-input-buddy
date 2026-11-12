@@ -118,7 +118,7 @@ extension BridgeAppModel {
             return
         }
 
-        if settings.selectedRemoteProfile?.model.isChromecastRemote == true {
+        if settings.selectedRemoteProfile?.model.isATVVRemote == true {
             settings.voiceFnTapModeEnabled = true
             voiceFnTapSession.setEnabled(true)
             startHIDMonitors(powerKeySuppressed: applyVoiceFunctionMapping(

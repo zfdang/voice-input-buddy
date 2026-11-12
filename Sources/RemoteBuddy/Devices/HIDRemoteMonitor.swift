@@ -88,9 +88,19 @@ enum HIDDeviceMatchDecision: Equatable {
 final class HIDRemoteMonitor {
     private let settings: AppSettings
     private let allowsG9N9N: Bool
+    private let allowsT1Remote: Bool
     private var currentReportIsGoogle = false
+    private var currentReportIsT1 = false
+    private var t1VoiceHoldActive = false
+    private var t1ReportUsageState = T1ReportUsageState()
+    private var lastT1MouseHeader: Data?
+    private var lastT1MouseLogTime: TimeInterval = 0
     private var currentReportDescriptor: Data?
-    var reportedModel: RemoteModel { currentReportIsGoogle ? .chromecastVoiceRemote : .unknown }
+    var reportedModel: RemoteModel {
+        if currentReportIsGoogle { return .chromecastVoiceRemote }
+        if currentReportIsT1 { return .t1Remote }
+        return .unknown
+    }
     private let eventSuppressor: KeyboardEventSuppressor
     private let ownsEventSuppressor: Bool
     private let scheduler: HIDRemoteScheduling
@@ -147,10 +157,12 @@ final class HIDRemoteMonitor {
     var onDeviceConnected: ((UUID?, String) -> Void)?
     var isMonitoring: Bool { manager != nil }
     var onInternalAction: ((UUID?, ButtonAction) -> Void)?
+    var onT1VoiceHoldChanged: ((UUID?, Bool) -> Void)?
 
     init(
         settings: AppSettings,
         allowsG9N9N: Bool = false,
+        allowsT1Remote: Bool = false,
         profileID: UUID? = nil,
         targetFingerprint: String? = nil,
         excludedFingerprints: @escaping () -> Set<String> = { [] },
@@ -179,6 +191,7 @@ final class HIDRemoteMonitor {
     ) {
         self.settings = settings
         self.allowsG9N9N = allowsG9N9N
+        self.allowsT1Remote = allowsT1Remote
         self.profileID = profileID
         self.targetFingerprint = targetFingerprint
         self.excludedFingerprints = excludedFingerprints
@@ -239,6 +252,8 @@ final class HIDRemoteMonitor {
         let targetModel = settings.remoteDeviceProfiles.first { $0.id == profileID }?.model
         let families = Self.monitorFamilies(targetModel: targetModel,
             powerKeySuppressed: powerKeySuppressed || backOnlyMode, allowsGoogle: allowsG9N9N)
+        let allowT1 = Self.monitorsT1Family(targetModel: targetModel,
+            powerKeySuppressed: powerKeySuppressed || backOnlyMode, allowsT1Remote: allowsT1Remote)
         let permissions = permissionSnapshot()
         let inputGranted = permissions.inputMonitoringGranted
         let accessibilityGranted = permissions.accessibilityGranted
@@ -249,7 +264,7 @@ final class HIDRemoteMonitor {
             mappingEnabled: settings.customMappingEnabled || backOnlyMode,
             inputMonitoringGranted: inputGranted,
             accessibilityGranted: accessibilityGranted,
-            powerKeySuppressed: families.xiaomi || families.google
+            powerKeySuppressed: families.xiaomi || families.google || allowT1
         ) else {
             if !inputGranted {
                 updateStatus(LocalizedMessage("button_mapping.permission.input_monitoring_required"))
@@ -265,7 +280,12 @@ final class HIDRemoteMonitor {
         let matches = Self.deviceMatchingCriteria(
             includeXiaomi: families.xiaomi,
             includeGoogle: families.google,
-            additionalIdentities: settings.compatibleHIDIdentities(includeXiaomi: families.xiaomi, includeGoogle: families.google)
+            includeT1: allowT1,
+            additionalIdentities: settings.compatibleHIDIdentities(
+                includeXiaomi: families.xiaomi,
+                includeGoogle: families.google,
+                includeT1: allowT1
+            )
         )
         guard !matches.isEmpty else {
             updateStatus(LocalizedMessage("button_mapping.error.power_suppression_failed"))
@@ -363,7 +383,9 @@ final class HIDRemoteMonitor {
         // matching callback because learning can restart the manager.
         DispatchQueue.main.async { [weak self] in self?.onCandidateAvailable?() }
         currentReportIsGoogle = allowsG9N9N && isGoogleDevice(device)
+        currentReportIsT1 = !currentReportIsGoogle && allowsT1Remote && isT1Device(device)
         guard !isGoogleCandidateIdentity(device) || currentReportIsGoogle else { return }
+        guard !isT1CandidateIdentity(device) || currentReportIsT1 else { return }
         guard currentReportIsGoogle || Self.isLocationAllowed(
             locationID: Self.locationID(for: device),
             allowedLocationIDs: allowedLocationIDs
@@ -437,16 +459,44 @@ final class HIDRemoteMonitor {
         return true
     }
 
+    enum DeviceOpenResult: Equatable {
+        case seized
+        case monitored(seizeAttemptResult: IOReturn?)
+        case failed(seizeAttemptResult: IOReturn?, monitorResult: IOReturn)
+    }
+
+    nonisolated static func shouldAttemptSeizure(isT1Device: Bool) -> Bool {
+        !isT1Device
+    }
+
+    nonisolated static func openDevice(
+        isT1Device: Bool,
+        openWithOptions: (IOOptionBits) -> IOReturn
+    ) -> DeviceOpenResult {
+        let shouldSeize = shouldAttemptSeizure(isT1Device: isT1Device)
+        var seizeAttemptResult: IOReturn?
+        if shouldSeize {
+            let seizeResult = openWithOptions(IOOptionBits(kIOHIDOptionsTypeSeizeDevice))
+            if seizeResult == kIOReturnSuccess {
+                return .seized
+            }
+            seizeAttemptResult = seizeResult
+        }
+        let monitorResult = openWithOptions(IOOptionBits(kIOHIDOptionsTypeNone))
+        guard monitorResult == kIOReturnSuccess else {
+            return .failed(seizeAttemptResult: seizeAttemptResult, monitorResult: monitorResult)
+        }
+        return .monitored(seizeAttemptResult: seizeAttemptResult)
+    }
+
     @discardableResult
     private func activateDevice(
         _ device: IOHIDDevice,
         fingerprint: String
     ) -> Bool {
-        let seizeResult = IOHIDDeviceOpen(
-            device,
-            IOOptionBits(kIOHIDOptionsTypeSeizeDevice)
-        )
-        if seizeResult == kIOReturnSuccess {
+        let isT1 = allowsT1Remote && !isGoogleDevice(device) && isT1Device(device)
+        switch Self.openDevice(isT1Device: isT1, openWithOptions: { IOHIDDeviceOpen(device, $0) }) {
+        case .seized:
             activeDevice = device
             deviceFingerprint = fingerprint
             activeDeviceIsSeized = true
@@ -454,46 +504,46 @@ final class HIDRemoteMonitor {
             AppLogger.shared.write("HID CONNECTED mode=seized")
             onDeviceConnected?(profileID, fingerprint)
             return true
-        }
-
-        let monitorResult = IOHIDDeviceOpen(device, IOOptionBits(kIOHIDOptionsTypeNone))
-        let karabinerInstalled = karabinerElementsInstalled()
-        if let exclusiveMessageKey = Self.deviceOpenFailureMessageKey(
-            result: monitorResult,
-            karabinerElementsInstalled: karabinerInstalled
-        ) {
-            updateStatus(LocalizedMessage(exclusiveMessageKey))
-            AppLogger.shared.write(
-                "HID DEVICE OPEN BLOCKED reason=exclusive_access " +
-                    "karabiner_installed=\(karabinerInstalled) " +
-                    "seize=\(seizeResult) monitor=\(monitorResult)"
+        case let .monitored(seizeAttemptResult):
+            activeDevice = device
+            deviceFingerprint = fingerprint
+            activeDeviceIsSeized = false
+            updateStatus(
+                LocalizedMessage(
+                    eventSuppressor.isRunning
+                        ? "button_mapping.status.connected_fallback"
+                        : "button_mapping.status.connected_system_actions_may_remain"
+                )
             )
-            return false
-        }
-        guard monitorResult == kIOReturnSuccess else {
+            AppLogger.shared.write(
+                seizeAttemptResult.map {
+                    "HID CONNECTED mode=monitored " +
+                        AppLogger.errorFields(domain: "io_return", code: Int($0), fieldPrefix: "seize_error")
+                } ?? "HID CONNECTED mode=monitored reason=t1_passthrough"
+            )
+            onDeviceConnected?(profileID, fingerprint)
+            return true
+        case let .failed(seizeAttemptResult, monitorResult):
+            let karabinerInstalled = karabinerElementsInstalled()
+            let seizeLabel = seizeAttemptResult.map(String.init) ?? "skipped"
+            if let exclusiveMessageKey = Self.deviceOpenFailureMessageKey(
+                result: monitorResult,
+                karabinerElementsInstalled: karabinerInstalled
+            ) {
+                updateStatus(LocalizedMessage(exclusiveMessageKey))
+                AppLogger.shared.write(
+                    "HID DEVICE OPEN BLOCKED reason=exclusive_access " +
+                        "karabiner_installed=\(karabinerInstalled) " +
+                        "seize=\(seizeLabel) monitor=\(monitorResult)"
+                )
+                return false
+            }
             updateStatus(LocalizedMessage("button_mapping.error.device_read_failed", arguments: [String(monitorResult)]))
             AppLogger.shared.write(
-                "HID DEVICE OPEN FAILED seize=\(seizeResult) monitor=\(monitorResult)"
+                "HID DEVICE OPEN FAILED seize=\(seizeLabel) monitor=\(monitorResult)"
             )
             return false
         }
-
-        activeDevice = device
-        deviceFingerprint = fingerprint
-        activeDeviceIsSeized = false
-        updateStatus(
-            LocalizedMessage(
-                eventSuppressor.isRunning
-                    ? "button_mapping.status.connected_fallback"
-                    : "button_mapping.status.connected_system_actions_may_remain"
-            )
-        )
-        AppLogger.shared.write(
-            "HID CONNECTED mode=monitored " +
-                AppLogger.errorFields(domain: "io_return", code: Int(seizeResult), fieldPrefix: "seize_error")
-        )
-        onDeviceConnected?(profileID, fingerprint)
-        return true
     }
 
     fileprivate func deviceDidRemove(device: IOHIDDevice) {
@@ -525,12 +575,14 @@ final class HIDRemoteMonitor {
             return
         }
         currentReportIsGoogle = allowsG9N9N && isGoogleDevice(device)
+        currentReportIsT1 = !currentReportIsGoogle && allowsT1Remote && isT1Device(device)
         currentReportDescriptor = IOHIDDeviceGetProperty(device, kIOHIDReportDescriptorKey as CFString) as? Data
         if currentReportIsGoogle {
             let payload = data.prefix(16).map { String(format: "%02X", $0) }.joined(separator: " ")
             diagnosticLogger("HID GOOGLE report id=\(reportID) bytes=\(data.count) payload=\(payload)")
         }
         guard !isGoogleCandidateIdentity(device) || currentReportIsGoogle else { return }
+        guard !isT1CandidateIdentity(device) || currentReportIsT1 else { return }
         guard currentReportIsGoogle || Self.isLocationAllowed(
             locationID: Self.locationID(for: device),
             allowedLocationIDs: allowedLocationIDs
@@ -574,6 +626,7 @@ final class HIDRemoteMonitor {
                     device,
                     fingerprint: fingerprint
                 ) else {
+                    t1ReportUsageState.reset()
                     diagnosticLogger("HID REPORT rejected reason=device_activation_failed")
                     return
                 }
@@ -621,13 +674,28 @@ final class HIDRemoteMonitor {
 
     func handleSimulatedGoogleReport(reportID: UInt32, data: Data, descriptor: Data? = nil) {
         let previous = currentReportIsGoogle
+        let previousT1 = currentReportIsT1
         let previousDescriptor = currentReportDescriptor
         defer {
             currentReportIsGoogle = previous
+            currentReportIsT1 = previousT1
             currentReportDescriptor = previousDescriptor
         }
         currentReportIsGoogle = true
+        currentReportIsT1 = false
         currentReportDescriptor = descriptor
+        handleSimulatedReport(reportID: reportID, data: data)
+    }
+
+    func handleSimulatedT1Report(reportID: UInt32, data: Data) {
+        let previousGoogle = currentReportIsGoogle
+        let previousT1 = currentReportIsT1
+        defer {
+            currentReportIsGoogle = previousGoogle
+            currentReportIsT1 = previousT1
+        }
+        currentReportIsGoogle = false
+        currentReportIsT1 = true
         handleSimulatedReport(reportID: reportID, data: data)
     }
 
@@ -659,6 +727,27 @@ final class HIDRemoteMonitor {
     }
 
     private func parsedUsages(reportID: UInt32, data: Data, source: String) -> Set<UInt16>? {
+        if currentReportIsT1 {
+            switch T1RemoteProtocol.decodeHIDReport(reportID: reportID, data: data) {
+            case let .usages(usages, voiceHoldPressed):
+                if reportID == T1RemoteProtocol.keyboardReportID,
+                   t1VoiceHoldActive != voiceHoldPressed {
+                    t1VoiceHoldActive = voiceHoldPressed
+                    onT1VoiceHoldChanged?(profileID, voiceHoldPressed)
+                }
+                return t1ReportUsageState.update(reportID: reportID, usages: usages)
+            case .ignore:
+                logIgnoredT1Report(reportID: reportID, data: data, source: source)
+                refreshActiveUsageExpiries()
+                return nil
+            case .invalid:
+                diagnosticLogger(
+                    "HID REPORT rejected reason=parse_failed source=\(source) " +
+                        "id=\(reportID) bytes=\(data.count)"
+                )
+                return nil
+            }
+        }
         let decoded = currentReportIsGoogle
             ? G9N9NProtocol.usages(reportID: reportID, data: data, descriptor: currentReportDescriptor)
             : RemoteHIDReportParser.usages(reportID: reportID, data: data)
@@ -670,6 +759,33 @@ final class HIDRemoteMonitor {
             return nil
         }
         return usages
+    }
+
+    private func logIgnoredT1Report(reportID: UInt32, data: Data, source: String) {
+        let payload = data.prefix(16).map { String(format: "%02X", $0) }.joined(separator: " ")
+        if reportID == T1RemoteProtocol.vendorReportID {
+            diagnosticLogger(
+                "HID T1 vendor_report source=\(source) id=\(reportID) bytes=\(data.count) payload=\(payload)"
+            )
+            return
+        }
+        if reportID == T1RemoteProtocol.mouseReportID {
+            let header = data.prefix(2)
+            let now = ProcessInfo.processInfo.systemUptime
+            let hasMotionOrButtons = data.dropFirst().contains(where: { $0 != 0 })
+            let shouldLog = header != lastT1MouseHeader ||
+                (hasMotionOrButtons && now - lastT1MouseLogTime >= 0.5)
+            guard shouldLog else { return }
+            lastT1MouseHeader = header
+            lastT1MouseLogTime = now
+            diagnosticLogger(
+                "HID T1 mouse_report source=\(source) id=\(reportID) bytes=\(data.count) payload=\(payload)"
+            )
+            return
+        }
+        diagnosticLogger(
+            "HID T1 ignored_report source=\(source) id=\(reportID) bytes=\(data.count) payload=\(payload)"
+        )
     }
 
     private func processParsedReport(
@@ -915,6 +1031,15 @@ final class HIDRemoteMonitor {
         }
     }
 
+    private func refreshActiveUsageExpiries() {
+        for usage in activeUsages {
+            refreshUsageExpiry(usage)
+        }
+        for usage in suppressedUntilReleasedUsages {
+            refreshSuppressedUsageExpiry(usage)
+        }
+    }
+
     private func refreshUsageExpiry(_ usage: UInt16) {
         usageExpiryTokens.removeValue(forKey: usage)
         usageExpiryTimers.removeValue(forKey: usage)?.cancel()
@@ -1093,6 +1218,7 @@ final class HIDRemoteMonitor {
     }
 
     nonisolated static func deviceMatchingCriteria(includeXiaomi: Bool, includeGoogle: Bool,
+                                       includeT1: Bool = false,
                                        additionalIdentities: [RemoteHIDIdentity] = []) -> [[String: Any]] {
         // IOHIDManager does not constrain matching by Product name. A name-only
         // dictionary acts as a wildcard and can open unrelated keyboards that
@@ -1105,6 +1231,9 @@ final class HIDRemoteMonitor {
         if includeGoogle {
             matches.append([kIOHIDVendorIDKey as String: G9N9NProtocol.vendorID,
                             kIOHIDProductIDKey as String: G9N9NProtocol.productID])
+        }
+        if includeT1 {
+            matches.append(RemoteHIDIdentity.t1Remote.matchingDictionary)
         }
         var included = Set(matches.compactMap { match -> RemoteHIDIdentity? in
             guard let vendor = match[kIOHIDVendorIDKey] as? Int,
@@ -1124,6 +1253,11 @@ final class HIDRemoteMonitor {
         return (xiaomi, google)
     }
 
+    nonisolated static func monitorsT1Family(targetModel: RemoteModel?, powerKeySuppressed: Bool,
+                                 allowsT1Remote: Bool) -> Bool {
+        allowsT1Remote && powerKeySuppressed && (targetModel == nil || targetModel?.isT1Remote == true)
+    }
+
     nonisolated static func matchesGoogleProtocol(identity: RemoteHIDIdentity, fingerprint: String,
                                       profiles: [RemoteDeviceProfile]) -> Bool {
         let matching = profiles.filter { $0.model.isChromecastRemote && $0.hidFingerprint == fingerprint }
@@ -1132,6 +1266,17 @@ final class HIDRemoteMonitor {
             (profile.compatibleHIDBinding?.identity == identity &&
              profile.compatibleHIDBinding?.fingerprint == fingerprint) ||
                 (profile.compatibleHIDBinding == nil && identity == .chromecast)
+        }
+    }
+
+    nonisolated static func matchesT1Protocol(identity: RemoteHIDIdentity, fingerprint: String,
+                                  profiles: [RemoteDeviceProfile]) -> Bool {
+        let matching = profiles.filter { $0.model.isT1Remote && $0.hidFingerprint == fingerprint }
+        if identity == .t1Remote, matching.isEmpty { return true }
+        return matching.contains { profile in
+            (profile.compatibleHIDBinding?.identity == identity &&
+             profile.compatibleHIDBinding?.fingerprint == fingerprint) ||
+                (profile.compatibleHIDBinding == nil && identity == .t1Remote)
         }
     }
 
@@ -1145,6 +1290,19 @@ final class HIDRemoteMonitor {
         guard let fingerprint = Self.fingerprint(for: device),
               let identity = RemoteHIDIdentity.read(from: device) else { return false }
         return Self.matchesGoogleProtocol(identity: identity, fingerprint: fingerprint,
+            profiles: settings.remoteDeviceProfiles)
+    }
+
+    private func isT1CandidateIdentity(_ device: IOHIDDevice) -> Bool {
+        guard let identity = RemoteHIDIdentity.read(from: device) else { return false }
+        return identity == .t1Remote || settings.compatibleHIDIdentities(
+            includeXiaomi: false, includeGoogle: false, includeT1: true).contains(identity)
+    }
+
+    private func isT1Device(_ device: IOHIDDevice) -> Bool {
+        guard let fingerprint = Self.fingerprint(for: device),
+              let identity = RemoteHIDIdentity.read(from: device) else { return false }
+        return Self.matchesT1Protocol(identity: identity, fingerprint: fingerprint,
             profiles: settings.remoteDeviceProfiles)
     }
 
@@ -1574,6 +1732,13 @@ final class HIDRemoteMonitor {
         nonRepeatableReleaseTimers.values.forEach { $0.cancel() }
         nonRepeatableReleaseTimers.removeAll()
         nonRepeatablePressedButtons.removeAll()
+        let wasT1VoiceHeld = t1VoiceHoldActive
+        t1VoiceHoldActive = false
+        if wasT1VoiceHeld {
+            onT1VoiceHoldChanged?(profileID, false)
+        }
+        lastT1MouseHeader = nil
+        lastT1MouseLogTime = 0
         resetGestureRecognition()
         if appSwitcherSession.isActive { finishAppSwitcherLifecycle(reason: "common_phrases_opened", confirmed: false) }
     }
@@ -1613,6 +1778,14 @@ final class HIDRemoteMonitor {
         nonRepeatableReleaseTimers.values.forEach { $0.cancel() }
         nonRepeatableReleaseTimers.removeAll()
         nonRepeatablePressedButtons.removeAll()
+        let wasT1VoiceHeld = t1VoiceHoldActive
+        t1VoiceHoldActive = false
+        if wasT1VoiceHeld {
+            onT1VoiceHoldChanged?(profileID, false)
+        }
+        t1ReportUsageState.reset()
+        lastT1MouseHeader = nil
+        lastT1MouseLogTime = 0
         resetGestureRecognition()
         activeUsages.removeAll()
         onActiveButtons?(profileID, [])

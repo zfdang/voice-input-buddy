@@ -38,19 +38,26 @@ enum OnboardingVoiceGesturePrompt {
     static func text(
         for mode: VoiceGestureMode,
         fnTapModeEnabled: Bool = false,
+        controlSource: OnboardingControlSource = .unselected,
         locale: Locale
     ) -> String {
         let isChinese = locale.identifier.lowercased().hasPrefix("zh")
-        if fnTapModeEnabled {
-            return isChinese
-                ? "按住语音键说话，说完松开（已自动开启点按转换）。"
-                : "Hold the voice button while speaking, then release it (Fn tap conversion enabled)."
+        let snapshot = LocalizationSnapshot(language: isChinese ? .simplifiedChinese : .english)
+        if controlSource == .t1Remote {
+            return snapshot.text(
+                fnTapModeEnabled
+                    ? "onboarding.voice_prompt.t1.fn_tap"
+                    : "onboarding.voice_prompt.t1.hold"
+            )
         }
-        switch (isChinese, mode) {
-        case (true, .hold): return "按住语音键说话，说完松开。"
-        case (true, .toggle): return "按一下语音键开始说话，再按一下结束。"
-        case (false, .hold): return "Hold the voice button while speaking, then release it."
-        case (false, .toggle): return "Press the voice button once to start, then once more to finish."
+        if fnTapModeEnabled {
+            return snapshot.text("onboarding.voice_prompt.generic.fn_tap")
+        }
+        switch mode {
+        case .hold:
+            return snapshot.text("onboarding.voice_prompt.generic.hold")
+        case .toggle:
+            return snapshot.text("onboarding.voice_prompt.generic.toggle")
         }
     }
 }

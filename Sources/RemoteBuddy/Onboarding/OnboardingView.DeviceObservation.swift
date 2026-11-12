@@ -78,13 +78,10 @@ extension OnboardingView {
 
     func prepareSelectedControlConnection() {
         switch settings.onboardingControlSource {
-        case .xiaomiRemote:
+        case .xiaomiRemote, .t1Remote, .chromecastRemote:
             model.refreshRemoteDiscovery()
             model.applyHIDSettings()
         case .siriRemote:
-            model.applyHIDSettings()
-        case .chromecastRemote:
-            model.refreshRemoteDiscovery()
             model.applyHIDSettings()
         case .unselected:
             break
@@ -116,7 +113,7 @@ extension OnboardingView {
 
     func selectedControlAcceptsVoice(_ source: RemoteInputSource?) -> Bool {
         switch settings.onboardingControlSource {
-        case .xiaomiRemote, .siriRemote, .chromecastRemote:
+        case .xiaomiRemote, .t1Remote, .siriRemote, .chromecastRemote:
             return source == .bluetoothRemote &&
                 (model.activePhysicalVoiceControlSource.map { $0 == settings.onboardingControlSource }
                     ?? selectedPhysicalRemoteProfileMatchesSource)
@@ -129,7 +126,9 @@ extension OnboardingView {
         guard let model = settings.selectedRemoteProfile?.model else { return false }
         switch settings.onboardingControlSource {
         case .xiaomiRemote:
-            return !model.usesPrivateAdapter && !model.isChromecastRemote
+            return !model.usesPrivateAdapter && !model.isATVVRemote
+        case .t1Remote:
+            return model.isT1Remote
         case .siriRemote:
             guard model.isAppleSiriRemote else { return false }
             guard let generation = settings.onboardingAppleRemoteGeneration else { return true }

@@ -44,6 +44,27 @@ enum ForeignVoiceRemoteProduct {
         return rejectedNames.contains(normalized) ? normalized : nil
     }
 
+    private static let nonT1ProductKeywords: [String] = [
+        "gy3le",
+        "google tv",
+        "streamer",
+        "siri",
+        "apple tv",
+        "apple remote",
+        "nvidia shield",
+        "shield tv",
+        "fire tv",
+        "roku",
+    ]
+
+    static func isExcludedFromT1CloneFallback(_ name: String?) -> Bool {
+        guard let normalized = normalized(name) else { return false }
+        if rejectedNames.contains(normalized) || G9N9NProtocol.isCandidateName(name) {
+            return true
+        }
+        return nonT1ProductKeywords.contains { normalized.contains($0) }
+    }
+
     private static func normalized(_ name: String?) -> String? {
         guard let name else { return nil }
         let trimmed = name
@@ -103,8 +124,13 @@ enum VoiceRemoteAdmissionDecision: Equatable {
 enum VoiceRemoteAdmission {
     /// Recheck a name learned after discovery using the same product policy.
     /// Candidate admission still requires the model/codec handshake before ready.
-    static func rejectsConnectedProduct(name: String?, allowsG9N9N: Bool) -> Bool {
+    static func rejectsConnectedProduct(
+        name: String?,
+        allowsG9N9N: Bool,
+        allowsT1Remote: Bool = false
+    ) -> Bool {
         if allowsG9N9N, G9N9NProtocol.isCandidateName(name) { return false }
+        if allowsT1Remote, T1RemoteProtocol.isCandidateName(name) { return false }
         return ForeignVoiceRemoteProduct.isRejected(name: name)
     }
 
@@ -114,12 +140,18 @@ enum VoiceRemoteAdmission {
         advertisesVoiceService: Bool,
         name: String?,
         advertisedName: String?,
-        allowsG9N9N: Bool = false
+        allowsG9N9N: Bool = false,
+        allowsT1Remote: Bool = false,
+        adoptUnidentifiedATVVAsT1: Bool = false
     ) -> VoiceRemoteAdmissionDecision {
         let nameForMatch = advertisedName ?? name
         if allowsG9N9N, G9N9NProtocol.isCandidateName(nameForMatch) {
             if let targetIdentifier, identifier != targetIdentifier { return .ignore }
             return targetIdentifier == nil ? .adoptRecognizedName(nameForMatch ?? "G9N9N") : .adoptSavedIdentity
+        }
+        if allowsT1Remote, T1RemoteProtocol.isCandidateName(nameForMatch) {
+            if let targetIdentifier, identifier != targetIdentifier { return .ignore }
+            return targetIdentifier == nil ? .adoptRecognizedName(nameForMatch ?? "T1-Remote") : .adoptSavedIdentity
         }
         // 别的产品优先否决，且优先于已保存身份：早先版本误把 Chromecast Remote 存成
         // Xiaomi 档案的情况真实发生过，只按 UUID 采纳会让这个错误一直重连下去。
@@ -134,6 +166,12 @@ enum VoiceRemoteAdmission {
             return .adoptRecognizedName(recognized)
         }
         guard advertisesVoiceService else { return .ignore }
+        if adoptUnidentifiedATVVAsT1, allowsT1Remote,
+           let trimmedName = nameForMatch?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !trimmedName.isEmpty,
+           !ForeignVoiceRemoteProduct.isExcludedFromT1CloneFallback(trimmedName) {
+            return .adoptRecognizedName(trimmedName)
+        }
         if let nameForMatch, !nameForMatch.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return .rejectUnrecognizedName(nameForMatch)
         }
@@ -407,10 +445,18 @@ enum ATVVSessionGate {
         capabilitiesConfirmed: Bool,
         isGoogleCandidate: Bool,
         googleReady: Bool,
+        isT1Candidate: Bool = false,
+        t1Ready: Bool = false,
         modelFormatResolved: Bool
     ) -> Bool {
         guard capabilitiesConfirmed else { return false }
-        return isGoogleCandidate ? googleReady : modelFormatResolved
+        if isGoogleCandidate {
+            return googleReady
+        }
+        if isT1Candidate {
+            return t1Ready && modelFormatResolved
+        }
+        return modelFormatResolved
     }
 
     static func canOpenMicrophone(
@@ -425,10 +471,24 @@ enum ATVVSessionGate {
             ATVVProtocol.supportsAudio(sampleRate: sampleRate)
     }
 
-    static func shouldIgnoreAudioAfterStop(stoppedAt: TimeInterval?,
-        now: TimeInterval = ProcessInfo.processInfo.systemUptime) -> Bool {
+    static func shouldIgnoreAudioAfterStop(
+        stoppedAt: TimeInterval?,
+        now: TimeInterval = ProcessInfo.processInfo.systemUptime,
+        cooldown: TimeInterval = 0.3
+    ) -> Bool {
         guard let stoppedAt else { return false }
-        return now - stoppedAt < 0.3
+        return now - stoppedAt < cooldown
+    }
+
+    static func audioAfterStopCooldown(isT1Candidate: Bool) -> TimeInterval {
+        isT1Candidate ? 0.8 : 0.3
+    }
+
+    static func shouldCloseStreamingOnRemoteOpenRequest(
+        isT1Candidate: Bool,
+        isStreaming: Bool
+    ) -> Bool {
+        isT1Candidate && isStreaming
     }
 
     static func cancelledOpenUptime(

@@ -7,6 +7,8 @@ enum RemoteModel: String, Codable, CaseIterable, Identifiable {
     case appleSiriRemoteA2540 = "apple_siri_remote_a2540"
     /// Google Chromecast Voice Remote G9N9N, handled by the public ATVV/HID adapters.
     case chromecastVoiceRemote = "chromecast_voice_remote"
+    /// T1-Remote air-mouse & mini-keyboard ATVV remote.
+    case t1Remote = "t1_remote"
     case unknown
 
     init(from decoder: Decoder) throws {
@@ -33,6 +35,8 @@ enum RemoteModel: String, Codable, CaseIterable, Identifiable {
             return "remote.device.model.unknown"
         case .chromecastVoiceRemote:
             return "remote.catalog.chromecastG9N9N.title"
+        case .t1Remote:
+            return "remote.catalog.t1Remote.title"
         case .unknown: return "remote.device.model.unknown"
         }
     }
@@ -44,6 +48,7 @@ enum RemoteModel: String, Codable, CaseIterable, Identifiable {
         case .appleSiriRemoteA2854: "apple-siri-remote-a2854"
         case .appleSiriRemoteA2540: "apple-siri-remote-a2540"
         case .chromecastVoiceRemote: "chromecast-voice-remote"
+        case .t1Remote: "t1-remote"
         case .unknown: nil
         }
     }
@@ -55,6 +60,15 @@ enum RemoteModel: String, Codable, CaseIterable, Identifiable {
     /// Google layout and Consumer Control report family.
     var isChromecastRemote: Bool {
         self == .chromecastVoiceRemote
+    }
+
+    var isT1Remote: Bool {
+        self == .t1Remote
+    }
+
+    /// Remotes that stream microphone audio over public BLE ATVV rather than a hardware Fn key.
+    var isATVVRemote: Bool {
+        isChromecastRemote || isT1Remote
     }
 
     /// Siri uses a separate adapter; public ATVV remotes share the native pipeline.

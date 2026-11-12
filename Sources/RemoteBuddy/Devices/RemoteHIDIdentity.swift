@@ -7,7 +7,8 @@ struct RemoteHIDIdentity: Codable, Hashable {
 
     static let xiaomi = Self(vendorID: 0x2717, productID: 0x32B8)
     static let chromecast = Self(vendorID: 0x18D1, productID: 0x9450)
-    var isStandard: Bool { self == .xiaomi || self == .chromecast }
+    static let t1Remote = Self(vendorID: T1RemoteProtocol.vendorID, productID: T1RemoteProtocol.productID)
+    var isStandard: Bool { self == .xiaomi || self == .chromecast || self == .t1Remote }
     var matchingDictionary: [String: Any] {
         [kIOHIDVendorIDKey: Int(vendorID), kIOHIDProductIDKey: Int(productID)]
     }

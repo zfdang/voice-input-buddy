@@ -116,6 +116,25 @@ enum G9N9NMappingLayout {
     ]
 }
 
+enum T1RemoteMappingLayout {
+    static let canvasHeight: CGFloat = 650
+    // Match the 480 × 1443 T1 front illustration without stretching buttons or their anchors.
+    static let remoteSize = CGSize(width: 160, height: 160.0 * 1443 / 480)
+    static let voiceAnchor = UnitPoint(x: 0.689, y: 0.373)
+    static let voiceTargetY: CGFloat = 0.57
+    // Only buttons outside the shared Report 1 Enter/arrow channel are customizable so
+    // the rear QWERTY keyboard's Enter and arrow keys always pass straight through.
+    static let placements: [RemoteMappingPlacement] = [
+        .init(button: .back, side: .left, anchor: .init(x: 0.284, y: 0.374), targetY: 0.36),
+        .init(button: .mute, side: .left, anchor: .init(x: 0.291, y: 0.494), targetY: 0.56),
+        .init(button: .power, side: .right, anchor: .init(x: 0.763, y: 0.070), targetY: 0.08),
+        .init(button: .volumeUp, side: .right, anchor: .init(x: 0.985, y: 0.192), targetY: 0.22),
+        .init(button: .volumeDown, side: .right, anchor: .init(x: 0.985, y: 0.256), targetY: 0.37),
+        .init(button: .home, side: .right, anchor: .init(x: 0.690, y: 0.495), targetY: 0.76),
+        .init(button: .menu, side: .right, anchor: .init(x: 0.690, y: 0.604), targetY: 0.91),
+    ]
+}
+
 struct RemoteMappingCanvas: View {
     @EnvironmentObject private var localization: LocalizationStore
 
@@ -127,18 +146,41 @@ struct RemoteMappingCanvas: View {
     var onVoiceSettings: () -> Void = {}
     var remoteModel: RemoteModel = .rc003
     private var isGoogle: Bool { remoteModel.isChromecastRemote }
+    private var isT1: Bool { remoteModel.isT1Remote }
     private var placements: [RemoteMappingPlacement] {
-        isGoogle ? G9N9NMappingLayout.placements : RemoteMappingLayout.buttonPlacements
+        if isGoogle { return G9N9NMappingLayout.placements }
+        if isT1 { return T1RemoteMappingLayout.placements }
+        return RemoteMappingLayout.buttonPlacements
     }
-    private var remoteSize: CGSize { isGoogle ? G9N9NMappingLayout.remoteSize : RemoteMappingLayout.remoteSize }
-    private var canvasHeight: CGFloat { isGoogle ? G9N9NMappingLayout.canvasHeight : RemoteMappingLayout.canvasHeight }
-    private var voiceAnchor: UnitPoint { isGoogle ? G9N9NMappingLayout.voiceAnchor : RemoteMappingLayout.voiceAnchor }
+    private var remoteSize: CGSize {
+        if isGoogle { return G9N9NMappingLayout.remoteSize }
+        if isT1 { return T1RemoteMappingLayout.remoteSize }
+        return RemoteMappingLayout.remoteSize
+    }
+    private var canvasHeight: CGFloat {
+        if isGoogle { return G9N9NMappingLayout.canvasHeight }
+        if isT1 { return T1RemoteMappingLayout.canvasHeight }
+        return RemoteMappingLayout.canvasHeight
+    }
+    private var voiceAnchor: UnitPoint {
+        if isGoogle { return G9N9NMappingLayout.voiceAnchor }
+        if isT1 { return T1RemoteMappingLayout.voiceAnchor }
+        return RemoteMappingLayout.voiceAnchor
+    }
+    private var voiceTargetY: CGFloat {
+        isT1 ? T1RemoteMappingLayout.voiceTargetY : RemoteMappingLayout.voiceTargetY
+    }
+    private var illustrationResourceName: String {
+        if isGoogle { return "ChromecastG9N9NIllustration" }
+        if isT1 { return "T1RemoteIllustration" }
+        return "BuddyRemoteIllustration"
+    }
 
     var body: some View {
         GeometryReader { geometry in
             let metrics = Metrics(width: geometry.size.width, remoteSize: remoteSize, height: canvasHeight)
             ZStack {
-                RemoteCatalogPhoto(resourceName: isGoogle ? "ChromecastG9N9NIllustration" : "BuddyRemoteIllustration")
+                RemoteCatalogPhoto(resourceName: illustrationResourceName)
                     .frame(
                         width: remoteSize.width,
                         height: remoteSize.height
@@ -161,7 +203,7 @@ struct RemoteMappingCanvas: View {
                     .frame(width: metrics.cardWidth, height: metrics.cardHeight)
                     .position(
                         x: metrics.cardCenterX(for: .right),
-                        y: canvasHeight * RemoteMappingLayout.voiceTargetY
+                        y: canvasHeight * voiceTargetY
                     )
             }
         }
@@ -183,7 +225,7 @@ struct RemoteMappingCanvas: View {
             drawConnection(
                 context: &context,
                 start: metrics.remotePoint(for: voiceAnchor),
-                end: metrics.cardEdgePoint(side: .right, targetY: RemoteMappingLayout.voiceTargetY),
+                end: metrics.cardEdgePoint(side: .right, targetY: voiceTargetY),
                 side: .right,
                 selected: voiceActive,
                 showsAnchor: voiceActive
@@ -320,7 +362,9 @@ struct RemoteMappingCanvas: View {
                             in: Capsule()
                         )
                 }
-                Text(localization.text("button_mapping.voice_button.detail"))
+                Text(localization.text(
+                    isT1 ? "button_mapping.voice_button.t1_detail" : "button_mapping.voice_button.detail"
+                ))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .lineLimit(2)

@@ -74,9 +74,7 @@ extension OnboardingView {
                     Image(systemName: "arrow.triangle.2.circlepath")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Color.accentColor)
-                    Text(verbatim: settings.onboardingVoiceTool == .macosDictation
-                        ? localization.text("onboarding.voice_tool.dictation_fn_tap_explanation")
-                        : localization.text("onboarding.voice_tool.fn_tap_banner"))
+                    Text(verbatim: fnTapExplanationText(fallbackKey: "onboarding.voice_tool.fn_tap_banner"))
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

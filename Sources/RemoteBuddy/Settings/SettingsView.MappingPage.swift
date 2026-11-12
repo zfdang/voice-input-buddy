@@ -32,13 +32,20 @@ extension SettingsView {
     }
 
     private var mappingPageHeader: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        let model = settings.selectedRemoteProfile?.model
+        let subtitleKey = if model?.isChromecastRemote == true {
+            "button_mapping.google.subtitle"
+        } else if model?.isT1Remote == true {
+            "button_mapping.t1.subtitle"
+        } else {
+            "button_mapping.page.subtitle"
+        }
+        return VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .center, spacing: 14) {
                 PageHeader(title: localization.text("button_mapping.page.title"))
                 mappingHeaderToggle
             }
-            Text(localization.text(settings.selectedRemoteProfile?.model.isChromecastRemote == true
-                ? "button_mapping.google.subtitle" : "button_mapping.page.subtitle"))
+            Text(localization.text(subtitleKey))
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -50,6 +57,10 @@ extension SettingsView {
             if settings.selectedRemoteProfile?.model.isChromecastRemote == true {
                 googleChordInformation
                 Text(localization.text("google.remote.ir_controls"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if settings.selectedRemoteProfile?.model.isT1Remote == true {
+                Text(localization.text("t1.remote.keyboard_airmouse_note"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

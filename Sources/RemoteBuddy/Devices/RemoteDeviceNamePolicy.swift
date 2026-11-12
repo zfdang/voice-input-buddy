@@ -75,9 +75,10 @@ enum RemoteDeviceNamePolicy {
     private static func cardFamilyOrder(_ model: RemoteModel) -> Int {
         switch model {
         case .rc001, .rc003: 0
-        case .appleSiriRemoteA2854, .appleSiriRemoteA2540: 1
+        case .t1Remote: 1
         case .chromecastVoiceRemote: 2
-        case .unknown: 3
+        case .appleSiriRemoteA2854, .appleSiriRemoteA2540: 3
+        case .unknown: 4
         }
     }
 
@@ -133,6 +134,8 @@ enum RemoteDeviceNamePolicy {
             return commonNames.contains(lowercased) || modelNames.contains(lowercased)
         case .chromecastVoiceRemote:
             return ["chromecast 遥控器", "chromecast remote"].contains(lowercased)
+        case .t1Remote:
+            return T1RemoteProtocol.isCandidateName(name)
         case .unknown:
             // 小米发现阶段可能先读到名称、后读到型号；沿用已有发现白名单。
             return XiaomiVoiceRemoteNameMatcher.matches(name)

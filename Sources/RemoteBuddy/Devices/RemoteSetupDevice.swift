@@ -2,6 +2,7 @@
 /// Adapter readiness is separate from allowing a device to be selected for setup.
 enum RemoteSetupDevice: String, CaseIterable, Identifiable {
     case xiaomi
+    case t1Remote
     case chromecastG9N9N
     case googleStreamerGY3LE
     case siriRemote
@@ -13,6 +14,7 @@ enum RemoteSetupDevice: String, CaseIterable, Identifiable {
     var onboardingSource: OnboardingControlSource? {
         switch self {
         case .xiaomi: return .xiaomiRemote
+        case .t1Remote: return .t1Remote
         case .chromecastG9N9N, .googleStreamerGY3LE: return .chromecastRemote
         case .siriRemote: return nil
         }
@@ -28,6 +30,7 @@ enum RemoteSetupDevice: String, CaseIterable, Identifiable {
     var illustrationResource: String {
         switch self {
         case .xiaomi: return "BuddyRemoteIllustration"
+        case .t1Remote: return "T1RemoteSetupIllustration"
         case .chromecastG9N9N: return "ChromecastG9N9NIllustration"
         case .googleStreamerGY3LE: return "GoogleStreamerGY3LEIllustration"
         case .siriRemote: return "SiriRemoteA2854Illustration"
@@ -43,7 +46,7 @@ enum RemoteSetupDevice: String, CaseIterable, Identifiable {
         switch self {
         case .chromecastG9N9N: return "G9N9N"
         case .googleStreamerGY3LE: return "GY3LE"
-        case .xiaomi, .siriRemote: return nil
+        case .xiaomi, .t1Remote, .siriRemote: return nil
         }
     }
 }

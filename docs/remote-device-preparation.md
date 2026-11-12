@@ -1,11 +1,12 @@
 # 遥控器型号、素材与兼容性
 
-设备范围为小米蓝牙遥控器 2／2 Pro、Google G9N9N、Google GY3LE、Apple Siri Remote 四项，均可在向导中选择。小米和两款 Google 选项可进入连接页；Siri Remote 点击继续时仍留在设备选择页并提示尚未支持。GY3LE 的设置入口不代表已完成型号专用协议适配。**G9N9N 当前仅部分支持语音功能，普通按键映射不支持**；实测原因和适用范围见 [独立测试报告](g9n9n-compatibility.md)。
+设备范围为小米蓝牙遥控器 2／2 Pro、T1 飞鼠键盘语音遥控器（含同款兼容版）、Google G9N9N、Google GY3LE、Apple Siri Remote 五项，均可在向导中选择。小米、T1 和两款 Google 选项可进入连接页；Siri Remote 点击继续时仍留在设备选择页并提示尚未支持。GY3LE 的设置入口不代表已完成型号专用协议适配。**G9N9N 当前仅部分支持语音功能，普通按键映射不支持**；实测原因和适用范围见 [独立测试报告](g9n9n-compatibility.md)。**T1 飞鼠键盘遥控器支持正反双面（正面常用控制键映射＋按一下松开开始说话、说完再按一下结束；背面 QWERTY 全键盘与飞鼠原生直通输入）**，详见 [T1 真机调试记录](t1-remote-hardware-debugging.md)。与小米遥控器需“一直按住说话、松手即停”不同，T1 在第一次松开语音键后仍持续收音直至再次按下停止；期间 Remote Buddy 会替你在系统端全程按住语音快捷键，因此同样兼容只支持长按模式的语音输入工具。
 
 ## 官方外观资料与应用素材
 
 | 设备 | 官方图片／按键资料 | 应用内素材 |
 | --- | --- | --- |
+| T1 飞鼠键盘语音遥控器 | 原创双面与正面示意图（按实物布局重绘，无厂商商标） | `Resources/T1RemoteSetupIllustration.png`（双面）/ `Resources/T1RemoteIllustration.png`（正面） |
 | Chromecast Voice Remote（G9N9N） | [Google 外观与按键图](https://support.google.com/chromecast/answer/10116742?hl=en) | `Resources/ChromecastG9N9NIllustration.png` |
 | Google TV Streamer Voice Remote（GY3LE） | [Google 外观与按键图](https://support.google.com/googletv/answer/15323195?hl=en)、[商品页](https://store.google.com/product/google_tv_streamer_remote?hl=en-US) | `Resources/GoogleStreamerGY3LEIllustration.png` |
 | Apple Siri Remote | [Apple 第三代 USB-C 外观图](https://support.apple.com/en-us/111844)、[型号识别](https://support.apple.com/en-au/103233) | `Resources/SiriRemoteA2854Illustration.png` |

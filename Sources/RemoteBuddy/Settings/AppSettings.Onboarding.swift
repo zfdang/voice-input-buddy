@@ -171,6 +171,7 @@ extension AppSettings {
         let source: OnboardingControlSource
         switch selectedRemoteProfile?.model {
         case .rc001, .rc003: source = .xiaomiRemote
+        case .t1Remote: source = .t1Remote
         case .chromecastVoiceRemote: source = .chromecastRemote
         case .appleSiriRemoteA2540, .appleSiriRemoteA2854: source = .siriRemote
         case .unknown, nil: source = .unselected
@@ -183,7 +184,7 @@ extension AppSettings {
         guard onboardingControlSource != source else { return }
         onboardingControlSource = source
         switch source {
-        case .xiaomiRemote, .siriRemote, .chromecastRemote:
+        case .xiaomiRemote, .t1Remote, .siriRemote, .chromecastRemote:
             onboardingRemoteAvailability = .hasRemote
         case .unselected:
             onboardingRemoteAvailability = .unselected

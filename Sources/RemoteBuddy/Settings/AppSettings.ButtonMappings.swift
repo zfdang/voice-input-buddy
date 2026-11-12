@@ -251,11 +251,16 @@ extension AppSettings {
         }
     }
 
-    func compatibleHIDIdentities(includeXiaomi: Bool, includeGoogle: Bool) -> [RemoteHIDIdentity] {
+    func compatibleHIDIdentities(
+        includeXiaomi: Bool,
+        includeGoogle: Bool,
+        includeT1: Bool = false
+    ) -> [RemoteHIDIdentity] {
         let valid = compatibleHIDBindings
         return remoteDeviceProfiles.compactMap { profile in
             guard let binding = profile.compatibleHIDBinding, valid.contains(binding),
                   (includeGoogle && profile.model.isChromecastRemote) ||
+                    (includeT1 && profile.model.isT1Remote) ||
                     (includeXiaomi && (profile.model == .rc001 || profile.model == .rc003)) else { return nil }
             return binding.identity
         }
@@ -264,9 +269,10 @@ extension AppSettings {
     @discardableResult
     func bindCompatibleHID(_ binding: RemoteHIDBinding, to profileID: UUID) -> Bool {
         guard let index = remoteDeviceProfiles.firstIndex(where: { $0.id == profileID }),
-              [RemoteModel.rc001, .rc003, .chromecastVoiceRemote].contains(remoteDeviceProfiles[index].model),
-              binding.identity != .xiaomi || !remoteDeviceProfiles[index].model.isChromecastRemote,
+              [RemoteModel.rc001, .rc003, .chromecastVoiceRemote, .t1Remote].contains(remoteDeviceProfiles[index].model),
+              binding.identity != .xiaomi || (!remoteDeviceProfiles[index].model.isChromecastRemote && !remoteDeviceProfiles[index].model.isT1Remote),
               binding.identity != .chromecast || remoteDeviceProfiles[index].model.isChromecastRemote,
+              binding.identity != .t1Remote || remoteDeviceProfiles[index].model.isT1Remote,
               binding.identity.vendorID != 0, !binding.fingerprint.isEmpty,
               !remoteDeviceProfiles.contains(where: {
                   $0.id != profileID && $0.hidFingerprint == binding.fingerprint
@@ -288,11 +294,11 @@ extension AppSettings {
         let matching = remoteDeviceProfiles.indices.filter {
             remoteDeviceProfiles[$0].bluetoothIdentifier == nil && remoteDeviceProfiles[$0].model == model
         }
-        let matchingIndex = model.isChromecastRemote
+        let matchingIndex = model.isATVVRemote
             ? (matching.count == 1 ? matching.first : nil) : matching.first
         let emptyIndex = remoteDeviceProfiles.firstIndex {
             $0.bluetoothIdentifier == nil && $0.model == .unknown &&
-                (!model.isChromecastRemote || $0.hidFingerprint == nil)
+                (!model.isATVVRemote || $0.hidFingerprint == nil)
         }
         if let index = matchingIndex ?? emptyIndex {
             remoteDeviceProfiles[index].bluetoothIdentifier = identifier
@@ -314,7 +320,7 @@ extension AppSettings {
         if let existing = remoteDeviceProfiles.first(where: { $0.hidFingerprint == fingerprint }) {
             return existing.id
         }
-        if model.isChromecastRemote {
+        if model.isATVVRemote {
             let candidates = remoteDeviceProfiles.indices.filter {
                 remoteDeviceProfiles[$0].model == model && remoteDeviceProfiles[$0].hidFingerprint == nil
             }

@@ -64,16 +64,22 @@ extension BridgeAppModel {
             voiceFnTapModeRequested: requestedFnTapMode,
             voiceKeyModeRequested: requestedVoiceKeyMode
         )
-        if settings.selectedRemoteProfile?.model.isChromecastRemote == true {
-            // G9N9N has no native Fn, but connected Xiaomi services still need
-            // the global software-trigger policy while this card is selected.
-            let googlePowerKeySuppressed = applyVoiceFunctionMapping(
+        if settings.selectedRemoteProfile?.model.isATVVRemote == true {
+            // ATVV remotes have no native Fn, while Xiaomi/T1 HID services still need
+            // their global UserKeyMapping policy while this card is selected.
+            let atvvPowerKeySuppressed = applyVoiceFunctionMapping(
                 neutralizeVoiceKey: shouldNeutralizeNativeVoiceKey)
             voiceFnTapSession.setEnabled(requestedFnTapMode && accessibilityGranted)
             startHIDMonitors(
-                powerKeySuppressed: googlePowerKeySuppressed,
+                powerKeySuppressed: atvvPowerKeySuppressed,
                 forceRestart: forceRestartMonitors
             )
+            if settings.selectedRemoteProfile?.model.isT1Remote == true {
+                completeHIDMappingRecoveryIfNeeded()
+                if !voiceFunctionMapper.hasMatchingServices {
+                    scheduleHIDMappingRecoveryIfNeeded(restartSiriRemote: restartSiriRemote)
+                }
+            }
             refreshVoiceKeyCompatibilityWarning()
             return
         }
@@ -312,7 +318,8 @@ extension BridgeAppModel {
             targets: targets,
             compatibleHIDIdentities: settings.compatibleHIDIdentities(
                 includeXiaomi: true,
-                includeGoogle: true
+                includeGoogle: true,
+                includeT1: true
             ),
             permissionSnapshot: permissionSnapshotProvider()
         )
@@ -481,6 +488,7 @@ extension BridgeAppModel {
         let monitor = HIDRemoteMonitor(
             settings: settings,
             allowsG9N9N: true,
+            allowsT1Remote: true,
             profileID: profileID,
             targetFingerprint: targetFingerprint,
             excludedFingerprints: excludedFingerprints,
@@ -572,6 +580,9 @@ extension BridgeAppModel {
             guard let self else { return }
             if let profileID { self.selectRemoteProfile(profileID) }
             self.performInternalAction(action, source: Self.commonPhraseHIDSource(profileID))
+        }
+        monitor.onT1VoiceHoldChanged = { _, isPressed in
+            AppLogger.shared.write("HID T1 voice_hold changed pressed=\(isPressed) mode=toggle")
         }
         return monitor
     }

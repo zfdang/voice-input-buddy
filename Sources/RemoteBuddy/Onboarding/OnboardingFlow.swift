@@ -8,7 +8,7 @@ enum OnboardingControlValidationPolicy {
     ) -> Bool {
         guard step == .remote || step == .controls else { return false }
         switch source {
-        case .xiaomiRemote, .siriRemote, .chromecastRemote:
+        case .xiaomiRemote, .t1Remote, .siriRemote, .chromecastRemote:
             return true
         case .unselected:
             return false
@@ -25,7 +25,7 @@ enum OnboardingSecureInputPolicy {
     ) -> Bool {
         guard step == .remote || step == .controls else { return false }
         switch source {
-        case .xiaomiRemote, .siriRemote, .chromecastRemote:
+        case .xiaomiRemote, .t1Remote, .siriRemote, .chromecastRemote:
             return true
         case .unselected:
             return false
@@ -211,6 +211,11 @@ enum OnboardingRemotePhotoKind: Equatable {
             }
             return .bundled(resourceName: XiaomiRemoteCatalog.photoResource(for: .rc003)
                 ?? "RC003-remote-photo")
+        case .t1Remote:
+            if let selectedDevice, selectedDevice.onboardingSource == .t1Remote {
+                return .bundled(resourceName: selectedDevice.illustrationResource)
+            }
+            return .bundled(resourceName: RemoteSetupDevice.t1Remote.illustrationResource)
         case .siriRemote:
             return .siriRemote
         case .chromecastRemote:

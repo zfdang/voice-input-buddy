@@ -503,6 +503,32 @@ struct BluetoothLifecycleTests {
             googleReady: true,
             modelFormatResolved: false
         ))
+
+        // T1 candidate requires both t1Ready (capabilities + validated PnP identity) and modelFormatResolved
+        #expect(!ATVVSessionGate.canTransitionToReady(
+            capabilitiesConfirmed: true,
+            isGoogleCandidate: false,
+            googleReady: false,
+            isT1Candidate: true,
+            t1Ready: false,
+            modelFormatResolved: true
+        ))
+        #expect(!ATVVSessionGate.canTransitionToReady(
+            capabilitiesConfirmed: true,
+            isGoogleCandidate: false,
+            googleReady: false,
+            isT1Candidate: true,
+            t1Ready: true,
+            modelFormatResolved: false
+        ))
+        #expect(ATVVSessionGate.canTransitionToReady(
+            capabilitiesConfirmed: true,
+            isGoogleCandidate: false,
+            googleReady: false,
+            isT1Candidate: true,
+            t1Ready: true,
+            modelFormatResolved: true
+        ))
     }
 
     @Test func microphoneRequiresConfirmed16kReadySession() {
@@ -536,6 +562,18 @@ struct BluetoothLifecycleTests {
         #expect(ATVVSessionGate.shouldIgnoreAudioAfterStop(stoppedAt: 1_000, now: 1_000.29))
         #expect(!ATVVSessionGate.shouldIgnoreAudioAfterStop(stoppedAt: 1_000, now: 1_000.31))
         #expect(!ATVVSessionGate.shouldIgnoreAudioAfterStop(stoppedAt: nil, now: 1_000))
+
+        let t1Cooldown = ATVVSessionGate.audioAfterStopCooldown(isT1Candidate: true)
+        #expect(t1Cooldown == 0.8)
+        #expect(ATVVSessionGate.audioAfterStopCooldown(isT1Candidate: false) == 0.3)
+        #expect(ATVVSessionGate.shouldIgnoreAudioAfterStop(stoppedAt: 1_000, now: 1_000.309, cooldown: t1Cooldown))
+        #expect(!ATVVSessionGate.shouldIgnoreAudioAfterStop(stoppedAt: 1_000, now: 1_000.81, cooldown: t1Cooldown))
+    }
+
+    @Test func t1SecondPressOpenRequestClosesOnlyWhileStreaming() {
+        #expect(ATVVSessionGate.shouldCloseStreamingOnRemoteOpenRequest(isT1Candidate: true, isStreaming: true))
+        #expect(!ATVVSessionGate.shouldCloseStreamingOnRemoteOpenRequest(isT1Candidate: true, isStreaming: false))
+        #expect(!ATVVSessionGate.shouldCloseStreamingOnRemoteOpenRequest(isT1Candidate: false, isStreaming: true))
     }
 
     @Test func directRemoteStreamIsAllowedUnlessAHostOpenWasJustCancelled() {
