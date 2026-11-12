@@ -15,10 +15,20 @@ enum AppLinks {
         string: "https://shurufa.doubao.com/"
     )!
     static let bageshuoWebsite = URL(string: "https://bug.youdao.com/")!
+    static let voiceBuddyChineseWebsite = URL(string: "https://myvoicebuddy.com/")!
+    static let voiceBuddyEnglishWebsite = URL(
+        string: "https://myvoicebuddy.com/en.html"
+    )!
 
     static func website(for locale: Locale) -> URL {
         locale.identifier.lowercased().hasPrefix("zh")
             ? chineseWebsite
             : englishWebsite
+    }
+
+    static func voiceBuddyWebsite(for locale: Locale) -> URL {
+        locale.identifier.lowercased().hasPrefix("zh")
+            ? voiceBuddyChineseWebsite
+            : voiceBuddyEnglishWebsite
     }
 }

@@ -254,7 +254,7 @@ The upstream project included an RC003 product photo. That photo and upstream pr
 
 ## Setup guide screenshots
 
-`Resources/Onboarding` includes inherited light/dark setup screenshots from remote-mic-app (SayAll contributors), under the upstream project license, and locally captured replacement/additional light screenshots for WeType, Doubao and VoiceCursor. They illustrate third-party and macOS settings; depicted interface copyrights and trademarks remain with their respective owners. The upstream proprietary app logo and remote product photo are not bundled. `BuddyRemoteIllustration.png` is an unbranded generated product render. `scripts/generate-remote-layout-reference.swift` produces its coordinate reference, not the shipped image. The artwork uses no manufacturer logos or downloaded product photos.
+`Resources/Onboarding` includes inherited light/dark setup screenshots from remote-mic-app (SayAll contributors), under the upstream project license, and locally captured or rendered replacement/additional light screenshots for WeType, Doubao, Bageshuo, and Voice Buddy. They illustrate third-party and macOS settings; depicted interface copyrights and trademarks remain with their respective owners. The upstream proprietary app logo and remote product photo are not bundled. `BuddyRemoteIllustration.png` is an unbranded generated product render. `scripts/generate-remote-layout-reference.swift` produces its coordinate reference, not the shipped image. The artwork uses no manufacturer logos or downloaded product photos.
 
 ## Public Google remote protocol references
 

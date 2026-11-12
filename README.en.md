@@ -70,9 +70,9 @@ Bluetooth pairing alone does not establish compatibility: the remote must use a 
 | --- | --- |
 | WeType / WeChat Input Method | Dedicated setup entry with virtual microphone and voice shortcut |
 | Doubao Input Method | Dedicated setup entry with hold and tap behavior |
+| [Voice Buddy](https://myvoicebuddy.com/en.html) | 100% local offline AI voice input & polish tool on Apple Silicon, supporting Hold and Toggle modes with virtual microphone and `Fn` trigger |
 | NetEase Bageshuo | Dedicated setup entry with voice shortcut and microphone configuration |
 | Typeless | Configure its voice shortcut and start/stop behavior |
-| VoiceCursor | Separate entry using the virtual microphone and a custom voice shortcut |
 | macOS Dictation | Built in, no third-party app; set the shortcut to Press 🌐 Twice. Holding the remote presses Fn twice to start, and releasing it presses Fn once to stop |
 | Other voice-input tools | Configure a custom shortcut under Other Tools |
 

@@ -22,11 +22,11 @@ extension RemoteModel {
 
 extension OnboardingVoiceTool {
     /// 是否支持「长按收音」（按住说话、松手结束）。
-    /// 已知工具里 Typeless、网易叭哥说与 macOS 听写不支持；微信输入法和豆包输入法支持。
+    /// 已知工具里 Typeless、网易叭哥说与 macOS 听写不支持；微信输入法、豆包输入法与 Voice Buddy 支持。
     var supportsHoldVoiceRecording: Bool {
         switch self {
         case .typeless, .bageshuo, .macosDictation: return false
-        case .weixin, .doubao, .voicecursor, .unselected, .other: return true
+        case .weixin, .doubao, .voiceBuddy, .unselected, .other: return true
         }
     }
 }

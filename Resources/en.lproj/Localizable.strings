@@ -1001,8 +1001,11 @@
 
 "remote.device.select_placeholder" = "Select a remote";
 
-"onboarding.voice_tool.voicecursor.title" = "VoiceCursor";
-"onboarding.voice_tool.voicecursor.detail" = "Use VoiceCursor with the virtual microphone and your configured voice shortcut.";
+"onboarding.voice_tool.voice_buddy.title" = "Voice Buddy";
+"onboarding.voice_tool.voice_buddy.detail" = "100% local offline AI voice input & polish for Apple Silicon (myvoicebuddy.com).";
+"onboarding.voice_tool.voice_buddy.intro" = "Voice Buddy runs 100% locally on Apple Silicon with on-device speech recognition and LLM text polish — zero audio or text leaves your Mac, using Fn hold-to-talk by default.";
+"onboarding.voice_tool.voice_buddy.install_detail" = "Voice Buddy was not found in Applications. Download it from ";
+"onboarding.voice_tool.voice_buddy.website" = "Visit myvoicebuddy.com ↗";
 "onboarding.voice_tool.macos_dictation.title" = "macOS Dictation";
 "onboarding.voice_tool.macos_dictation.detail" = "Use the built-in Dictation. You do not need a third-party app.";
 "onboarding.voice_tool.dictation_fn_tap_explanation" = "Hold the remote's voice key to talk and release when done. Remote Buddy sends two Fn taps to start macOS Dictation, then waits for the remaining audio to finish before sending one Fn tap to stop it. Fn Tap conversion is enabled automatically.";
@@ -1026,10 +1029,12 @@
 
 
 
-"onboarding.voice_tool.guide.open_voicecursor" = "Open VoiceCursor";
-"onboarding.voice_tool.guide.open_voicecursor.detail" = "Open VoiceCursor → Settings → General to configure its hotkey and microphone.";
-"onboarding.voice_tool.guide.screenshot.voicecursor_setting_fn" = "In VoiceCursor → General → Hotkeys, set Dictation to Fn.";
-"onboarding.voice_tool.guide.screenshot.voicecursor_setting_mic" = "In VoiceCursor → Audio → Microphone, choose Remote Buddy Mic.";
+"onboarding.voice_tool.guide.open_voice_buddy" = "Open Voice Buddy";
+"onboarding.voice_tool.guide.open_voice_buddy.detail" = "Open Voice Buddy → General to configure its trigger key, matching recording mode, and microphone input source.";
+"onboarding.voice_tool.guide.configure_voice_buddy" = "Set Trigger key to Fn / 🌐 and Hold to talk";
+"onboarding.voice_tool.guide.screenshot.voicebuddy_setting_fn" = "In Voice Buddy → General → Shortcut & Recording, set Trigger key to Fn / 🌐 and Recording Mode to Hold to talk (as shown) so recording stays in sync with the remote.";
+"onboarding.voice_tool.guide.voice_buddy.match_toggle_mode" = "Since toggle mode is selected for this remote, set Voice Buddy’s Recording Mode to Press to start / stop instead.";
+"onboarding.voice_tool.guide.screenshot.voicebuddy_setting_mic" = "In Voice Buddy → General → Audio & Feedback, select Remote Buddy Mic as the Microphone input source.";
 
 "diagnostics.logs.open_failed" = "Unable to open the log file";
 "diagnostics.logs.open_failed.detail" = "Check that your Library/Logs/RemoteBuddy folder is writable, then try again.";

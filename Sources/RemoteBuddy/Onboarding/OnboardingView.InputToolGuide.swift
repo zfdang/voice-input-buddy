@@ -252,6 +252,12 @@ extension OnboardingView {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            if resourceName == "voicebuddy-setting-fn", proposedPairingPlan?.binding.gestureMode == .toggle {
+                Text(verbatim: localization.text("onboarding.voice_tool.guide.voice_buddy.match_toggle_mode"))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color.accentColor)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 
@@ -388,17 +394,17 @@ extension OnboardingView {
                     )
                 ),
             ]
-        case .voicecursor:
+        case .voiceBuddy:
             toolSteps = [
                 OnboardingInputMethodGuideStep(
                     id: 1,
-                    titleKey: "onboarding.voice_tool.guide.open_voicecursor",
-                    content: .instruction(systemImage: "mic.fill", detailKey: "onboarding.voice_tool.guide.open_voicecursor.detail")
+                    titleKey: "onboarding.voice_tool.guide.open_voice_buddy",
+                    content: .instruction(systemImage: "waveform.circle.fill", detailKey: "onboarding.voice_tool.guide.open_voice_buddy.detail")
                 ),
                 OnboardingInputMethodGuideStep(
                     id: 2,
-                    titleKey: "onboarding.voice_tool.guide.configure_other",
-                    content: .screenshot("voicecursor-setting-fn")
+                    titleKey: "onboarding.voice_tool.guide.configure_voice_buddy",
+                    content: .screenshot("voicebuddy-setting-fn")
                 ),
             ]
         case .macosDictation:

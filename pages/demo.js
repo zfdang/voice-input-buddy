@@ -63,7 +63,7 @@ button.addEventListener('blur', stop);
         badge: '语音工具',
         windowTitle: '输入法与语音工具集成 · Remote Buddy',
         src: 'assets/screenshots/integration-zh.png',
-        alt: 'Remote Buddy 输入法与语音工具集成界面：微信输入法、豆包输入法、网易叭哥说、Typeless、VoiceCursor、macOS 听写等配置入口',
+        alt: 'Remote Buddy 输入法与语音工具集成界面：微信输入法、豆包输入法、Voice Buddy（语音搭子）、网易叭哥说、Typeless、macOS 听写等配置入口',
         desc: '查看当前输入工具和麦克风状态，打开对应的设置向导。也可调整语音触发键及 Fn 点按设置。'
       },
       {
@@ -182,7 +182,7 @@ button.addEventListener('blur', stop);
         badge: 'Integrations',
         windowTitle: 'Voice Tools Integration · Remote Buddy',
         src: 'assets/screenshots/integration-en.png',
-        alt: 'Remote Buddy Voice Tools interface: setup guides for WeType, Doubao, NetEase Bageshuo, Typeless, VoiceCursor, macOS Dictation, and other tools',
+        alt: 'Remote Buddy Voice Tools interface: setup guides for WeType, Doubao, Voice Buddy, NetEase Bageshuo, Typeless, macOS Dictation, and other tools',
         desc: 'Check the selected input tool and microphone status, then open its setup guide. Adjust the voice trigger key and Fn tap settings here too.'
       },
       {

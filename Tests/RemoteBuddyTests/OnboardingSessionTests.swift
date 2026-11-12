@@ -28,10 +28,10 @@ struct OnboardingSessionTests {
         let profile = settings.registerBluetoothRemote(identifier: UUID(), model: .rc003)
         settings.selectRemoteProfile(profile)
         settings.setOnboardingControlSource(.xiaomiRemote)
-        settings.setOnboardingVoiceTool(.voicecursor)
+        settings.setOnboardingVoiceTool(.voiceBuddy)
         settings.voiceKeyMode = .leftCommand
         settings.voiceFnTapModeEnabled = false
-        settings.verifiedVoiceToolBinding = VoiceToolUserBinding(tool: .voicecursor, shortcut: .leftCommand,
+        settings.verifiedVoiceToolBinding = VoiceToolUserBinding(tool: .voiceBuddy, shortcut: .leftCommand,
             gestureMode: .hold, source: .manuallyConfirmed, validationState: .verified)
         let originalBinding = settings.verifiedVoiceToolBinding
         settings.completeOnboarding()
@@ -53,7 +53,7 @@ struct OnboardingSessionTests {
         #expect(!reloaded.canDismissOnboarding)
         #expect(reloaded.onboardingStep == .complete)
         #expect(reloaded.onboardingControlSource == .xiaomiRemote)
-        #expect(reloaded.onboardingVoiceTool == .voicecursor)
+        #expect(reloaded.onboardingVoiceTool == .voiceBuddy)
         #expect(reloaded.verifiedVoiceToolBinding == originalBinding)
         #expect(reloaded.voiceKeyMode == .leftCommand)
         #expect(!reloaded.voiceFnTapModeEnabled)
@@ -66,20 +66,20 @@ struct OnboardingSessionTests {
         let settings = try settings()
         let profile = settings.registerBluetoothRemote(identifier: UUID(), model: .rc003)
         settings.selectRemoteProfile(profile)
-        settings.setOnboardingVoiceTool(.voicecursor)
+        settings.setOnboardingVoiceTool(.voiceBuddy)
         settings.completeOnboarding()
         SettingsPageBehavior.beginIntegrationSetup(tool: .weixin, settings: settings)
         #expect(settings.canDismissOnboarding)
         settings.dismissOnboarding()
         #expect(settings.isOnboardingComplete)
-        #expect(settings.onboardingVoiceTool == .voicecursor)
+        #expect(settings.onboardingVoiceTool == .voiceBuddy)
     }
 
     @Test func completingIntegrationKeepsNewConfiguration() throws {
         let settings = try settings()
         let profile = settings.registerBluetoothRemote(identifier: UUID(), model: .rc003)
         settings.selectRemoteProfile(profile)
-        settings.setOnboardingVoiceTool(.voicecursor)
+        settings.setOnboardingVoiceTool(.voiceBuddy)
         settings.completeOnboarding()
         SettingsPageBehavior.beginIntegrationSetup(tool: .weixin, settings: settings)
         settings.completeOnboarding()
