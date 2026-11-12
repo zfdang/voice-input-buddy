@@ -615,20 +615,4 @@ extension BridgeAppModel {
             }
         }
     }
-
-    func handleT1VoiceHoldRelease(profileID: UUID?) {
-        let targetIdentifier = profileID.flatMap { id in
-            settings.remoteDeviceProfiles.first(where: { $0.id == id })?.bluetoothIdentifier
-        } ?? voiceSession.activeDeviceIdentifier ?? voiceSession.pendingStart.identifier
-        guard let targetIdentifier,
-              let bridge = connections.bridges[targetIdentifier],
-              bridge.identifiedModel?.isT1Remote == true
-        else { return }
-        guard voiceSession.activeDeviceIdentifier == targetIdentifier ||
-                voiceSession.pendingStart.identifier == targetIdentifier
-        else { return }
-        if bridge.requestMicrophoneClose() {
-            AppLogger.shared.write("ATVV MIC_CLOSE requested reason=t1_voice_release")
-        }
-    }
 }

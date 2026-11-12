@@ -321,8 +321,8 @@
 "button_mapping.page.title" = "Button Mapping";
 "button_mapping.page.subtitle" = "Click a button to change its settings";
 "button_mapping.google.subtitle" = "G9N9N supports OK + direction for Enter; single-button mapping is unavailable";
-"button_mapping.t1.subtitle" = "Click any front button to customize; press and release Voice to start talking, then press again to stop (air mouse & back keyboard pass straight through)";
-"t1.remote.keyboard_airmouse_note" = "Front control buttons support single, double, and long-press mapping. Air mouse cursor movement and the back QWERTY keyboard work natively.";
+"button_mapping.t1.subtitle" = "Click Back, Home, Menu, Mute, Volume, or Power to customize; press and release Voice to start talking, then press again to stop (OK, arrows, air mouse, and back keyboard pass straight through)";
+"t1.remote.keyboard_airmouse_note" = "Back, Home, Menu, Mute, Volume, and Power support single, double, and long-press mapping. OK, direction keys, air mouse movement, and the back QWERTY keyboard always stay native.";
 "button_mapping.google.enter.title" = "OK + direction → Enter (fixed)";
 "button_mapping.google.enter.detail" = "When Custom Buttons is enabled and the app has exclusive access, briefly press OK + any direction to send Enter. This fixed combination is not affected by the individual settings below.";
 "button_mapping.google.enter.limit" = "Because G9N9N key reports violate macOS specifications, single-key and release events are dropped by the system, making individual button mappings ineffective on this device. Only OK + direction sends Enter; holding may repeat input.";
@@ -776,7 +776,7 @@
 "onboarding.controls.xiaomi.detail" = "Press three different control buttons on the Xiaomi remote, such as an arrow, OK, Back, Home, or volume.";
 "onboarding.controls.siri.detail" = "Press three different control buttons on the Apple Remote, such as an arrow, center, Back, TV, Play, or volume.";
 "onboarding.controls.chromecast.detail" = "Press three different control buttons on Chromecast Voice Remote, such as an arrow, OK, Back, Home, Mute, or volume.";
-"onboarding.controls.t1.detail" = "Press three different control buttons on the front of T1-Remote, such as an arrow, OK, Back, Home, Menu, Mute, or volume.";
+"onboarding.controls.t1.detail" = "Press three different customizable buttons on the front of T1-Remote, such as Back, Home, Menu, Mute, Volume, or Power.";
 "onboarding.controls.g9n9n.detail" = "For G9N9N, test using two-button pairs: press OK + Up, release both; then press Back + Up, release both. Detecting 3 distinct buttons lets you continue.";
 "onboarding.controls.g9n9n.ready" = "Button checks passed; continue setup";
 "onboarding.side.g9n9n_test_enabled" = "Button test enabled";

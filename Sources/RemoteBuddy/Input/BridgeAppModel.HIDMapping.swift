@@ -581,9 +581,8 @@ extension BridgeAppModel {
             if let profileID { self.selectRemoteProfile(profileID) }
             self.performInternalAction(action, source: Self.commonPhraseHIDSource(profileID))
         }
-        monitor.onT1VoiceHoldChanged = { [weak self] profileID, isPressed in
-            guard let self, !isPressed else { return }
-            self.handleT1VoiceHoldRelease(profileID: profileID)
+        monitor.onT1VoiceHoldChanged = { _, isPressed in
+            AppLogger.shared.write("HID T1 voice_hold changed pressed=\(isPressed) mode=toggle")
         }
         return monitor
     }

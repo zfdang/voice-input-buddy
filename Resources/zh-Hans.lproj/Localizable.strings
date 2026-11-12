@@ -321,8 +321,8 @@
 "button_mapping.page.title" = "按键映射";
 "button_mapping.page.subtitle" = "点击按键进行设置";
 "button_mapping.google.subtitle" = "G9N9N 仅支持 OK＋方向键发送 Enter，单键映射不可用";
-"button_mapping.t1.subtitle" = "点击正面按键自定义设置；语音键按一下松开开始说话，说完再按一下结束（飞鼠与背面全键盘直通输入）";
-"t1.remote.keyboard_airmouse_note" = "正面常用按键支持单击、双击与长按映射；空中飞鼠指针移动与背面 QWERTY 全键盘保持系统原生输入。";
+"button_mapping.t1.subtitle" = "点击返回、主页、菜单、静音、音量或电源键自定义；语音键按一下松开开始说话，再按一下结束（确认、方向键、飞鼠与背面全键盘直通输入）";
+"t1.remote.keyboard_airmouse_note" = "返回、主页、菜单、静音、音量与电源键支持单击、双击与长按映射；确认、方向键、空中飞鼠与背面 QWERTY 全键盘保持系统原生输入。";
 "button_mapping.google.enter.title" = "OK＋方向键 → Enter（固定）";
 "button_mapping.google.enter.detail" = "开启上方“自定义按键”并由应用独占设备时，短按 OK＋任意方向键可发送 Enter。该组合为固定动作，不受下方单键设置影响。";
 "button_mapping.google.enter.limit" = "因 G9N9N 发送的按键报文不符合 macOS 规范，单键与松开事件会被系统底层丢弃，因此下方的单键配置对该设备无效。仅 OK＋方向键可发送 Enter；长按双键可能重复输入。";
@@ -773,7 +773,7 @@
 "onboarding.controls.xiaomi.detail" = "在小米遥控器上连续按下三个不同的普通按键，例如方向、确定、返回、主页或音量。";
 "onboarding.controls.siri.detail" = "在苹果遥控器上连续按下三个不同的普通按键，例如方向、中心、返回、TV、播放或音量。";
 "onboarding.controls.chromecast.detail" = "在 Chromecast 遥控器上连续按下三个不同的普通按键，例如方向、确定、返回、主页、静音或音量。";
-"onboarding.controls.t1.detail" = "在 T1 遥控器正面连续按下三个不同的普通按键，例如方向、确认、返回、主页、菜单、静音或音量。";
+"onboarding.controls.t1.detail" = "在 T1 遥控器正面连续按下三个不同的可映射按键，例如返回、主页、菜单、静音、音量或电源键。";
 "onboarding.controls.g9n9n.detail" = "G9N9N 请使用双键测试：先同时按 OK＋上，松开；再同时按返回＋上，松开。累计检测到 3 个按键即可继续。";
 "onboarding.controls.g9n9n.ready" = "已完成按键检测，可继续设置";
 "onboarding.side.g9n9n_test_enabled" = "按键测试已开启";

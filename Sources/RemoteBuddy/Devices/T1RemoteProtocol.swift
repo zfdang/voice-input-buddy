@@ -14,12 +14,9 @@ enum T1RemoteProtocol {
     static let mouseReportID: UInt32 = 4
     static let vendorReportID: UInt32 = 0x5A
 
+    // Keep Enter (0x28) and arrows (0x4F..0x52) native so the shared Report 1
+    // channel never intercepts rear QWERTY Enter/arrow keys when buttons are mapped.
     private static let mappedKeyboardUsages: Set<UInt8> = [
-        0x28, // OK / Enter
-        0x4F, // Right
-        0x50, // Left
-        0x51, // Down
-        0x52, // Up
         0x65, // Menu
     ]
 

@@ -121,20 +121,17 @@ enum T1RemoteMappingLayout {
     // Match the 480 × 1443 T1 front illustration without stretching buttons or their anchors.
     static let remoteSize = CGSize(width: 160, height: 160.0 * 1443 / 480)
     static let voiceAnchor = UnitPoint(x: 0.689, y: 0.373)
-    static let voiceTargetY: CGFloat = 0.645
+    static let voiceTargetY: CGFloat = 0.57
+    // Only buttons outside the shared Report 1 Enter/arrow channel are customizable so
+    // the rear QWERTY keyboard's Enter and arrow keys always pass straight through.
     static let placements: [RemoteMappingPlacement] = [
-        .init(button: .up, side: .left, anchor: .init(x: 0.491, y: 0.165), targetY: 0.10),
-        .init(button: .left, side: .left, anchor: .init(x: 0.286, y: 0.233), targetY: 0.26),
-        .init(button: .ok, side: .left, anchor: .init(x: 0.491, y: 0.233), targetY: 0.42),
-        .init(button: .down, side: .left, anchor: .init(x: 0.491, y: 0.301), targetY: 0.58),
-        .init(button: .back, side: .left, anchor: .init(x: 0.284, y: 0.374), targetY: 0.74),
-        .init(button: .mute, side: .left, anchor: .init(x: 0.291, y: 0.494), targetY: 0.90),
-        .init(button: .power, side: .right, anchor: .init(x: 0.763, y: 0.070), targetY: 0.065),
-        .init(button: .volumeUp, side: .right, anchor: .init(x: 0.985, y: 0.192), targetY: 0.21),
-        .init(button: .right, side: .right, anchor: .init(x: 0.696, y: 0.233), targetY: 0.355),
-        .init(button: .volumeDown, side: .right, anchor: .init(x: 0.985, y: 0.256), targetY: 0.50),
-        .init(button: .home, side: .right, anchor: .init(x: 0.690, y: 0.495), targetY: 0.79),
-        .init(button: .menu, side: .right, anchor: .init(x: 0.690, y: 0.604), targetY: 0.935),
+        .init(button: .back, side: .left, anchor: .init(x: 0.284, y: 0.374), targetY: 0.36),
+        .init(button: .mute, side: .left, anchor: .init(x: 0.291, y: 0.494), targetY: 0.56),
+        .init(button: .power, side: .right, anchor: .init(x: 0.763, y: 0.070), targetY: 0.08),
+        .init(button: .volumeUp, side: .right, anchor: .init(x: 0.985, y: 0.192), targetY: 0.22),
+        .init(button: .volumeDown, side: .right, anchor: .init(x: 0.985, y: 0.256), targetY: 0.37),
+        .init(button: .home, side: .right, anchor: .init(x: 0.690, y: 0.495), targetY: 0.76),
+        .init(button: .menu, side: .right, anchor: .init(x: 0.690, y: 0.604), targetY: 0.91),
     ]
 }
 

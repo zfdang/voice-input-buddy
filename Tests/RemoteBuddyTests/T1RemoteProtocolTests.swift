@@ -5,25 +5,28 @@ import Testing
 @Suite("T1-Remote protocol, HID mapping, and admission")
 struct T1RemoteProtocolTests {
     @Test func decodesFrontButtonsAndVoiceHoldAcrossReportsWithoutSeizure() {
-        // Report 1: OK (0x28), Voice hold (0xAA), and modified QWERTY chord (Shift + A).
+        // Report 1: Menu (0x65) and Voice hold (0xAA).
         #expect(T1RemoteProtocol.decodeHIDReport(
             reportID: T1RemoteProtocol.keyboardReportID,
-            data: Data([0x01, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x00, 0x00])
-        ) == .usages([RemoteButton.ok.hidUsage], voiceHoldPressed: false))
+            data: Data([0x01, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00, 0x00, 0x00])
+        ) == .usages([RemoteButton.menu.hidUsage], voiceHoldPressed: false))
 
         #expect(T1RemoteProtocol.decodeHIDReport(
             reportID: T1RemoteProtocol.keyboardReportID,
             data: Data([0x01, 0x00, 0x00, 0xAA, 0x00, 0x00, 0x00, 0x00, 0x00])
         ) == .usages([], voiceHoldPressed: true))
 
-        // Back QWERTY keys (plain or modified) pass straight through without hijacking button actions.
+        // Enter (0x28), arrows (0x4F..0x52), and back QWERTY keys pass straight through natively
+        // so customizing buttons never hijacks the rear keyboard's Enter or arrow keys.
+        for passthroughKey: UInt8 in [0x04, 0x28, 0x4F, 0x50, 0x51, 0x52] {
+            #expect(T1RemoteProtocol.decodeHIDReport(
+                reportID: T1RemoteProtocol.keyboardReportID,
+                data: Data([0x01, 0x00, 0x00, passthroughKey, 0x00, 0x00, 0x00, 0x00, 0x00])
+            ) == .usages([], voiceHoldPressed: false))
+        }
         #expect(T1RemoteProtocol.decodeHIDReport(
             reportID: T1RemoteProtocol.keyboardReportID,
-            data: Data([0x01, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00])
-        ) == .usages([], voiceHoldPressed: false))
-        #expect(T1RemoteProtocol.decodeHIDReport(
-            reportID: T1RemoteProtocol.keyboardReportID,
-            data: Data([0x01, 0x02, 0x00, 0x28, 0x00, 0x00, 0x00, 0x00, 0x00])
+            data: Data([0x01, 0x02, 0x00, 0x65, 0x00, 0x00, 0x00, 0x00, 0x00])
         ) == .usages([], voiceHoldPressed: false))
 
         // Report 2: Consumer Control keys and neutral AC Search (0x0221).
@@ -67,11 +70,11 @@ struct T1RemoteProtocolTests {
         monitor.onActiveButtons = { _, buttons in active = buttons }
         monitor.onT1VoiceHoldChanged = { id, pressed in voiceHoldEvents.append((id, pressed)) }
 
-        // Holding OK stays active while air-mouse reports arrive.
-        monitor.handleSimulatedT1Report(reportID: 1, data: Data([0x01, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x00, 0x00]))
-        #expect(active == [.ok])
+        // Holding Menu stays active while air-mouse reports arrive.
+        monitor.handleSimulatedT1Report(reportID: 1, data: Data([0x01, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00, 0x00, 0x00]))
+        #expect(active == [.menu])
         monitor.handleSimulatedT1Report(reportID: 4, data: Data([0x04, 0x00, 0x04, 0xFF, 0x00]))
-        #expect(active == [.ok])
+        #expect(active == [.menu])
         monitor.handleSimulatedT1Report(reportID: 1, data: Data([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
         #expect(active.isEmpty)
 
@@ -246,9 +249,9 @@ struct T1RemoteProtocolTests {
 
     @Test @MainActor func t1ReportUsageStateTracksHeldButtonsIndependentlyPerReport() {
         var state = T1ReportUsageState()
-        #expect(state.update(reportID: T1RemoteProtocol.keyboardReportID, usages: [0x4F]) == [0x4F])
-        #expect(state.update(reportID: T1RemoteProtocol.consumerReportID, usages: [0xE9]) == [0x4F, 0xE9])
-        #expect(state.update(reportID: T1RemoteProtocol.consumerReportID, usages: []) == [0x4F])
+        #expect(state.update(reportID: T1RemoteProtocol.keyboardReportID, usages: [0x65]) == [0x65])
+        #expect(state.update(reportID: T1RemoteProtocol.consumerReportID, usages: [0xE9]) == [0x65, 0xE9])
+        #expect(state.update(reportID: T1RemoteProtocol.consumerReportID, usages: []) == [0x65])
         #expect(state.update(reportID: T1RemoteProtocol.keyboardReportID, usages: []) == [])
 
         let suite = "t1-per-report-state-" + UUID().uuidString
@@ -271,10 +274,10 @@ struct T1RemoteProtocolTests {
             activeHistory.append(buttons)
         }
 
-        // Hold Right Arrow on Report 1, then press & release Vol+ on Report 2, then release Right Arrow on Report 1.
+        // Hold Menu on Report 1, then press & release Vol+ on Report 2, then release Menu on Report 1.
         monitor.handleSimulatedT1Report(
             reportID: T1RemoteProtocol.keyboardReportID,
-            data: Data([0x01, 0x00, 0x00, 0x4F, 0x00, 0x00, 0x00, 0x00, 0x00])
+            data: Data([0x01, 0x00, 0x00, 0x65, 0x00, 0x00, 0x00, 0x00, 0x00])
         )
         monitor.handleSimulatedT1Report(
             reportID: T1RemoteProtocol.consumerReportID,
@@ -290,10 +293,96 @@ struct T1RemoteProtocolTests {
         )
 
         #expect(activeHistory == [
-            [.right],
-            [.right, .volumeUp],
-            [.right],
+            [.menu],
+            [.menu, .volumeUp],
+            [.menu],
             [],
         ])
+    }
+
+    @Test @MainActor func t1FirstVoiceReleaseDoesNotCloseActiveToggleStream() throws {
+        let suite = "t1-toggle-release-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let settings = AppSettings(defaults: defaults)
+        settings.customMappingEnabled = true
+
+        let bridgeID = UUID()
+        let mappings = RemoteDeviceMappings(
+            buttonBindings: AppSettings.defaultBindings,
+            buttonShortcuts: [:],
+            secondaryButtonBindings: [:]
+        )
+        let profile = RemoteDeviceProfile(
+            model: .t1Remote,
+            bluetoothIdentifier: bridgeID,
+            hidFingerprint: "t1-sim",
+            mappings: mappings
+        )
+        settings.remoteDeviceProfiles = [profile]
+        settings.selectedRemoteProfileID = profile.id
+
+        var tapEnabled = false
+        let suppressor = KeyboardEventSuppressor(
+            permissionsGranted: { true },
+            tapOperations: .init(
+                start: { tapEnabled = true; return true },
+                stop: { tapEnabled = false },
+                isEnabled: { tapEnabled }
+            )
+        )
+        let model = BridgeAppModel(
+            settings: settings,
+            initialAudioDevices: [],
+            hidEventSuppressor: suppressor,
+            permissionSnapshotProvider: {
+                HIDPermissionSnapshot(inputMonitoringGranted: true, accessibilityGranted: true)
+            }
+        )
+        model.preferredInputSourceMonitor = PreferredInputSourceMonitor(
+            voiceTool: { [weak settings] in settings?.onboardingVoiceTool ?? .unselected },
+            installMonitor: { _ in NSObject() },
+            removeMonitor: { _ in }
+        )
+
+        let bridge = BluetoothRemoteBridge(
+            settings: settings,
+            delegate: model,
+            targetIdentifier: bridgeID
+        )
+        model.connections.bridges[bridgeID] = bridge
+        bridge.simulateReadyStateForTesting()
+        model.connections.states[ObjectIdentifier(bridge)] = bridge.state
+        model.started = true
+        defer {
+            model.stopHIDMonitors()
+            model.preferredInputSourceMonitor.stop()
+            model.cancelHIDMappingRecovery(reason: "test_cleanup")
+            bridge.stop()
+            model.connections.bridges.values.forEach { $0.stop() }
+            model.connections.discoveryBridge?.stop()
+            model.connections.bridges.removeAll()
+            model.connections.states.removeAll()
+            model.connections.discoveryBridge = nil
+            model.started = false
+        }
+
+        model.applyHIDSettings()
+        let monitor = try #require(model.hidMonitors["t1-sim"])
+        bridge.simulateMicrophoneOpenedForTesting(true)
+        #expect(bridge.isMicrophoneOpen)
+
+        // Initial Voice press + release in toggle mode must not request MIC_CLOSE.
+        monitor.handleSimulatedT1Report(
+            reportID: T1RemoteProtocol.keyboardReportID,
+            data: Data([0x01, 0x00, 0x00, 0xAA, 0x00, 0x00, 0x00, 0x00, 0x00])
+        )
+        monitor.handleSimulatedT1Report(
+            reportID: T1RemoteProtocol.keyboardReportID,
+            data: Data([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+        )
+        #expect(bridge.isMicrophoneOpen)
+        #expect(!bridge.isMicrophoneClosePending)
     }
 }

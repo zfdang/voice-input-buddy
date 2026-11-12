@@ -72,8 +72,8 @@ struct RemoteMappingLayoutTests {
         let layoutRatio = T1RemoteMappingLayout.remoteSize.height / T1RemoteMappingLayout.remoteSize.width
         #expect(abs(imageRatio - layoutRatio) < 0.0001)
         #expect(T1RemoteMappingLayout.remoteSize.height < T1RemoteMappingLayout.canvasHeight)
-        #expect(T1RemoteMappingLayout.placements.count == 12)
-        #expect(Set(T1RemoteMappingLayout.placements.map(\.button)).count == 12)
+        #expect(T1RemoteMappingLayout.placements.count == 7)
+        #expect(Set(T1RemoteMappingLayout.placements.map(\.button)).count == 7)
 
         for anchor in T1RemoteMappingLayout.placements.map(\.anchor) + [T1RemoteMappingLayout.voiceAnchor] {
             let point = RemoteMappingLayout.remotePoint(
