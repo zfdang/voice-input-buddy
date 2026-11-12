@@ -252,6 +252,12 @@ extension OnboardingView {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            if resourceName == "voicebuddy-setting-fn", proposedPairingPlan?.binding.gestureMode == .toggle {
+                Text(verbatim: localization.text("onboarding.voice_tool.guide.voice_buddy.match_toggle_mode"))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color.accentColor)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 

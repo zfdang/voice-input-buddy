@@ -204,6 +204,18 @@ struct ProductBoundaryTests {
         #expect(profile.installationProbe == .applicationBundle)
         #expect(AppLinks.voiceBuddyWebsite(for: Locale(identifier: "zh-Hans")).absoluteString == "https://myvoicebuddy.com/")
         #expect(AppLinks.voiceBuddyWebsite(for: Locale(identifier: "en")).absoluteString == "https://myvoicebuddy.com/en.html")
+        for source in [OnboardingControlSource.xiaomiRemote, .t1Remote, .siriRemote, .chromecastRemote] {
+            let plan = OnboardingVoicePairingPlan.resolve(tool: .voiceBuddy, controlSource: source)
+            #expect(plan?.binding.gestureMode == .hold)
+            #expect(plan?.binding.shortcut == .function)
+        }
+        let chromecastTogglePlan = OnboardingVoicePairingPlan.resolve(
+            tool: .voiceBuddy,
+            controlSource: .chromecastRemote,
+            preferredGesture: .toggle
+        )
+        #expect(chromecastTogglePlan?.binding.gestureMode == .toggle)
+        #expect(chromecastTogglePlan?.fnTapModeEnabled == true)
     }
 
     @Test func integrationCatalogIncludesUninstalledToolsInConsistentOrder() {
