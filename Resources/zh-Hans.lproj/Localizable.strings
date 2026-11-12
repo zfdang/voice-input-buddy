@@ -999,8 +999,11 @@
 
 "remote.device.select_placeholder" = "请选择遥控器";
 
-"onboarding.voice_tool.voicecursor.title" = "VoiceCursor";
-"onboarding.voice_tool.voicecursor.detail" = "通过虚拟麦克风与配置的语音快捷键连接 VoiceCursor。";
+"onboarding.voice_tool.voice_buddy.title" = "Voice Buddy（语音搭子）";
+"onboarding.voice_tool.voice_buddy.detail" = "100% 本地 AI 语音输入与润色工具，零数据上云（myvoicebuddy.com）。";
+"onboarding.voice_tool.voice_buddy.intro" = "Voice Buddy 是一款 100% 本地离线运行的 Apple Silicon 语音输入搭子：端侧完成语音识别与大模型润色，音频与文字绝不上云，原生支持 Fn 长按说话与点按启停。";
+"onboarding.voice_tool.voice_buddy.install_detail" = "当前未检测到已安装的 Voice Buddy，可前往官网下载安装：";
+"onboarding.voice_tool.voice_buddy.website" = "访问官网 myvoicebuddy.com ↗";
 "onboarding.voice_tool.macos_dictation.title" = "macOS 听写";
 "onboarding.voice_tool.macos_dictation.detail" = "使用系统自带的听写，无需安装第三方工具。";
 "onboarding.voice_tool.dictation_fn_tap_explanation" = "按住遥控器语音键说话，说完松开。遥控搭子会连按两次 Fn 启动 macOS 听写，松开后等待剩余音频送完，再按一次 Fn 结束。软件已自动开启点按转换。";
@@ -1024,10 +1027,11 @@
 
 
 
-"onboarding.voice_tool.guide.open_voicecursor" = "打开 VoiceCursor";
-"onboarding.voice_tool.guide.open_voicecursor.detail" = "打开 VoiceCursor 的设置 → General，配置语音快捷键和麦克风。";
-"onboarding.voice_tool.guide.screenshot.voicecursor_setting_fn" = "在 VoiceCursor 的 General → Hotkeys 中，将 Dictation 设为 Fn。";
-"onboarding.voice_tool.guide.screenshot.voicecursor_setting_mic" = "在 VoiceCursor 的 Audio → Microphone 中选择 Remote Buddy Mic。";
+"onboarding.voice_tool.guide.open_voice_buddy" = "打开 Voice Buddy";
+"onboarding.voice_tool.guide.open_voice_buddy.detail" = "打开 Voice Buddy（语音搭子）主窗口并切换到“通用”，配置触发按键与麦克风输入源。支持按住说话和按键切换两种模式。";
+"onboarding.voice_tool.guide.configure_voice_buddy" = "将触发按键设为 Fn / 🌐";
+"onboarding.voice_tool.guide.screenshot.voicebuddy_setting_fn" = "在 Voice Buddy → 通用 → 快捷键与录音方式中，将“触发按键”设为 Fn / 🌐，并按习惯选择“按住说话”或“按键切换录音”。";
+"onboarding.voice_tool.guide.screenshot.voicebuddy_setting_mic" = "在 Voice Buddy → 通用 → 音频输入与提示中，将“麦克风输入源”选为 Remote Buddy Mic。";
 
 "diagnostics.logs.open_failed" = "无法打开日志文件";
 "diagnostics.logs.open_failed.detail" = "请检查 Library/Logs/RemoteBuddy 目录是否可写，然后重试。";

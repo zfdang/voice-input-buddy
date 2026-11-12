@@ -200,8 +200,8 @@ extension OnboardingView {
                 onboardingGuideScreenshot(
                     resourceName: "bageshuo-input-microphone"
                 )
-            } else if settings.onboardingVoiceTool == .voicecursor {
-                onboardingGuideScreenshot(resourceName: "voicecursor-setting-mic")
+            } else if settings.onboardingVoiceTool == .voiceBuddy {
+                onboardingGuideScreenshot(resourceName: "voicebuddy-setting-mic")
             } else if settings.onboardingVoiceTool == .macosDictation {
                 onboardingGuideScreenshot(resourceName: "macos-dictation-microphone")
             }

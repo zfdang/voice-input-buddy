@@ -56,6 +56,44 @@ extension OnboardingView {
                 .fixedSize(horizontal: false, vertical: true)
             }
 
+            if settings.onboardingVoiceTool == .voiceBuddy {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "waveform.circle.fill")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(Color.accentColor)
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(verbatim: localization.text("onboarding.voice_tool.voice_buddy.intro"))
+                                .font(.system(size: 12))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            HStack(spacing: 8) {
+                                if voiceToolAvailability[.voiceBuddy] == .notInstalled {
+                                    Text(verbatim: localization.text("onboarding.voice_tool.voice_buddy.install_detail"))
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(.secondary)
+                                }
+                                onboardingLink(
+                                    id: "voice-tool.voice-buddy.website",
+                                    destination: AppLinks.voiceBuddyWebsite(for: localization.locale)
+                                ) {
+                                    Text(verbatim: localization.text("onboarding.voice_tool.voice_buddy.website"))
+                                }
+                                .font(.system(size: 12, weight: .semibold))
+                            }
+                            .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.accentColor.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.accentColor.opacity(0.18), lineWidth: 1)
+                }
+            }
+
             if settings.onboardingVoiceTool == .bageshuo && voiceToolAvailability[.bageshuo] == .notInstalled {
                 HStack(spacing: 8) {
                     Text(verbatim: localization.text("onboarding.voice_tool.bageshuo.install_detail"))
@@ -84,7 +122,7 @@ extension OnboardingView {
                 .background(Color.accentColor.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
             }
 
-            if settings.onboardingVoiceTool == .other || settings.onboardingVoiceTool == .voicecursor {
+            if settings.onboardingVoiceTool == .other {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "mic.badge.xmark")
                         .font(.system(size: 16, weight: .medium))

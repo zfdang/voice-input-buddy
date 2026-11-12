@@ -169,7 +169,7 @@ struct CompatibleRemoteBindingTests {
 
     @Test func addDeviceOpensDeviceSelectionWithoutResettingConfiguredTools() throws {
         let settings = try settings()
-        settings.setOnboardingVoiceTool(.voicecursor)
+        settings.setOnboardingVoiceTool(.voiceBuddy)
         settings.voiceKeyMode = .leftCommand
         settings.voiceFnTapModeEnabled = false
         let profile = settings.registerBluetoothRemote(identifier: UUID(), model: .rc003)
@@ -182,7 +182,7 @@ struct CompatibleRemoteBindingTests {
         #expect(settings.canDismissOnboarding)
         #expect(!settings.isOnboardingComplete)
         #expect(settings.onboardingDevice == nil)
-        #expect(settings.onboardingVoiceTool == .voicecursor)
+        #expect(settings.onboardingVoiceTool == .voiceBuddy)
         #expect(settings.voiceKeyMode == .leftCommand)
         #expect(settings.remoteDeviceProfiles == original)
     }

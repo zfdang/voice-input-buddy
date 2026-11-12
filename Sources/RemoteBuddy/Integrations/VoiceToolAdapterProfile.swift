@@ -4,9 +4,9 @@ enum OnboardingVoiceTool: String, CaseIterable, Codable, Identifiable {
     case unselected
     case weixin
     case doubao
+    case voiceBuddy = "voice_buddy"
     case bageshuo
     case typeless
-    case voicecursor
     case macosDictation = "macos_dictation"
     case other
 
@@ -26,18 +26,20 @@ enum OnboardingVoiceTool: String, CaseIterable, Codable, Identifiable {
             return "com.bytedance.inputmethod.doubaoime.pinyin"
         case .weixin:
             return "com.tencent.inputmethod.wetype.pinyin"
-        case .unselected, .bageshuo, .typeless, .voicecursor, .macosDictation, .other:
+        case .unselected, .voiceBuddy, .bageshuo, .typeless, .macosDictation, .other:
             return nil
         }
     }
 
     var applicationBundleIdentifier: String? {
         switch self {
+        case .voiceBuddy:
+            return "com.voicebuddy.app"
         case .bageshuo:
             return "com.bageshuo"
         case .typeless:
             return "now.typeless.desktop"
-        case .unselected, .doubao, .weixin, .voicecursor, .macosDictation, .other:
+        case .unselected, .doubao, .weixin, .macosDictation, .other:
             return nil
         }
     }
@@ -109,7 +111,16 @@ struct VoiceToolAdapterProfile: Equatable {
                 installationProbe: .none,
                 evidenceState: .pending
             )
-        case .voicecursor, .other:
+        case .voiceBuddy:
+            return Self(
+                tool: tool,
+                supportedModes: [.hold, .toggle],
+                defaultShortcutByMode: [.hold: .function, .toggle: .function],
+                recommendedMode: .hold,
+                installationProbe: .applicationBundle,
+                evidenceState: .verified
+            )
+        case .other:
             return Self(
                 tool: tool,
                 supportedModes: [.hold, .toggle],

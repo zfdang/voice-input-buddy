@@ -140,9 +140,9 @@ extension OnboardingView {
         switch tool {
         case .weixin: return "message.fill"
         case .doubao: return "quote.bubble.fill"
+        case .voiceBuddy: return "waveform.circle.fill"
         case .bageshuo: return "waveform.and.mic"
         case .typeless: return "waveform.badge.mic"
-        case .voicecursor: return "mic.badge.plus"
         case .macosDictation: return "mic.fill"
         case .other: return "ellipsis.circle.fill"
         case .unselected: return "circle"

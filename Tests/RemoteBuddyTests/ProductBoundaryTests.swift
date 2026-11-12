@@ -14,7 +14,7 @@ struct ProductBoundaryTests {
             "weixin-input-menu", "weixin-input-settings",
             "bageshuo-menu", "bageshuo-settings", "bageshuo-input-microphone",
         ]
-        let microphone = ["doubao-input-microphone", "weixin-input-microphone", "voicecursor-setting-fn", "voicecursor-setting-mic"]
+        let microphone = ["doubao-input-microphone", "weixin-input-microphone", "voicebuddy-setting-fn", "voicebuddy-setting-mic"]
         for name in paired + microphone {
             let url = try #require(RemoteBuddyResourceBundle.onboardingImageURL(named: name, isDark: false, in: bundle))
             #expect(url.lastPathComponent == "\(name)-light.jpg")
@@ -183,25 +183,32 @@ struct ProductBoundaryTests {
         settings.customMappingEnabled = true
         settings.setOnboardingControlSource(.chromecastRemote)
         settings.completeOnboarding()
-        SettingsPageBehavior.beginIntegrationSetup(tool: .voicecursor, settings: settings)
+        SettingsPageBehavior.beginIntegrationSetup(tool: .voiceBuddy, settings: settings)
         #expect(settings.selectedAudioDeviceUID == "BuddyMic2ch_UID")
         #expect(settings.gainDB == 6)
         #expect(settings.customMappingEnabled)
-        #expect(settings.onboardingVoiceTool == .voicecursor)
+        #expect(settings.onboardingVoiceTool == .voiceBuddy)
         #expect(settings.onboardingControlSource == .chromecastRemote)
         #expect(settings.onboardingPurpose == .integration)
         #expect(settings.onboardingStep == .voiceTool)
         #expect(!settings.isOnboardingComplete)
         let restored = AppSettings(defaults: defaults)
-        #expect(restored.onboardingVoiceTool == .voicecursor)
+        #expect(restored.onboardingVoiceTool == .voiceBuddy)
         let tools = OnboardingVoiceToolVisibilityPolicy.tools
-        #expect(tools.contains(.voicecursor))
+        #expect(tools.contains(.voiceBuddy))
         #expect(tools.contains(.other))
+        #expect(OnboardingVoiceTool.voiceBuddy.applicationBundleIdentifier == "com.voicebuddy.app")
+        #expect(OnboardingVoiceTool.voiceBuddy.supportsHoldVoiceRecording)
+        let profile = VoiceToolAdapterProfile.profile(for: .voiceBuddy)
+        #expect(profile.supportedModes == [.hold, .toggle])
+        #expect(profile.installationProbe == .applicationBundle)
+        #expect(AppLinks.voiceBuddyWebsite(for: Locale(identifier: "zh-Hans")).absoluteString == "https://myvoicebuddy.com/")
+        #expect(AppLinks.voiceBuddyWebsite(for: Locale(identifier: "en")).absoluteString == "https://myvoicebuddy.com/en.html")
     }
 
     @Test func integrationCatalogIncludesUninstalledToolsInConsistentOrder() {
         #expect(OnboardingVoiceToolVisibilityPolicy.tools == [
-            .weixin, .doubao, .bageshuo, .typeless, .voicecursor, .macosDictation, .other,
+            .weixin, .doubao, .voiceBuddy, .bageshuo, .typeless, .macosDictation, .other,
         ])
     }
 
@@ -392,7 +399,7 @@ struct ProductBoundaryTests {
         #expect(!OnboardingFlowPolicy.canContinue(
             from: .voiceTool, voiceTool: .unselected, capabilities: passed
         ))
-        for tool in [OnboardingVoiceTool.weixin, .doubao, .bageshuo, .voicecursor, .typeless, .other] {
+        for tool in [OnboardingVoiceTool.weixin, .doubao, .voiceBuddy, .bageshuo, .typeless, .other] {
             #expect(!OnboardingFlowPolicy.canContinue(
                 from: .voiceTool, voiceTool: tool, capabilities: OnboardingCapabilities()
             ))
