@@ -59,10 +59,10 @@
 "button_mapping.permission.accessibility_expired" = "Accessibility access is unavailable. Button controls have stopped.";
 "button_mapping.permission.system_expired" = "Required permissions are no longer available. Button controls have stopped.";
 "common.status.stopped" = "Stopped";
-"connection.status.searching" = "Looking for a Xiaomi remote";
+"connection.status.searching" = "Looking for a remote";
 "connection.status.connecting" = "Connecting to the remote";
 "connection.status.initializing_voice" = "Initializing the voice service";
-"connection.status.connected_to_device" = "Xiaomi remote connected";
+"connection.status.connected_to_device" = "Remote connected";
 "connection.status.apple_remote_connected" = "Apple Remote connected";
 "connection.status.chromecast_connected" = "Chromecast remote connected";
 "connection.status.reconnecting" = "Connection lost; preparing to reconnect";
@@ -359,7 +359,7 @@
 "permissions.page.subtitle" = "Grant these permissions in order so the remote can connect and send button actions";
 "permissions.required.title" = "Required Permissions";
 "permission.bluetooth.title" = "Bluetooth";
-"permission.bluetooth.description" = "Connect Xiaomi Bluetooth Remote 2 Pro and receive voice input";
+"permission.bluetooth.description" = "Connect Bluetooth remotes and receive voice input";
 "permission.bluetooth.open_settings" = "Open Bluetooth Settings";
 "permission.input_monitoring.title" = "Input Monitoring";
 "permission.input_monitoring.description" = "Detect remote button presses and help prevent duplicate system actions";
@@ -685,14 +685,14 @@
 "onboarding.remote_availability.title" = "Do you have a physical remote right now?";
 "onboarding.remote_availability.detail" = "A physical remote provides the most complete and reliable Remote Buddy experience. You can continue with a phone if one is not available.";
 "onboarding.remote_availability.has_remote.title" = "I Have a Remote";
-"onboarding.remote_availability.has_remote.detail" = "Connect a Xiaomi Bluetooth remote and use its physical buttons and microphone.";
+"onboarding.remote_availability.has_remote.detail" = "Connect a supported Bluetooth remote and use its physical buttons and microphone.";
 "onboarding.remote_availability.no_remote.title" = "No Remote Right Now";
 "onboarding.remote_availability.no_remote.detail" = "Choose the iPhone app or WeChat mini program next.";
 "onboarding.remote_availability.recommended" = "Preferred";
 "onboarding.remote_availability.illustration" = "Use a physical remote when available";
 "onboarding.control_method.title" = "Choose a phone option without a remote";
 "onboarding.control_method.physical_remote.title" = "Physical Remote";
-"onboarding.control_method.physical_remote.detail" = "Connect a Xiaomi Bluetooth remote and use its physical buttons and microphone.";
+"onboarding.control_method.physical_remote.detail" = "Connect a supported Bluetooth remote and use its physical buttons and microphone.";
 "onboarding.control_method.illustration" = "Choose the control method you can use now";
 "onboarding.permissions.title" = "Allow Remote Buddy to connect and control your Mac";
 "onboarding.permissions.detail" = "Enable all three permissions before choosing a device. The microphone driver is checked in step 4.";
@@ -1063,7 +1063,7 @@
 
 "common_phrases.key.ok" = "Select button";
 
-"button_mapping.unsupported_device" = "This remote is not supported yet. Choose a Xiaomi or G9N9N remote to configure buttons.";
+"button_mapping.unsupported_device" = "This remote is not supported yet. Choose a Xiaomi, T1-Remote, or G9N9N remote to configure buttons.";
 
 
 "voice_button.status.cleanup_failed" = "Could not release Fn. Restore Accessibility permission and try again.";
