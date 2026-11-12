@@ -95,6 +95,7 @@ final class HIDRemoteMonitor {
     private let ownsEventSuppressor: Bool
     private let scheduler: HIDRemoteScheduling
     private let permissionPoll: HIDPermissionPoll
+    private let permissionSnapshot: () -> HIDPermissionSnapshot
     private let nativeSuppressionAvailable: () -> Bool
     private let runtimePermissions: () -> Bool
     private let actionPerformer: (RemoteButton, ButtonTrigger, ConfiguredButtonAction) -> Bool
@@ -157,6 +158,7 @@ final class HIDRemoteMonitor {
         ownsEventSuppressor: Bool = true,
         scheduler: HIDRemoteScheduling = DispatchHIDRemoteScheduler(),
         permissionPoll: HIDPermissionPoll = .shared,
+        permissionSnapshot: @escaping () -> HIDPermissionSnapshot = { .current },
         runtimePermissions: @escaping () -> Bool = {
             HIDRemoteMonitor.isInputMonitoringGranted && KeyboardInjector.isAccessibilityTrusted
         },
@@ -184,6 +186,7 @@ final class HIDRemoteMonitor {
         self.ownsEventSuppressor = ownsEventSuppressor
         self.scheduler = scheduler
         self.permissionPoll = permissionPoll
+        self.permissionSnapshot = permissionSnapshot
         self.runtimePermissions = runtimePermissions
         self.nativeSuppressionAvailable = nativeSuppressionAvailable ?? { eventSuppressor.isRunning }
         self.nativeKeyStatePoster = appSwitcherKeyStatePoster
@@ -236,8 +239,9 @@ final class HIDRemoteMonitor {
         let targetModel = settings.remoteDeviceProfiles.first { $0.id == profileID }?.model
         let families = Self.monitorFamilies(targetModel: targetModel,
             powerKeySuppressed: powerKeySuppressed || backOnlyMode, allowsGoogle: allowsG9N9N)
-        let inputGranted = Self.isInputMonitoringGranted
-        let accessibilityGranted = KeyboardInjector.isAccessibilityTrusted
+        let permissions = permissionSnapshot()
+        let inputGranted = permissions.inputMonitoringGranted
+        let accessibilityGranted = permissions.accessibilityGranted
         AppLogger.shared.write(
             "HID PERMISSIONS input=\(inputGranted) accessibility=\(accessibilityGranted)"
         )

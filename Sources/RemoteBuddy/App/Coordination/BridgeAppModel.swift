@@ -163,6 +163,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     var rc003VoiceExtensionOpenTimer: DispatchSourceTimer?
     var rc003VoiceExtensionDeadlineTimer: DispatchSourceTimer?
     let hidEventSuppressor: KeyboardEventSuppressor
+    let permissionSnapshotProvider: () -> HIDPermissionSnapshot
     var hidMonitoringInterrupted = false
     var hidMonitors: [String: HIDRemoteMonitor] = [:]
     var discoveryHIDMonitor: HIDRemoteMonitor?
@@ -204,6 +205,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
         loginItemService: LoginItemService = LoginItemService(),
         voiceFunctionMapper: RemoteHIDKeyMapper? = nil,
         hidEventSuppressor: KeyboardEventSuppressor? = nil,
+        permissionSnapshotProvider: @escaping () -> HIDPermissionSnapshot = { .current },
         rc003VoiceExtensionTestEnabled: Bool =
             ProcessInfo.processInfo.arguments.contains("--rc003-voice-extension-test") ||
             (Bundle.main.object(forInfoDictionaryKey: "RC003VoiceExtensionTestEnabled") as? Bool == true)
@@ -213,6 +215,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
         self.commonPhraseStore = commonPhraseStore
         self.voiceFunctionMapper = voiceFunctionMapper ?? RemoteHIDKeyMapper()
         self.hidEventSuppressor = hidEventSuppressor ?? KeyboardEventSuppressor()
+        self.permissionSnapshotProvider = permissionSnapshotProvider
 
         self.loginItemService = loginItemService
         self.rc003VoiceExtensionTestEnabled = rc003VoiceExtensionTestEnabled
@@ -223,7 +226,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
             guard let self else { return }
             self.hidMonitoringInterrupted = true
             self.stopHIDMonitors()
-            let permissions = HIDPermissionSnapshot.current
+            let permissions = self.permissionSnapshotProvider()
             self.appliedHIDPermissionSnapshot = permissions
             self.hidStatus = LocalizedMessage(
                 !permissions.inputMonitoringGranted ? "button_mapping.permission.input_monitoring_required" :

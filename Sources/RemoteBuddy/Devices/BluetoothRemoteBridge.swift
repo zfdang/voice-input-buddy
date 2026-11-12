@@ -266,12 +266,14 @@ final class BluetoothRemoteBridge: NSObject {
         stopStreaming()
     }
 
+#if DEBUG
     func simulateReadyStateForTesting(deviceName: String = "Test remote") {
         shouldRun = true
         generationCounter &+= 1
         lifecycle = .ready(generationCounter)
         state = .ready(deviceName)
     }
+#endif
 
     private let serviceUUID = CBUUID(string: ATVVProtocol.serviceUUID)
     private let transmitUUID = CBUUID(string: ATVVProtocol.transmitUUID)

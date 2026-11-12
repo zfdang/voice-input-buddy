@@ -2,6 +2,7 @@ import Foundation
 
 struct SystemAudioSuspensionState {
     private(set) var reasons = Set<SystemAudioSuspensionReason>()
+    private(set) var pendingSystemWakeRecovery = false
 
     var isSuspended: Bool {
         !reasons.isEmpty
@@ -19,10 +20,26 @@ struct SystemAudioSuspensionState {
 
     @discardableResult
     mutating func apply(_ event: SystemAudioLifecycleEvent) -> Bool {
+        if event == .systemWillSleep {
+            pendingSystemWakeRecovery = false
+        }
         if event.isSuspending {
             return reasons.insert(event.suspensionReason).inserted
         }
-        return reasons.remove(event.suspensionReason) != nil
+        let removed = reasons.remove(event.suspensionReason) != nil
+        if removed, event == .systemDidWake {
+            pendingSystemWakeRecovery = true
+        }
+        return removed
+    }
+
+    mutating func consumePendingSystemWakeRecovery() -> Bool {
+        defer { pendingSystemWakeRecovery = false }
+        return pendingSystemWakeRecovery
+    }
+
+    mutating func clearPendingSystemWakeRecovery() {
+        pendingSystemWakeRecovery = false
     }
 }
 

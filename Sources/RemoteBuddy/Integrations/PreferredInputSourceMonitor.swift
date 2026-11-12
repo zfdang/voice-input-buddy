@@ -32,6 +32,10 @@ final class PreferredInputSourceMonitor {
     private static let activationTimeout: TimeInterval = 0.5
     private static let activationPollInterval: TimeInterval = 0.02
 
+    var isMonitoring: Bool {
+        monitor != nil
+    }
+
     var functionKeyIsPressedForDiagnostics: Bool {
         functionKeyIsPressed
     }
