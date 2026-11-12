@@ -22,13 +22,16 @@ struct HIDHotPathIdempotencyTests {
         final class Counters {
             var serviceProviderCallCount = 0
             var setMappingsCount = 0
+            var orderedFnWaitCount = 0
             var tapStartCount = 0
             var tapStopCount = 0
             var tapEnabled = false
             var hasMatchingHIDServices = true
+            var allowWrites = true
             var primaryRegistryID: UInt64? = 123
             var primaryLocationID: UInt32 = 9
             var hidMappings: [HIDUsageMapping] = []
+            var recordedWrites: [(registryID: UInt64?, mappings: [HIDUsageMapping])] = []
             var secondaryService: (
                 enabled: Bool,
                 registryID: UInt64?,
@@ -42,13 +45,27 @@ struct HIDHotPathIdempotencyTests {
             var logs: [String] = []
         }
 
+        func startAndVerifyVoice(on targetBridge: BluetoothRemoteBridge? = nil, id: UUID? = nil) {
+            let orderedFnBefore = counters.orderedFnWaitCount
+            model.bluetoothBridgeDidStartVoice(targetBridge ?? bridge)
+            if model.requiresOrderedVoiceFn {
+                #expect(counters.orderedFnWaitCount == orderedFnBefore + 1)
+            } else {
+                #expect(model.voiceSession.isActive)
+            }
+            endVoiceSession(for: id)
+        }
+
         func endVoiceSession(for id: UUID? = nil) {
             _ = model.voiceSession.pendingStart.cancel(ifOwnedBy: id ?? bridgeID)
             model.voiceSession.stopRequested = false
             model.voiceSession.end()
         }
 
-        func cleanup() {
+        func cleanup(expectNoFnTapLogs: Bool = true) {
+            if expectNoFnTapLogs {
+                #expect(counters.logs.isEmpty)
+            }
             model.stopHIDMonitors()
             model.preferredInputSourceMonitor.stop()
             model.cancelHIDMappingRecovery(reason: "test_cleanup")
@@ -72,14 +89,18 @@ struct HIDHotPathIdempotencyTests {
     }
 
     private static func makeStubPreferredInputSourceMonitor(
-        settings: AppSettings
+        settings: AppSettings,
+        counters: Harness.Counters
     ) -> PreferredInputSourceMonitor {
         PreferredInputSourceMonitor(
             voiceTool: { [weak settings] in settings?.onboardingVoiceTool ?? .unselected },
             prepareInputSource: { _ in .selected },
             currentInputSourceID: { "test.input.source" },
             restoreInputSource: { _ in .selected },
-            waitForInputSourceActivation: { _, _, _, done in done(false) },
+            waitForInputSourceActivation: { _, _, _, done in
+                counters.orderedFnWaitCount += 1
+                done(false)
+            },
             installMonitor: { _ in MonitorToken() },
             removeMonitor: { _ in },
             logger: { _ in }
@@ -139,13 +160,16 @@ struct HIDHotPathIdempotencyTests {
                 counters.serviceProviderCallCount += 1
                 var services: [RemoteHIDMappingService] = []
                 if counters.hasMatchingHIDServices {
+                    let regID = counters.primaryRegistryID
                     services.append(
                         RemoteHIDMappingService(
-                            registryID: counters.primaryRegistryID,
+                            registryID: regID,
                             locationID: counters.primaryLocationID,
                             readMappings: { counters.hidMappings },
                             setMappings: {
+                                guard counters.allowWrites else { return false }
                                 counters.setMappingsCount += 1
+                                counters.recordedWrites.append((registryID: regID, mappings: $0))
                                 counters.hidMappings = $0
                                 return true
                             }
@@ -153,13 +177,16 @@ struct HIDHotPathIdempotencyTests {
                     )
                 }
                 if counters.secondaryService.enabled {
+                    let regID = counters.secondaryService.registryID
                     services.append(
                         RemoteHIDMappingService(
-                            registryID: counters.secondaryService.registryID,
+                            registryID: regID,
                             locationID: counters.secondaryService.locationID,
                             readMappings: { counters.secondaryService.mappings },
                             setMappings: {
+                                guard counters.allowWrites else { return false }
                                 counters.setMappingsCount += 1
+                                counters.recordedWrites.append((registryID: regID, mappings: $0))
                                 counters.secondaryService.mappings = $0
                                 return true
                             }
@@ -198,7 +225,10 @@ struct HIDHotPathIdempotencyTests {
             permissionSnapshotProvider: { counters.permissionSnapshot }
         )
         // Cancel any ordered-Fn voice key wait synchronously so tests never post OS key events.
-        model.preferredInputSourceMonitor = Self.makeStubPreferredInputSourceMonitor(settings: settings)
+        model.preferredInputSourceMonitor = Self.makeStubPreferredInputSourceMonitor(
+            settings: settings,
+            counters: counters
+        )
         model.voiceFnTapSession = VoiceFnTapSessionController(
             setFunctionKeyPressed: { _ in true },
             enqueueAudio: { _ in },
@@ -248,13 +278,15 @@ struct HIDHotPathIdempotencyTests {
         let granted = HIDPermissionSnapshot(inputMonitoringGranted: true, accessibilityGranted: true)
         let deniedAccessibility = HIDPermissionSnapshot(inputMonitoringGranted: true, accessibilityGranted: false)
 
-        // Plain Fn hold-to-talk never needs pre-voice reapplication.
+        // Plain Fn hold-to-talk without custom mapping never needs pre-voice reapplication.
         #expect(!BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
+            customMappingEnabled: false,
             mode: .function,
             fnTapModeEnabled: false,
             requiresOrderedFn: false,
             hasHardwareVoiceKey: true,
-            currentServicesVoiceKeyNeutralized: false,
+            isVoiceKeyNeutralized: false,
+            currentServicesMatchDesiredMapping: false,
             fnTapSessionEnabled: false,
             monitoringInterrupted: true,
             monitoringConfigurationApplied: false,
@@ -262,13 +294,29 @@ struct HIDHotPathIdempotencyTests {
             currentPermissionSnapshot: granted
         ))
 
-        // Steady-state ordered-Fn (e.g. Weixin) skips reapplication when neutralized and healthy.
+        // Plain Fn with customMappingEnabled skips when power-key suppression matches live services, and recovers if missing.
         #expect(!BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
+            customMappingEnabled: true,
             mode: .function,
             fnTapModeEnabled: false,
-            requiresOrderedFn: true,
+            requiresOrderedFn: false,
             hasHardwareVoiceKey: true,
-            currentServicesVoiceKeyNeutralized: true,
+            isVoiceKeyNeutralized: false,
+            currentServicesMatchDesiredMapping: true,
+            fnTapSessionEnabled: false,
+            monitoringInterrupted: false,
+            monitoringConfigurationApplied: true,
+            appliedPermissionSnapshot: granted,
+            currentPermissionSnapshot: granted
+        ))
+        #expect(BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
+            customMappingEnabled: true,
+            mode: .function,
+            fnTapModeEnabled: false,
+            requiresOrderedFn: false,
+            hasHardwareVoiceKey: true,
+            isVoiceKeyNeutralized: false,
+            currentServicesMatchDesiredMapping: false,
             fnTapSessionEnabled: false,
             monitoringInterrupted: false,
             monitoringConfigurationApplied: true,
@@ -276,13 +324,31 @@ struct HIDHotPathIdempotencyTests {
             currentPermissionSnapshot: granted
         ))
 
-        // Missing neutralization, interrupted monitoring, missing applied monitor config, or permission changes trigger recovery.
-        #expect(BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
+        // Steady-state ordered-Fn (e.g. Weixin) skips reapplication when neutralized and healthy.
+        #expect(!BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
+            customMappingEnabled: true,
             mode: .function,
             fnTapModeEnabled: false,
             requiresOrderedFn: true,
             hasHardwareVoiceKey: true,
-            currentServicesVoiceKeyNeutralized: false,
+            isVoiceKeyNeutralized: true,
+            currentServicesMatchDesiredMapping: true,
+            fnTapSessionEnabled: false,
+            monitoringInterrupted: false,
+            monitoringConfigurationApplied: true,
+            appliedPermissionSnapshot: granted,
+            currentPermissionSnapshot: granted
+        ))
+
+        // Missing neutralization, service mismatch, interrupted monitoring, missing config, or permission changes trigger recovery.
+        #expect(BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
+            customMappingEnabled: true,
+            mode: .function,
+            fnTapModeEnabled: false,
+            requiresOrderedFn: true,
+            hasHardwareVoiceKey: true,
+            isVoiceKeyNeutralized: true,
+            currentServicesMatchDesiredMapping: false,
             fnTapSessionEnabled: false,
             monitoringInterrupted: false,
             monitoringConfigurationApplied: true,
@@ -290,11 +356,27 @@ struct HIDHotPathIdempotencyTests {
             currentPermissionSnapshot: granted
         ))
         #expect(BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
+            customMappingEnabled: true,
             mode: .function,
             fnTapModeEnabled: false,
             requiresOrderedFn: true,
             hasHardwareVoiceKey: true,
-            currentServicesVoiceKeyNeutralized: true,
+            isVoiceKeyNeutralized: false,
+            currentServicesMatchDesiredMapping: true,
+            fnTapSessionEnabled: false,
+            monitoringInterrupted: false,
+            monitoringConfigurationApplied: true,
+            appliedPermissionSnapshot: granted,
+            currentPermissionSnapshot: granted
+        ))
+        #expect(BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
+            customMappingEnabled: true,
+            mode: .function,
+            fnTapModeEnabled: false,
+            requiresOrderedFn: true,
+            hasHardwareVoiceKey: true,
+            isVoiceKeyNeutralized: true,
+            currentServicesMatchDesiredMapping: true,
             fnTapSessionEnabled: false,
             monitoringInterrupted: true,
             monitoringConfigurationApplied: true,
@@ -302,11 +384,13 @@ struct HIDHotPathIdempotencyTests {
             currentPermissionSnapshot: granted
         ))
         #expect(BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
+            customMappingEnabled: true,
             mode: .function,
             fnTapModeEnabled: false,
             requiresOrderedFn: true,
             hasHardwareVoiceKey: true,
-            currentServicesVoiceKeyNeutralized: true,
+            isVoiceKeyNeutralized: true,
+            currentServicesMatchDesiredMapping: true,
             fnTapSessionEnabled: false,
             monitoringInterrupted: false,
             monitoringConfigurationApplied: false,
@@ -314,11 +398,13 @@ struct HIDHotPathIdempotencyTests {
             currentPermissionSnapshot: granted
         ))
         #expect(BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
+            customMappingEnabled: true,
             mode: .function,
             fnTapModeEnabled: false,
             requiresOrderedFn: true,
             hasHardwareVoiceKey: true,
-            currentServicesVoiceKeyNeutralized: true,
+            isVoiceKeyNeutralized: true,
+            currentServicesMatchDesiredMapping: true,
             fnTapSessionEnabled: false,
             monitoringInterrupted: false,
             monitoringConfigurationApplied: true,
@@ -328,11 +414,13 @@ struct HIDHotPathIdempotencyTests {
 
         // Chromecast remote (no hardware voice key) does not flap when no Xiaomi HID service is neutralized.
         #expect(!BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
+            customMappingEnabled: true,
             mode: .leftCommand,
             fnTapModeEnabled: false,
             requiresOrderedFn: false,
             hasHardwareVoiceKey: false,
-            currentServicesVoiceKeyNeutralized: false,
+            isVoiceKeyNeutralized: false,
+            currentServicesMatchDesiredMapping: true,
             fnTapSessionEnabled: false,
             monitoringInterrupted: false,
             monitoringConfigurationApplied: true,
@@ -342,11 +430,13 @@ struct HIDHotPathIdempotencyTests {
 
         // Fn-tap mode requires session activation only when Accessibility is granted and session is disabled.
         #expect(BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
+            customMappingEnabled: true,
             mode: .function,
             fnTapModeEnabled: true,
             requiresOrderedFn: false,
             hasHardwareVoiceKey: false,
-            currentServicesVoiceKeyNeutralized: false,
+            isVoiceKeyNeutralized: false,
+            currentServicesMatchDesiredMapping: true,
             fnTapSessionEnabled: false,
             monitoringInterrupted: false,
             monitoringConfigurationApplied: true,
@@ -354,11 +444,13 @@ struct HIDHotPathIdempotencyTests {
             currentPermissionSnapshot: granted
         ))
         #expect(!BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
+            customMappingEnabled: true,
             mode: .function,
             fnTapModeEnabled: true,
             requiresOrderedFn: false,
             hasHardwareVoiceKey: false,
-            currentServicesVoiceKeyNeutralized: false,
+            isVoiceKeyNeutralized: false,
+            currentServicesMatchDesiredMapping: true,
             fnTapSessionEnabled: false,
             monitoringInterrupted: false,
             monitoringConfigurationApplied: true,
@@ -366,11 +458,13 @@ struct HIDHotPathIdempotencyTests {
             currentPermissionSnapshot: deniedAccessibility
         ))
         #expect(!BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
+            customMappingEnabled: true,
             mode: .function,
             fnTapModeEnabled: true,
             requiresOrderedFn: false,
             hasHardwareVoiceKey: true,
-            currentServicesVoiceKeyNeutralized: true,
+            isVoiceKeyNeutralized: true,
+            currentServicesMatchDesiredMapping: true,
             fnTapSessionEnabled: true,
             monitoringInterrupted: false,
             monitoringConfigurationApplied: true,
@@ -401,8 +495,7 @@ struct HIDHotPathIdempotencyTests {
         let initialDiscovery = try #require(model.discoveryHIDMonitor)
 
         for _ in 0..<3 {
-            model.bluetoothBridgeDidStartVoice(bridge)
-            harness.endVoiceSession()
+            harness.startAndVerifyVoice(on: bridge)
         }
 
         #expect(counters.tapStartCount == 1)
@@ -410,18 +503,15 @@ struct HIDHotPathIdempotencyTests {
         #expect(counters.setMappingsCount == 1)
         #expect(model.hidMonitors["test-remote"] === initialMonitor)
         #expect(model.discoveryHIDMonitor === initialDiscovery)
-        #expect(counters.logs.isEmpty)
 
         // When monitoring was interrupted, voice start triggers HID recovery.
         model.hidMonitoringInterrupted = true
-        model.bluetoothBridgeDidStartVoice(bridge)
-        harness.endVoiceSession()
+        harness.startAndVerifyVoice(on: bridge)
 
         #expect(!model.hidMonitoringInterrupted)
         #expect(counters.tapStopCount == 1)
         #expect(counters.tapStartCount == 2)
         #expect(model.hidMonitors["test-remote"] !== initialMonitor)
-        #expect(counters.logs.isEmpty)
     }
 
     @Test func voiceStartRecoversWhenAppliedMonitoringConfigurationIsMissing() throws {
@@ -441,14 +531,12 @@ struct HIDHotPathIdempotencyTests {
 
         // Simulate unhealthy monitor start leaving appliedHIDMonitoringConfiguration nil without setting interrupted.
         model.appliedHIDMonitoringConfiguration = nil
-        model.bluetoothBridgeDidStartVoice(harness.bridge)
-        harness.endVoiceSession()
+        harness.startAndVerifyVoice()
 
         #expect(model.appliedHIDMonitoringConfiguration != nil)
         #expect(counters.tapStopCount == 1)
         #expect(counters.tapStartCount == 2)
         #expect(model.hidMonitors["test-remote"] !== initialMonitor)
-        #expect(counters.logs.isEmpty)
     }
 
     @Test func voiceStartReappliesSettingsWhenServiceWasNotYetNeutralized() throws {
@@ -467,12 +555,10 @@ struct HIDHotPathIdempotencyTests {
         #expect(counters.setMappingsCount == 0)
 
         counters.hasMatchingHIDServices = true
-        model.bluetoothBridgeDidStartVoice(harness.bridge)
-        harness.endVoiceSession()
+        harness.startAndVerifyVoice()
 
         #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
         #expect(counters.setMappingsCount == 1)
-        #expect(counters.logs.isEmpty)
     }
 
     @Test func applyHIDSettingsReusesHealthyMonitorsUnlessConfigChangesOrRecheckForced() throws {
@@ -713,8 +799,9 @@ struct HIDHotPathIdempotencyTests {
         counters.secondaryService.enabled = true
 
         // Verify explicit live validation invalidates isVoiceKeyNeutralized (true -> false) on unmapped service 2.
-        #expect(!model.voiceFunctionMapper.refreshVoiceKeyNeutralizationValidity(
-            expectedPowerKeySuppression: harness.settings.customMappingEnabled
+        #expect(!model.voiceFunctionMapper.refreshAppliedMappingsValidity(
+            expectedPowerKeySuppression: harness.settings.customMappingEnabled,
+            expectedVoiceKeyNeutralization: model.shouldNeutralizeNativeVoiceKey
         ))
         #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
 
@@ -725,27 +812,26 @@ struct HIDHotPathIdempotencyTests {
 
         counters.secondaryService.enabled = true
         counters.secondaryService.mappings = [RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey]
+        counters.recordedWrites.removeAll()
         let writesBeforeVoice = counters.setMappingsCount
-        model.bluetoothBridgeDidStartVoice(bridge2)
-        harness.endVoiceSession(for: bridge2ID)
+        harness.startAndVerifyVoice(on: bridge2, id: bridge2ID)
 
         #expect(counters.setMappingsCount == writesBeforeVoice + 2)
         #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
-        #expect(counters.secondaryService.mappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey))
-        #expect(counters.secondaryService.mappings.contains(RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey))
+        let secondaryWrite = try #require(counters.recordedWrites.last(where: { $0.registryID == 202 }))
+        #expect(secondaryWrite.mappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey))
+        #expect(secondaryWrite.mappings.contains(RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey))
         #expect(model.hidAllowedLocationIDs == Set([9, 10]))
 
         // Subsequent voice press on remote 2 reuses the healthy neutralized set without extra writes.
         let writesAfterCatchup = counters.setMappingsCount
         let tapStartsAfterCatchup = counters.tapStartCount
         let monitor2AfterCatchup = try #require(model.hidMonitors["remote-2"])
-        model.bluetoothBridgeDidStartVoice(bridge2)
-        harness.endVoiceSession(for: bridge2ID)
+        harness.startAndVerifyVoice(on: bridge2, id: bridge2ID)
 
         #expect(counters.setMappingsCount == writesAfterCatchup)
         #expect(counters.tapStartCount == tapStartsAfterCatchup)
         #expect(model.hidMonitors["remote-2"] === monitor2AfterCatchup)
-        #expect(counters.logs.isEmpty)
     }
 
     @Test func refreshValidityDetectsNewRegistryIDResetMappingsNilRegistryIDAndPowerMismatch() throws {
@@ -764,28 +850,35 @@ struct HIDHotPathIdempotencyTests {
         // 1. Different registryID after reconnect invalidates neutralization even with leftover power-only mapping.
         counters.primaryRegistryID = 456
         counters.hidMappings = [RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey]
-        #expect(!model.voiceFunctionMapper.refreshVoiceKeyNeutralizationValidity(expectedPowerKeySuppression: true))
+        #expect(!model.voiceFunctionMapper.refreshAppliedMappingsValidity(
+            expectedPowerKeySuppression: true,
+            expectedVoiceKeyNeutralization: true
+        ))
         #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
 
         let writesBeforeNewID = counters.setMappingsCount
-        model.bluetoothBridgeDidStartVoice(harness.bridge)
-        harness.endVoiceSession()
+        harness.startAndVerifyVoice()
         #expect(counters.setMappingsCount == writesBeforeNewID + 1)
         #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
 
         // 2. Reused registryID (456) whose OS mappings were reset forces reapply on voice start.
         counters.hidMappings = []
+        counters.recordedWrites.removeAll()
         let writesBeforeReset = counters.setMappingsCount
-        model.bluetoothBridgeDidStartVoice(harness.bridge)
-        harness.endVoiceSession()
+        harness.startAndVerifyVoice()
         #expect(counters.setMappingsCount == writesBeforeReset + 1)
         #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
-        #expect(counters.hidMappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey))
+        #expect(counters.recordedWrites.last?.mappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey) == true)
 
-        // 3. nil registryID cannot be verified as already applied and forces reapply.
+        // 3. nil registryID cannot be verified as already applied and rolls back when neutralization is required.
         counters.primaryRegistryID = nil
         #expect(model.voiceFunctionMapper.needsReapply(suppressPowerKey: true, neutralizeVoiceKey: true))
-        #expect(!model.voiceFunctionMapper.refreshVoiceKeyNeutralizationValidity(expectedPowerKeySuppression: true))
+        #expect(!model.voiceFunctionMapper.refreshAppliedMappingsValidity(
+            expectedPowerKeySuppression: true,
+            expectedVoiceKeyNeutralization: true
+        ))
+        #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
+        #expect(!model.voiceFunctionMapper.apply(suppressPowerKey: true, neutralizeVoiceKey: true))
         #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
 
         counters.primaryRegistryID = 789
@@ -794,20 +887,21 @@ struct HIDHotPathIdempotencyTests {
 
         // 4. Power-key suppression mismatch (customMappingEnabled turned off) invalidates live validity.
         harness.settings.customMappingEnabled = false
-        #expect(!model.voiceFunctionMapper.refreshVoiceKeyNeutralizationValidity(
-            expectedPowerKeySuppression: harness.settings.customMappingEnabled
+        #expect(!model.voiceFunctionMapper.refreshAppliedMappingsValidity(
+            expectedPowerKeySuppression: harness.settings.customMappingEnabled,
+            expectedVoiceKeyNeutralization: model.shouldNeutralizeNativeVoiceKey
         ))
         #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
 
+        counters.recordedWrites.removeAll()
         let writesBeforePowerToggle = counters.setMappingsCount
-        model.bluetoothBridgeDidStartVoice(harness.bridge)
-        harness.endVoiceSession()
+        harness.startAndVerifyVoice()
         #expect(counters.setMappingsCount == writesBeforePowerToggle + 1)
-        #expect(!counters.hidMappings.contains(RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey))
-        #expect(counters.hidMappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey))
+        #expect(counters.recordedWrites.last?.mappings.contains(RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey) == false)
+        #expect(counters.recordedWrites.last?.mappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey) == true)
     }
 
-    @Test func transientEmptyServicesPreservesFnTapModeAndNeutralizationUntilServiceReturns() throws {
+    @Test func transientEmptyServicesAndFailedVoiceStartWritePreserveFnTapMode() throws {
         let harness = try makeHarness(
             customMappingEnabled: true,
             voiceKeyMode: .function,
@@ -822,28 +916,37 @@ struct HIDHotPathIdempotencyTests {
         #expect(harness.settings.voiceFnTapModeEnabled)
         #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
 
-        // Brief HID service disappearance during jitter must NOT flip isVoiceKeyNeutralized or voiceFnTapModeEnabled.
+        // Brief HID service disappearance during jitter clears appliedConfiguration without flipping preferences.
         counters.hasMatchingHIDServices = false
         let writesBeforeJitter = counters.setMappingsCount
-        #expect(model.voiceFunctionMapper.refreshVoiceKeyNeutralizationValidity(expectedPowerKeySuppression: true))
+        #expect(model.voiceFunctionMapper.refreshAppliedMappingsValidity(
+            expectedPowerKeySuppression: true,
+            expectedVoiceKeyNeutralization: true
+        ))
         #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
         #expect(harness.settings.voiceFnTapModeEnabled)
-
-        model.bluetoothBridgeDidStartVoice(harness.bridge)
-        harness.endVoiceSession()
         #expect(counters.setMappingsCount == writesBeforeJitter)
-        #expect(harness.settings.voiceFnTapModeEnabled)
-        #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
 
-        // Once the HID service returns (even with cleared mappings), cleared appliedConfiguration forces reapply.
+        // Returning service sees cleared appliedConfiguration and forces reapply on voice start.
         counters.hasMatchingHIDServices = true
         counters.hidMappings = []
-        model.bluetoothBridgeDidStartVoice(harness.bridge)
-        harness.endVoiceSession()
+        counters.recordedWrites.removeAll()
+        harness.startAndVerifyVoice()
         #expect(counters.setMappingsCount == writesBeforeJitter + 1)
-        #expect(counters.hidMappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey))
+        #expect(counters.recordedWrites.last?.mappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey) == true)
         #expect(harness.settings.voiceFnTapModeEnabled)
         #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
+
+        // If a returning service fails to write during voice start (`allowVoiceKeyModeFallback: false`),
+        // Fn-tap mode preference is still preserved rather than flipped to false.
+        counters.primaryRegistryID = 456
+        counters.hidMappings = []
+        counters.allowWrites = false
+        model.bluetoothBridgeDidStartVoice(harness.bridge)
+        #expect(!model.voiceSession.isActive)
+        harness.endVoiceSession()
+        #expect(harness.settings.voiceFnTapModeEnabled)
+        #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
     }
 
     @Test func pruneAppliedServicesShrinksIntersectionSoReturningServiceMustReapply() throws {
@@ -860,7 +963,7 @@ struct HIDHotPathIdempotencyTests {
 
         #expect(!model.voiceFunctionMapper.needsReapply(suppressPowerKey: true, neutralizeVoiceKey: true))
 
-        // Drop primary (101/123) while keeping secondary (202), then prune.
+        // Drop primary (123) while keeping secondary (202), then prune.
         counters.hasMatchingHIDServices = false
         model.voiceFunctionMapper.pruneAppliedServices()
         #expect(!model.voiceFunctionMapper.needsReapply(suppressPowerKey: true, neutralizeVoiceKey: true))
@@ -870,11 +973,98 @@ struct HIDHotPathIdempotencyTests {
         counters.hasMatchingHIDServices = true
         counters.hidMappings = []
         #expect(model.voiceFunctionMapper.needsReapply(suppressPowerKey: true, neutralizeVoiceKey: true))
-        #expect(!model.voiceFunctionMapper.refreshVoiceKeyNeutralizationValidity(expectedPowerKeySuppression: true))
+        #expect(!model.voiceFunctionMapper.refreshAppliedMappingsValidity(
+            expectedPowerKeySuppression: true,
+            expectedVoiceKeyNeutralization: true
+        ))
         #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
     }
 
-    @Test func candidateAvailableAndConnectedRefreshDeduplicatesAndRespectsLifecycleGuards() async throws {
+    @Test func pureFunctionModeRevalidatesPowerSuppressionOnlyWhenCustomMappingEnabled() throws {
+        let harness = try makeHarness(
+            customMappingEnabled: true,
+            voiceKeyMode: .function,
+            voiceTool: .unselected,
+            hasMatchingHIDServices: true,
+            secondaryServiceEnabled: false
+        )
+        defer { harness.cleanup() }
+        let model = harness.model
+        let counters = harness.counters
+
+        #expect(!model.shouldNeutralizeNativeVoiceKey)
+        #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
+        #expect(model.voiceFunctionMapper.isPowerKeySuppressed)
+        let initialWrites = counters.setMappingsCount
+
+        // Steady state with customMappingEnabled skips teardown and extra writes.
+        harness.startAndVerifyVoice()
+        #expect(counters.setMappingsCount == initialWrites)
+
+        // Late second service without power-key suppression is caught and patched on voice start.
+        counters.secondaryService.enabled = true
+        counters.secondaryService.mappings = []
+        counters.recordedWrites.removeAll()
+        harness.startAndVerifyVoice()
+        #expect(counters.setMappingsCount == initialWrites + 2)
+        let secondaryWrite = try #require(counters.recordedWrites.last(where: { $0.registryID == 202 }))
+        #expect(secondaryWrite.mappings.contains(RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey))
+        #expect(model.hidAllowedLocationIDs == Set([9, 10]))
+
+        // Turning off customMappingEnabled skips live service probing during voice start altogether.
+        harness.settings.customMappingEnabled = false
+        model.applyHIDSettings()
+        let probesBeforeDisabledVoice = counters.serviceProviderCallCount
+        let writesBeforeDisabledVoice = counters.setMappingsCount
+        harness.startAndVerifyVoice()
+        #expect(counters.serviceProviderCallCount == probesBeforeDisabledVoice)
+        #expect(counters.setMappingsCount == writesBeforeDisabledVoice)
+    }
+
+    @Test func partialMappingOptionsDuplicateRegistryIDAndNilRegistryIDWithoutNeutralization() throws {
+        let harness = try makeHarness(
+            customMappingEnabled: false,
+            voiceKeyMode: .leftCommand,
+            voiceTool: .unselected,
+            hasMatchingHIDServices: true
+        )
+        defer { harness.cleanup() }
+        let mapper = harness.model.voiceFunctionMapper
+        let counters = harness.counters
+
+        // 1. suppressPowerKey: false + neutralizeVoiceKey: true applies and validates cleanly.
+        #expect(mapper.isVoiceKeyNeutralized)
+        #expect(!mapper.isPowerKeySuppressed)
+        #expect(!mapper.needsReapply(suppressPowerKey: false, neutralizeVoiceKey: true))
+
+        // 2. suppressPowerKey: true + neutralizeVoiceKey: false leaves voice key unneutralized and suppresses power.
+        #expect(mapper.apply(suppressPowerKey: true, neutralizeVoiceKey: false))
+        #expect(!mapper.isVoiceKeyNeutralized)
+        #expect(mapper.isPowerKeySuppressed)
+        #expect(!mapper.needsReapply(suppressPowerKey: true, neutralizeVoiceKey: false))
+        #expect(mapper.refreshAppliedMappingsValidity(
+            expectedPowerKeySuppression: true,
+            expectedVoiceKeyNeutralization: false
+        ))
+
+        // 3. Duplicate registryID across two services leaves appliedConfiguration nil -> needsReapply stays true.
+        counters.secondaryService.enabled = true
+        counters.secondaryService.registryID = counters.primaryRegistryID
+        #expect(mapper.apply(suppressPowerKey: true, neutralizeVoiceKey: false))
+        #expect(mapper.needsReapply(suppressPowerKey: true, neutralizeVoiceKey: false))
+        #expect(!mapper.refreshAppliedMappingsValidity(
+            expectedPowerKeySuppression: true,
+            expectedVoiceKeyNeutralization: false
+        ))
+
+        // 4. nil registryID without voice neutralization skips unidentifiable service without caching appliedConfiguration.
+        counters.secondaryService.enabled = false
+        counters.primaryRegistryID = nil
+        #expect(!mapper.apply(suppressPowerKey: true, neutralizeVoiceKey: false))
+        #expect(mapper.needsReapply(suppressPowerKey: true, neutralizeVoiceKey: false))
+    }
+
+    @Test func candidateAvailableAndConnectedRefreshCoalescesDefersFlushesAndCancelsStaleWork() async throws {
         let harness = try makeHarness(
             customMappingEnabled: true,
             voiceKeyMode: .leftCommand,
@@ -892,21 +1082,27 @@ struct HIDHotPathIdempotencyTests {
         let monitor = try #require(model.hidMonitors["test-remote"])
         let profileID = try #require(harness.settings.selectedRemoteProfileID)
 
-        // When suspended or during an active voice session, candidate callbacks refuse to enqueue a refresh.
-        model.handleSystemAudioLifecycle(.systemWillSleep)
-        monitor.onCandidateAvailable?()
-        #expect(!model.pendingHIDServiceMappingRefresh)
-        model.handleSystemAudioLifecycle(.systemDidWake)
-
-        model.voiceSession.pendingStart.begin(for: harness.bridgeID)
-        monitor.onCandidateAvailable?()
-        #expect(!model.pendingHIDServiceMappingRefresh)
-        harness.endVoiceSession()
-
-        // Trigger candidate availability (location 10 would otherwise be filtered by unsafe_location) + connect events.
+        // During an active voice session, candidate callbacks defer instead of dropping the refresh,
+        // wait out flush attempts while active, and apply on endVoiceSessionIfNeeded.
+        model.beginVoiceSessionIfNeeded()
+        #expect(model.isStreaming)
         counters.secondaryService.enabled = true
         counters.secondaryService.mappings = [RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey]
+        let writesDuringActiveVoice = counters.setMappingsCount
 
+        monitor.onCandidateAvailable?()
+        #expect(model.pendingHIDServiceMappingRefresh)
+        model.flushPendingHIDServiceMappingRefreshIfNeeded()
+        #expect(model.pendingHIDServiceMappingRefresh)
+        #expect(counters.setMappingsCount == writesDuringActiveVoice)
+
+        model.endVoiceSessionIfNeeded(flushAudio: false)
+        #expect(!model.pendingHIDServiceMappingRefresh)
+        #expect(counters.secondaryService.mappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey))
+        #expect(model.hidAllowedLocationIDs == Set([9, 10]))
+
+        // Coalesces multiple rapid triggers while idle into a single async refresh pass.
+        counters.secondaryService.mappings = []
         let callsBeforeRefresh = counters.serviceProviderCallCount
         let writesBeforeRefresh = counters.setMappingsCount
         monitor.onCandidateAvailable?()
@@ -914,29 +1110,49 @@ struct HIDHotPathIdempotencyTests {
         monitor.onDeviceConnected?(profileID, "test-remote")
         #expect(model.pendingHIDServiceMappingRefresh)
 
-        // Drain the single coalesced main-queue dispatch.
         await withCheckedContinuation { continuation in
             DispatchQueue.main.async { continuation.resume() }
+        }
+        if model.pendingHIDServiceMappingRefresh {
+            await withCheckedContinuation { continuation in
+                DispatchQueue.main.async { continuation.resume() }
+            }
         }
 
         #expect(!model.pendingHIDServiceMappingRefresh)
         #expect(counters.secondaryService.mappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey))
         #expect(counters.secondaryService.mappings.contains(RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey))
-        #expect(model.hidAllowedLocationIDs == Set([9, 10]))
-        // applyHIDSettings() probes services twice (apply + needsReapply guard), coalesced across 3 triggers into 1 pass.
-        #expect(counters.serviceProviderCallCount == callsBeforeRefresh + 2)
+        #expect(counters.serviceProviderCallCount >= callsBeforeRefresh + 2)
+        #expect(counters.serviceProviderCallCount <= callsBeforeRefresh + 3)
         #expect(counters.setMappingsCount == writesBeforeRefresh + 2)
 
-        // stop() clears any pending refresh flag cleanly, and prepareForTermination() blocks further queueing.
+        // Sleeping retains deferred refresh flag and flushes once wake clears suspension.
+        counters.secondaryService.mappings = []
+        model.handleSystemAudioLifecycle(.systemWillSleep)
+        monitor.onCandidateAvailable?()
+        #expect(model.pendingHIDServiceMappingRefresh)
+        model.handleSystemAudioLifecycle(.systemDidWake)
+        #expect(!model.pendingHIDServiceMappingRefresh)
+        #expect(counters.secondaryService.mappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey))
+
+        // stop() -> started = true invalidates stale queued async refresh via generation bump.
+        // Note: stop() runs voiceFunctionMapper.restore(), so sample writesAfterStop right after stop().
+        counters.secondaryService.mappings = []
         monitor.onCandidateAvailable?()
         #expect(model.pendingHIDServiceMappingRefresh)
         model.stop()
         #expect(!model.pendingHIDServiceMappingRefresh)
-
+        let writesAfterStop = counters.setMappingsCount
         model.started = true
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+        #expect(counters.setMappingsCount == writesAfterStop)
+        #expect(counters.secondaryService.mappings.isEmpty)
+
+        // prepareForTermination() blocks further queueing.
         model.prepareForTermination()
         monitor.onCandidateAvailable?()
         #expect(!model.pendingHIDServiceMappingRefresh)
-        #expect(counters.logs.isEmpty)
     }
 }

@@ -20,9 +20,19 @@ extension BridgeAppModel {
     }
 
     func flushPendingVoiceToolMappingRefresh(applyMappings: (() -> Void)? = nil) {
-        guard pendingVoiceToolMappingRefresh, canRefreshHIDMappingsNow else { return }
-        pendingVoiceToolMappingRefresh = false
-        if let applyMappings { applyMappings() } else { applyHIDSettings() }
+        guard canRefreshHIDMappingsNow else { return }
+        if pendingVoiceToolMappingRefresh {
+            pendingVoiceToolMappingRefresh = false
+            if applyMappings == nil {
+                pendingHIDServiceMappingRefresh = false
+            }
+            if let applyMappings { applyMappings() } else { applyHIDSettings() }
+            if applyMappings != nil {
+                flushPendingHIDServiceMappingRefreshIfNeeded(applyMappings: applyMappings)
+            }
+            return
+        }
+        flushPendingHIDServiceMappingRefreshIfNeeded(applyMappings: applyMappings)
     }
     var requiresOrderedVoiceFn: Bool {
         OrderedVoiceActivationPolicy.needsSoftwareFn(

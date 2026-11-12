@@ -61,21 +61,26 @@ extension BridgeAppModel {
             return
         }
         let profileID = activateRemoteProfile(for: bridge)
-        let currentServicesVoiceKeyNeutralized = voiceFunctionMapper
-            .refreshVoiceKeyNeutralizationValidity(
-                expectedPowerKeySuppression: settings.customMappingEnabled
+        let currentPermissionSnapshot = permissionSnapshotProvider()
+        let neutralizeVoiceKey = shouldNeutralizeNativeVoiceKey
+        let currentServicesMatchDesiredMapping = voiceFunctionMapper
+            .refreshAppliedMappingsValidity(
+                expectedPowerKeySuppression: settings.customMappingEnabled,
+                expectedVoiceKeyNeutralization: neutralizeVoiceKey
             )
         if Self.shouldReapplyHIDSettingsBeforeVoiceStart(
+            customMappingEnabled: settings.customMappingEnabled,
             mode: settings.voiceKeyMode,
             fnTapModeEnabled: settings.voiceFnTapModeEnabled,
             requiresOrderedFn: requiresOrderedVoiceFn,
             hasHardwareVoiceKey: bridge.identifiedModel?.isChromecastRemote != true,
-            currentServicesVoiceKeyNeutralized: currentServicesVoiceKeyNeutralized,
+            isVoiceKeyNeutralized: voiceFunctionMapper.isVoiceKeyNeutralized,
+            currentServicesMatchDesiredMapping: currentServicesMatchDesiredMapping,
             fnTapSessionEnabled: voiceFnTapSession.isEnabled,
             monitoringInterrupted: hidMonitoringInterrupted,
             monitoringConfigurationApplied: appliedHIDMonitoringConfiguration != nil,
             appliedPermissionSnapshot: appliedHIDPermissionSnapshot,
-            currentPermissionSnapshot: permissionSnapshotProvider()
+            currentPermissionSnapshot: currentPermissionSnapshot
         ) {
             applyHIDSettings(allowVoiceKeyModeFallback: false)
         }
@@ -84,7 +89,7 @@ extension BridgeAppModel {
             voiceFnTapModeEnabled: settings.voiceFnTapModeEnabled,
             isVoiceKeyNeutralized: voiceFunctionMapper.isVoiceKeyNeutralized,
             hasHardwareVoiceKey: bridge.identifiedModel?.isChromecastRemote != true,
-            accessibilityGranted: KeyboardInjector.isAccessibilityTrusted,
+            accessibilityGranted: currentPermissionSnapshot.accessibilityGranted,
             requiresOrderedFn: requiresOrderedVoiceFn
         ) else {
             _ = bridge.requestMicrophoneClose()

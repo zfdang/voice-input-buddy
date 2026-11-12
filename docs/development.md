@@ -36,7 +36,7 @@ SwiftPM 主执行目标为 RemoteBuddy。采用公开源码的默认构建，不
 
 音频启动只在准备队列枚举设备，回到主线程后采用固定输出 UID 并排队配置。停止时直接向音频引擎队列提交释放；旧枚举或启动回调不会释放后续会话的输出，也不会覆盖更新配置的状态。
 
-快捷键录制结果在回调送达时再次检查录制代次。停止、重置或销毁录制器后，排队中的普通按键和独立修饰键结果均作废。HID 映射只有在设备被独占或原始按键过滤器运行时才附加动作；过滤不可用时停止重复与延迟手势动作，保留默认左右方向键的原生直通。HID 监听器在目标设备集合、身份或健康状态未变化时直接复用已有监视器；`recheckRemoteInput()` 与恢复路径仍可强制重建。`HIDRemoteMonitor` 发现候选或新连接设备时通过防抖主线程任务补齐服务映射，语音开始前会复用 `IOHIDEventSystemClient` 实时核验目标 HID 服务列表、电源键抑制与语音键中和状态；遇到短暂空服务列表时仅失效服务配置而不篡改 `isVoiceKeyNeutralized` 或 `voiceFnTapModeEnabled`。
+快捷键录制结果在回调送达时再次检查录制代次。停止、重置或销毁录制器后，排队中的普通按键和独立修饰键结果均作废。HID 映射只有在设备被独占或原始按键过滤器运行时才附加动作；过滤不可用时停止重复与延迟手势动作，保留默认左右方向键的原生直通。HID 监听器在目标设备集合、身份、权限与健康状态未变化时直接复用已有监视器；`recheckRemoteInput()`、`scheduleHIDMappingRecoveryIfNeeded` 与升级完成恢复路径会传入 `forceRestartMonitors: true` 强制重建。`HIDRemoteMonitor.onCandidateAvailable` 与 `onDeviceConnected` 通过 `pendingHIDServiceMappingRefresh` 布尔去重与代次计数（`hidServiceMappingRefreshGeneration`）调度主线程 `applyHIDSettings(restartSiriRemote: false)` 补齐新服务映射；若当时处于语音会话或系统挂起期间则保留待刷新标记，待语音结束、`flushPendingVoiceToolMappingRefresh` 或恢复后补齐（注：语音期间若有新蓝牙遥控器恰好首次进入 `.ready`，其就绪回调仍直接走 `applyHIDSettings()`）。每次语音开始前，仅当开启自定义按键映射或需要中和语音键时，才会通过新建 `IOHIDEventSystemClientCreateSimpleClient` 同步读取当前 HID 服务的 `registryID` 与键值映射，核验电源键抑制和语音键中和状态，无小米 HID 服务的纯 Chromecast 或未开启自定义映射且无需中和的纯 `.function` 稳态不会触发重应用；遇到短暂空服务列表（`.noServices`）时仅清 `appliedConfiguration` 以便设备返回后补齐而不改写 `isVoiceKeyNeutralized` 或 `settings.voiceFnTapModeEnabled`，若服务缺少 `registryID` 或存在重复 `registryID` 也不缓存 `appliedConfiguration`。
 
 更新源使用独立的临时 URLSession，空闲和总请求超时均为 30 秒。响应头和流式读取均检查 1 MiB 上限，超限时取消该请求。不会修改共享 URLSession 的配置，不增加常驻轮询或逐输入事件的权限查询。
 

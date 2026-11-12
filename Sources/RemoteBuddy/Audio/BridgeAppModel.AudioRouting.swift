@@ -195,6 +195,7 @@ extension BridgeAppModel {
             return
         }
         resumeVirtualAudioOutputIfNeeded(reason: event.rawValue)
+        flushPendingVoiceToolMappingRefresh()
         completeBluetoothResume(
             event: event,
             reason: event.rawValue

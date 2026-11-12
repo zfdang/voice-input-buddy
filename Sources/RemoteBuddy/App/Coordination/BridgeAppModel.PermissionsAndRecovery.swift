@@ -26,22 +26,25 @@ extension BridgeAppModel {
     /// Reapplies HID settings before starting Bluetooth voice only when live-validated
     /// neutralization or listener state is incomplete, interrupted, or permissions changed.
     nonisolated static func shouldReapplyHIDSettingsBeforeVoiceStart(
+        customMappingEnabled: Bool,
         mode: VoiceKeyMode,
         fnTapModeEnabled: Bool,
         requiresOrderedFn: Bool,
         hasHardwareVoiceKey: Bool,
-        currentServicesVoiceKeyNeutralized: Bool,
+        isVoiceKeyNeutralized: Bool,
+        currentServicesMatchDesiredMapping: Bool,
         fnTapSessionEnabled: Bool,
         monitoringInterrupted: Bool,
-        monitoringConfigurationApplied: Bool = true,
+        monitoringConfigurationApplied: Bool,
         appliedPermissionSnapshot: HIDPermissionSnapshot?,
         currentPermissionSnapshot: HIDPermissionSnapshot
     ) -> Bool {
         let needsNeutralization = mode != .function || fnTapModeEnabled || requiresOrderedFn
-        guard needsNeutralization else { return false }
+        guard customMappingEnabled || needsNeutralization else { return false }
         if monitoringInterrupted || !monitoringConfigurationApplied { return true }
         if appliedPermissionSnapshot != currentPermissionSnapshot { return true }
-        if hasHardwareVoiceKey, !currentServicesVoiceKeyNeutralized { return true }
+        if !currentServicesMatchDesiredMapping { return true }
+        if hasHardwareVoiceKey, needsNeutralization, !isVoiceKeyNeutralized { return true }
         if fnTapModeEnabled, !requiresOrderedFn, !fnTapSessionEnabled,
            currentPermissionSnapshot.accessibilityGranted {
             return true

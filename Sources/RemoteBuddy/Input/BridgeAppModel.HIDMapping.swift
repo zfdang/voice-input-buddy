@@ -59,6 +59,7 @@ extension BridgeAppModel {
             }
             return
         }
+        pendingHIDServiceMappingRefresh = false
         requestNextHIDPermissionIfNeeded(
             voiceFnTapModeRequested: requestedFnTapMode,
             voiceKeyModeRequested: requestedVoiceKeyMode
@@ -431,19 +432,33 @@ extension BridgeAppModel {
     }
 
     private func scheduleHIDServiceMappingRefreshIfNeeded() {
-        guard canRefreshHIDMappingsNow, !pendingHIDServiceMappingRefresh else { return }
+        guard started, !isTerminating else { return }
+        guard !pendingHIDServiceMappingRefresh else { return }
         pendingHIDServiceMappingRefresh = true
+        guard canRefreshHIDMappingsNow else { return }
+        let generation = hidServiceMappingRefreshGeneration
         // Defer outside IOHIDManager callbacks before probing/reapplying IOHIDEventSystem mappings.
         DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            self.pendingHIDServiceMappingRefresh = false
-            guard self.canRefreshHIDMappingsNow,
-                  self.voiceFunctionMapper.needsReapply(
-                      suppressPowerKey: self.settings.customMappingEnabled,
-                      neutralizeVoiceKey: self.shouldNeutralizeNativeVoiceKey
-                  )
+            guard let self,
+                  self.started,
+                  !self.isTerminating,
+                  self.hidServiceMappingRefreshGeneration == generation
             else { return }
-            self.applyHIDSettings(restartSiriRemote: false)
+            self.flushPendingHIDServiceMappingRefreshIfNeeded()
+        }
+    }
+
+    func flushPendingHIDServiceMappingRefreshIfNeeded(applyMappings: (() -> Void)? = nil) {
+        guard pendingHIDServiceMappingRefresh, canRefreshHIDMappingsNow else { return }
+        pendingHIDServiceMappingRefresh = false
+        guard voiceFunctionMapper.needsReapply(
+            suppressPowerKey: settings.customMappingEnabled,
+            neutralizeVoiceKey: shouldNeutralizeNativeVoiceKey
+        ) else { return }
+        if let applyMappings {
+            applyMappings()
+        } else {
+            applyHIDSettings(restartSiriRemote: false)
         }
     }
 

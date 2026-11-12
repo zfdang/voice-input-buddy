@@ -147,7 +147,6 @@ final class RemoteHIDKeyMapper {
 
     private var originalMappings: [UInt64: OriginalMappings] = [:]
     private var appliedConfiguration: AppliedConfiguration?
-    private lazy var hidEventSystemClient = IOHIDEventSystemClientCreateSimpleClient(kCFAllocatorDefault)
     private(set) var isApplied = false
     private(set) var isPowerKeySuppressed = false
     private(set) var powerSuppressedLocationIDs: Set<UInt32>?
@@ -159,10 +158,7 @@ final class RemoteHIDKeyMapper {
     }
 
     private func matchingServices() -> [RemoteHIDMappingService] {
-        serviceProvider?() ?? Self.systemServices(
-            client: hidEventSystemClient,
-            additionalIdentities: additionalIdentities
-        )
+        serviceProvider?() ?? Self.systemServices(additionalIdentities: additionalIdentities)
     }
 
     private func evaluateAppliedServices(
@@ -200,18 +196,26 @@ final class RemoteHIDKeyMapper {
     }
 
     /// Revalidates `isVoiceKeyNeutralized` and power-key suppression against currently attached
-    /// HID services so late-arriving or reconnected remotes never inherit stale readiness.
+    /// HID services so late-arriving, reconnected, or unmapped remotes never inherit stale readiness.
     @discardableResult
-    func refreshVoiceKeyNeutralizationValidity(
-        expectedPowerKeySuppression: Bool = false
+    func refreshAppliedMappingsValidity(
+        expectedPowerKeySuppression: Bool,
+        expectedVoiceKeyNeutralization: Bool
     ) -> Bool {
-        guard isVoiceKeyNeutralized else { return false }
+        guard expectedPowerKeySuppression || expectedVoiceKeyNeutralization else {
+            return true
+        }
         let services = matchingServices()
         matchedServiceCount = services.count
+        if expectedVoiceKeyNeutralization, !isVoiceKeyNeutralized {
+            // Preserve non-flapping behavior when no Xiaomi HID services exist (e.g. G9N9N-only),
+            // while forcing reapplication if any live Xiaomi HID service is present.
+            return services.isEmpty
+        }
         switch evaluateAppliedServices(
             services,
             suppressPowerKey: expectedPowerKeySuppression,
-            neutralizeVoiceKey: true
+            neutralizeVoiceKey: expectedVoiceKeyNeutralization
         ) {
         case .upToDate:
             return true
@@ -222,7 +226,9 @@ final class RemoteHIDKeyMapper {
             return true
         case .needsReapply:
             appliedConfiguration = nil
-            isVoiceKeyNeutralized = false
+            if expectedVoiceKeyNeutralization {
+                isVoiceKeyNeutralized = false
+            }
             return false
         }
     }
@@ -521,10 +527,8 @@ final class RemoteHIDKeyMapper {
         isVoiceKeyNeutralized = false
     }
 
-    private static func systemServices(
-        client: IOHIDEventSystemClient,
-        additionalIdentities: Set<RemoteHIDIdentity>
-    ) -> [RemoteHIDMappingService] {
+    private static func systemServices(additionalIdentities: Set<RemoteHIDIdentity>) -> [RemoteHIDMappingService] {
+        let client = IOHIDEventSystemClientCreateSimpleClient(kCFAllocatorDefault)
         let services = IOHIDEventSystemClientCopyServices(client) as? [IOHIDServiceClient] ?? []
         return services.filter { isTarget($0, additionalIdentities: additionalIdentities) }.map { service in
             RemoteHIDMappingService(

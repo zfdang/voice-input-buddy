@@ -196,6 +196,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     var appliedHIDPermissionSnapshot: HIDPermissionSnapshot?
     var appliedHIDMonitoringConfiguration: HIDMonitoringConfiguration?
     var pendingHIDServiceMappingRefresh = false
+    var hidServiceMappingRefreshGeneration: UInt64 = 0
     private var terminationObserver: NSObjectProtocol?
     var completedUpdateHIDRecoveryWorkItem: DispatchWorkItem?
     var hidMappingRecoveryWorkItem: DispatchWorkItem?
@@ -301,6 +302,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
         commonPhrases.close(reason: "app_stop")
         preferredInputSourceMonitor.stop()
         pendingHIDServiceMappingRefresh = false
+        hidServiceMappingRefreshGeneration &+= 1
         guard started else {
             audio.invalidatePendingWork()
             return
