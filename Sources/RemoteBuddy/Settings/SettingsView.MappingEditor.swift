@@ -197,11 +197,12 @@ extension SettingsView {
         HStack(spacing: 7) {
             Image(systemName: systemImage)
                 .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-            Text(title).lineLimit(1).truncationMode(.tail)
+            Text(title).lineLimit(2).truncationMode(.tail)
             Spacer(minLength: 0)
         }
         .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
         .padding(.horizontal, 10)
+        .padding(.vertical, 6)
         .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
         .background(
             isSelected ? Color.accentColor.opacity(0.13) : Color.primary.opacity(0.045),

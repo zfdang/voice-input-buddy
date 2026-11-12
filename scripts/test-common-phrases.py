@@ -15,6 +15,12 @@ class PhraseTests(unittest.TestCase):
         self.assertEqual(len(result['entries']), 12)
         self.assertEqual(result['bindings']['ok'], 'builtin-001')
         self.assertEqual(result['entries'][2]['text'], '看不懂，说清楚一点')
+    def test_chromecast_keys_have_defaults(self):
+        result = module.generate(source)
+        self.assertEqual(len(result['bindings']), 11)
+        self.assertEqual(result['bindings']['home'], 'builtin-006')
+        self.assertEqual(result['bindings']['mute'], 'builtin-007')
+        self.assertEqual(result['bindings']['input'], 'builtin-011')
     def test_entries_keep_only_original_chinese_content_with_neutral_fields(self):
         result = module.generate(source)
         self.assertEqual(result['schemaVersion'], 2)
@@ -28,7 +34,8 @@ class PhraseTests(unittest.TestCase):
     def test_bad_defaults_fail(self):
         for bad in [source.replace('| OK | 1 |', '| OK | 99 |'),
                     source.replace('| 左 | 2 |', '| OK | 2 |'),
-                    source.replace('| 上 | 3 | 看不懂，说清楚一点 |', '| 上 | 3 | 错误 |')]:
+                    source.replace('| 上 | 3 | 看不懂，说清楚一点 |', '| 上 | 3 | 错误 |'),
+                    source.replace('| 静音 | 7 |', '| 主页 | 7 |')]:
             with self.assertRaises(ValueError): module.generate(bad)
     def test_bad_phrase_rows_fail(self):
         for bad in [source.replace('| 2 | 继续 |', '| 1 | 继续 |'),

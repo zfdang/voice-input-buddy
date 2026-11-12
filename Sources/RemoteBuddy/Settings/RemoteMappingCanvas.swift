@@ -283,7 +283,7 @@ struct RemoteMappingCanvas: View {
         let active = activeButtons.contains(button)
         return VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 6) {
-                Image(systemName: symbol(for: button))
+                icon(for: button)
                     .frame(width: 14)
                 Text(button.displayName(using: localization))
                     .font(.system(size: 13, weight: .semibold))
@@ -384,6 +384,15 @@ struct RemoteMappingCanvas: View {
         .buttonStyle(.plain)
     }
 
+    @ViewBuilder
+    private func icon(for button: RemoteButton) -> some View {
+        if button == .input {
+            RemoteInputGlyph(size: 13)
+        } else {
+            Image(systemName: symbol(for: button))
+        }
+    }
+
     private func symbol(for button: RemoteButton) -> String {
         switch button {
         case .power: return "power"
@@ -403,6 +412,7 @@ struct RemoteMappingCanvas: View {
         // 这三颗键只属于 Chromecast 遥控器，由它自己的画布渲染；小米画布的卡片集合是
         // `RemoteButton.xiaomiCases`，不会出现它们，这里只是满足枚举穷尽性。
         case .youtube, .netflix: return "play.rectangle"
+        // Drawn by `icon(for:)`; kept only for exhaustiveness.
         case .input: return "rectangle.on.rectangle"
         }
     }
