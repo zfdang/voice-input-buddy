@@ -1020,4 +1020,90 @@ struct T1RemoteProtocolTests {
         monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: kbRelease)
         monitor.disconnectSimulatedDevice()
     }
+
+    @Test @MainActor func t1ModalMissingReleaseRecoveryClearsHeldRoutingAndAllowsNextSameDirectionSelection() throws {
+        let suite = "t1-modal-missing-release-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = AppSettings(defaults: defaults)
+        settings.customMappingEnabled = true
+
+        let clock = ControlledTestScheduler()
+        let profileID = UUID()
+        let source = BridgeAppModel.commonPhraseHIDSource(profileID)
+        var uptime: TimeInterval = 0
+        let suppressor = KeyboardEventSuppressor(uptime: { uptime }, permissionsGranted: { true })
+        var activeButtons: Set<RemoteButton> = []
+        var decisions: [CommonPhraseRouting.Decision] = []
+        var routing = CommonPhraseRouting()
+
+        let monitor = HIDRemoteMonitor(
+            settings: settings,
+            allowsT1Remote: true,
+            profileID: profileID,
+            eventSuppressor: suppressor,
+            ownsEventSuppressor: false,
+            scheduler: clock,
+            runtimePermissions: { true },
+            nativeSuppressionAvailable: { true },
+            diagnosticLogger: { _ in }
+        )
+        monitor.onActiveButtons = { _, buttons in activeButtons = buttons }
+        monitor.claimsRuntimeButton = { id, button in
+            guard id == profileID else { return false }
+            return routing.claims(button, source: source)
+        }
+        monitor.onRuntimeButton = { id, button, phase in
+            guard id == profileID else { return false }
+            let decision = routing.handle(button, phase: phase, source: source)
+            decisions.append(decision)
+            return decision != .unhandled
+        }
+        monitor.connectSimulatedDevice(fingerprint: "t1-fp", profileID: profileID, isSeized: false)
+
+        let upPress = Data([0x01, 0x00, 0x00, 0x52, 0x00, 0x00, 0x00, 0x00, 0x00])
+        let releaseReport = Data([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+        let consumerRelease = Data([0x02, 0x00, 0x00])
+
+        // 1. Open Common Phrases and press Up, then drop its release report.
+        routing.open(source: source)
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: upPress)
+        #expect(decisions == [.insert(.up)])
+        #expect(routing.claims(.up, source: source))
+        #expect(activeButtons == [.up])
+        let firstDown = try #require(CGEvent(keyboardEventSource: nil, virtualKey: 126, keyDown: true))
+        #expect(suppressor.handle(type: .keyDown, event: firstDown))
+
+        // 2. Advance past missing-release timeout without a release report: recovery must clear
+        // active passthrough state, CommonPhraseRouting.held, and arm keyUp suppression.
+        let recoveryAt = HIDRemoteTiming.missingReleaseTimeoutMilliseconds + 100
+        uptime = Double(recoveryAt) / 1000.0
+        clock.advance(to: recoveryAt)
+        #expect(activeButtons.isEmpty)
+        #expect(!routing.claims(.up, source: source))
+        #expect(decisions == [.insert(.up), .consumed])
+        let delayedUp = try #require(CGEvent(keyboardEventSource: nil, virtualKey: 126, keyDown: false))
+        #expect(suppressor.handle(type: .keyUp, event: delayedUp))
+
+        // 3. A Report 2 event must not resurrect the expired Report 1 passthrough usage.
+        decisions.removeAll()
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.consumerReportID, data: consumerRelease)
+        #expect(activeButtons.isEmpty)
+        #expect(decisions.isEmpty)
+
+        // 4. Reopen Common Phrases and press the SAME Up direction without any prior zero report:
+        // it must select cleanly and suppress native Up Arrow instead of leaking to the foreground app.
+        routing.open(source: source)
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: upPress)
+        #expect(decisions == [.insert(.up)])
+        let secondDown = try #require(CGEvent(keyboardEventSource: nil, virtualKey: 126, keyDown: true))
+        #expect(suppressor.handle(type: .keyDown, event: secondDown))
+
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: releaseReport)
+        #expect(decisions == [.insert(.up), .consumed])
+        let secondUp = try #require(CGEvent(keyboardEventSource: nil, virtualKey: 126, keyDown: false))
+        #expect(suppressor.handle(type: .keyUp, event: secondUp))
+        #expect(!routing.claims(.up, source: source))
+        monitor.disconnectSimulatedDevice()
+    }
 }
