@@ -321,7 +321,7 @@
 "button_mapping.page.title" = "Button Mapping";
 "button_mapping.page.subtitle" = "Click a button to change its settings";
 "button_mapping.google.subtitle" = "G9N9N supports OK + direction for Enter; single-button mapping is unavailable";
-"button_mapping.t1.subtitle" = "Click any front button to customize; Hold Voice to talk (air mouse & back keyboard pass straight through)";
+"button_mapping.t1.subtitle" = "Click any front button to customize; press and release Voice to start talking, then press again to stop (air mouse & back keyboard pass straight through)";
 "t1.remote.keyboard_airmouse_note" = "Front control buttons support single, double, and long-press mapping. Air mouse cursor movement and the back QWERTY keyboard work natively.";
 "button_mapping.google.enter.title" = "OK + direction → Enter (fixed)";
 "button_mapping.google.enter.detail" = "When Custom Buttons is enabled and the app has exclusive access, briefly press OK + any direction to send Enter. This fixed combination is not affected by the individual settings below.";
@@ -343,6 +343,7 @@
 "button_mapping.voice_button.title" = "Voice Button";
 "button_mapping.voice_button.fixed" = "Voice Trigger Key";
 "button_mapping.voice_button.detail" = "Hold to talk. Choose Fn/Globe, Left or Right Command, or Left or Right Option as the trigger key. The voice button is separate from other button actions.";
+"button_mapping.voice_button.t1_detail" = "Press and release to start talking, then press again to stop. Choose Fn/Globe, Left or Right Command, or Left or Right Option; excluded from regular button actions.";
 "button_mapping.action.not_set" = "Not Set";
 "button_mapping.single_click.help" = "Runs after one press. It waits briefly when a double-click action is set.";
 "button_mapping.double_click.effect" = "A single press waits briefly to distinguish it from a double press. Long press can still use a separate action or Hold to Repeat.";
@@ -657,7 +658,7 @@
 "onboarding.control_source.xiaomi_remote.title" = "Xiaomi Bluetooth Remote 2 / 2 Pro";
 "onboarding.control_source.xiaomi_remote.detail" = "Hold the physical voice button and release it to stop.";
 "onboarding.control_source.t1_remote.title" = "T1-Remote Air Mouse & Keyboard";
-"onboarding.control_source.t1_remote.detail" = "Hold the physical voice button and release to stop. Back QWERTY keyboard types directly.";
+"onboarding.control_source.t1_remote.detail" = "Physical voice button: press and release to start speaking, then press again to stop. Back QWERTY keyboard types directly.";
 "onboarding.control_source.siri_remote.title" = "Apple Remote (6th / 7th Generation)";
 "onboarding.control_source.siri_remote.detail" = "Use the physical voice button: hold to speak and release to stop.";
 "onboarding.control_source.apple_remote.generation_6.title" = "Apple Remote (6th Generation)";
@@ -764,6 +765,7 @@
 "onboarding.voice_test.placeholder" = "Try saying: Remote Buddy is connected";
 "onboarding.voice_test.waiting_voice" = "Waiting for you to use the voice button as described above…";
 "onboarding.voice_test.fn_tap_explanation" = "Remote Recording & Fn Tap Conversion: Supported remotes only record audio while held, stopping upon release. Tap conversion coordinates with recording: pressing sends an Fn tap to start recognition; releasing waits for audio to drain, then sends a second Fn tap to finish. Simply hold to talk and release when done.";
+"onboarding.voice_test.t1_fn_tap_explanation" = "T1-Remote & Fn Tap Conversion: Pressing and releasing T1’s voice key starts continuous recording until you press it once more. Tap conversion sends an Fn tap when recording starts, then waits for remaining audio after the second press before sending another Fn tap to finish.";
 "onboarding.voice_test.receiving" = "Receiving voice audio…";
 "onboarding.voice_test.waiting_text" = "Audio received. Waiting for text to appear…";
 "onboarding.voice_test.tool_not_running" = "Open the selected voice app before starting the test…";
@@ -847,10 +849,12 @@
 "onboarding.recovery.voice.no_samples.detail" = "Check the audio output device, then %@.";
 "onboarding.recovery.voice.no_samples.action" = "Retry Voice Audio";
 "onboarding.recovery.voice.session_not_ended.title" = "Finish the Voice Session";
+"onboarding.recovery.voice.session_not_ended.t1_title" = "Press the Voice Button Again to Finish";
 "onboarding.recovery.voice.session_not_ended.detail" = "%@ to finish voice input so Remote Buddy can check the result.";
 "onboarding.recovery.voice.session_not_ended.action" = "Start This Check Again";
 "onboarding.recovery.voice.gesture.hold" = "hold the voice button while speaking, then release it to finish";
 "onboarding.recovery.voice.gesture.toggle" = "press the voice button once to start, then again to stop";
+"onboarding.recovery.voice.gesture.t1" = "press and release the voice button to start speaking, then press it again to stop";
 "onboarding.recovery.voice.finish.hold" = "Release the voice button";
 "onboarding.recovery.voice.finish.toggle" = "Press the voice button again";
 "onboarding.recovery.voice.manual_input.title" = "Keyboard input cannot complete the voice check";
@@ -1003,6 +1007,7 @@
 "onboarding.voice_tool.macos_dictation.title" = "macOS Dictation";
 "onboarding.voice_tool.macos_dictation.detail" = "Use the built-in Dictation. You do not need a third-party app.";
 "onboarding.voice_tool.dictation_fn_tap_explanation" = "Hold the remote's voice key to talk and release when done. Remote Buddy sends two Fn taps to start macOS Dictation, then waits for the remaining audio to finish before sending one Fn tap to stop it. Fn Tap conversion is enabled automatically.";
+"onboarding.voice_tool.t1_dictation_fn_tap_explanation" = "Press and release T1’s voice key to start talking, then press it once more to finish. Remote Buddy sends two Fn taps to start macOS Dictation, and after the second press drains remaining audio it sends one Fn tap to stop it. Fn Tap conversion is enabled automatically.";
 "onboarding.voice_tool.guide.enable_dictation" = "Turn on macOS Dictation";
 "onboarding.voice_tool.guide.screenshot.macos_dictation_enable" = "Open System Settings → Keyboard → Dictation. Turn on Dictation and confirm the system privacy prompt. Add the languages you speak and wait for any language downloads to finish.";
 "onboarding.voice_tool.guide.configure_dictation" = "Set the Dictation shortcut to Press 🌐 Twice";

@@ -203,4 +203,39 @@ struct T1RemoteProtocolTests {
         #expect(vendorLogs.first?.contains("payload=5A 01 02") == true)
         #expect(mouseLogs.count == 2)
     }
+
+    @Test func t1OnboardingPromptsDistinguishPressReleaseStartAndSecondPressStop() {
+        let zh = Locale(identifier: "zh-Hans")
+        let en = Locale(identifier: "en")
+
+        let t1HoldZh = OnboardingVoiceGesturePrompt.text(
+            for: .hold,
+            fnTapModeEnabled: false,
+            controlSource: .t1Remote,
+            locale: zh
+        )
+        let xiaomiHoldZh = OnboardingVoiceGesturePrompt.text(
+            for: .hold,
+            fnTapModeEnabled: false,
+            controlSource: .xiaomiRemote,
+            locale: zh
+        )
+        #expect(t1HoldZh.contains("按一下") && t1HoldZh.contains("再按一下"))
+        #expect(xiaomiHoldZh.contains("按住"))
+
+        let t1TapEn = OnboardingVoiceGesturePrompt.text(
+            for: .hold,
+            fnTapModeEnabled: true,
+            controlSource: .t1Remote,
+            locale: en
+        )
+        let t1HoldEn = OnboardingVoiceGesturePrompt.text(
+            for: .hold,
+            fnTapModeEnabled: false,
+            controlSource: .t1Remote,
+            locale: en
+        )
+        #expect(t1TapEn.contains("Press and release") && t1TapEn.contains("once more"))
+        #expect(t1HoldEn.contains("Press and release") && t1HoldEn.contains("holds the voice key"))
+    }
 }

@@ -247,7 +247,7 @@ extension OnboardingView {
                     .frame(width: 34, height: 34)
                     .background(Color.orange.opacity(0.12), in: Circle())
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(localization.text("onboarding.recovery.\(failure.rawValue).title"))
+                    Text(localization.text(recoveryTitleKey(for: failure)))
                         .font(.system(size: 14, weight: .semibold))
                         .fixedSize(horizontal: false, vertical: true)
                     Text(recoveryDetailText(for: failure))
@@ -291,6 +291,13 @@ extension OnboardingView {
         return true
     }
 
+    private func recoveryTitleKey(for failure: FirstUseFailureReason) -> String {
+        if failure == .voiceSessionNotEnded, settings.onboardingControlSource == .t1Remote {
+            return "onboarding.recovery.voice.session_not_ended.t1_title"
+        }
+        return "onboarding.recovery.\(failure.rawValue).title"
+    }
+
     private func recoveryDetailKey(for failure: FirstUseFailureReason) -> String {
         if usesG9N9NButtonTestWorkaround {
             switch failure {
@@ -328,6 +335,9 @@ extension OnboardingView {
     }
 
     private var recoveryVoiceGestureInstruction: String {
+        if settings.onboardingControlSource == .t1Remote {
+            return localization.text("onboarding.recovery.voice.gesture.t1")
+        }
         switch effectivePreferredGesture {
         case .hold:
             return localization.text("onboarding.recovery.voice.gesture.hold")
@@ -337,6 +347,9 @@ extension OnboardingView {
     }
 
     private var recoveryVoiceFinishInstruction: String {
+        if settings.onboardingControlSource == .t1Remote {
+            return localization.text("onboarding.recovery.voice.finish.toggle")
+        }
         switch effectivePreferredGesture {
         case .hold:
             return localization.text("onboarding.recovery.voice.finish.hold")

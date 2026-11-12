@@ -34,9 +34,9 @@
 
 - **写入特性**：Capabilities / Control 写入使用 `.withoutResponse`。
 - **解码参数**：ATVV v1.0、16 kHz IMA-ADPCM、`highFirst`（`lowNibbleFirst = false`）。
-- **挂断保护（`MIC_CLOSE` + `MIC_EXTEND`）**：实测该遥控器在松开语音键时仅清除 Report 1 的 `0xAA` 标志位，并不会主动发送 ATVV `AUDIO_STOP` 控制包。因此 Host 在检测到 Report 1 `0xAA` 从按下变为松开时主动下发 `MIC_CLOSE` 结束录音，并在长按超过单段窗口时下发 `MIC_EXTEND` 维持会话。
+- **挂断保护（`MIC_CLOSE` + `MIC_EXTEND`）**：实测该遥控器在第一次按下语音键后会直接发送 ATVV `STREAM START`（`0x04`）开启持续收音，**第一次松开语音键不上报任何 HID 释放或 `AUDIO_STOP` 控制包**（表现类似“按一次开始、再按一次结束”的开关模式）；再次按下语音键时会发送 `0x08` 与 Report 2（部分固件/状态还会带 Report 1 `0xAA` 标志位）。因此 Host 在收到录音中的 `0x08`（或 Report 1 `0xAA` 释放边沿）时主动下发 `MIC_CLOSE` 结束录音，在长按/持续收音超过单段窗口时定时下发 `MIC_EXTEND` 维持会话，并将 T1 的停播后尾音屏蔽窗口放宽至 `0.8s` 防止幽灵重启。期间 Host 侧会全程维持虚拟语音键按下直到 `STREAM STOP（0x00）`，从而兼容只支持长按触发的输入工具。
 
 ## 已验证范围与限制
 
-- 已通过实机抓包与调试工具核对：`T1-Remote`（`0x620A:0x0407`）蓝牙配对、电量读取、Report 1/2/3/4/`0x5A` 报文、语音按住启动 Spotlight 与 ATVV 16 kHz ADPCM 音频帧。
+- 已通过实机抓包与调试工具核对：`T1-Remote`（`0x620A:0x0407`）蓝牙配对、电量读取、Report 1/2/3/4/`0x5A` 报文、Spotlight 抑制、ATVV 16 kHz ADPCM 音频帧，以及“按一下松开说话 → 再按一下停止”的全链路兼容微信输入法等长按语音工具。
 - 未包含且保留开放：不同批次贴牌克隆款的实机 HID 描述符差异，以及 2.4GHz USB Dongle 模式（当前适配针对蓝牙直连模式）。
