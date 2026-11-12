@@ -248,6 +248,16 @@ struct T1ReportUsageState {
         }
     }
 
+    mutating func remove(_ usage: UInt16) {
+        for (reportID, var usages) in usagesByReportID where usages.remove(usage) != nil {
+            if usages.isEmpty {
+                usagesByReportID.removeValue(forKey: reportID)
+            } else {
+                usagesByReportID[reportID] = usages
+            }
+        }
+    }
+
     mutating func reset() {
         usagesByReportID.removeAll()
     }

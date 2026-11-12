@@ -104,6 +104,12 @@ final class HIDRemoteMonitor {
     private var t1ReportUsageState = T1ReportUsageState()
     private var t1PassthroughUsageState = T1ReportUsageState()
     private var activeT1PassthroughUsages: Set<UInt16> = []
+    private var interceptedT1PassthroughUsages: Set<UInt16> = []
+    private var t1PassthroughExpiryTokens: [UInt16: UUID] = [:]
+    private var t1PassthroughExpiryTimers: [UInt16: HIDRemoteScheduledTask] = [:]
+    private var t1PassthroughHardCeilingTimers: [UInt16: HIDRemoteScheduledTask] = [:]
+    private var suppressedUntilReleasedT1PassthroughUsages: Set<UInt16> = []
+    private var suppressedT1PassthroughExpiryTimers: [UInt16: HIDRemoteScheduledTask] = [:]
     private var lastT1MouseHeader: Data?
     private var lastT1MouseLogTime: TimeInterval = 0
     private var currentReportDescriptor: Data?
@@ -641,8 +647,7 @@ final class HIDRemoteMonitor {
                     fingerprint: fingerprint
                 ) else {
                     t1ReportUsageState.reset()
-                    t1PassthroughUsageState.reset()
-                    activeT1PassthroughUsages.removeAll()
+                    clearT1PassthroughTracking()
                     diagnosticLogger("HID REPORT rejected reason=device_activation_failed")
                     return
                 }
@@ -818,9 +823,17 @@ final class HIDRemoteMonitor {
         parsed: ParsedHIDReport
     ) {
         let usages = parsed.mappedUsages
-        let observedAll = parsed.allObservedUsages
-        let pressedPassthrough = parsed.observedPassthroughUsages.subtracting(activeT1PassthroughUsages)
-        activeT1PassthroughUsages = parsed.observedPassthroughUsages
+        suppressedUntilReleasedT1PassthroughUsages = suppressedUntilReleasedT1PassthroughUsages
+            .intersection(parsed.observedPassthroughUsages)
+        for usage in suppressedUntilReleasedT1PassthroughUsages {
+            refreshSuppressedT1PassthroughExpiry(usage)
+        }
+        let observedPassthrough = parsed.observedPassthroughUsages
+            .subtracting(suppressedUntilReleasedT1PassthroughUsages)
+        let observedAll = usages.union(observedPassthrough)
+        let releasedPassthrough = activeT1PassthroughUsages.subtracting(observedPassthrough)
+        let pressedPassthrough = observedPassthrough.subtracting(activeT1PassthroughUsages)
+        activeT1PassthroughUsages = observedPassthrough
         diagnosticLogger(
             "HID REPORT accepted source=\(source) id=\(reportID) bytes=\(data.count) " +
                 "usage_count=\(observedAll.count) buttons=\(Self.buttonList(for: observedAll))"
@@ -848,19 +861,98 @@ final class HIDRemoteMonitor {
             }
             return
         }
-        if !pressedPassthrough.isEmpty, let deviceFingerprint {
-            for usage in pressedPassthrough.sorted() {
-                guard let button = RemoteButton.usageMap[usage] else { continue }
-                if let routedProfileID = onPassthroughButtonObserved?(profileID, deviceFingerprint, button),
-                   profileID == nil {
-                    profileID = routedProfileID
-                }
-            }
+        processT1PassthroughReleases(for: releasedPassthrough)
+        if !pressedPassthrough.isEmpty {
+            processT1PassthroughPresses(for: pressedPassthrough)
+        }
+        for usage in pressedPassthrough {
+            scheduleT1PassthroughHardCeiling(for: usage)
+        }
+        for usage in activeT1PassthroughUsages {
+            refreshT1PassthroughExpiry(usage)
         }
         if backOnlyMode {
             processBackOnly(usages: usages.intersection([RemoteButton.back.hidUsage]))
         } else {
             process(usages: usages)
+        }
+    }
+
+    private static func handlesAppSwitcherControl(_ button: RemoteButton) -> Bool {
+        switch button {
+        case .ok, .back, .left, .right, .up, .down:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func processT1PassthroughReleases(for released: Set<UInt16>) {
+        for usage in released.sorted() {
+            t1PassthroughExpiryTokens.removeValue(forKey: usage)
+            t1PassthroughExpiryTimers.removeValue(forKey: usage)?.cancel()
+            t1PassthroughHardCeilingTimers.removeValue(forKey: usage)?.cancel()
+            suppressedT1PassthroughExpiryTimers.removeValue(forKey: usage)?.cancel()
+            suppressedUntilReleasedT1PassthroughUsages.remove(usage)
+            guard interceptedT1PassthroughUsages.remove(usage) != nil else { continue }
+            guard let button = RemoteButton.usageMap[usage] else { continue }
+            diagnosticLogger(
+                "HID T1 modal_passthrough phase=release button=\(button.rawValue)"
+            )
+            if !activeDeviceIsSeized {
+                eventSuppressor.arm(button: button, edge: .up)
+            }
+            _ = onRuntimeButton?(profileID, button, .release)
+        }
+    }
+
+    private func processT1PassthroughPresses(for pressed: Set<UInt16>) {
+        for usage in pressed.sorted() {
+            guard let button = RemoteButton.usageMap[usage] else { continue }
+            var resolvedProfileID = profileID
+            if let deviceFingerprint,
+               let routedProfileID = onPassthroughButtonObserved?(profileID, deviceFingerprint, button) {
+                if profileID == nil {
+                    profileID = routedProfileID
+                }
+                resolvedProfileID = routedProfileID
+            }
+            guard !backOnlyMode else { continue }
+            let targetProfileID = resolvedProfileID ?? profileID
+            let reportingModel = targetProfileID.flatMap { id in
+                settings.remoteDeviceProfiles.first(where: { $0.id == id })?.model
+            } ?? .t1Remote
+            let suppressConfiguredAction = OnboardingControlValidationPolicy.suppressConfiguredActions(
+                at: settings.onboardingStep,
+                source: settings.onboardingControlSource,
+                reportingModel: reportingModel,
+                onboardingWindowIsActive: onboardingWindowIsActive()
+            )
+            guard !suppressConfiguredAction else { continue }
+
+            let claimedByRuntime = targetProfileID != nil && claimsRuntimeButton?(targetProfileID, button) == true
+            let claimedByAppSwitcher = appSwitcherSession.isActive && Self.handlesAppSwitcherControl(button)
+            guard claimedByRuntime || claimedByAppSwitcher else { continue }
+
+            if !activeDeviceIsSeized {
+                eventSuppressor.arm(button: button, edge: .down)
+            }
+            interceptedT1PassthroughUsages.insert(usage)
+            guard mappingDeliveryIsSafe else {
+                pauseForUnavailableNativeFilter()
+                continue
+            }
+            diagnosticLogger(
+                "HID T1 modal_passthrough phase=press button=\(button.rawValue) " +
+                    "runtime=\(claimedByRuntime) app_switcher=\(claimedByAppSwitcher)"
+            )
+            if claimedByRuntime,
+               onRuntimeButton?(targetProfileID, button, .press) == true {
+                continue
+            }
+            if appSwitcherSession.isActive, handleAppSwitcherControlPress(button) {
+                continue
+            }
         }
     }
 
@@ -1077,6 +1169,12 @@ final class HIDRemoteMonitor {
         for usage in suppressedUntilReleasedUsages {
             refreshSuppressedUsageExpiry(usage)
         }
+        for usage in activeT1PassthroughUsages {
+            refreshT1PassthroughExpiry(usage)
+        }
+        for usage in suppressedUntilReleasedT1PassthroughUsages {
+            refreshSuppressedT1PassthroughExpiry(usage)
+        }
     }
 
     private func refreshUsageExpiry(_ usage: UInt16) {
@@ -1148,6 +1246,92 @@ final class HIDRemoteMonitor {
         suppressedUntilReleasedUsages.insert(usage)
         refreshSuppressedUsageExpiry(usage)
         synthesizeReleaseState(for: usage, reason: "hard_ceiling")
+    }
+
+    private func scheduleT1PassthroughHardCeiling(
+        for usage: UInt16,
+        afterMilliseconds: UInt64 = HIDRemoteTiming.maximumContinuousHoldMilliseconds
+    ) {
+        t1PassthroughHardCeilingTimers.removeValue(forKey: usage)?.cancel()
+        guard RemoteButton.usageMap[usage] != nil else { return }
+        t1PassthroughHardCeilingTimers[usage] = scheduler.schedule(
+            afterMilliseconds: afterMilliseconds,
+            repeatingEveryMilliseconds: nil
+        ) { [weak self] in
+            self?.recoverT1PassthroughHardCeilingHold(for: usage)
+        }
+    }
+
+    private func refreshT1PassthroughExpiry(_ usage: UInt16) {
+        t1PassthroughExpiryTokens.removeValue(forKey: usage)
+        t1PassthroughExpiryTimers.removeValue(forKey: usage)?.cancel()
+        guard RemoteButton.usageMap[usage] != nil else { return }
+        let token = UUID()
+        t1PassthroughExpiryTokens[usage] = token
+        t1PassthroughExpiryTimers[usage] = scheduler.schedule(
+            afterMilliseconds: HIDRemoteTiming.missingReleaseTimeoutMilliseconds,
+            repeatingEveryMilliseconds: nil
+        ) { [weak self] in
+            guard let self, self.t1PassthroughExpiryTokens[usage] == token else { return }
+            self.recoverMissingT1PassthroughRelease(for: usage)
+        }
+    }
+
+    private func refreshSuppressedT1PassthroughExpiry(_ usage: UInt16) {
+        suppressedT1PassthroughExpiryTimers.removeValue(forKey: usage)?.cancel()
+        suppressedT1PassthroughExpiryTimers[usage] = scheduler.schedule(
+            afterMilliseconds: HIDRemoteTiming.missingReleaseTimeoutMilliseconds,
+            repeatingEveryMilliseconds: nil
+        ) { [weak self] in
+            guard let self else { return }
+            self.suppressedUntilReleasedT1PassthroughUsages.remove(usage)
+            self.suppressedT1PassthroughExpiryTimers.removeValue(forKey: usage)
+        }
+    }
+
+    private func synthesizeT1PassthroughReleaseState(for usage: UInt16, reason: String) {
+        t1PassthroughExpiryTokens.removeValue(forKey: usage)
+        t1PassthroughExpiryTimers.removeValue(forKey: usage)?.cancel()
+        t1PassthroughHardCeilingTimers.removeValue(forKey: usage)?.cancel()
+        let wasActive = activeT1PassthroughUsages.remove(usage) != nil
+        let wasIntercepted = interceptedT1PassthroughUsages.remove(usage) != nil
+        t1PassthroughUsageState.remove(usage)
+        guard wasActive || wasIntercepted else { return }
+        guard let button = RemoteButton.usageMap[usage] else { return }
+        if wasIntercepted {
+            diagnosticLogger("HID T1 modal_passthrough recovered reason=\(reason) button=\(button.rawValue)")
+            if !activeDeviceIsSeized {
+                eventSuppressor.arm(button: button, edge: .up)
+            }
+            _ = onRuntimeButton?(profileID, button, .release)
+        }
+        emitActiveButtons()
+    }
+
+    private func recoverMissingT1PassthroughRelease(for usage: UInt16) {
+        suppressedT1PassthroughExpiryTimers.removeValue(forKey: usage)?.cancel()
+        suppressedUntilReleasedT1PassthroughUsages.remove(usage)
+        synthesizeT1PassthroughReleaseState(for: usage, reason: "missing_release")
+    }
+
+    private func recoverT1PassthroughHardCeilingHold(for usage: UInt16) {
+        suppressedUntilReleasedT1PassthroughUsages.insert(usage)
+        refreshSuppressedT1PassthroughExpiry(usage)
+        synthesizeT1PassthroughReleaseState(for: usage, reason: "hard_ceiling")
+    }
+
+    private func clearT1PassthroughTracking() {
+        t1PassthroughUsageState.reset()
+        activeT1PassthroughUsages.removeAll()
+        interceptedT1PassthroughUsages.removeAll()
+        t1PassthroughExpiryTokens.removeAll()
+        t1PassthroughExpiryTimers.values.forEach { $0.cancel() }
+        t1PassthroughExpiryTimers.removeAll()
+        t1PassthroughHardCeilingTimers.values.forEach { $0.cancel() }
+        t1PassthroughHardCeilingTimers.removeAll()
+        suppressedUntilReleasedT1PassthroughUsages.removeAll()
+        suppressedT1PassthroughExpiryTimers.values.forEach { $0.cancel() }
+        suppressedT1PassthroughExpiryTimers.removeAll()
     }
 
     private func processBackOnly(usages rawUsages: Set<UInt16>) {
@@ -1801,6 +1985,11 @@ final class HIDRemoteMonitor {
                     eventSuppressor.arm(button: button, edge: .up)
                 }
             }
+            for usage in interceptedT1PassthroughUsages {
+                if let button = RemoteButton.usageMap[usage] {
+                    eventSuppressor.arm(button: button, edge: .up)
+                }
+            }
         }
         repeatTimers.values.forEach { $0.cancel() }
         repeatTimers.removeAll()
@@ -1823,8 +2012,7 @@ final class HIDRemoteMonitor {
             onT1VoiceHoldChanged?(profileID, false)
         }
         t1ReportUsageState.reset()
-        t1PassthroughUsageState.reset()
-        activeT1PassthroughUsages.removeAll()
+        clearT1PassthroughTracking()
         lastT1MouseHeader = nil
         lastT1MouseLogTime = 0
         resetGestureRecognition()
