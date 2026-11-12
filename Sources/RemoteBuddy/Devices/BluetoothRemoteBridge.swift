@@ -185,6 +185,7 @@ final class BluetoothRemoteBridge: NSObject {
     private let reconnectWakeMonitor = BluetoothReconnectWakeMonitor()
     private var remoteWakeStartedAt: TimeInterval?
     private var reconnectWorkItem: DispatchWorkItem?
+    private let scheduleReconnect: (TimeInterval, DispatchWorkItem) -> Void
     private var connectionTimeoutWorkItem: DispatchWorkItem?
     private var initializationTimeoutWorkItem: DispatchWorkItem?
     private let disconnectWatchdog = BluetoothDisconnectWatchdog()
@@ -265,6 +266,15 @@ final class BluetoothRemoteBridge: NSObject {
         stopStreaming()
     }
 
+#if DEBUG
+    func simulateReadyStateForTesting(deviceName: String = "Test remote") {
+        shouldRun = true
+        generationCounter &+= 1
+        lifecycle = .ready(generationCounter)
+        state = .ready(deviceName)
+    }
+#endif
+
     private let serviceUUID = CBUUID(string: ATVVProtocol.serviceUUID)
     private let transmitUUID = CBUUID(string: ATVVProtocol.transmitUUID)
     private let audioUUID = CBUUID(string: ATVVProtocol.audioUUID)
@@ -339,7 +349,10 @@ final class BluetoothRemoteBridge: NSObject {
         allowsG9N9N: Bool = false,
         audioPipeline: BluetoothAudioPipeline = BluetoothAudioPipeline(),
         scheduleMicrophoneClose: @escaping OperationScheduler = ScheduledOperation.mainQueue,
-        excludedIdentifiers: @escaping () -> Set<UUID> = { [] }
+        excludedIdentifiers: @escaping () -> Set<UUID> = { [] },
+        scheduleReconnect: @escaping (TimeInterval, DispatchWorkItem) -> Void = { delay, work in
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
+        }
     ) {
         self.settings = settings
         self.audioDecoder = audioPipeline
@@ -348,6 +361,7 @@ final class BluetoothRemoteBridge: NSObject {
         self.delegate = delegate
         self.targetIdentifier = targetIdentifier
         self.excludedIdentifiers = excludedIdentifiers
+        self.scheduleReconnect = scheduleReconnect
         super.init()
     }
 
@@ -1057,7 +1071,7 @@ final class BluetoothRemoteBridge: NSObject {
             self.startFreshConnectionCycle()
         }
         reconnectWorkItem = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
+        scheduleReconnect(delay, work)
         monitorRemoteWake()
     }
 

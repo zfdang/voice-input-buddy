@@ -302,11 +302,13 @@ enum BluetoothCentralRecoveryEvent {
 }
 
 enum BluetoothWakeRecoveryPolicy {
+    /// Returns whether wake handling should force a fresh Bluetooth voice-link recovery cycle.
     static func shouldForceReconnect(
         event: SystemAudioLifecycleEvent,
+        pendingSystemWake: Bool,
         started: Bool
     ) -> Bool {
-        started && event == .systemDidWake
+        started && (event == .systemDidWake || pendingSystemWake)
     }
 
     /// 挂起原因全部解除后，是否需要主动重建蓝牙语音链路。

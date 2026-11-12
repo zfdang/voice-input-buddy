@@ -84,7 +84,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
         return nil
     }
 
-    let voiceFunctionMapper = RemoteHIDKeyMapper()
+    let voiceFunctionMapper: RemoteHIDKeyMapper
     lazy var preferredInputSourceMonitor = PreferredInputSourceMonitor(
         voiceTool: { [weak self] in
             self?.settings.onboardingVoiceTool ?? .unselected
@@ -162,7 +162,8 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     var rc003VoiceExtensionTimer: DispatchSourceTimer?
     var rc003VoiceExtensionOpenTimer: DispatchSourceTimer?
     var rc003VoiceExtensionDeadlineTimer: DispatchSourceTimer?
-    let hidEventSuppressor = KeyboardEventSuppressor()
+    let hidEventSuppressor: KeyboardEventSuppressor
+    let permissionSnapshotProvider: () -> HIDPermissionSnapshot
     var hidMonitoringInterrupted = false
     var hidMonitors: [String: HIDRemoteMonitor] = [:]
     var discoveryHIDMonitor: HIDRemoteMonitor?
@@ -202,6 +203,9 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
         commonPhraseStore: CommonPhraseStore = CommonPhraseStore(),
         initialAudioDevices: [AudioDeviceInfo] = [],
         loginItemService: LoginItemService = LoginItemService(),
+        voiceFunctionMapper: RemoteHIDKeyMapper? = nil,
+        hidEventSuppressor: KeyboardEventSuppressor? = nil,
+        permissionSnapshotProvider: @escaping () -> HIDPermissionSnapshot = { .current },
         rc003VoiceExtensionTestEnabled: Bool =
             ProcessInfo.processInfo.arguments.contains("--rc003-voice-extension-test") ||
             (Bundle.main.object(forInfoDictionaryKey: "RC003VoiceExtensionTestEnabled") as? Bool == true)
@@ -209,17 +213,20 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
         let settings = settings ?? AppSettings()
         self.settings = settings
         self.commonPhraseStore = commonPhraseStore
+        self.voiceFunctionMapper = voiceFunctionMapper ?? RemoteHIDKeyMapper()
+        self.hidEventSuppressor = hidEventSuppressor ?? KeyboardEventSuppressor()
+        self.permissionSnapshotProvider = permissionSnapshotProvider
 
         self.loginItemService = loginItemService
         self.rc003VoiceExtensionTestEnabled = rc003VoiceExtensionTestEnabled
         commonPhrases.onWillOpen = { [weak self] in self?.cancelPendingCommonPhraseButtonActions() }
         audioDevices = initialAudioDevices
-        hidEventSuppressor.onSystemDisabled = { [weak self] in
+        self.hidEventSuppressor.onSystemDisabled = { [weak self] in
             // Stop mapping as well: an unseized remote must not inject actions without filtering.
             guard let self else { return }
             self.hidMonitoringInterrupted = true
             self.stopHIDMonitors()
-            let permissions = HIDPermissionSnapshot.current
+            let permissions = self.permissionSnapshotProvider()
             self.appliedHIDPermissionSnapshot = permissions
             self.hidStatus = LocalizedMessage(
                 !permissions.inputMonitoringGranted ? "button_mapping.permission.input_monitoring_required" :
@@ -275,7 +282,10 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     func stop() {
         commonPhrases.close(reason: "app_stop")
         preferredInputSourceMonitor.stop()
-        guard started else { return }
+        guard started else {
+            audio.invalidatePendingWork()
+            return
+        }
         started = false
         cancelHIDMappingRecovery(reason: "app_stop")
         completedUpdateHIDRecoveryWorkItem?.cancel()

@@ -78,6 +78,15 @@ extension BridgeAppModel {
         publishAudioDevices(devices)
         startObservingAudioHardware()
         releaseVirtualAudioOutputIfUnused(reason: "startup_complete")
+        if !audio.suspensionState.suspendsHIDMonitoring, hidMonitoringInterrupted {
+            applyHIDSettings()
+        }
+        if !audio.suspensionState.isSuspended {
+            completeBluetoothResume(
+                event: nil,
+                reason: "startup_complete"
+            )
+        }
         startBluetoothConnections()
         AppLogger.shared.write(
             "AUDIO REBIND finished reason=startup success=\(configured) status=\(audioStatus.key) " +
@@ -128,22 +137,26 @@ extension BridgeAppModel {
                 "configured_bridges=\(connections.bridges.count) " +
                 "discovery_bridge=\(connections.discoveryBridge != nil) " +
                 "bluetooth_voice=\(voiceSession.isActive) " +
-                "" +
                 "test_tone=\(isPlayingTestTone) audio_ready=\(isAudioOutputReady)"
         )
+        if !started {
+            audio.suspensionState.clearPendingSystemWakeRecovery()
+        }
         guard started, changed else { return }
         setBluetoothSystemSuspended(
             audio.suspensionState.isSuspended,
             reason: event.rawValue
         )
-        if event == .sessionDidResignActive {
-            commonPhrases.close(reason: "session_inactive")
-            stopHIDMonitors()
-            hidMonitoringInterrupted = true
-        }
         if event == .systemWillSleep || event == .sessionDidResignActive {
+            let closeReason = event == .systemWillSleep ? "system_sleep" : "session_inactive"
+            // Also cancels any in-flight common-phrase insertion and clears routing ownership.
+            commonPhrases.close(reason: closeReason)
+            suspendHIDMonitoring(reason: event.rawValue)
             suspendActiveAudio(reason: event.rawValue)
             return
+        }
+        if !event.isSuspending, hidMonitoringInterrupted, !audio.suspensionState.suspendsHIDMonitoring {
+            applyHIDSettings()
         }
         guard !audio.startupPending else {
             AppLogger.shared.write(
@@ -151,7 +164,10 @@ extension BridgeAppModel {
                     "suspended=\(audio.suspensionState.isSuspended)"
             )
             if !audio.suspensionState.isSuspended {
-                resumeBluetoothConnectionCyclesIfNeeded(reason: event.rawValue)
+                completeBluetoothResume(
+                    event: event,
+                    reason: event.rawValue
+                )
             }
             return
         }
@@ -161,7 +177,6 @@ extension BridgeAppModel {
                 AppLogger.shared.write(
                     "SYSTEM AUDIO suspend_deferred event=\(event.rawValue) " +
                         "bluetooth_voice=\(voiceSession.isActive) " +
-                        "" +
                         "test_tone=\(isPlayingTestTone)"
                 )
                 return
@@ -173,22 +188,38 @@ extension BridgeAppModel {
         guard !audio.suspensionState.isSuspended else {
             AppLogger.shared.write(
                 "SYSTEM AUDIO resume_deferred event=\(event.rawValue) " +
-                    "remaining_reasons=\(audio.suspensionState.diagnostic)"
+                    "remaining_reasons=\(audio.suspensionState.diagnostic) " +
+                    "suspends_hid=\(audio.suspensionState.suspendsHIDMonitoring) " +
+                    "pending_system_wake=\(audio.suspensionState.pendingSystemWakeRecovery)"
             )
             return
         }
-        if hidMonitoringInterrupted { applyHIDSettings() }
         resumeVirtualAudioOutputIfNeeded(reason: "system_\(event.rawValue)")
-        if BluetoothWakeRecoveryPolicy.shouldForceReconnect(event: event, started: started) {
+        completeBluetoothResume(
+            event: event,
+            reason: event.rawValue
+        )
+    }
+
+    private func completeBluetoothResume(
+        event: SystemAudioLifecycleEvent?,
+        reason: String
+    ) {
+        let pendingSystemWake = audio.suspensionState.consumePendingSystemWakeRecovery()
+        if BluetoothWakeRecoveryPolicy.shouldForceReconnect(
+            event: event ?? .screenDidWake,
+            pendingSystemWake: pendingSystemWake,
+            started: started
+        ) {
             recoverBluetoothVoiceLink(reason: "system_wake")
         } else if BluetoothWakeRecoveryPolicy.shouldRecoverVoiceLinkAfterResume(
-            started: started,
-            configuredBridgeCount: connections.bridges.count,
-            readyBridgeCount: readyBluetoothBridgeCount,
-            voiceLinkActive: hasActiveVirtualAudioSource
-        ) {
+                      started: started,
+                      configuredBridgeCount: connections.bridges.count,
+                      readyBridgeCount: readyBluetoothBridgeCount,
+                      voiceLinkActive: hasActiveVirtualAudioSource
+                  ) {
             AppLogger.shared.write(
-                "SYSTEM AUDIO voice_link_recovery event=\(event.rawValue) " +
+                "SYSTEM AUDIO voice_link_recovery event=\(reason) " +
                     "cause=no_ready_bridge ready_bridges=0 " +
                     "configured_bridges=\(connections.bridges.count) " +
                     "discovery_bridge=\(connections.discoveryBridge != nil) " +
@@ -196,7 +227,8 @@ extension BridgeAppModel {
             )
             recoverBluetoothVoiceLink(reason: "session_activated")
         }
-        resumeBluetoothConnectionCyclesIfNeeded(reason: event.rawValue)
+        resumeBluetoothConnectionCyclesIfNeeded(reason: reason)
+        if isConnected { voiceFnTapSession.resume() }
     }
 
     private func suspendActiveAudio(reason: String) {

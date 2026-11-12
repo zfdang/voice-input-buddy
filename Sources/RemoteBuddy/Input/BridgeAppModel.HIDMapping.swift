@@ -10,7 +10,11 @@ extension BridgeAppModel {
         allowVoiceKeyModeFallback: Bool = true,
         restartSiriRemote: Bool = true
     ) {
-        let permissionSnapshot = HIDPermissionSnapshot.current
+        if audio.suspensionState.suspendsHIDMonitoring {
+            suspendHIDMonitoring(reason: "system_suspended")
+            return
+        }
+        let permissionSnapshot = permissionSnapshotProvider()
         appliedHIDPermissionSnapshot = permissionSnapshot
         if !permissionSnapshot.inputMonitoringGranted || !permissionSnapshot.accessibilityGranted {
             // Detach input filtering before system calls and the Fn-cleanup early return below.
@@ -37,7 +41,7 @@ extension BridgeAppModel {
         }
 
         let requestedVoiceKeyMode = settings.voiceKeyMode
-        let accessibilityGranted = KeyboardInjector.isAccessibilityTrusted
+        let accessibilityGranted = permissionSnapshot.accessibilityGranted
         let requestedFnTapMode = settings.voiceFnTapModeEnabled && requestedVoiceKeyMode == .function
 
         if settings.voiceFnTapModeEnabled != requestedFnTapMode {
@@ -62,7 +66,7 @@ extension BridgeAppModel {
             // the global software-trigger policy while this card is selected.
             let googlePowerKeySuppressed = applyVoiceFunctionMapping(
                 neutralizeVoiceKey: shouldNeutralizeNativeVoiceKey)
-            voiceFnTapSession.setEnabled(requestedFnTapMode && KeyboardInjector.isAccessibilityTrusted)
+            voiceFnTapSession.setEnabled(requestedFnTapMode && accessibilityGranted)
             startHIDMonitors(powerKeySuppressed: googlePowerKeySuppressed)
             refreshVoiceKeyCompatibilityWarning()
             return
@@ -163,6 +167,10 @@ extension BridgeAppModel {
         }
         startHIDMonitors(powerKeySuppressed: powerKeySuppressed)
         completeHIDMappingRecoveryIfNeeded()
+        if !voiceFunctionMapper.hasMatchingServices,
+           settings.customMappingEnabled || shouldNeutralizeNativeVoiceKey {
+            scheduleHIDMappingRecoveryIfNeeded(restartSiriRemote: restartSiriRemote)
+        }
         refreshVoiceKeyCompatibilityWarning()
     }
 
@@ -171,6 +179,10 @@ extension BridgeAppModel {
     ) {
         if settings.selectedRemoteProfile?.model.isChromecastRemote == true {
             cancelHIDMappingRecovery(reason: "google_atvv_voice")
+            return
+        }
+        guard !audio.suspensionState.suspendsHIDMonitoring else {
+            cancelHIDMappingRecovery(reason: "system_suspended")
             return
         }
         guard hidMappingRecoveryWorkItem == nil else { return }
@@ -200,6 +212,7 @@ extension BridgeAppModel {
             guard let self, self.hidMappingRecoveryGeneration == generation else { return }
             self.hidMappingRecoveryWorkItem = nil
             guard self.started,
+                  !self.audio.suspensionState.suspendsHIDMonitoring,
                   self.readyBluetoothBridgeCount > 0,
                   !self.voiceFunctionMapper.hasMatchingServices
             else {
@@ -254,6 +267,10 @@ extension BridgeAppModel {
 
     func startHIDMonitors(powerKeySuppressed: Bool) {
         stopHIDMonitors()
+        guard !audio.suspensionState.suspendsHIDMonitoring else {
+            hidMonitoringInterrupted = true
+            return
+        }
         let backOnlyMode = !settings.customMappingEnabled && (
             settings.onboardingControlMethod == .physicalRemote ||
             settings.onboardingRemoteAvailability == .hasRemote ||
@@ -309,8 +326,21 @@ extension BridgeAppModel {
         activeRemoteButtons = []
     }
 
+    /// Releases HID monitors, event taps, input-source observers, and pending recovery work
+    /// while the system is sleeping or the console session is inactive.
+    func suspendHIDMonitoring(reason: String) {
+        cancelHIDMappingRecovery(reason: reason)
+        stopHIDMonitors()
+        preferredInputSourceMonitor.stop(preservingExplicitVoiceSession: false)
+        hidMonitoringInterrupted = true
+    }
+
     func startHIDDiscoveryIfNeeded(allowBackOnly: Bool = false) {
         guard (settings.customMappingEnabled || allowBackOnly), discoveryHIDMonitor == nil else { return }
+        guard !audio.suspensionState.suspendsHIDMonitoring else {
+            hidMonitoringInterrupted = true
+            return
+        }
         let monitor = makeHIDMonitor(
             profileID: nil,
             targetFingerprint: nil,
@@ -350,6 +380,7 @@ extension BridgeAppModel {
             excludedFingerprints: excludedFingerprints,
             eventSuppressor: hidEventSuppressor,
             ownsEventSuppressor: false,
+            permissionSnapshot: permissionSnapshotProvider,
             actionPerformer: { [weak self] _, _, configured in
                 self?.performExternalConfiguredAction(configured) ?? false
             }

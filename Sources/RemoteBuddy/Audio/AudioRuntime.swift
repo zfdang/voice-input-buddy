@@ -70,6 +70,7 @@ final class AudioRuntime {
         recoveryCoalescingState.reset()
         virtualAudioReleaseGeneration &+= 1
         pendingVirtualAudioRelease = nil
+        suspensionState = SystemAudioSuspensionState()
     }
 
     isolated deinit {
