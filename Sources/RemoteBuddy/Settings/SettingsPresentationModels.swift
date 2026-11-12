@@ -254,7 +254,6 @@ enum SettingsPageBehavior {
     }
 
     @MainActor static func beginDeviceSetup(settings: AppSettings) {
-        settings.allowForgottenRemotesForSetup()
         settings.preserveCompletedOnboarding()
         settings.onboardingPurpose = settings.canDismissOnboarding ? .addDevice : .initialSetup
         settings.discardOnboardingVoiceTrial()

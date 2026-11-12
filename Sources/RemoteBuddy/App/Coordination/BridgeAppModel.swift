@@ -197,6 +197,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
         let allowedLocationIDs: Set<UInt32>?
         let targets: [HIDMonitorTargetConfiguration]
         let compatibleHIDIdentities: [RemoteHIDIdentity]
+        let excludedDiscoveryFingerprints: Set<String>
         let permissionSnapshot: HIDPermissionSnapshot
     }
 

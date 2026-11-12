@@ -158,6 +158,10 @@ enum OnboardingControlSource: String, CaseIterable, Codable, Identifiable {
         }
     }
 
+    func matchesConfirmedCandidate(_ model: RemoteModel) -> Bool {
+        model != .unknown && matches(model)
+    }
+
     static func defaultSource(for method: OnboardingControlMethod) -> Self {
         switch method {
         case .physicalRemote: return .xiaomiRemote

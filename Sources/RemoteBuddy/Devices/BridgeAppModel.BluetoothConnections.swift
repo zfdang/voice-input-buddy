@@ -46,7 +46,7 @@ extension BridgeAppModel {
             },
             excludedIdentifiers: { [weak self] in
                 guard let self else { return [] }
-                return Set(self.connections.bridges.keys).union(self.settings.forgottenBluetoothIdentifiers)
+                return Set(self.connections.bridges.keys).union(self.settings.excludedForgottenBluetoothIdentifiers())
             }
         )
         observeRemoteHIDIdentity(bridge)
@@ -68,7 +68,10 @@ extension BridgeAppModel {
             )
             return nil
         }
-        guard !settings.forgottenBluetoothIdentifiers.contains(identifier) else { return nil }
+        guard settings.allowsSetupCandidate(
+            bluetoothIdentifier: identifier,
+            model: bridge.identifiedModel
+        ) else { return nil }
         guard bridge.bindVerifiedIdentity(identifier) else {
             diagnosticLog(
                 "REMOTE PROFILE phase=completed result=rejected reason=identity_mismatch"
@@ -172,6 +175,22 @@ extension BridgeAppModel {
         refreshBluetoothPresentation()
         AppLogger.shared.write("REMOTE PROFILE phase=completed result=removed")
         return true
+    }
+
+    func removeUncommittedOnboardingRemotes() {
+        for profileID in settings.uncommittedOnboardingRemoteProfileIDs() {
+            _ = removeRemoteDevice(profileID)
+        }
+    }
+
+    func dismissOnboardingSetup() {
+        removeUncommittedOnboardingRemotes()
+        settings.dismissOnboarding()
+        if let profileID = settings.selectedRemoteProfileID {
+            selectRemoteProfile(profileID)
+        }
+        applyHIDSettings()
+        refreshRemoteDiscovery()
     }
 
     var onboardingRemoteProfiles: [RemoteDeviceProfile] {
