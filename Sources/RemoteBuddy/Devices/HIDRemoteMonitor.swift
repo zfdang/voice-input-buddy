@@ -92,6 +92,8 @@ final class HIDRemoteMonitor {
     private var currentReportIsGoogle = false
     private var currentReportIsT1 = false
     private var t1VoiceHoldActive = false
+    private var lastT1MouseHeader: Data?
+    private var lastT1MouseLogTime: TimeInterval = 0
     private var currentReportDescriptor: Data?
     var reportedModel: RemoteModel {
         if currentReportIsGoogle { return .chromecastVoiceRemote }
@@ -705,6 +707,7 @@ final class HIDRemoteMonitor {
                 }
                 return usages
             case .ignore:
+                logIgnoredT1Report(reportID: reportID, data: data, source: source)
                 return nil
             case .invalid:
                 diagnosticLogger(
@@ -725,6 +728,33 @@ final class HIDRemoteMonitor {
             return nil
         }
         return usages
+    }
+
+    private func logIgnoredT1Report(reportID: UInt32, data: Data, source: String) {
+        let payload = data.prefix(16).map { String(format: "%02X", $0) }.joined(separator: " ")
+        if reportID == T1RemoteProtocol.vendorReportID {
+            diagnosticLogger(
+                "HID T1 vendor_report source=\(source) id=\(reportID) bytes=\(data.count) payload=\(payload)"
+            )
+            return
+        }
+        if reportID == T1RemoteProtocol.mouseReportID {
+            let header = data.prefix(2)
+            let now = ProcessInfo.processInfo.systemUptime
+            let hasMotionOrButtons = data.dropFirst().contains(where: { $0 != 0 })
+            let shouldLog = header != lastT1MouseHeader ||
+                (hasMotionOrButtons && now - lastT1MouseLogTime >= 0.5)
+            guard shouldLog else { return }
+            lastT1MouseHeader = header
+            lastT1MouseLogTime = now
+            diagnosticLogger(
+                "HID T1 mouse_report source=\(source) id=\(reportID) bytes=\(data.count) payload=\(payload)"
+            )
+            return
+        }
+        diagnosticLogger(
+            "HID T1 ignored_report source=\(source) id=\(reportID) bytes=\(data.count) payload=\(payload)"
+        )
     }
 
     private func processParsedReport(
@@ -1663,6 +1693,8 @@ final class HIDRemoteMonitor {
         nonRepeatableReleaseTimers.removeAll()
         nonRepeatablePressedButtons.removeAll()
         t1VoiceHoldActive = false
+        lastT1MouseHeader = nil
+        lastT1MouseLogTime = 0
         resetGestureRecognition()
         if appSwitcherSession.isActive { finishAppSwitcherLifecycle(reason: "common_phrases_opened", confirmed: false) }
     }
@@ -1703,6 +1735,8 @@ final class HIDRemoteMonitor {
         nonRepeatableReleaseTimers.removeAll()
         nonRepeatablePressedButtons.removeAll()
         t1VoiceHoldActive = false
+        lastT1MouseHeader = nil
+        lastT1MouseLogTime = 0
         resetGestureRecognition()
         activeUsages.removeAll()
         onActiveButtons?(profileID, [])

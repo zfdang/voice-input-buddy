@@ -1263,6 +1263,18 @@ final class BluetoothRemoteBridge: NSObject {
             capabilitiesConfirmed = true
             finishInitializationIfReady(generation: generation)
         case 0x08:
+            guard lifecycle.acceptsProtocolData(generation: generation) else { return }
+            if ATVVSessionGate.shouldCloseStreamingOnRemoteOpenRequest(
+                isT1Candidate: t1Candidate,
+                isStreaming: streaming
+            ) {
+                if requestMicrophoneClose() {
+                    AppLogger.shared.write("ATVV MIC_CLOSE requested reason=t1_second_press")
+                } else {
+                    AppLogger.shared.write("ATVV MIC_OPEN t1_close_already_pending")
+                }
+                return
+            }
             guard requestMicrophoneOpen() else {
                 AppLogger.shared.write("ATVV MIC_OPEN remote_request_ignored")
                 return
@@ -1339,7 +1351,10 @@ final class BluetoothRemoteBridge: NSObject {
             let predictor = Int(Int16(bitPattern: predictorBits))
             audioDecoder.synchronize(predictor: predictor, stepIndex: Int(bytes[6]))
         default:
-            break
+            let payload = bytes.prefix(16).map { String(format: "%02X", $0) }.joined(separator: " ")
+            AppLogger.shared.write(
+                "ATVV CONTROL unknown opcode=\(String(format: "0x%02X", bytes[0])) bytes=\(bytes.count) payload=\(payload)"
+            )
         }
     }
 
@@ -1456,7 +1471,12 @@ final class BluetoothRemoteBridge: NSObject {
         cancelledMicrophoneOpenAt = nil
         if !streaming {
             let receivedAt = ProcessInfo.processInfo.systemUptime
-            if let lastStopAt, ATVVSessionGate.shouldIgnoreAudioAfterStop(stoppedAt: lastStopAt, now: receivedAt) {
+            let cooldown = ATVVSessionGate.audioAfterStopCooldown(isT1Candidate: t1Candidate)
+            if let lastStopAt, ATVVSessionGate.shouldIgnoreAudioAfterStop(
+                stoppedAt: lastStopAt,
+                now: receivedAt,
+                cooldown: cooldown
+            ) {
                 let delayMilliseconds = max(
                     0,
                     Int(((receivedAt - lastStopAt) * 1_000).rounded())

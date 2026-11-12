@@ -439,10 +439,24 @@ enum ATVVSessionGate {
             ATVVProtocol.supportsAudio(sampleRate: sampleRate)
     }
 
-    static func shouldIgnoreAudioAfterStop(stoppedAt: TimeInterval?,
-        now: TimeInterval = ProcessInfo.processInfo.systemUptime) -> Bool {
+    static func shouldIgnoreAudioAfterStop(
+        stoppedAt: TimeInterval?,
+        now: TimeInterval = ProcessInfo.processInfo.systemUptime,
+        cooldown: TimeInterval = 0.3
+    ) -> Bool {
         guard let stoppedAt else { return false }
-        return now - stoppedAt < 0.3
+        return now - stoppedAt < cooldown
+    }
+
+    static func audioAfterStopCooldown(isT1Candidate: Bool) -> TimeInterval {
+        isT1Candidate ? 0.8 : 0.3
+    }
+
+    static func shouldCloseStreamingOnRemoteOpenRequest(
+        isT1Candidate: Bool,
+        isStreaming: Bool
+    ) -> Bool {
+        isT1Candidate && isStreaming
     }
 
     static func cancelledOpenUptime(

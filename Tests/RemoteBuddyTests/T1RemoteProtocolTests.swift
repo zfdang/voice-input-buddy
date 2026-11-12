@@ -174,4 +174,33 @@ struct T1RemoteProtocolTests {
         mapper.restore()
         #expect(t1Mappings.isEmpty)
     }
+
+    @Test @MainActor func logsIgnoredT1VendorAndChangedMouseReportsWithoutFlooding() {
+        let suite = "t1-ignored-log-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let settings = AppSettings(defaults: defaults)
+        settings.customMappingEnabled = true
+        var logs: [String] = []
+        let monitor = HIDRemoteMonitor(
+            settings: settings,
+            allowsT1Remote: true,
+            runtimePermissions: { true },
+            nativeSuppressionAvailable: { true },
+            diagnosticLogger: { logs.append($0) }
+        )
+
+        monitor.handleSimulatedT1Report(reportID: 0x5A, data: Data([0x5A, 0x01, 0x02]))
+        monitor.handleSimulatedT1Report(reportID: 0x5A, data: Data([0x5A, 0x01, 0x03]))
+        monitor.handleSimulatedT1Report(reportID: 4, data: Data([0x04, 0x00, 0x00, 0x00]))
+        monitor.handleSimulatedT1Report(reportID: 4, data: Data([0x04, 0x00, 0x00, 0x00]))
+        monitor.handleSimulatedT1Report(reportID: 4, data: Data([0x04, 0x01, 0x00, 0x00]))
+
+        let vendorLogs = logs.filter { $0.contains("HID T1 vendor_report") }
+        let mouseLogs = logs.filter { $0.contains("HID T1 mouse_report") }
+        #expect(vendorLogs.count == 2)
+        #expect(vendorLogs.first?.contains("payload=5A 01 02") == true)
+        #expect(mouseLogs.count == 2)
+    }
 }
