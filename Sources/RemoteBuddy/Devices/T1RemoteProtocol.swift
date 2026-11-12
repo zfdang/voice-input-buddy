@@ -20,6 +20,16 @@ enum T1RemoteProtocol {
         0x65, // Menu
     ]
 
+    // Unmodified Enter (0x28) and arrows (0x4F..0x52) are still observed read-only for
+    // onboarding validation and button-test highlighting without entering button mapping.
+    private static let passthroughObservedKeyboardUsages: Set<UInt8> = [
+        0x28, // OK / Enter
+        0x4F, // Right
+        0x50, // Left
+        0x51, // Down
+        0x52, // Up
+    ]
+
     private static let candidateNames: Set<String> = [
         "t1-remote",
         "t1 remote",
@@ -42,17 +52,32 @@ enum T1RemoteProtocol {
         case invalid
     }
 
+    struct MonitorHIDDecodeResult: Equatable {
+        let result: HIDReportResult
+        let observedPassthroughUsages: Set<UInt16>
+    }
+
     /// Decodes a single T1-Remote HID input report without requiring exclusive HID seizure.
     ///
     /// Reports 4 (air mouse) and `0x5A` (vendor) return `.ignore` so air-mouse cursor motion never
     /// logs parse errors or drops currently held buttons.
     static func decodeHIDReport(reportID: UInt32, data: Data) -> HIDReportResult {
+        decodeHIDReportForMonitor(reportID: reportID, data: data).result
+    }
+
+    /// Decodes both mappable button usages and read-only observed passthrough usages (unmodified
+    /// front-panel OK/arrow keys) for HID monitoring and onboarding feedback.
+    static func decodeHIDReportForMonitor(reportID: UInt32, data: Data) -> MonitorHIDDecodeResult {
         switch reportID {
         case keyboardReportID:
             guard let payload = stripLeadingReportID(UInt8(keyboardReportID), expectedLength: 8, data: data),
                   payload.count >= 8
-            else { return .invalid }
+            else {
+                return MonitorHIDDecodeResult(result: .invalid, observedPassthroughUsages: [])
+            }
+            let modifier = payload[0]
             var usages: Set<UInt16> = []
+            var passthroughUsages: Set<UInt16> = []
             var voiceHoldPressed = false
             for byte in payload[2..<8] where byte != 0 {
                 if byte == UInt8(voiceHoldUsage) {
@@ -61,46 +86,76 @@ enum T1RemoteProtocol {
                     // Keep mapped front-panel buttons (Menu 0x65) active even when rear QWERTY
                     // modifiers change mid-hold so modifier chords cannot drop an active hold.
                     usages.insert(UInt16(byte))
+                } else if modifier == 0, passthroughObservedKeyboardUsages.contains(byte) {
+                    passthroughUsages.insert(UInt16(byte))
                 }
             }
-            return .usages(usages, voiceHoldPressed: voiceHoldPressed)
+            return MonitorHIDDecodeResult(
+                result: .usages(usages, voiceHoldPressed: voiceHoldPressed),
+                observedPassthroughUsages: passthroughUsages
+            )
 
         case consumerReportID:
             guard let payload = stripLeadingReportID(UInt8(consumerReportID), expectedLength: 2, data: data),
                   payload.count >= 2
-            else { return .invalid }
+            else {
+                return MonitorHIDDecodeResult(result: .invalid, observedPassthroughUsages: [])
+            }
             let usage = UInt16(payload[0]) | (UInt16(payload[1]) << 8)
             switch usage {
             case 0x0000:
-                return .usages([], voiceHoldPressed: false)
+                return MonitorHIDDecodeResult(
+                    result: .usages([], voiceHoldPressed: false),
+                    observedPassthroughUsages: []
+                )
             case 0x0224:
-                return .usages([RemoteButton.back.hidUsage], voiceHoldPressed: false)
+                return MonitorHIDDecodeResult(
+                    result: .usages([RemoteButton.back.hidUsage], voiceHoldPressed: false),
+                    observedPassthroughUsages: []
+                )
             case 0x0223:
-                return .usages([RemoteButton.home.hidUsage], voiceHoldPressed: false)
+                return MonitorHIDDecodeResult(
+                    result: .usages([RemoteButton.home.hidUsage], voiceHoldPressed: false),
+                    observedPassthroughUsages: []
+                )
             case 0x00E2:
-                return .usages([RemoteButton.mute.hidUsage], voiceHoldPressed: false)
+                return MonitorHIDDecodeResult(
+                    result: .usages([RemoteButton.mute.hidUsage], voiceHoldPressed: false),
+                    observedPassthroughUsages: []
+                )
             case 0x00E9:
-                return .usages([RemoteButton.volumeUp.hidUsage], voiceHoldPressed: false)
+                return MonitorHIDDecodeResult(
+                    result: .usages([RemoteButton.volumeUp.hidUsage], voiceHoldPressed: false),
+                    observedPassthroughUsages: []
+                )
             case 0x00EA:
-                return .usages([RemoteButton.volumeDown.hidUsage], voiceHoldPressed: false)
+                return MonitorHIDDecodeResult(
+                    result: .usages([RemoteButton.volumeDown.hidUsage], voiceHoldPressed: false),
+                    observedPassthroughUsages: []
+                )
             default:
                 // Non-release unmapped consumer usages (such as 0x0221 AC Search or back-keyboard
                 // media keys) must not wipe currently held Report 2 buttons when interleaved.
-                return .ignore
+                return MonitorHIDDecodeResult(result: .ignore, observedPassthroughUsages: [])
             }
 
         case systemControlReportID:
             guard let payload = stripLeadingReportID(UInt8(systemControlReportID), expectedLength: 1, data: data),
                   payload.count >= 1
-            else { return .invalid }
+            else {
+                return MonitorHIDDecodeResult(result: .invalid, observedPassthroughUsages: [])
+            }
             let usages: Set<UInt16> = (payload[0] & 0x01) != 0 ? [RemoteButton.power.hidUsage] : []
-            return .usages(usages, voiceHoldPressed: false)
+            return MonitorHIDDecodeResult(
+                result: .usages(usages, voiceHoldPressed: false),
+                observedPassthroughUsages: []
+            )
 
         case mouseReportID, vendorReportID:
-            return .ignore
+            return MonitorHIDDecodeResult(result: .ignore, observedPassthroughUsages: [])
 
         default:
-            return .invalid
+            return MonitorHIDDecodeResult(result: .invalid, observedPassthroughUsages: [])
         }
     }
 

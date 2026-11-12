@@ -92,7 +92,18 @@ final class HIDRemoteMonitor {
     private var currentReportIsGoogle = false
     private var currentReportIsT1 = false
     private var t1VoiceHoldActive = false
+    private struct ParsedHIDReport {
+        let mappedUsages: Set<UInt16>
+        let observedPassthroughUsages: Set<UInt16>
+
+        var allObservedUsages: Set<UInt16> {
+            mappedUsages.union(observedPassthroughUsages)
+        }
+    }
+
     private var t1ReportUsageState = T1ReportUsageState()
+    private var t1PassthroughUsageState = T1ReportUsageState()
+    private var activeT1PassthroughUsages: Set<UInt16> = []
     private var lastT1MouseHeader: Data?
     private var lastT1MouseLogTime: TimeInterval = 0
     private var currentReportDescriptor: Data?
@@ -149,6 +160,7 @@ final class HIDRemoteMonitor {
     var onStatus: ((LocalizedMessage) -> Void)?
     var onActiveButtons: ((UUID?, Set<RemoteButton>) -> Void)?
     var onButtonPressed: ((UUID?, String, RemoteButton) -> (profileID: UUID, shouldPerformAction: Bool)?)?
+    var onPassthroughButtonObserved: ((UUID?, String, RemoteButton) -> UUID?)?
     var onRuntimeButton: ((UUID?, RemoteButton, RemoteButtonPhase) -> Bool)?
     var claimsRuntimeButton: ((UUID?, RemoteButton) -> Bool)?
     var onInputReset: ((UUID?) -> Void)?
@@ -158,6 +170,7 @@ final class HIDRemoteMonitor {
     var isMonitoring: Bool { manager != nil }
     var onInternalAction: ((UUID?, ButtonAction) -> Void)?
     var onT1VoiceHoldChanged: ((UUID?, Bool) -> Void)?
+    var onboardingWindowIsActive: () -> Bool = { true }
 
     init(
         settings: AppSettings,
@@ -604,21 +617,22 @@ final class HIDRemoteMonitor {
             diagnosticLogger("HID REPORT rejected reason=\(reason)")
             return
         }
-        let discoveryUsages: Set<UInt16>?
+        let discoveryReport: ParsedHIDReport?
         if deviceFingerprint == nil, targetFingerprint == nil {
-            guard let usages = parsedUsages(reportID: reportID, data: data, source: "device") else {
+            guard let parsed = parseReport(reportID: reportID, data: data, source: "device") else {
                 return
             }
-            guard Self.shouldPromoteDiscoveryReport(usages: usages) else {
+            let observedUsages = parsed.allObservedUsages
+            guard Self.shouldPromoteDiscoveryReport(usages: observedUsages) else {
                 diagnosticLogger(
                     "HID REPORT deferred reason=discovery_no_known_button source=device " +
-                        "id=\(reportID) bytes=\(data.count) usage_count=\(usages.count)"
+                        "id=\(reportID) bytes=\(data.count) usage_count=\(observedUsages.count)"
                 )
                 return
             }
-            discoveryUsages = usages
+            discoveryReport = parsed
         } else {
-            discoveryUsages = nil
+            discoveryReport = nil
         }
         if deviceFingerprint == nil {
             if !promoteProbedDevice(device, fingerprint: fingerprint) {
@@ -627,6 +641,8 @@ final class HIDRemoteMonitor {
                     fingerprint: fingerprint
                 ) else {
                     t1ReportUsageState.reset()
+                    t1PassthroughUsageState.reset()
+                    activeT1PassthroughUsages.removeAll()
                     diagnosticLogger("HID REPORT rejected reason=device_activation_failed")
                     return
                 }
@@ -637,12 +653,12 @@ final class HIDRemoteMonitor {
             releaseForRevokedPermissions()
             return
         }
-        if let discoveryUsages {
+        if let discoveryReport {
             processParsedReport(
                 reportID: reportID,
                 data: data,
                 source: "device",
-                usages: discoveryUsages
+                parsed: discoveryReport
             )
         } else {
             parseAndProcess(reportID: reportID, data: data, source: "device")
@@ -720,22 +736,29 @@ final class HIDRemoteMonitor {
     }
 
     private func parseAndProcess(reportID: UInt32, data: Data, source: String) {
-        guard let usages = parsedUsages(reportID: reportID, data: data, source: source) else {
+        guard let parsed = parseReport(reportID: reportID, data: data, source: source) else {
             return
         }
-        processParsedReport(reportID: reportID, data: data, source: source, usages: usages)
+        processParsedReport(reportID: reportID, data: data, source: source, parsed: parsed)
     }
 
-    private func parsedUsages(reportID: UInt32, data: Data, source: String) -> Set<UInt16>? {
+    private func parseReport(reportID: UInt32, data: Data, source: String) -> ParsedHIDReport? {
         if currentReportIsT1 {
-            switch T1RemoteProtocol.decodeHIDReport(reportID: reportID, data: data) {
+            let decoded = T1RemoteProtocol.decodeHIDReportForMonitor(reportID: reportID, data: data)
+            switch decoded.result {
             case let .usages(usages, voiceHoldPressed):
                 if reportID == T1RemoteProtocol.keyboardReportID,
                    t1VoiceHoldActive != voiceHoldPressed {
                     t1VoiceHoldActive = voiceHoldPressed
                     onT1VoiceHoldChanged?(profileID, voiceHoldPressed)
                 }
-                return t1ReportUsageState.update(reportID: reportID, usages: usages)
+                return ParsedHIDReport(
+                    mappedUsages: t1ReportUsageState.update(reportID: reportID, usages: usages),
+                    observedPassthroughUsages: t1PassthroughUsageState.update(
+                        reportID: reportID,
+                        usages: decoded.observedPassthroughUsages
+                    )
+                )
             case .ignore:
                 logIgnoredT1Report(reportID: reportID, data: data, source: source)
                 refreshActiveUsageExpiries()
@@ -758,7 +781,7 @@ final class HIDRemoteMonitor {
             )
             return nil
         }
-        return usages
+        return ParsedHIDReport(mappedUsages: usages, observedPassthroughUsages: [])
     }
 
     private func logIgnoredT1Report(reportID: UInt32, data: Data, source: String) {
@@ -792,11 +815,15 @@ final class HIDRemoteMonitor {
         reportID: UInt32,
         data: Data,
         source: String,
-        usages: Set<UInt16>
+        parsed: ParsedHIDReport
     ) {
+        let usages = parsed.mappedUsages
+        let observedAll = parsed.allObservedUsages
+        let pressedPassthrough = parsed.observedPassthroughUsages.subtracting(activeT1PassthroughUsages)
+        activeT1PassthroughUsages = parsed.observedPassthroughUsages
         diagnosticLogger(
             "HID REPORT accepted source=\(source) id=\(reportID) bytes=\(data.count) " +
-                "usage_count=\(usages.count) buttons=\(Self.buttonList(for: usages))"
+                "usage_count=\(observedAll.count) buttons=\(Self.buttonList(for: observedAll))"
         )
         // The tested indexed G9N9N drops its release reports before IOHID.
         // Treat each complete chord report as a tap, never as a held key.
@@ -806,7 +833,10 @@ final class HIDRemoteMonitor {
                                             reportID: reportID, descriptor: currentReportDescriptor),
            usages.count > 1, !backOnlyMode,
            !OnboardingControlValidationPolicy.suppressConfiguredActions(
-               at: settings.onboardingStep, source: settings.onboardingControlSource
+               at: settings.onboardingStep,
+               source: settings.onboardingControlSource,
+               reportingModel: .chromecastVoiceRemote,
+               onboardingWindowIsActive: onboardingWindowIsActive()
            ) {
             if G9N9NProtocol.isEnterChord(usages) {
                 processG9N9NEnterChord()
@@ -817,6 +847,15 @@ final class HIDRemoteMonitor {
                 diagnosticLogger("HID G9N9N chord ignored reason=unsupported_pair")
             }
             return
+        }
+        if !pressedPassthrough.isEmpty, let deviceFingerprint {
+            for usage in pressedPassthrough.sorted() {
+                guard let button = RemoteButton.usageMap[usage] else { continue }
+                if let routedProfileID = onPassthroughButtonObserved?(profileID, deviceFingerprint, button),
+                   profileID == nil {
+                    profileID = routedProfileID
+                }
+            }
         }
         if backOnlyMode {
             processBackOnly(usages: usages.intersection([RemoteButton.back.hidUsage]))
@@ -877,7 +916,7 @@ final class HIDRemoteMonitor {
             scheduleHardCeiling(for: usage)
         }
         for usage in usages { refreshUsageExpiry(usage) }
-        onActiveButtons?(profileID, RemoteButton.buttons(for: usages))
+        emitActiveButtons()
 
         for usage in pressed.sorted() {
             // A failed action may stop/reset the monitor. Do not dispatch further
@@ -1090,7 +1129,7 @@ final class HIDRemoteMonitor {
         }
         activeUsages.remove(usage)
         _ = onRuntimeButton?(profileID, button, .release)
-        onActiveButtons?(profileID, RemoteButton.buttons(for: activeUsages))
+        emitActiveButtons()
     }
 
     private func recoverMissingRelease(for usage: UInt16) {
@@ -1137,7 +1176,7 @@ final class HIDRemoteMonitor {
         }
         activeUsages = usages
         for usage in usages { refreshUsageExpiry(usage) }
-        onActiveButtons?(profileID, RemoteButton.buttons(for: usages))
+        emitActiveButtons()
         guard pressed.contains(RemoteButton.back.hidUsage) else { return }
         let configured = ConfiguredButtonAction(action: .deleteBackward, shortcut: nil)
         guard actionPerformer(.back, .singleClick, configured) else {
@@ -1784,11 +1823,17 @@ final class HIDRemoteMonitor {
             onT1VoiceHoldChanged?(profileID, false)
         }
         t1ReportUsageState.reset()
+        t1PassthroughUsageState.reset()
+        activeT1PassthroughUsages.removeAll()
         lastT1MouseHeader = nil
         lastT1MouseLogTime = 0
         resetGestureRecognition()
         activeUsages.removeAll()
-        onActiveButtons?(profileID, [])
+        emitActiveButtons()
+    }
+
+    private func emitActiveButtons() {
+        onActiveButtons?(profileID, RemoteButton.buttons(for: activeUsages.union(activeT1PassthroughUsages)))
     }
 
     private var mappingDeliveryIsSafe: Bool {

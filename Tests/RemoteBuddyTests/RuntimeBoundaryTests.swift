@@ -216,4 +216,80 @@ struct RuntimeBoundaryTests {
         #expect(output.diagnosticSnapshot(deliveryGeneration: 0).pendingBuffers == 0)
     }
 
+    @Test func onboardingSuppressionRespectsSourceModelAndWindowActivity() {
+        #expect(
+            OnboardingControlValidationPolicy.suppressConfiguredActions(
+                at: .controls,
+                source: .t1Remote,
+                reportingModel: .rc003,
+                onboardingWindowIsActive: true
+            ) == false
+        )
+        #expect(
+            OnboardingControlValidationPolicy.suppressConfiguredActions(
+                at: .controls,
+                source: .t1Remote,
+                reportingModel: .t1Remote,
+                onboardingWindowIsActive: false
+            ) == false
+        )
+        #expect(
+            OnboardingControlValidationPolicy.suppressConfiguredActions(
+                at: .controls,
+                source: .t1Remote,
+                reportingModel: .t1Remote,
+                onboardingWindowIsActive: true
+            ) == true
+        )
+
+        let (defaults, name) = values()
+        defer { defaults.removePersistentDomain(forName: name) }
+        let settings = AppSettings(defaults: defaults)
+        let emptyMappings = RemoteDeviceMappings(
+            buttonBindings: [:],
+            buttonShortcuts: [:],
+            secondaryButtonBindings: [:]
+        )
+        let xiaomiProfile = RemoteDeviceProfile(
+            model: .rc003,
+            customName: "Xiaomi RC003",
+            hidFingerprint: "xiaomi-fp",
+            mappings: emptyMappings
+        )
+        let t1Profile = RemoteDeviceProfile(
+            model: .t1Remote,
+            customName: "T1-Remote",
+            hidFingerprint: "t1-fp",
+            mappings: emptyMappings
+        )
+        settings.remoteDeviceProfiles = [xiaomiProfile, t1Profile]
+        settings.onboardingControlSource = .t1Remote
+        settings.onboardingStep = .controls
+
+        var windowActive = false
+        let model = BridgeAppModel(
+            settings: settings,
+            initialAudioDevices: [],
+            onboardingWindowIsActive: { windowActive }
+        )
+
+        let xiaomiMonitor = model.makeHIDMonitor(
+            profileID: xiaomiProfile.id,
+            targetFingerprint: "xiaomi-fp"
+        )
+        let t1Monitor = model.makeHIDMonitor(
+            profileID: t1Profile.id,
+            targetFingerprint: "t1-fp"
+        )
+
+        // When Settings/Onboarding window is backgrounded (e.g. user focused another app), neither remote suppresses actions.
+        #expect(xiaomiMonitor.onButtonPressed?(xiaomiProfile.id, "xiaomi-fp", .ok)?.shouldPerformAction == true)
+        #expect(t1Monitor.onButtonPressed?(t1Profile.id, "t1-fp", .back)?.shouldPerformAction == true)
+
+        // Even when the T1 onboarding controls window is active in foreground, Xiaomi actions keep working normally.
+        windowActive = true
+        #expect(xiaomiMonitor.onButtonPressed?(xiaomiProfile.id, "xiaomi-fp", .ok)?.shouldPerformAction == true)
+        #expect(t1Monitor.onButtonPressed?(t1Profile.id, "t1-fp", .back)?.shouldPerformAction == false)
+    }
+
 }

@@ -705,4 +705,141 @@ struct T1RemoteProtocolTests {
         #expect(spy.stopCount == 3)
         #expect(!bridge.hasPendingVoiceWork)
     }
+
+    @Test @MainActor func t1MonitorObservesDPadAndOKPassthroughWithoutExecutingCustomActions() throws {
+        // Decoder exposes unmodified OK (0x28) and arrows (0x4F..0x52) only as passthrough observation,
+        // keeping decodeHIDReport empty and ignoring modified rear-keyboard chords (e.g. Shift+Enter).
+        let okReport = Data([0x01, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x00, 0x00])
+        let shiftOkReport = Data([0x01, 0x02, 0x00, 0x28, 0x00, 0x00, 0x00, 0x00, 0x00])
+        let upReport = Data([0x01, 0x00, 0x00, 0x52, 0x00, 0x00, 0x00, 0x00, 0x00])
+        let releaseReport = Data([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+
+        let decodedOK = T1RemoteProtocol.decodeHIDReportForMonitor(
+            reportID: T1RemoteProtocol.keyboardReportID,
+            data: okReport
+        )
+        #expect(decodedOK.result == .usages([], voiceHoldPressed: false))
+        #expect(decodedOK.observedPassthroughUsages == [RemoteButton.ok.hidUsage])
+
+        let decodedShiftOK = T1RemoteProtocol.decodeHIDReportForMonitor(
+            reportID: T1RemoteProtocol.keyboardReportID,
+            data: shiftOkReport
+        )
+        #expect(decodedShiftOK.result == .usages([], voiceHoldPressed: false))
+        #expect(decodedShiftOK.observedPassthroughUsages.isEmpty)
+
+        let suite = "t1-passthrough-observe-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = AppSettings(defaults: defaults)
+        settings.customMappingEnabled = true
+        let profileID = UUID()
+        settings.setBaseBinding(
+            .init(action: .commandCopy, shortcut: nil),
+            for: .ok,
+            trigger: .singleClick,
+            profileID: profileID
+        )
+
+        var performedActions: [RemoteButton] = []
+        let monitor = HIDRemoteMonitor(
+            settings: settings,
+            allowsT1Remote: true,
+            profileID: profileID,
+            runtimePermissions: { true },
+            nativeSuppressionAvailable: { true },
+            actionPerformer: { button, _, _ in
+                performedActions.append(button)
+                return true
+            },
+            diagnosticLogger: { _ in }
+        )
+        defer { monitor.cancelMappingInteractions() }
+
+        var activeHistory: [Set<RemoteButton>] = []
+        var observedPassthroughButtons: [RemoteButton] = []
+        var pressedButtons: [RemoteButton] = []
+        monitor.onActiveButtons = { _, buttons in
+            activeHistory.append(buttons)
+        }
+        monitor.onPassthroughButtonObserved = { id, _, button in
+            observedPassthroughButtons.append(button)
+            return id ?? profileID
+        }
+        monitor.onButtonPressed = { id, _, button in
+            pressedButtons.append(button)
+            return (id ?? profileID, true)
+        }
+
+        monitor.connectSimulatedDevice(fingerprint: "t1-fp", profileID: profileID, isSeized: false)
+        activeHistory.removeAll()
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: okReport)
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: releaseReport)
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: upReport)
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: releaseReport)
+
+        #expect(observedPassthroughButtons == [.ok, .up])
+        #expect(pressedButtons.isEmpty)
+        #expect(activeHistory == [[.ok], [], [.up], []])
+        #expect(performedActions.isEmpty)
+    }
+
+    @Test @MainActor func t1PassthroughRoutingAvoidsSwitchingSelectedRemoteOutsideSetupAndPublishesFirstPressWhenSelectedInSetup() throws {
+        let suite = "t1-passthrough-routing-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = AppSettings(defaults: defaults)
+        settings.customMappingEnabled = true
+
+        let emptyMappings = RemoteDeviceMappings(
+            buttonBindings: [:],
+            buttonShortcuts: [:],
+            secondaryButtonBindings: [:]
+        )
+        let xiaomiProfile = RemoteDeviceProfile(
+            model: .rc003,
+            customName: "Xiaomi RC003",
+            hidFingerprint: "xiaomi-fp",
+            mappings: emptyMappings
+        )
+        let t1Profile = RemoteDeviceProfile(
+            model: .t1Remote,
+            customName: "T1-Remote",
+            hidFingerprint: "t1-fp",
+            mappings: emptyMappings
+        )
+        settings.remoteDeviceProfiles = [xiaomiProfile, t1Profile]
+        settings.selectRemoteProfile(xiaomiProfile.id)
+        settings.onboardingCompletedVersion = 1
+
+        let model = BridgeAppModel(settings: settings, initialAudioDevices: [])
+        let t1Monitor = model.makeHIDMonitor(
+            profileID: t1Profile.id,
+            targetFingerprint: "t1-fp"
+        )
+        t1Monitor.connectSimulatedDevice(fingerprint: "t1-fp", profileID: t1Profile.id, isSeized: false)
+
+        let okReport = Data([0x01, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x00, 0x00])
+        let releaseReport = Data([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+
+        // [P2] Outside T1 onboarding, rear-keyboard Enter/arrow usages must not switch selectedRemoteProfileID away from Xiaomi.
+        t1Monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: okReport)
+        #expect(settings.selectedRemoteProfileID == xiaomiProfile.id)
+        #expect(model.activeRemoteButtons.isEmpty)
+        #expect(model.lastRemoteButtonPress == nil)
+        t1Monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: releaseReport)
+
+        // [P3] During T1 onboarding, even for an already-bound T1 monitor whose own profileID did not change,
+        // the very first observed passthrough press must switch to T1 and publish [.ok] immediately.
+        settings.onboardingCompletedVersion = 0
+        settings.onboardingControlSource = .t1Remote
+        settings.onboardingStep = .remote
+
+        t1Monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: okReport)
+        #expect(settings.selectedRemoteProfileID == t1Profile.id)
+        #expect(model.activeRemoteButtons == [.ok])
+        #expect(model.lastRemoteButtonPress == .ok)
+        t1Monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: releaseReport)
+        #expect(model.activeRemoteButtons.isEmpty)
+    }
 }

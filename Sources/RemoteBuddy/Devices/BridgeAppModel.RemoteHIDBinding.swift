@@ -46,8 +46,8 @@ extension BridgeAppModel {
 
     @discardableResult
     func bindCompatibleRemote(_ candidate: RemoteHIDCandidate, profileID: UUID, select: Bool = true) -> Bool {
-        guard !settings.forgottenHIDFingerprints.contains(candidate.id),
-              let profile = settings.remoteDeviceProfiles.first(where: { $0.id == profileID }),
+        guard let profile = settings.remoteDeviceProfiles.first(where: { $0.id == profileID }),
+              settings.allowsSetupCandidate(hidFingerprint: candidate.id, model: profile.model),
               let identifier = profile.bluetoothIdentifier,
               let bridge = connections.bridges[identifier], case .ready = bridge.state,
               !profile.model.isChromecastRemote || bridge.identifiedModel == .chromecastVoiceRemote,
