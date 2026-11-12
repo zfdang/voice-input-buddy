@@ -26,8 +26,22 @@ extension AppSettings {
         !isOnboardingComplete && (onboardingStep == .remote || onboardingStep == .controls)
     }
 
+    private var activeSetupSelectedProfile: RemoteDeviceProfile? {
+        guard !isOnboardingComplete,
+              let profile = selectedRemoteProfile else { return nil }
+        if onboardingControlSource != .unselected,
+           profile.model != .unknown,
+           !onboardingControlSource.matchesConfirmedCandidate(profile.model) {
+            return nil
+        }
+        return profile
+    }
+
     func excludedForgottenBluetoothIdentifiers() -> Set<UUID> {
-        let forgotten = forgottenBluetoothIdentifiers
+        var forgotten = forgottenBluetoothIdentifiers
+        if let activeBluetoothID = activeSetupSelectedProfile?.bluetoothIdentifier {
+            forgotten.remove(activeBluetoothID)
+        }
         guard allowsForgottenRemoteDuringActiveControlSetup else { return forgotten }
         let models = forgottenBluetoothModels
         return forgotten.filter { identifier in
@@ -39,7 +53,10 @@ extension AppSettings {
     }
 
     func excludedForgottenHIDFingerprints() -> Set<String> {
-        let forgotten = forgottenHIDFingerprints
+        var forgotten = forgottenHIDFingerprints
+        if let activeHIDFingerprint = activeSetupSelectedProfile?.hidFingerprint {
+            forgotten.remove(activeHIDFingerprint)
+        }
         guard allowsForgottenRemoteDuringActiveControlSetup else { return forgotten }
         let models = forgottenHIDModels
         return forgotten.filter { fingerprint in
@@ -54,6 +71,9 @@ extension AppSettings {
 
     func allowsSetupCandidate(bluetoothIdentifier: UUID, model: RemoteModel?) -> Bool {
         guard forgottenBluetoothIdentifiers.contains(bluetoothIdentifier) else { return true }
+        if activeSetupSelectedProfile?.bluetoothIdentifier == bluetoothIdentifier {
+            return true
+        }
         guard allowsForgottenRemoteDuringActiveControlSetup else { return false }
         if let raw = forgottenBluetoothModels[bluetoothIdentifier.uuidString],
            let storedModel = RemoteModel(rawValue: raw),
@@ -66,6 +86,9 @@ extension AppSettings {
 
     func allowsSetupCandidate(hidFingerprint: String, model: RemoteModel?) -> Bool {
         guard forgottenHIDFingerprints.contains(hidFingerprint) else { return true }
+        if activeSetupSelectedProfile?.hidFingerprint == hidFingerprint {
+            return true
+        }
         guard allowsForgottenRemoteDuringActiveControlSetup else { return false }
         if let raw = forgottenHIDModels[hidFingerprint],
            let storedModel = RemoteModel(rawValue: raw),

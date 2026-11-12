@@ -110,7 +110,7 @@ extension OnboardingView {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.large)
-                    .disabled(model.isStreaming)
+                    .disabled(model.isVoiceConfigurationBusy)
                     .accessibilityIdentifier("onboarding.dismiss")
                 }
                 if !settings.canDismissOnboarding {
@@ -191,7 +191,7 @@ extension OnboardingView {
             }
         }
         if settings.onboardingStep == .complete {
-            settings.completeOnboarding()
+            model.completeOnboardingSetup()
             return
         }
         if let next = settings.onboardingPurpose.nextStep(after: settings.onboardingStep) {

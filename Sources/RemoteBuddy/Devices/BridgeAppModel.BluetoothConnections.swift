@@ -141,9 +141,21 @@ extension BridgeAppModel {
 
     @discardableResult
     func removeRemoteDevice(_ profileID: UUID) -> Bool {
-        guard !isVoiceConfigurationBusy,
-              let profile = settings.remoteDeviceProfiles.first(where: { $0.id == profileID }),
-              settings.removeRemoteProfile(profileID) else { return false }
+        performRemoveRemoteDevice(profileID, allowWhenVoiceBusy: false)
+    }
+
+    @discardableResult
+    private func performRemoveRemoteDevice(_ profileID: UUID, allowWhenVoiceBusy: Bool) -> Bool {
+        if !allowWhenVoiceBusy {
+            guard !isVoiceConfigurationBusy else { return false }
+        }
+        guard let profile = settings.remoteDeviceProfiles.first(where: { $0.id == profileID }) else {
+            return false
+        }
+        if allowWhenVoiceBusy {
+            cancelVoiceActivityForRemoval(of: profile)
+        }
+        guard settings.removeRemoteProfile(profileID) else { return false }
         if let identifier = profile.bluetoothIdentifier {
             if let bridge = connections.bridges.removeValue(forKey: identifier) {
                 bridge.stop()
@@ -177,10 +189,57 @@ extension BridgeAppModel {
         return true
     }
 
+    private func cancelVoiceActivityForRemoval(of profile: RemoteDeviceProfile) {
+        if let identifier = profile.bluetoothIdentifier {
+            if voiceSession.pendingStart.cancel(ifOwnedBy: identifier) {
+                voiceSession.stopRequested = false
+            }
+            if let bridge = connections.bridges[identifier] {
+                if rc003VoiceExtensionTestEnabled,
+                   rc003VoiceExtensionActive,
+                   rc003VoiceExtensionBridge === bridge {
+                    finishRC003VoiceExtensionTest(reason: "onboarding_remote_removed")
+                }
+                if longRecordingBridge === bridge {
+                    finishLongRecording(reason: "onboarding_remote_removed")
+                }
+            }
+            let ownsActiveVoice = BluetoothVoiceDeviceOwnershipPolicy.matches(
+                identifier,
+                active: voiceSession.activeDeviceIdentifier
+            ) || voiceSession.activeDeviceIdentifier == nil
+            if ownsActiveVoice && (voiceSession.isActive || isVoiceConfigurationBusy) {
+                voiceSession.isActive = false
+                voiceSession.activeDeviceIdentifier = nil
+                voiceSession.commandAudio.cancel()
+                _ = voiceFnTapSession.stopVoice()
+                releaseVoiceKeyIfNeeded(owner: .bluetooth, forceSoftware: true)
+                endVoiceSessionIfNeeded(flushAudio: false)
+            }
+        }
+        if profile.hidFingerprint != nil, isVoiceConfigurationBusy {
+            if longRecordingRequested {
+                finishLongRecording(reason: "onboarding_remote_removed")
+            }
+            _ = voiceFnTapSession.stopVoice()
+            _ = releaseVoiceKeyIfNeeded()
+            endVoiceSessionIfNeeded(flushAudio: false)
+        }
+    }
+
     func removeUncommittedOnboardingRemotes() {
         for profileID in settings.uncommittedOnboardingRemoteProfileIDs() {
-            _ = removeRemoteDevice(profileID)
+            _ = performRemoveRemoteDevice(profileID, allowWhenVoiceBusy: true)
         }
+    }
+
+    func completeOnboardingSetup() {
+        for profileID in settings.unconfirmedTransientRemoteProfileIDs() {
+            _ = performRemoveRemoteDevice(profileID, allowWhenVoiceBusy: true)
+        }
+        settings.completeOnboarding()
+        applyHIDSettings()
+        refreshRemoteDiscovery()
     }
 
     func dismissOnboardingSetup() {

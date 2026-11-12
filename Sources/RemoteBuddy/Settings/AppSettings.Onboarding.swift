@@ -58,8 +58,7 @@ extension AppSettings {
     }
 
     func uncommittedOnboardingRemoteProfileIDs() -> [UUID] {
-        guard let configuration = onboardingReturnConfiguration else { return [] }
-        let initialIDs = Set(configuration.initialRemoteProfileIDs)
+        let initialIDs = Set(onboardingReturnConfiguration?.initialRemoteProfileIDs ?? [])
         let forgottenBluetooth = forgottenBluetoothIdentifiers
         let forgottenHID = forgottenHIDFingerprints
         return remoteDeviceProfiles.compactMap { profile in
@@ -68,6 +67,26 @@ extension AppSettings {
             let matchesForgottenHID = profile.hidFingerprint.map { forgottenHID.contains($0) } ?? false
             return (matchesForgottenBluetooth || matchesForgottenHID) ? profile.id : nil
         }
+    }
+
+    func confirmedTransientOnboardingProfile() -> RemoteDeviceProfile? {
+        let transientIDs = Set(uncommittedOnboardingRemoteProfileIDs())
+        guard !transientIDs.isEmpty else { return nil }
+        if let selectedID = selectedRemoteProfileID,
+           transientIDs.contains(selectedID),
+           let selectedProfile = remoteDeviceProfiles.first(where: { $0.id == selectedID }) {
+            return selectedProfile
+        }
+        if transientIDs.count == 1,
+           let onlyID = transientIDs.first {
+            return remoteDeviceProfiles.first(where: { $0.id == onlyID })
+        }
+        return nil
+    }
+
+    func unconfirmedTransientRemoteProfileIDs() -> [UUID] {
+        let confirmedID = confirmedTransientOnboardingProfile()?.id
+        return uncommittedOnboardingRemoteProfileIDs().filter { $0 != confirmedID }
     }
 
     func dismissOnboarding() {
@@ -318,7 +337,11 @@ extension AppSettings {
     }
 
     func completeOnboarding() {
-        unforgetRemotes(remoteDeviceProfiles)
+        let confirmedProfiles = confirmedTransientOnboardingProfile().map { [$0] } ?? []
+        for profileID in unconfirmedTransientRemoteProfileIDs() {
+            _ = removeRemoteProfile(profileID)
+        }
+        unforgetRemotes(confirmedProfiles)
         defaults.removeObject(forKey: Self.onboardingReturnConfigurationKey)
         recordFirstUseEvent(.completed, step: .complete)
         onboardingStep = .complete
