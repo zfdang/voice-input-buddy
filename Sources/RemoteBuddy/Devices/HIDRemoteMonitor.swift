@@ -160,6 +160,7 @@ final class HIDRemoteMonitor {
     var onStatus: ((LocalizedMessage) -> Void)?
     var onActiveButtons: ((UUID?, Set<RemoteButton>) -> Void)?
     var onButtonPressed: ((UUID?, String, RemoteButton) -> (profileID: UUID, shouldPerformAction: Bool)?)?
+    var onPassthroughButtonObserved: ((UUID?, String, RemoteButton) -> UUID?)?
     var onRuntimeButton: ((UUID?, RemoteButton, RemoteButtonPhase) -> Bool)?
     var claimsRuntimeButton: ((UUID?, RemoteButton) -> Bool)?
     var onInputReset: ((UUID?) -> Void)?
@@ -847,23 +848,19 @@ final class HIDRemoteMonitor {
             }
             return
         }
+        if !pressedPassthrough.isEmpty, let deviceFingerprint {
+            for usage in pressedPassthrough.sorted() {
+                guard let button = RemoteButton.usageMap[usage] else { continue }
+                if let routedProfileID = onPassthroughButtonObserved?(profileID, deviceFingerprint, button),
+                   profileID == nil {
+                    profileID = routedProfileID
+                }
+            }
+        }
         if backOnlyMode {
             processBackOnly(usages: usages.intersection([RemoteButton.back.hidUsage]))
         } else {
             process(usages: usages)
-        }
-        if !pressedPassthrough.isEmpty, let deviceFingerprint {
-            let previousProfileID = profileID
-            for usage in pressedPassthrough.sorted() {
-                guard let button = RemoteButton.usageMap[usage] else { continue }
-                if let routing = onButtonPressed?(profileID, deviceFingerprint, button),
-                   profileID == nil {
-                    profileID = routing.profileID
-                }
-            }
-            if profileID != previousProfileID {
-                emitActiveButtons()
-            }
         }
     }
 

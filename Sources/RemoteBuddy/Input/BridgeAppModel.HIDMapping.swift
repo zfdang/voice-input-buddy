@@ -480,6 +480,31 @@ extension BridgeAppModel {
         }
     }
 
+    private func resolveProfileIDForMonitor(
+        _ monitor: HIDRemoteMonitor,
+        profileID: UUID?,
+        fingerprint: String,
+        registerIfMissing: Bool
+    ) -> UUID? {
+        guard !settings.forgottenHIDFingerprints.contains(fingerprint) else { return nil }
+        let existingProfileID = profileID ?? settings.profileID(forHIDFingerprint: fingerprint)
+        guard let resolvedProfileID = existingProfileID
+            ?? (registerIfMissing
+                ? settings.registerHIDRemote(fingerprint: fingerprint, model: monitor.reportedModel)
+                : nil)
+        else { return nil }
+        if existingProfileID == nil {
+            appliedHIDMonitoringConfiguration = nil
+            monitor.assignProfileID(resolvedProfileID)
+            hidMonitors[fingerprint] = monitor
+            if discoveryHIDMonitor === monitor {
+                discoveryHIDMonitor = nil
+                startHIDDiscoveryIfNeeded()
+            }
+        }
+        return resolvedProfileID
+    }
+
     func makeHIDMonitor(
         profileID: UUID?,
         targetFingerprint: String?,
@@ -545,22 +570,12 @@ extension BridgeAppModel {
             guard let self, let monitor else {
                 return profileID.map { ($0, true) }
             }
-            guard !self.settings.forgottenHIDFingerprints.contains(fingerprint) else { return nil }
-            let existingProfileID = profileID
-                ?? self.settings.profileID(forHIDFingerprint: fingerprint)
-            guard let resolvedProfileID = existingProfileID
-                ?? self.settings.registerHIDRemote(fingerprint: fingerprint, model: monitor.reportedModel)
-            else { return nil }
-            let isNewBinding = existingProfileID == nil
-            if isNewBinding {
-                self.appliedHIDMonitoringConfiguration = nil
-                monitor.assignProfileID(resolvedProfileID)
-                self.hidMonitors[fingerprint] = monitor
-                if self.discoveryHIDMonitor === monitor {
-                    self.discoveryHIDMonitor = nil
-                    self.startHIDDiscoveryIfNeeded()
-                }
-            }
+            guard let resolvedProfileID = self.resolveProfileIDForMonitor(
+                monitor,
+                profileID: profileID,
+                fingerprint: fingerprint,
+                registerIfMissing: true
+            ) else { return nil }
             self.scheduleRemoteWakeRecovery(profileID: resolvedProfileID, reason: "hid_button")
             self.selectRemoteProfile(resolvedProfileID)
             self.lastRemoteButtonPress = button
@@ -582,6 +597,27 @@ extension BridgeAppModel {
                 resolvedProfileID,
                 !suppressConfiguredAction
             )
+        }
+        monitor.onPassthroughButtonObserved = { [weak self, weak monitor] profileID, fingerprint, button in
+            guard let self, let monitor else { return profileID }
+            let inT1ControlOnboarding = !self.settings.isOnboardingComplete &&
+                (self.settings.onboardingStep == .remote || self.settings.onboardingStep == .controls) &&
+                self.settings.onboardingControlSource == .t1Remote
+            guard let resolvedProfileID = self.resolveProfileIDForMonitor(
+                monitor,
+                profileID: profileID,
+                fingerprint: fingerprint,
+                registerIfMissing: inT1ControlOnboarding
+            ) else { return nil }
+            if inT1ControlOnboarding {
+                self.scheduleRemoteWakeRecovery(profileID: resolvedProfileID, reason: "hid_button")
+                self.selectRemoteProfile(resolvedProfileID)
+                self.lastRemoteButtonPress = button
+            } else if resolvedProfileID == self.settings.selectedRemoteProfileID {
+                self.scheduleRemoteWakeRecovery(profileID: resolvedProfileID, reason: "hid_button")
+                self.lastRemoteButtonPress = button
+            }
+            return resolvedProfileID
         }
         monitor.onInternalAction = { [weak self] profileID, action in
             guard let self else { return }
