@@ -22,8 +22,8 @@ python3 -m http.server 8765 --directory pages
 不依赖外部播放器或追踪服务。更新视频时同步更新封面、字幕和两种语言的介绍。
 
 视频的动画源文件与旁白位于 `scripts/demo-video/visuals.py` 和
-`scripts/demo-video/render.py`，更新时先对照当前程序界面。网页硬件区域列出四项设备，
-与输入工具列表并列展示。网页说明小米已适配、G9N9N 支持语音但不支持普通单键映射、GY3LE 与 Siri Remote 计划支持，并链接到 README 的各型号支持情况。实际连接准入与验收状态以 README 和应用向导为准。操作说明须匹配当前界面：音频固定输出 Remote Buddy Mic，用户只需在输入工具中选择同名麦克风。安装包未公证的提醒仅保留在网页文字说明中；视频不展示此提醒。
+`scripts/demo-video/render.py`，更新时先对照当前程序界面。网页硬件区域列出五项设备，
+与输入工具列表并列展示。网页说明小米与 T1 已适配、G9N9N 支持语音但不支持普通单键映射、GY3LE 与 Siri Remote 计划支持，并链接到 README 的各型号支持情况。实际连接准入与验收状态以 README 和应用向导为准。操作说明须匹配当前界面：音频固定输出 Remote Buddy Mic，用户只需在输入工具中选择同名麦克风。安装包未公证的提醒仅保留在网页文字说明中；视频不展示此提醒。
 
 在 macOS 上重做视频（需要 `ffmpeg`、`ffprobe` 和系统中文字体）：
 

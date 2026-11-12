@@ -11,7 +11,7 @@
 | RemoteBuddyTests | 协议、生命周期与产品边界测试 |
 | Sparkle | 第三方 macOS 更新框架 |
 
-当前连接适配提供小米 RC001／RC003 和 Google G9N9N；G9N9N 当前仅部分支持语音功能，普通按键映射不支持，见 [独立测试报告](g9n9n-compatibility.md)。GY3LE 可进入连接向导，但没有型号专用协议适配；Siri Remote 可在设备目录中选择，不能继续连接。内部兼容类型不代表对应功能已启用；私有扩展包不参与构建。
+当前连接适配提供小米 RC001／RC003、T1 飞鼠键盘语音遥控器（`T1RemoteProtocol.swift`）和 Google G9N9N；T1 支持 7 颗不与背面全键盘冲突的正面控制键自定义映射、ATVV 语音输入及原生飞鼠与背面 QWERTY 直通；G9N9N 当前仅部分支持语音功能，普通按键映射不支持，见 [独立测试报告](g9n9n-compatibility.md)。GY3LE 可进入连接向导，但没有型号专用协议适配；Siri Remote 可在设备目录中选择，不能继续连接。内部兼容类型不代表对应功能已启用；私有扩展包不参与构建。
 
 ## 驱动
 

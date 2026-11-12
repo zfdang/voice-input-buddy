@@ -24,6 +24,7 @@ referenced_keys = set()
 referenced_keys.update(re.findall(r'titleKey:\s*"([\w\.-]+)"', source))
 referenced_keys.update(re.findall(r'detailKey:\s*"([\w\.-]+)"', source))
 referenced_keys.update(re.findall(r'localization\.text\("([\w\.-]+)"\)', source))
+referenced_keys.update(re.findall(r'snapshot\.text\(\s*"([\w\.-]+)"', source))
 referenced_keys.update(re.findall(r'LocalizedMessage\(\s*"([\w\.-]+)"', source))
 for strings in sorted(resources.glob('*.lproj/Localizable.strings')):
     keys = set(re.findall(r'^\s*"([^"\n]+)"\s*=', strings.read_text(), re.MULTILINE))
@@ -74,9 +75,11 @@ for name in sorted(names):
     if dark is not None or name not in {'doubao-input-microphone', 'weixin-input-microphone', 'voicecursor-setting-fn', 'voicecursor-setting-mic', 'macos-dictation-enable', 'macos-dictation-shortcut', 'macos-dictation-microphone'}:
         assert dark is not None, f'Missing dark screenshot: {name}'
         files.append(dark)
-# Product catalog resources are required even while adapters remain planned.
+# Product catalog and button-mapping resources are required even while adapters remain planned.
 catalog = (app_sources / 'Devices/RemoteSetupDevice.swift').read_text()
+device_catalog = (app_sources / 'Devices/XiaomiRemoteCatalog.swift').read_text()
 illustrations = set(re.findall(r'return "(\w+Illustration)"', catalog))
+illustrations.update(re.findall(r'"(\w+Illustration)"', device_catalog))
 assert illustrations, 'No product catalog illustrations found'
 files.extend(resources / f'{name}.png' for name in sorted(illustrations))
 for path in files:

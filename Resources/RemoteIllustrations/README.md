@@ -1,6 +1,6 @@
 # Remote illustrations
 
-These three SVG files are original schematic drawings distributed under the
+These four SVG files are original schematic drawings distributed under the
 project's GPL-3.0-only license. Matching transparent PNGs in the parent directory
 are the app's thumbnails. They contain no copied manufacturer photographs,
 logos, or traced image paths. Buttons use generic symbols or short text labels.
@@ -27,6 +27,7 @@ To regenerate a thumbnail from its editable vector source, from the repo root:
 rsvg-convert Resources/RemoteIllustrations/ChromecastG9N9NIllustration.svg -o Resources/ChromecastG9N9NIllustration.png
 rsvg-convert Resources/RemoteIllustrations/GoogleStreamerGY3LEIllustration.svg -o Resources/GoogleStreamerGY3LEIllustration.png
 rsvg-convert Resources/RemoteIllustrations/SiriRemoteA2854Illustration.svg -o Resources/SiriRemoteA2854Illustration.png
+rsvg-convert Resources/RemoteIllustrations/T1RemoteIllustration.svg -o Resources/T1RemoteIllustration.png
 ```
 
 `rsvg-convert` is only an artwork regeneration tool; normal application builds
