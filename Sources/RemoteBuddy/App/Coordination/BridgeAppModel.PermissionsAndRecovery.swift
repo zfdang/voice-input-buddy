@@ -31,6 +31,7 @@ extension BridgeAppModel {
         fnTapModeEnabled: Bool,
         requiresOrderedFn: Bool,
         hasHardwareVoiceKey: Bool,
+        hasMatchingHIDServices: Bool,
         isVoiceKeyNeutralized: Bool,
         currentServicesMatchDesiredMapping: Bool,
         fnTapSessionEnabled: Bool,
@@ -43,7 +44,10 @@ extension BridgeAppModel {
         guard customMappingEnabled || needsNeutralization else { return false }
         if monitoringInterrupted || !monitoringConfigurationApplied { return true }
         if appliedPermissionSnapshot != currentPermissionSnapshot { return true }
-        if !currentServicesMatchDesiredMapping { return true }
+        if !currentServicesMatchDesiredMapping,
+           hasMatchingHIDServices || (hasHardwareVoiceKey && needsNeutralization) {
+            return true
+        }
         if hasHardwareVoiceKey, needsNeutralization, !isVoiceKeyNeutralized { return true }
         if fnTapModeEnabled, !requiresOrderedFn, !fnTapSessionEnabled,
            currentPermissionSnapshot.accessibilityGranted {

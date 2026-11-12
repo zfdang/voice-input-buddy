@@ -74,6 +74,7 @@ extension BridgeAppModel {
             fnTapModeEnabled: settings.voiceFnTapModeEnabled,
             requiresOrderedFn: requiresOrderedVoiceFn,
             hasHardwareVoiceKey: bridge.identifiedModel?.isChromecastRemote != true,
+            hasMatchingHIDServices: voiceFunctionMapper.hasMatchingServices,
             isVoiceKeyNeutralized: voiceFunctionMapper.isVoiceKeyNeutralized,
             currentServicesMatchDesiredMapping: currentServicesMatchDesiredMapping,
             fnTapSessionEnabled: voiceFnTapSession.isEnabled,

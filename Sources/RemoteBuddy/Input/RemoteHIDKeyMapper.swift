@@ -208,9 +208,8 @@ final class RemoteHIDKeyMapper {
         let services = matchingServices()
         matchedServiceCount = services.count
         if expectedVoiceKeyNeutralization, !isVoiceKeyNeutralized {
-            // Preserve non-flapping behavior when no Xiaomi HID services exist (e.g. G9N9N-only),
-            // while forcing reapplication if any live Xiaomi HID service is present.
-            return services.isEmpty
+            appliedConfiguration = nil
+            return false
         }
         switch evaluateAppliedServices(
             services,
@@ -220,10 +219,12 @@ final class RemoteHIDKeyMapper {
         case .upToDate:
             return true
         case .noServices:
-            // Clear applied service IDs so returning remotes must reapply, while preserving
-            // mode preferences and avoiding `matched=0` churn during brief service drops.
+            // Never retain stale neutralization across an empty service list: clear both
+            // applied state and `isVoiceKeyNeutralized` so hardware-key remotes cannot
+            // accept software voice before reconnecting HID services are neutralized.
             appliedConfiguration = nil
-            return true
+            isVoiceKeyNeutralized = false
+            return false
         case .needsReapply:
             appliedConfiguration = nil
             if expectedVoiceKeyNeutralization {
@@ -251,7 +252,12 @@ final class RemoteHIDKeyMapper {
         matchedServiceCount = services.count
         let liveIDs = Set(services.compactMap(\.registryID))
         applied.serviceRegistryIDs.formIntersection(liveIDs)
-        appliedConfiguration = applied.serviceRegistryIDs.isEmpty ? nil : applied
+        if applied.serviceRegistryIDs.isEmpty {
+            appliedConfiguration = nil
+            isVoiceKeyNeutralized = false
+        } else {
+            appliedConfiguration = applied
+        }
     }
 
     init(

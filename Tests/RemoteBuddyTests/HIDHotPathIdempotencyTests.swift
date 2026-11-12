@@ -285,6 +285,7 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: false,
             requiresOrderedFn: false,
             hasHardwareVoiceKey: true,
+            hasMatchingHIDServices: false,
             isVoiceKeyNeutralized: false,
             currentServicesMatchDesiredMapping: false,
             fnTapSessionEnabled: false,
@@ -294,15 +295,31 @@ struct HIDHotPathIdempotencyTests {
             currentPermissionSnapshot: granted
         ))
 
-        // Plain Fn with customMappingEnabled skips when power-key suppression matches live services, and recovers if missing.
+        // Plain Fn with customMappingEnabled skips when power-key suppression matches live services or no HID services exist, and recovers when services mismatch.
         #expect(!BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
             customMappingEnabled: true,
             mode: .function,
             fnTapModeEnabled: false,
             requiresOrderedFn: false,
             hasHardwareVoiceKey: true,
+            hasMatchingHIDServices: true,
             isVoiceKeyNeutralized: false,
             currentServicesMatchDesiredMapping: true,
+            fnTapSessionEnabled: false,
+            monitoringInterrupted: false,
+            monitoringConfigurationApplied: true,
+            appliedPermissionSnapshot: granted,
+            currentPermissionSnapshot: granted
+        ))
+        #expect(!BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
+            customMappingEnabled: true,
+            mode: .function,
+            fnTapModeEnabled: false,
+            requiresOrderedFn: false,
+            hasHardwareVoiceKey: true,
+            hasMatchingHIDServices: false,
+            isVoiceKeyNeutralized: false,
+            currentServicesMatchDesiredMapping: false,
             fnTapSessionEnabled: false,
             monitoringInterrupted: false,
             monitoringConfigurationApplied: true,
@@ -315,6 +332,7 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: false,
             requiresOrderedFn: false,
             hasHardwareVoiceKey: true,
+            hasMatchingHIDServices: true,
             isVoiceKeyNeutralized: false,
             currentServicesMatchDesiredMapping: false,
             fnTapSessionEnabled: false,
@@ -331,6 +349,7 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: false,
             requiresOrderedFn: true,
             hasHardwareVoiceKey: true,
+            hasMatchingHIDServices: true,
             isVoiceKeyNeutralized: true,
             currentServicesMatchDesiredMapping: true,
             fnTapSessionEnabled: false,
@@ -347,6 +366,7 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: false,
             requiresOrderedFn: true,
             hasHardwareVoiceKey: true,
+            hasMatchingHIDServices: true,
             isVoiceKeyNeutralized: true,
             currentServicesMatchDesiredMapping: false,
             fnTapSessionEnabled: false,
@@ -361,6 +381,7 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: false,
             requiresOrderedFn: true,
             hasHardwareVoiceKey: true,
+            hasMatchingHIDServices: true,
             isVoiceKeyNeutralized: false,
             currentServicesMatchDesiredMapping: true,
             fnTapSessionEnabled: false,
@@ -375,6 +396,7 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: false,
             requiresOrderedFn: true,
             hasHardwareVoiceKey: true,
+            hasMatchingHIDServices: true,
             isVoiceKeyNeutralized: true,
             currentServicesMatchDesiredMapping: true,
             fnTapSessionEnabled: false,
@@ -389,6 +411,7 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: false,
             requiresOrderedFn: true,
             hasHardwareVoiceKey: true,
+            hasMatchingHIDServices: true,
             isVoiceKeyNeutralized: true,
             currentServicesMatchDesiredMapping: true,
             fnTapSessionEnabled: false,
@@ -403,6 +426,7 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: false,
             requiresOrderedFn: true,
             hasHardwareVoiceKey: true,
+            hasMatchingHIDServices: true,
             isVoiceKeyNeutralized: true,
             currentServicesMatchDesiredMapping: true,
             fnTapSessionEnabled: false,
@@ -412,15 +436,33 @@ struct HIDHotPathIdempotencyTests {
             currentPermissionSnapshot: granted
         ))
 
-        // Chromecast remote (no hardware voice key) does not flap when no Xiaomi HID service is neutralized.
+        // Chromecast remote (no hardware voice key) does not flap when no Xiaomi HID service exists.
         #expect(!BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
             customMappingEnabled: true,
             mode: .leftCommand,
             fnTapModeEnabled: false,
             requiresOrderedFn: false,
             hasHardwareVoiceKey: false,
+            hasMatchingHIDServices: false,
             isVoiceKeyNeutralized: false,
-            currentServicesMatchDesiredMapping: true,
+            currentServicesMatchDesiredMapping: false,
+            fnTapSessionEnabled: false,
+            monitoringInterrupted: false,
+            monitoringConfigurationApplied: true,
+            appliedPermissionSnapshot: granted,
+            currentPermissionSnapshot: granted
+        ))
+
+        // Hardware-key remote (.leftCommand) must still force reapplication when its HID service has not yet appeared.
+        #expect(BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
+            customMappingEnabled: true,
+            mode: .leftCommand,
+            fnTapModeEnabled: false,
+            requiresOrderedFn: false,
+            hasHardwareVoiceKey: true,
+            hasMatchingHIDServices: false,
+            isVoiceKeyNeutralized: false,
+            currentServicesMatchDesiredMapping: false,
             fnTapSessionEnabled: false,
             monitoringInterrupted: false,
             monitoringConfigurationApplied: true,
@@ -435,8 +477,9 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: true,
             requiresOrderedFn: false,
             hasHardwareVoiceKey: false,
+            hasMatchingHIDServices: false,
             isVoiceKeyNeutralized: false,
-            currentServicesMatchDesiredMapping: true,
+            currentServicesMatchDesiredMapping: false,
             fnTapSessionEnabled: false,
             monitoringInterrupted: false,
             monitoringConfigurationApplied: true,
@@ -449,8 +492,9 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: true,
             requiresOrderedFn: false,
             hasHardwareVoiceKey: false,
+            hasMatchingHIDServices: false,
             isVoiceKeyNeutralized: false,
-            currentServicesMatchDesiredMapping: true,
+            currentServicesMatchDesiredMapping: false,
             fnTapSessionEnabled: false,
             monitoringInterrupted: false,
             monitoringConfigurationApplied: true,
@@ -463,6 +507,7 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: true,
             requiresOrderedFn: false,
             hasHardwareVoiceKey: true,
+            hasMatchingHIDServices: true,
             isVoiceKeyNeutralized: true,
             currentServicesMatchDesiredMapping: true,
             fnTapSessionEnabled: true,
@@ -916,23 +961,32 @@ struct HIDHotPathIdempotencyTests {
         #expect(harness.settings.voiceFnTapModeEnabled)
         #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
 
-        // Brief HID service disappearance during jitter clears appliedConfiguration without flipping preferences.
+        // HID service disappearance invalidates neutralization so hardware remotes wait for re-neutralization,
+        // without discarding the user's Fn-tap preference.
         counters.hasMatchingHIDServices = false
         let writesBeforeJitter = counters.setMappingsCount
-        #expect(model.voiceFunctionMapper.refreshAppliedMappingsValidity(
+        #expect(!model.voiceFunctionMapper.refreshAppliedMappingsValidity(
             expectedPowerKeySuppression: true,
             expectedVoiceKeyNeutralization: true
         ))
-        #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
+        #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
         #expect(harness.settings.voiceFnTapModeEnabled)
         #expect(counters.setMappingsCount == writesBeforeJitter)
+
+        // While the hardware remote's HID service is still absent, Bluetooth voice start is rejected
+        // yet the Fn-tap preference remains intact across the disconnect.
+        model.bluetoothBridgeDidStartVoice(harness.bridge)
+        #expect(!model.voiceSession.isActive)
+        harness.endVoiceSession()
+        #expect(harness.settings.voiceFnTapModeEnabled)
+        #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
 
         // Returning service sees cleared appliedConfiguration and forces reapply on voice start.
         counters.hasMatchingHIDServices = true
         counters.hidMappings = []
         counters.recordedWrites.removeAll()
         harness.startAndVerifyVoice()
-        #expect(counters.setMappingsCount == writesBeforeJitter + 1)
+        #expect(counters.setMappingsCount > writesBeforeJitter)
         #expect(counters.recordedWrites.last?.mappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey) == true)
         #expect(harness.settings.voiceFnTapModeEnabled)
         #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
@@ -947,6 +1001,38 @@ struct HIDHotPathIdempotencyTests {
         harness.endVoiceSession()
         #expect(harness.settings.voiceFnTapModeEnabled)
         #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
+    }
+
+    @Test func hardwareRemoteRejectsBluetoothVoiceBeforeReconnectedHIDServiceAppearsWhilePreservingPreference() throws {
+        let harness = try makeHarness(
+            customMappingEnabled: true,
+            voiceKeyMode: .leftCommand,
+            voiceTool: .unselected,
+            hasMatchingHIDServices: true
+        )
+        defer { harness.cleanup() }
+        let model = harness.model
+        let counters = harness.counters
+
+        #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
+        #expect(harness.settings.voiceKeyMode == .leftCommand)
+
+        // Simulate disconnect where HID service disappears before Bluetooth voice starts on reconnect.
+        counters.hasMatchingHIDServices = false
+        model.bluetoothBridgeDidStartVoice(harness.bridge)
+        #expect(!model.voiceSession.isActive)
+        #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
+        #expect(harness.settings.voiceKeyMode == .leftCommand)
+        harness.endVoiceSession()
+
+        // Once the reconnected HID service arrives, voice start re-neutralizes it and activates.
+        counters.hasMatchingHIDServices = true
+        counters.hidMappings = []
+        counters.recordedWrites.removeAll()
+        harness.startAndVerifyVoice()
+        #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
+        #expect(counters.recordedWrites.last?.mappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey) == true)
+        #expect(harness.settings.voiceKeyMode == .leftCommand)
     }
 
     @Test func pruneAppliedServicesShrinksIntersectionSoReturningServiceMustReapply() throws {
@@ -969,7 +1055,15 @@ struct HIDHotPathIdempotencyTests {
         #expect(!model.voiceFunctionMapper.needsReapply(suppressPowerKey: true, neutralizeVoiceKey: true))
         #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
 
-        // Reconnecting the pruned primary service (123) must force reapplication.
+        // Dropping the last remaining service clears neutralization so a reconnected hardware remote must re-apply.
+        counters.secondaryService.enabled = false
+        model.voiceFunctionMapper.pruneAppliedServices()
+        #expect(!model.voiceFunctionMapper.hasMatchingServices)
+        #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
+        #expect(!model.voiceFunctionMapper.needsReapply(suppressPowerKey: true, neutralizeVoiceKey: true))
+
+        // Reconnecting the pruned primary service (123) forces reapplication.
+        counters.secondaryService.enabled = true
         counters.hasMatchingHIDServices = true
         counters.hidMappings = []
         #expect(model.voiceFunctionMapper.needsReapply(suppressPowerKey: true, neutralizeVoiceKey: true))
