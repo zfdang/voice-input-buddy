@@ -92,6 +92,7 @@ final class HIDRemoteMonitor {
     private var currentReportIsGoogle = false
     private var currentReportIsT1 = false
     private var t1VoiceHoldActive = false
+    private var t1ReportUsageState = T1ReportUsageState()
     private var lastT1MouseHeader: Data?
     private var lastT1MouseLogTime: TimeInterval = 0
     private var currentReportDescriptor: Data?
@@ -458,27 +459,39 @@ final class HIDRemoteMonitor {
         return true
     }
 
+    nonisolated static func shouldAttemptSeizure(isT1Device: Bool) -> Bool {
+        !isT1Device
+    }
+
     @discardableResult
     private func activateDevice(
         _ device: IOHIDDevice,
         fingerprint: String
     ) -> Bool {
-        let seizeResult = IOHIDDeviceOpen(
-            device,
-            IOOptionBits(kIOHIDOptionsTypeSeizeDevice)
-        )
-        if seizeResult == kIOReturnSuccess {
-            activeDevice = device
-            deviceFingerprint = fingerprint
-            activeDeviceIsSeized = true
-            updateStatus(LocalizedMessage("button_mapping.status.connected"))
-            AppLogger.shared.write("HID CONNECTED mode=seized")
-            onDeviceConnected?(profileID, fingerprint)
-            return true
+        let isT1 = allowsT1Remote && !isGoogleDevice(device) && isT1Device(device)
+        let shouldSeize = Self.shouldAttemptSeizure(isT1Device: isT1)
+        let seizeResult: IOReturn
+        if shouldSeize {
+            seizeResult = IOHIDDeviceOpen(
+                device,
+                IOOptionBits(kIOHIDOptionsTypeSeizeDevice)
+            )
+            if seizeResult == kIOReturnSuccess {
+                activeDevice = device
+                deviceFingerprint = fingerprint
+                activeDeviceIsSeized = true
+                updateStatus(LocalizedMessage("button_mapping.status.connected"))
+                AppLogger.shared.write("HID CONNECTED mode=seized")
+                onDeviceConnected?(profileID, fingerprint)
+                return true
+            }
+        } else {
+            seizeResult = kIOReturnUnsupported
         }
 
         let monitorResult = IOHIDDeviceOpen(device, IOOptionBits(kIOHIDOptionsTypeNone))
         let karabinerInstalled = karabinerElementsInstalled()
+        let seizeLabel = shouldSeize ? String(seizeResult) : "skipped"
         if let exclusiveMessageKey = Self.deviceOpenFailureMessageKey(
             result: monitorResult,
             karabinerElementsInstalled: karabinerInstalled
@@ -487,14 +500,14 @@ final class HIDRemoteMonitor {
             AppLogger.shared.write(
                 "HID DEVICE OPEN BLOCKED reason=exclusive_access " +
                     "karabiner_installed=\(karabinerInstalled) " +
-                    "seize=\(seizeResult) monitor=\(monitorResult)"
+                    "seize=\(seizeLabel) monitor=\(monitorResult)"
             )
             return false
         }
         guard monitorResult == kIOReturnSuccess else {
             updateStatus(LocalizedMessage("button_mapping.error.device_read_failed", arguments: [String(monitorResult)]))
             AppLogger.shared.write(
-                "HID DEVICE OPEN FAILED seize=\(seizeResult) monitor=\(monitorResult)"
+                "HID DEVICE OPEN FAILED seize=\(seizeLabel) monitor=\(monitorResult)"
             )
             return false
         }
@@ -510,8 +523,10 @@ final class HIDRemoteMonitor {
             )
         )
         AppLogger.shared.write(
-            "HID CONNECTED mode=monitored " +
-                AppLogger.errorFields(domain: "io_return", code: Int(seizeResult), fieldPrefix: "seize_error")
+            shouldSeize
+                ? "HID CONNECTED mode=monitored " +
+                    AppLogger.errorFields(domain: "io_return", code: Int(seizeResult), fieldPrefix: "seize_error")
+                : "HID CONNECTED mode=monitored reason=t1_passthrough"
         )
         onDeviceConnected?(profileID, fingerprint)
         return true
@@ -597,6 +612,7 @@ final class HIDRemoteMonitor {
                     device,
                     fingerprint: fingerprint
                 ) else {
+                    t1ReportUsageState.reset()
                     diagnosticLogger("HID REPORT rejected reason=device_activation_failed")
                     return
                 }
@@ -705,7 +721,7 @@ final class HIDRemoteMonitor {
                     t1VoiceHoldActive = voiceHoldPressed
                     onT1VoiceHoldChanged?(profileID, voiceHoldPressed)
                 }
-                return usages
+                return t1ReportUsageState.update(reportID: reportID, usages: usages)
             case .ignore:
                 logIgnoredT1Report(reportID: reportID, data: data, source: source)
                 return nil
@@ -1735,6 +1751,7 @@ final class HIDRemoteMonitor {
         nonRepeatableReleaseTimers.removeAll()
         nonRepeatablePressedButtons.removeAll()
         t1VoiceHoldActive = false
+        t1ReportUsageState.reset()
         lastT1MouseHeader = nil
         lastT1MouseLogTime = 0
         resetGestureRecognition()

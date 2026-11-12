@@ -503,6 +503,32 @@ struct BluetoothLifecycleTests {
             googleReady: true,
             modelFormatResolved: false
         ))
+
+        // T1 candidate requires both t1Ready (capabilities + validated PnP identity) and modelFormatResolved
+        #expect(!ATVVSessionGate.canTransitionToReady(
+            capabilitiesConfirmed: true,
+            isGoogleCandidate: false,
+            googleReady: false,
+            isT1Candidate: true,
+            t1Ready: false,
+            modelFormatResolved: true
+        ))
+        #expect(!ATVVSessionGate.canTransitionToReady(
+            capabilitiesConfirmed: true,
+            isGoogleCandidate: false,
+            googleReady: false,
+            isT1Candidate: true,
+            t1Ready: true,
+            modelFormatResolved: false
+        ))
+        #expect(ATVVSessionGate.canTransitionToReady(
+            capabilitiesConfirmed: true,
+            isGoogleCandidate: false,
+            googleReady: false,
+            isT1Candidate: true,
+            t1Ready: true,
+            modelFormatResolved: true
+        ))
     }
 
     @Test func microphoneRequiresConfirmed16kReadySession() {

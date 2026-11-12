@@ -134,6 +134,8 @@ struct T1RemoteReadiness {
     private var capabilitiesAccepted = false
     private var matchedIdentity = false
 
+    var identityConfirmed: Bool { matchedIdentity }
+
     mutating func acceptCapabilities(_ capabilities: ATVVCapabilities) -> Bool {
         guard capabilities.codecs & 0x02 != 0 else { return false }
         capabilitiesAccepted = true
@@ -152,4 +154,25 @@ struct T1RemoteReadiness {
     }
 
     var isReady: Bool { capabilitiesAccepted && matchedIdentity }
+}
+
+/// Tracks currently held HID usages separately per T1 report ID so reports from
+/// different interfaces (keyboard, consumer, system) do not clear each other's buttons.
+struct T1ReportUsageState {
+    private var usagesByReportID: [UInt32: Set<UInt16>] = [:]
+
+    mutating func update(reportID: UInt32, usages: Set<UInt16>) -> Set<UInt16> {
+        if usages.isEmpty {
+            usagesByReportID.removeValue(forKey: reportID)
+        } else {
+            usagesByReportID[reportID] = usages
+        }
+        return usagesByReportID.values.reduce(into: Set<UInt16>()) { combined, reportUsages in
+            combined.formUnion(reportUsages)
+        }
+    }
+
+    mutating func reset() {
+        usagesByReportID.removeAll()
+    }
 }

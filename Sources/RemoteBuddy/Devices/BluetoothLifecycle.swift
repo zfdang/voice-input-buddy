@@ -421,10 +421,18 @@ enum ATVVSessionGate {
         capabilitiesConfirmed: Bool,
         isGoogleCandidate: Bool,
         googleReady: Bool,
+        isT1Candidate: Bool = false,
+        t1Ready: Bool = false,
         modelFormatResolved: Bool
     ) -> Bool {
         guard capabilitiesConfirmed else { return false }
-        return isGoogleCandidate ? googleReady : modelFormatResolved
+        if isGoogleCandidate {
+            return googleReady
+        }
+        if isT1Candidate {
+            return t1Ready && modelFormatResolved
+        }
+        return modelFormatResolved
     }
 
     static func canOpenMicrophone(

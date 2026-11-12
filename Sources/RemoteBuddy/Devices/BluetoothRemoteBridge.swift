@@ -946,8 +946,15 @@ final class BluetoothRemoteBridge: NSObject {
                   self.lifecycle == .discovering(generation) ||
                     self.lifecycle == .awaitingCapabilities(generation)
             else { return }
-            self.failInitialization(LocalizedMessage(self.googleCandidate && !self.googleReadiness.identityConfirmed
-                ? "google.remote.unconfirmed_identity" : "connection.error.voice_service_timeout"))
+            let timeoutKey: String
+            if self.googleCandidate && !self.googleReadiness.identityConfirmed {
+                timeoutKey = "google.remote.unconfirmed_identity"
+            } else if self.t1Candidate && self.capabilitiesConfirmed && !self.t1Readiness.identityConfirmed {
+                timeoutKey = "t1.remote.unconfirmed_identity"
+            } else {
+                timeoutKey = "connection.error.voice_service_timeout"
+            }
+            self.failInitialization(LocalizedMessage(timeoutKey))
         }
         initializationTimeoutWorkItem = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 8, execute: work)
@@ -1363,10 +1370,12 @@ final class BluetoothRemoteBridge: NSObject {
             capabilitiesConfirmed: capabilitiesConfirmed,
             isGoogleCandidate: googleCandidate,
             googleReady: googleReadiness.isReady,
+            isT1Candidate: t1Candidate,
+            t1Ready: t1Readiness.isReady,
             modelFormatResolved: modelFormatResolved
         ),
         lifecycle == .awaitingCapabilities(generation), let peripheral else { return }
-        if t1Candidate && identifiedModel == nil {
+        if t1Candidate && t1Readiness.isReady && identifiedModel == nil {
             identifiedModel = .t1Remote
             delegate?.bluetoothBridge(self, didIdentifyRemoteModel: .t1Remote)
         }
@@ -2016,6 +2025,11 @@ extension BluetoothRemoteBridge {
                 hasObservedPowerState = false
                 lastObservedPowerState = nil
                 delegate?.bluetoothBridge(self, didUpdatePowerState: nil)
+            } else if characteristic.uuid == pnpIDUUID, t1Candidate {
+                AppLogger.shared.write(
+                    "BLE PNP T1 read_failed " + AppLogger.errorFields(error)
+                )
+                failInitialization(LocalizedMessage("t1.remote.unconfirmed_identity"))
             } else if characteristic.uuid == modelNumberUUID {
                 AppLogger.shared.write(
                     "BLE MODEL read_failed " + AppLogger.errorFields(error)
@@ -2040,13 +2054,17 @@ extension BluetoothRemoteBridge {
                 delegate?.bluetoothBridge(self, didIdentifyRemoteModel: .chromecastVoiceRemote)
                 finishInitializationIfReady(generation: generation)
             } else if allowsT1Remote, (t1Candidate || reportedHIDIdentity == .t1Remote) {
-                t1Candidate = true
-                if let identity = reportedHIDIdentity,
-                   t1Readiness.acceptIdentity(identity, allowCustomIdentity: true) {
-                    identifiedModel = .t1Remote
-                    delegate?.bluetoothBridge(self, didIdentifyRemoteModel: .t1Remote)
-                    finishInitializationIfReady(generation: generation)
+                guard let identity = reportedHIDIdentity,
+                      t1Readiness.acceptIdentity(identity, allowCustomIdentity: true) else {
+                    AppLogger.shared.write("BLE PNP T1 identity_rejected")
+                    failInitialization(LocalizedMessage("t1.remote.unconfirmed_identity"))
+                    return
                 }
+                t1Candidate = true
+                audioDecoder.configureFormat(lowNibbleFirst: false)
+                identifiedModel = .t1Remote
+                delegate?.bluetoothBridge(self, didIdentifyRemoteModel: .t1Remote)
+                finishInitializationIfReady(generation: generation)
             }
             onHIDIdentityUpdate?()
             return

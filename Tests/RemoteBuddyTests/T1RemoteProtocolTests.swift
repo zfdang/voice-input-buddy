@@ -238,4 +238,62 @@ struct T1RemoteProtocolTests {
         #expect(t1TapEn.contains("Press and release") && t1TapEn.contains("once more"))
         #expect(t1HoldEn.contains("Press and release") && t1HoldEn.contains("holds the voice key"))
     }
+
+    @Test func t1DevicesSkipHIDSeizureToPreserveKeyboardAndAirMouse() {
+        #expect(!HIDRemoteMonitor.shouldAttemptSeizure(isT1Device: true))
+        #expect(HIDRemoteMonitor.shouldAttemptSeizure(isT1Device: false))
+    }
+
+    @Test @MainActor func t1ReportUsageStateTracksHeldButtonsIndependentlyPerReport() {
+        var state = T1ReportUsageState()
+        #expect(state.update(reportID: T1RemoteProtocol.keyboardReportID, usages: [0x4F]) == [0x4F])
+        #expect(state.update(reportID: T1RemoteProtocol.consumerReportID, usages: [0xE9]) == [0x4F, 0xE9])
+        #expect(state.update(reportID: T1RemoteProtocol.consumerReportID, usages: []) == [0x4F])
+        #expect(state.update(reportID: T1RemoteProtocol.keyboardReportID, usages: []) == [])
+
+        let suite = "t1-per-report-state-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let settings = AppSettings(defaults: defaults)
+        settings.customMappingEnabled = true
+        let monitor = HIDRemoteMonitor(
+            settings: settings,
+            allowsT1Remote: true,
+            runtimePermissions: { true },
+            nativeSuppressionAvailable: { true },
+            diagnosticLogger: { _ in }
+        )
+        defer { monitor.cancelMappingInteractions() }
+
+        var activeHistory: [Set<RemoteButton>] = []
+        monitor.onActiveButtons = { _, buttons in
+            activeHistory.append(buttons)
+        }
+
+        // Hold Right Arrow on Report 1, then press & release Vol+ on Report 2, then release Right Arrow on Report 1.
+        monitor.handleSimulatedT1Report(
+            reportID: T1RemoteProtocol.keyboardReportID,
+            data: Data([0x01, 0x00, 0x00, 0x4F, 0x00, 0x00, 0x00, 0x00, 0x00])
+        )
+        monitor.handleSimulatedT1Report(
+            reportID: T1RemoteProtocol.consumerReportID,
+            data: Data([0x02, 0xE9, 0x00])
+        )
+        monitor.handleSimulatedT1Report(
+            reportID: T1RemoteProtocol.consumerReportID,
+            data: Data([0x02, 0x00, 0x00])
+        )
+        monitor.handleSimulatedT1Report(
+            reportID: T1RemoteProtocol.keyboardReportID,
+            data: Data([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+        )
+
+        #expect(activeHistory == [
+            [.right],
+            [.right, .volumeUp],
+            [.right],
+            [],
+        ])
+    }
 }
