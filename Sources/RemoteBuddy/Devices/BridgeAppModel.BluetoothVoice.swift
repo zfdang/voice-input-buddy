@@ -61,7 +61,10 @@ extension BridgeAppModel {
             return
         }
         let profileID = activateRemoteProfile(for: bridge)
-        let currentServicesVoiceKeyNeutralized = voiceFunctionMapper.refreshVoiceKeyNeutralizationValidity()
+        let currentServicesVoiceKeyNeutralized = voiceFunctionMapper
+            .refreshVoiceKeyNeutralizationValidity(
+                expectedPowerKeySuppression: settings.customMappingEnabled
+            )
         if Self.shouldReapplyHIDSettingsBeforeVoiceStart(
             mode: settings.voiceKeyMode,
             fnTapModeEnabled: settings.voiceFnTapModeEnabled,
@@ -70,6 +73,7 @@ extension BridgeAppModel {
             currentServicesVoiceKeyNeutralized: currentServicesVoiceKeyNeutralized,
             fnTapSessionEnabled: voiceFnTapSession.isEnabled,
             monitoringInterrupted: hidMonitoringInterrupted,
+            monitoringConfigurationApplied: appliedHIDMonitoringConfiguration != nil,
             appliedPermissionSnapshot: appliedHIDPermissionSnapshot,
             currentPermissionSnapshot: permissionSnapshotProvider()
         ) {

@@ -431,11 +431,13 @@ extension BridgeAppModel {
     }
 
     private func scheduleHIDServiceMappingRefreshIfNeeded() {
+        guard canRefreshHIDMappingsNow, !pendingHIDServiceMappingRefresh else { return }
+        pendingHIDServiceMappingRefresh = true
         // Defer outside IOHIDManager callbacks before probing/reapplying IOHIDEventSystem mappings.
         DispatchQueue.main.async { [weak self] in
-            guard let self, self.started,
-                  !self.audio.suspensionState.suspendsHIDMonitoring,
-                  !self.isStreaming,
+            guard let self else { return }
+            self.pendingHIDServiceMappingRefresh = false
+            guard self.canRefreshHIDMappingsNow,
                   self.voiceFunctionMapper.needsReapply(
                       suppressPowerKey: self.settings.customMappingEnabled,
                       neutralizeVoiceKey: self.shouldNeutralizeNativeVoiceKey
@@ -465,6 +467,7 @@ extension BridgeAppModel {
         )
         monitor.onCandidateAvailable = { [weak self] in
             guard let self else { return }
+            self.scheduleHIDServiceMappingRefreshIfNeeded()
             for bridge in self.connections.bridges.values {
                 self.learnSelectedRemoteHIDIdentity(bridge)
                 bridge.recoverSystemConnectedRemote(reason: "hid_candidate")

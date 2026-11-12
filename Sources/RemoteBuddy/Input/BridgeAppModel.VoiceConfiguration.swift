@@ -12,11 +12,15 @@ extension BridgeAppModel {
         flushPendingVoiceToolMappingRefresh()
     }
 
+    var canRefreshHIDMappingsNow: Bool {
+        started && !isTerminating && !audio.suspensionState.suspendsHIDMonitoring &&
+            !isStreaming && !voiceSession.isActive && !hasPendingBluetoothVoiceWork &&
+            voiceSession.pendingStart.identifier == nil && !voiceKeyLatch.isHeld &&
+            !voiceKeyActivationInProgress && !voiceFnTapSession.requiresCleanupBeforeMapping
+    }
+
     func flushPendingVoiceToolMappingRefresh(applyMappings: (() -> Void)? = nil) {
-        guard pendingVoiceToolMappingRefresh, started, !isStreaming,
-              !voiceSession.isActive, !hasPendingBluetoothVoiceWork,
-              !voiceKeyLatch.isHeld, !voiceKeyActivationInProgress,
-              !voiceFnTapSession.requiresCleanupBeforeMapping else { return }
+        guard pendingVoiceToolMappingRefresh, canRefreshHIDMappingsNow else { return }
         pendingVoiceToolMappingRefresh = false
         if let applyMappings { applyMappings() } else { applyHIDSettings() }
     }

@@ -33,12 +33,13 @@ extension BridgeAppModel {
         currentServicesVoiceKeyNeutralized: Bool,
         fnTapSessionEnabled: Bool,
         monitoringInterrupted: Bool,
+        monitoringConfigurationApplied: Bool = true,
         appliedPermissionSnapshot: HIDPermissionSnapshot?,
         currentPermissionSnapshot: HIDPermissionSnapshot
     ) -> Bool {
         let needsNeutralization = mode != .function || fnTapModeEnabled || requiresOrderedFn
         guard needsNeutralization else { return false }
-        if monitoringInterrupted { return true }
+        if monitoringInterrupted || !monitoringConfigurationApplied { return true }
         if appliedPermissionSnapshot != currentPermissionSnapshot { return true }
         if hasHardwareVoiceKey, !currentServicesVoiceKeyNeutralized { return true }
         if fnTapModeEnabled, !requiresOrderedFn, !fnTapSessionEnabled,
