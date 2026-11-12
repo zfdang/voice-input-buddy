@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
   changelog:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
@@ -39,13 +40,12 @@ jobs:
           if-no-files-found: error
 
   build:
-    needs: changelog
     runs-on: macos-15
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        arch: [arm64, x86_64]
+        arch: ${{ fromJSON((github.event_name == 'push' && github.ref == 'refs/heads/main') && '["arm64", "x86_64"]' || '["arm64"]') }}
     env:
       BUILD_ARCH: ${{ matrix.arch }}
       DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
@@ -61,20 +61,13 @@ jobs:
           scripts/release-metadata.sh | tee "$RUNNER_TEMP/release-version"
           cat "$RUNNER_TEMP/release-version" >> "$GITHUB_ENV"
           cat "$RUNNER_TEMP/release-version" >> "$GITHUB_OUTPUT"
-      - uses: actions/download-artifact@v8.0.2
-        with:
-          name: release-changelog
-          path: ${{ runner.temp }}/release-changelog
-      - name: Cache SwiftPM and build artifacts
+      - name: Cache Sparkle artifact and BlackHole driver source
         uses: actions/cache@v4
         with:
           path: |
             ~/Library/Caches/org.swift.swiftpm/artifacts
-            .build
-          key: ${{ runner.os }}-${{ matrix.arch }}-swift-${{ hashFiles('Package.resolved', 'Package.swift') }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.arch }}-swift-${{ hashFiles('Package.resolved', 'Package.swift') }}-
-            ${{ runner.os }}-${{ matrix.arch }}-swift-
+            .build/buddy-driver
+          key: ${{ runner.os }}-${{ matrix.arch }}-deps-v1-${{ hashFiles('Package.resolved', 'Package.swift', 'scripts/build-driver.sh', 'third_party/blackhole/device-usb.patch') }}
       - name: Pre-populate Sparkle binary package cache
         env:
           GH_TOKEN: ${{ github.token }}
@@ -92,23 +85,72 @@ jobs:
               rm -f "$cached_file"
             fi
           fi
+      - name: Restore incremental SwiftPM build cache
+        id: build-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .build/${{ matrix.arch }}-apple-macosx
+            .build/app-${{ matrix.arch }}
+            .build/artifacts
+            .build/checkouts
+            .build/repositories
+            .build/build.db
+            .build/debug.yaml
+            .build/release.yaml
+            .build/plugin-tools.yaml
+            .build/workspace-state.json
+            .build/debug
+            .build/release
+            .build/.cached-git-sha
+          key: ${{ runner.os }}-${{ matrix.arch }}-swift-v2-xcode26.2-${{ hashFiles('Package.resolved', 'Package.swift') }}-${{ github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.arch }}-swift-v2-xcode26.2-${{ hashFiles('Package.resolved', 'Package.swift') }}-main-
+            ${{ runner.os }}-${{ matrix.arch }}-swift-v2-xcode26.2-${{ hashFiles('Package.resolved', 'Package.swift') }}-${{ github.ref_name }}-
+            ${{ runner.os }}-${{ matrix.arch }}-swift-v2-xcode26.2-${{ hashFiles('Package.resolved', 'Package.swift') }}-
+      - name: Restore Git commit timestamps for incremental compilation
+        run: python3 scripts/restore-git-mtimes.py --marker-file .build/.cached-git-sha
       - name: Test
         run: |
-          python3 scripts/test-release-notes.py
-          python3 scripts/test-release-metadata.py
-          python3 scripts/test-release-sources.py
-          python3 scripts/test-common-phrases.py
-          python3 scripts/test-dependency-checkout.py
-          python3 scripts/test-app-bundle.py
-          python3 scripts/test-installation-actions.py
-          python3 scripts/test-app-ownership.py
-          python3 scripts/test-appcast.py
-          python3 scripts/test-pages-update-feeds.py
-          python3 scripts/test-update-signature.py
-          python3 scripts/test-release-signing.py
-          python3 scripts/test-sign-bundle.py
-          python3 scripts/test-installer-product.py
-          python3 scripts/test-local-signed-build.py
+          python3 - <<'PY'
+          import concurrent.futures, subprocess, sys
+
+          scripts = [
+              "scripts/test-release-notes.py",
+              "scripts/test-release-metadata.py",
+              "scripts/test-release-sources.py",
+              "scripts/test-restore-git-mtimes.py",
+              "scripts/test-common-phrases.py",
+              "scripts/test-dependency-checkout.py",
+              "scripts/test-app-bundle.py",
+              "scripts/test-installation-actions.py",
+              "scripts/test-app-ownership.py",
+              "scripts/test-appcast.py",
+              "scripts/test-pages-update-feeds.py",
+              "scripts/test-update-signature.py",
+              "scripts/test-release-signing.py",
+              "scripts/test-sign-bundle.py",
+              "scripts/test-installer-product.py",
+              "scripts/test-local-signed-build.py",
+          ]
+
+          def run_script(path):
+              proc = subprocess.run([sys.executable, path], capture_output=True, text=True)
+              return path, proc.returncode, proc.stdout, proc.stderr
+
+          failed = False
+          with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+              for path, code, out, err in pool.map(run_script, scripts):
+                  print(f"=== {path} (exit {code}) ===")
+                  if out:
+                      print(out, end="" if out.endswith("\n") else "\n")
+                  if err:
+                      print(err, file=sys.stderr, end="" if err.endswith("\n") else "\n")
+                  if code != 0:
+                      failed = True
+          if failed:
+              sys.exit(1)
+          PY
           swift test --disable-keychain
       - name: Import fixed release signing identity
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -117,6 +159,9 @@ jobs:
           MACOS_SIGNING_P12_PASSWORD: ${{ secrets.MACOS_SIGNING_P12_PASSWORD }}
         run: python3 scripts/release-signing-keychain.py setup
       - name: Build app, driver, and standalone uninstaller
+        env:
+          CONFIGURATION: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && 'release' || 'debug' }}
+          APP_BUILD_SCRATCH_PATH: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && format('{0}/.build/app-{1}', github.workspace, matrix.arch) || format('{0}/.build', github.workspace) }}
         run: |
           scripts/build-app.sh
           scripts/build-driver.sh
@@ -131,7 +176,24 @@ jobs:
         run: |
           scripts/build-release-package.sh
           scripts/verify-release-package.sh
-          if [[ "$BUILD_ARCH" == arm64 ]]; then scripts/build-release-sources.sh; fi
+          if [[ "$BUILD_ARCH" == arm64 && "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/main ]]; then scripts/build-release-sources.sh; fi
+      - name: Download shared release changelog
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          dest="${{ runner.temp }}/release-changelog"
+          mkdir -p "$dest"
+          for attempt in $(seq 1 40); do
+            if gh run download "$GITHUB_RUN_ID" --repo "$GH_REPO" --name release-changelog --dir "$dest" >/dev/null 2>&1; then
+              test -s "$dest/release-changes.txt"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Timed out waiting for release-changelog artifact." >&2
+          exit 1
       - name: Sign and verify production update package
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
@@ -140,6 +202,7 @@ jobs:
           SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
         run: scripts/sign-release-update.sh
       - uses: actions/upload-artifact@v7.0.2
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           name: macOS-release-${{ matrix.arch }}
           path: dist/release/*
@@ -147,10 +210,32 @@ jobs:
       - name: Remove release signing keychain
         if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: python3 scripts/release-signing-keychain.py cleanup
+      - name: Record SwiftPM cache marker
+        if: success() && steps.build-cache.outputs.cache-hit != 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || steps.build-cache.outputs.cache-matched-key == '')
+        run: python3 scripts/restore-git-mtimes.py --write-marker --marker-file .build/.cached-git-sha
+      - name: Save incremental SwiftPM build cache
+        if: success() && steps.build-cache.outputs.cache-hit != 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || steps.build-cache.outputs.cache-matched-key == '')
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .build/${{ matrix.arch }}-apple-macosx
+            .build/app-${{ matrix.arch }}
+            .build/artifacts
+            .build/checkouts
+            .build/repositories
+            .build/build.db
+            .build/debug.yaml
+            .build/release.yaml
+            .build/plugin-tools.yaml
+            .build/workspace-state.json
+            .build/debug
+            .build/release
+            .build/.cached-git-sha
+          key: ${{ runner.os }}-${{ matrix.arch }}-swift-v2-xcode26.2-${{ hashFiles('Package.resolved', 'Package.swift') }}-${{ github.ref_name }}-${{ github.sha }}
 
   publish:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: build
+    needs: [changelog, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write

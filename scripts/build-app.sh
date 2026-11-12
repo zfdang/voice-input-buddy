@@ -13,7 +13,7 @@ done <<< "$release_metadata"
 : "${RELEASE_TAG:?Release metadata is required}"
 configuration="${CONFIGURATION:-release}"
 source scripts/architecture.sh
-scratch="$root/.build/app-$BUILD_ARCH"
+scratch="${APP_BUILD_SCRATCH_PATH:-$root/.build/app-$BUILD_ARCH}"
 if [[ -d "$scratch/checkouts/Sparkle/.git" ]]; then
     python3 scripts/verify-dependency-checkout.py "$scratch/checkouts/Sparkle"
 fi
