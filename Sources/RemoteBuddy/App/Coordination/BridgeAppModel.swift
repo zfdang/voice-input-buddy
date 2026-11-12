@@ -173,11 +173,30 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
 
     /// Google readiness derives from the shared public Bluetooth bridges.
     var connectedChromecastProfileIDs = Set<UUID>()
+    struct HIDMonitorTargetConfiguration: Equatable {
+        let profileID: UUID
+        let fingerprint: String
+        let model: RemoteModel
+    }
+
+    struct HIDMonitoringConfiguration: Equatable {
+        let customMappingEnabled: Bool
+        let backOnlyMode: Bool
+        let powerKeySuppressed: Bool
+        let allowedLocationIDs: Set<UInt32>?
+        let targets: [HIDMonitorTargetConfiguration]
+        let compatibleHIDIdentities: [RemoteHIDIdentity]
+        let permissionSnapshot: HIDPermissionSnapshot
+    }
+
     var hidPowerKeySuppressed = false
     var hidAllowedLocationIDs: Set<UInt32>?
     var started = false
     var remoteDeviceNameRefreshOperation: UInt64 = 0
     var appliedHIDPermissionSnapshot: HIDPermissionSnapshot?
+    var appliedHIDMonitoringConfiguration: HIDMonitoringConfiguration?
+    var pendingHIDServiceMappingRefresh = false
+    var hidServiceMappingRefreshGeneration: UInt64 = 0
     private var terminationObserver: NSObjectProtocol?
     var completedUpdateHIDRecoveryWorkItem: DispatchWorkItem?
     var hidMappingRecoveryWorkItem: DispatchWorkItem?
@@ -282,6 +301,8 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     func stop() {
         commonPhrases.close(reason: "app_stop")
         preferredInputSourceMonitor.stop()
+        pendingHIDServiceMappingRefresh = false
+        hidServiceMappingRefreshGeneration &+= 1
         guard started else {
             audio.invalidatePendingWork()
             return

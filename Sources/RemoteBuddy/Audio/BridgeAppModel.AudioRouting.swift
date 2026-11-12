@@ -181,7 +181,7 @@ extension BridgeAppModel {
                 )
                 return
             }
-            releaseVirtualAudioOutputIfUnused(reason: "system_\(event.rawValue)")
+            releaseVirtualAudioOutputIfUnused(reason: event.rawValue)
             return
         }
 
@@ -194,7 +194,8 @@ extension BridgeAppModel {
             )
             return
         }
-        resumeVirtualAudioOutputIfNeeded(reason: "system_\(event.rawValue)")
+        resumeVirtualAudioOutputIfNeeded(reason: event.rawValue)
+        flushPendingVoiceToolMappingRefresh()
         completeBluetoothResume(
             event: event,
             reason: event.rawValue

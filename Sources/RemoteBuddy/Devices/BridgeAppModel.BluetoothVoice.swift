@@ -61,15 +61,39 @@ extension BridgeAppModel {
             return
         }
         let profileID = activateRemoteProfile(for: bridge)
-        if settings.voiceKeyMode != .function || settings.voiceFnTapModeEnabled || requiresOrderedVoiceFn {
+        let currentPermissionSnapshot = permissionSnapshotProvider()
+        let neutralizeVoiceKey = shouldNeutralizeNativeVoiceKey
+        let currentServicesMatchDesiredMapping = voiceFunctionMapper
+            .refreshAppliedMappingsValidity(
+                expectedPowerKeySuppression: settings.customMappingEnabled,
+                expectedVoiceKeyNeutralization: neutralizeVoiceKey
+            )
+        if Self.shouldReapplyHIDSettingsBeforeVoiceStart(
+            customMappingEnabled: settings.customMappingEnabled,
+            mode: settings.voiceKeyMode,
+            fnTapModeEnabled: settings.voiceFnTapModeEnabled,
+            requiresOrderedFn: requiresOrderedVoiceFn,
+            hasHardwareVoiceKey: bridge.identifiedModel?.isChromecastRemote != true,
+            hasMatchingHIDServices: voiceFunctionMapper.hasMatchingServices,
+            isVoiceKeyNeutralized: voiceFunctionMapper.isVoiceKeyNeutralized,
+            currentServicesMatchDesiredMapping: currentServicesMatchDesiredMapping,
+            fnTapSessionEnabled: voiceFnTapSession.isEnabled,
+            monitoringInterrupted: hidMonitoringInterrupted,
+            monitoringConfigurationApplied: appliedHIDMonitoringConfiguration != nil,
+            appliedPermissionSnapshot: appliedHIDPermissionSnapshot,
+            currentPermissionSnapshot: currentPermissionSnapshot
+        ) {
             applyHIDSettings(allowVoiceKeyModeFallback: false)
+        } else if !voiceFunctionMapper.hasMatchingServices,
+                  settings.customMappingEnabled || neutralizeVoiceKey {
+            scheduleHIDMappingRecoveryIfNeeded(restartSiriRemote: false)
         }
         guard Self.canStartBluetoothVoice(
             mode: settings.voiceKeyMode,
             voiceFnTapModeEnabled: settings.voiceFnTapModeEnabled,
             isVoiceKeyNeutralized: voiceFunctionMapper.isVoiceKeyNeutralized,
             hasHardwareVoiceKey: bridge.identifiedModel?.isChromecastRemote != true,
-            accessibilityGranted: KeyboardInjector.isAccessibilityTrusted,
+            accessibilityGranted: currentPermissionSnapshot.accessibilityGranted,
             requiresOrderedFn: requiresOrderedVoiceFn
         ) else {
             _ = bridge.requestMicrophoneClose()
@@ -147,7 +171,9 @@ extension BridgeAppModel {
                     "RC003 EXTENSION physical_segment_reopened trace=\(voiceSession.activeBluetoothVoiceTraceID ?? 0)"
                 )
             } else {
-                _ = voiceFnTapSession.startVoice()
+                if voiceFnTapSession.isEnabled {
+                    _ = voiceFnTapSession.startVoice()
+                }
                 beginVoiceSessionIfNeeded()
                 if rc003VoiceExtensionTestEnabled, bridge.identifiedModel?.isChromecastRemote != true {
                     rc003VoiceExtensionActive = true
@@ -529,6 +555,7 @@ extension BridgeAppModel {
                 scheduleHIDMappingRecoveryIfNeeded()
             }
         } else {
+            voiceFunctionMapper.pruneAppliedServices()
             if readyBluetoothBridgeCount == 0 {
                 cancelHIDMappingRecovery(reason: "bluetooth_not_ready")
             }

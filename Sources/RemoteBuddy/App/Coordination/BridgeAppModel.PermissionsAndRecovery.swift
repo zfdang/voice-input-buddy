@@ -23,6 +23,39 @@ extension BridgeAppModel {
         return true
     }
 
+    /// Reapplies HID settings before starting Bluetooth voice only when live-validated
+    /// neutralization or listener state is incomplete, interrupted, or permissions changed.
+    nonisolated static func shouldReapplyHIDSettingsBeforeVoiceStart(
+        customMappingEnabled: Bool,
+        mode: VoiceKeyMode,
+        fnTapModeEnabled: Bool,
+        requiresOrderedFn: Bool,
+        hasHardwareVoiceKey: Bool,
+        hasMatchingHIDServices: Bool,
+        isVoiceKeyNeutralized: Bool,
+        currentServicesMatchDesiredMapping: Bool,
+        fnTapSessionEnabled: Bool,
+        monitoringInterrupted: Bool,
+        monitoringConfigurationApplied: Bool,
+        appliedPermissionSnapshot: HIDPermissionSnapshot?,
+        currentPermissionSnapshot: HIDPermissionSnapshot
+    ) -> Bool {
+        let needsNeutralization = mode != .function || fnTapModeEnabled || requiresOrderedFn
+        guard customMappingEnabled || needsNeutralization else { return false }
+        if monitoringInterrupted || !monitoringConfigurationApplied { return true }
+        if appliedPermissionSnapshot != currentPermissionSnapshot { return true }
+        if !currentServicesMatchDesiredMapping,
+           hasMatchingHIDServices || (hasHardwareVoiceKey && needsNeutralization) {
+            return true
+        }
+        if hasHardwareVoiceKey, needsNeutralization, !isVoiceKeyNeutralized { return true }
+        if fnTapModeEnabled, !requiresOrderedFn, !fnTapSessionEnabled,
+           currentPermissionSnapshot.accessibilityGranted {
+            return true
+        }
+        return false
+    }
+
     nonisolated static func canStartBluetoothVoice(
         mode: VoiceKeyMode,
         voiceFnTapModeEnabled: Bool = false,
@@ -129,7 +162,7 @@ extension BridgeAppModel {
     func recheckRemoteInput() {
         guard started, !isStreaming else { return }
         AppLogger.shared.write("HID USER_RECHECK requested")
-        applyHIDSettings()
+        applyHIDSettings(forceRestartMonitors: true)
         refreshVoiceKeyCompatibilityWarning()
     }
 

@@ -12,13 +12,27 @@ extension BridgeAppModel {
         flushPendingVoiceToolMappingRefresh()
     }
 
+    var canRefreshHIDMappingsNow: Bool {
+        started && !isTerminating && !audio.suspensionState.suspendsHIDMonitoring &&
+            !isStreaming && !voiceSession.isActive && !hasPendingBluetoothVoiceWork &&
+            voiceSession.pendingStart.identifier == nil && !voiceKeyLatch.isHeld &&
+            !voiceKeyActivationInProgress && !voiceFnTapSession.requiresCleanupBeforeMapping
+    }
+
     func flushPendingVoiceToolMappingRefresh(applyMappings: (() -> Void)? = nil) {
-        guard pendingVoiceToolMappingRefresh, started, !isStreaming,
-              !voiceSession.isActive, !hasPendingBluetoothVoiceWork,
-              !voiceKeyLatch.isHeld, !voiceKeyActivationInProgress,
-              !voiceFnTapSession.requiresCleanupBeforeMapping else { return }
-        pendingVoiceToolMappingRefresh = false
-        if let applyMappings { applyMappings() } else { applyHIDSettings() }
+        guard canRefreshHIDMappingsNow else { return }
+        if pendingVoiceToolMappingRefresh {
+            pendingVoiceToolMappingRefresh = false
+            if applyMappings == nil {
+                pendingHIDServiceMappingRefresh = false
+            }
+            if let applyMappings { applyMappings() } else { applyHIDSettings() }
+            if applyMappings != nil {
+                flushPendingHIDServiceMappingRefreshIfNeeded(applyMappings: applyMappings)
+            }
+            return
+        }
+        flushPendingHIDServiceMappingRefreshIfNeeded(applyMappings: applyMappings)
     }
     var requiresOrderedVoiceFn: Bool {
         OrderedVoiceActivationPolicy.needsSoftwareFn(
