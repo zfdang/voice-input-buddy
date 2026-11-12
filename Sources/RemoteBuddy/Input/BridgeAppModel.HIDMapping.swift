@@ -228,6 +228,11 @@ extension BridgeAppModel {
                 self.cancelHIDMappingRecovery(reason: "conditions_changed")
                 return
             }
+            guard self.canRefreshHIDMappingsNow else {
+                // Voice is active or awaiting teardown; defer catch-up until voice becomes idle.
+                self.pendingHIDServiceMappingRefresh = true
+                return
+            }
             AppLogger.shared.write(
                 "HID MAPPING RECOVERY applying attempt=\(attempt) " +
                     "ready_bridges=\(self.readyBluetoothBridgeCount)"
@@ -451,14 +456,20 @@ extension BridgeAppModel {
     func flushPendingHIDServiceMappingRefreshIfNeeded(applyMappings: (() -> Void)? = nil) {
         guard pendingHIDServiceMappingRefresh, canRefreshHIDMappingsNow else { return }
         pendingHIDServiceMappingRefresh = false
-        guard voiceFunctionMapper.needsReapply(
+        let requiresReapply = voiceFunctionMapper.needsReapply(
             suppressPowerKey: settings.customMappingEnabled,
             neutralizeVoiceKey: shouldNeutralizeNativeVoiceKey
-        ) else { return }
-        if let applyMappings {
-            applyMappings()
-        } else {
-            applyHIDSettings(restartSiriRemote: false)
+        )
+        if requiresReapply {
+            if let applyMappings {
+                applyMappings()
+            } else {
+                applyHIDSettings(restartSiriRemote: false)
+            }
+        } else if applyMappings == nil,
+                  !voiceFunctionMapper.hasMatchingServices,
+                  settings.customMappingEnabled || shouldNeutralizeNativeVoiceKey {
+            scheduleHIDMappingRecoveryIfNeeded(restartSiriRemote: false)
         }
     }
 

@@ -453,7 +453,7 @@ struct HIDHotPathIdempotencyTests {
             currentPermissionSnapshot: granted
         ))
 
-        // Hardware-key remote (.leftCommand) must still force reapplication when its HID service has not yet appeared.
+        // Hardware-key remote (.leftCommand) forces reapplication when neutralization is missing even before HID services appear.
         #expect(BridgeAppModel.shouldReapplyHIDSettingsBeforeVoiceStart(
             customMappingEnabled: true,
             mode: .leftCommand,
@@ -961,7 +961,7 @@ struct HIDHotPathIdempotencyTests {
         #expect(harness.settings.voiceFnTapModeEnabled)
         #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
 
-        // HID service disappearance invalidates neutralization so hardware remotes wait for re-neutralization,
+        // HID service disappearance resets all applied flags so hardware remotes wait for re-neutralization,
         // without discarding the user's Fn-tap preference.
         counters.hasMatchingHIDServices = false
         let writesBeforeJitter = counters.setMappingsCount
@@ -969,6 +969,9 @@ struct HIDHotPathIdempotencyTests {
             expectedPowerKeySuppression: true,
             expectedVoiceKeyNeutralization: true
         ))
+        #expect(!model.voiceFunctionMapper.isApplied)
+        #expect(!model.voiceFunctionMapper.isPowerKeySuppressed)
+        #expect(model.voiceFunctionMapper.powerSuppressedLocationIDs == nil)
         #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
         #expect(harness.settings.voiceFnTapModeEnabled)
         #expect(counters.setMappingsCount == writesBeforeJitter)
@@ -981,15 +984,17 @@ struct HIDHotPathIdempotencyTests {
         #expect(harness.settings.voiceFnTapModeEnabled)
         #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
 
-        // Returning service sees cleared appliedConfiguration and forces reapply on voice start.
+        // Returning service sees cleared appliedConfiguration and reapplies once; subsequent voice press reuses it.
         counters.hasMatchingHIDServices = true
         counters.hidMappings = []
         counters.recordedWrites.removeAll()
         harness.startAndVerifyVoice()
-        #expect(counters.setMappingsCount > writesBeforeJitter)
+        #expect(counters.setMappingsCount == writesBeforeJitter + 1)
         #expect(counters.recordedWrites.last?.mappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey) == true)
         #expect(harness.settings.voiceFnTapModeEnabled)
         #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
+        harness.startAndVerifyVoice()
+        #expect(counters.setMappingsCount == writesBeforeJitter + 1)
 
         // If a returning service fails to write during voice start (`allowVoiceKeyModeFallback: false`),
         // Fn-tap mode preference is still preserved rather than flipped to false.
@@ -1001,6 +1006,55 @@ struct HIDHotPathIdempotencyTests {
         harness.endVoiceSession()
         #expect(harness.settings.voiceFnTapModeEnabled)
         #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
+    }
+
+    @Test func refreshValidityDiscriminatesUnneutralizedEmptyServicesAndResetsAllStateOnDivergence() throws {
+        let harness = try makeHarness(
+            customMappingEnabled: true,
+            voiceKeyMode: .leftCommand,
+            voiceTool: .unselected,
+            hasMatchingHIDServices: true
+        )
+        defer { harness.cleanup() }
+        let mapper = harness.model.voiceFunctionMapper
+        let counters = harness.counters
+
+        // Switch to power-suppression-only apply so isVoiceKeyNeutralized == false while services stay non-empty.
+        #expect(mapper.apply(suppressPowerKey: true, neutralizeVoiceKey: false))
+        #expect(!mapper.isVoiceKeyNeutralized)
+        #expect(mapper.isPowerKeySuppressed)
+        #expect(mapper.powerSuppressedLocationIDs == Set([9]))
+
+        // Discriminating case: empty services + isVoiceKeyNeutralized == false when neutralization is expected
+        // MUST return false and clear all applied flags (old code returned services.isEmpty == true).
+        counters.hasMatchingHIDServices = false
+        #expect(!mapper.refreshAppliedMappingsValidity(
+            expectedPowerKeySuppression: true,
+            expectedVoiceKeyNeutralization: true
+        ))
+        #expect(!mapper.hasMatchingServices)
+        #expect(!mapper.isApplied)
+        #expect(!mapper.isPowerKeySuppressed)
+        #expect(mapper.powerSuppressedLocationIDs == nil)
+        #expect(!mapper.isVoiceKeyNeutralized)
+
+        // Divergence (.needsReapply) without voice neutralization also resets power-key suppression flags.
+        counters.hasMatchingHIDServices = true
+        counters.hidMappings = []
+        #expect(mapper.apply(suppressPowerKey: true, neutralizeVoiceKey: false))
+        #expect(mapper.isApplied)
+        #expect(mapper.isPowerKeySuppressed)
+        #expect(mapper.powerSuppressedLocationIDs == Set([9]))
+
+        counters.hidMappings = []
+        #expect(!mapper.refreshAppliedMappingsValidity(
+            expectedPowerKeySuppression: true,
+            expectedVoiceKeyNeutralization: false
+        ))
+        #expect(!mapper.isApplied)
+        #expect(!mapper.isPowerKeySuppressed)
+        #expect(mapper.powerSuppressedLocationIDs == nil)
+        #expect(!mapper.isVoiceKeyNeutralized)
     }
 
     @Test func hardwareRemoteRejectsBluetoothVoiceBeforeReconnectedHIDServiceAppearsWhilePreservingPreference() throws {
@@ -1021,18 +1075,24 @@ struct HIDHotPathIdempotencyTests {
         counters.hasMatchingHIDServices = false
         model.bluetoothBridgeDidStartVoice(harness.bridge)
         #expect(!model.voiceSession.isActive)
+        #expect(!model.voiceFunctionMapper.isApplied)
+        #expect(!model.voiceFunctionMapper.isPowerKeySuppressed)
         #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
         #expect(harness.settings.voiceKeyMode == .leftCommand)
         harness.endVoiceSession()
 
-        // Once the reconnected HID service arrives, voice start re-neutralizes it and activates.
+        // Once the reconnected HID service arrives, voice start re-neutralizes it once and reuses on repeat.
         counters.hasMatchingHIDServices = true
         counters.hidMappings = []
         counters.recordedWrites.removeAll()
+        let writesBeforeReconnect = counters.setMappingsCount
         harness.startAndVerifyVoice()
+        #expect(counters.setMappingsCount == writesBeforeReconnect + 1)
         #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
         #expect(counters.recordedWrites.last?.mappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey) == true)
         #expect(harness.settings.voiceKeyMode == .leftCommand)
+        harness.startAndVerifyVoice()
+        #expect(counters.setMappingsCount == writesBeforeReconnect + 1)
     }
 
     @Test func pruneAppliedServicesShrinksIntersectionSoReturningServiceMustReapply() throws {
@@ -1048,19 +1108,27 @@ struct HIDHotPathIdempotencyTests {
         let counters = harness.counters
 
         #expect(!model.voiceFunctionMapper.needsReapply(suppressPowerKey: true, neutralizeVoiceKey: true))
+        #expect(model.voiceFunctionMapper.powerSuppressedLocationIDs == Set([9, 10]))
 
-        // Drop primary (123) while keeping secondary (202), then prune.
+        // Drop primary (123, location 9) while keeping secondary (202, location 10), then prune.
         counters.hasMatchingHIDServices = false
         model.voiceFunctionMapper.pruneAppliedServices()
         #expect(!model.voiceFunctionMapper.needsReapply(suppressPowerKey: true, neutralizeVoiceKey: true))
         #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
+        #expect(model.voiceFunctionMapper.powerSuppressedLocationIDs == Set([10]))
 
-        // Dropping the last remaining service clears neutralization so a reconnected hardware remote must re-apply.
+        // Dropping the last remaining service clears all applied state (`needsReapply` is false until a service returns).
         counters.secondaryService.enabled = false
         model.voiceFunctionMapper.pruneAppliedServices()
         #expect(!model.voiceFunctionMapper.hasMatchingServices)
+        #expect(!model.voiceFunctionMapper.isApplied)
+        #expect(!model.voiceFunctionMapper.isPowerKeySuppressed)
+        #expect(model.voiceFunctionMapper.powerSuppressedLocationIDs == nil)
         #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
-        #expect(!model.voiceFunctionMapper.needsReapply(suppressPowerKey: true, neutralizeVoiceKey: true))
+        #expect(!model.voiceFunctionMapper.refreshAppliedMappingsValidity(
+            expectedPowerKeySuppression: true,
+            expectedVoiceKeyNeutralization: true
+        ))
 
         // Reconnecting the pruned primary service (123) forces reapplication.
         counters.secondaryService.enabled = true
@@ -1071,6 +1139,15 @@ struct HIDHotPathIdempotencyTests {
             expectedPowerKeySuppression: true,
             expectedVoiceKeyNeutralization: true
         ))
+        #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
+
+        // When appliedConfiguration is nil (e.g. duplicate registryID), pruneAppliedServices still clears stale flags.
+        counters.secondaryService.registryID = counters.primaryRegistryID
+        #expect(model.voiceFunctionMapper.apply(suppressPowerKey: true, neutralizeVoiceKey: true))
+        #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
+        model.voiceFunctionMapper.pruneAppliedServices()
+        #expect(!model.voiceFunctionMapper.isApplied)
+        #expect(!model.voiceFunctionMapper.isPowerKeySuppressed)
         #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
     }
 
@@ -1141,7 +1218,7 @@ struct HIDHotPathIdempotencyTests {
             expectedVoiceKeyNeutralization: false
         ))
 
-        // 3. Duplicate registryID across two services leaves appliedConfiguration nil -> needsReapply stays true.
+        // 3. Duplicate registryID across two services leaves appliedConfiguration nil -> every consecutive voice start reapplies.
         counters.secondaryService.enabled = true
         counters.secondaryService.registryID = counters.primaryRegistryID
         #expect(mapper.apply(suppressPowerKey: true, neutralizeVoiceKey: false))
@@ -1150,6 +1227,23 @@ struct HIDHotPathIdempotencyTests {
             expectedPowerKeySuppression: true,
             expectedVoiceKeyNeutralization: false
         ))
+
+        harness.settings.customMappingEnabled = true
+        harness.settings.voiceKeyMode = .function
+        harness.model.applyHIDSettings()
+        let writesBeforeConsecutiveDuplicateVoice = counters.setMappingsCount
+        harness.startAndVerifyVoice()
+        #expect(counters.setMappingsCount == writesBeforeConsecutiveDuplicateVoice + 2)
+        harness.startAndVerifyVoice()
+        #expect(counters.setMappingsCount == writesBeforeConsecutiveDuplicateVoice + 4)
+
+        // Restoring distinct registryIDs restores steady-state reuse across consecutive voice starts.
+        counters.secondaryService.registryID = 202
+        harness.model.applyHIDSettings()
+        let writesBeforeUniqueReuse = counters.setMappingsCount
+        harness.startAndVerifyVoice()
+        harness.startAndVerifyVoice()
+        #expect(counters.setMappingsCount == writesBeforeUniqueReuse)
 
         // 4. nil registryID without voice neutralization skips unidentifiable service without caching appliedConfiguration.
         counters.secondaryService.enabled = false
@@ -1171,7 +1265,6 @@ struct HIDHotPathIdempotencyTests {
         let counters = harness.counters
 
         #expect(counters.hidMappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey))
-        #expect(counters.secondaryService.mappings.isEmpty)
 
         let monitor = try #require(model.hidMonitors["test-remote"])
         let profileID = try #require(harness.settings.selectedRemoteProfileID)
@@ -1195,7 +1288,7 @@ struct HIDHotPathIdempotencyTests {
         #expect(counters.secondaryService.mappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey))
         #expect(model.hidAllowedLocationIDs == Set([9, 10]))
 
-        // Coalesces multiple rapid triggers while idle into a single async refresh pass.
+        // Coalesces multiple rapid triggers while idle into a single async refresh pass (1 needsReapply + 1 apply).
         counters.secondaryService.mappings = []
         let callsBeforeRefresh = counters.serviceProviderCallCount
         let writesBeforeRefresh = counters.setMappingsCount
@@ -1207,17 +1300,11 @@ struct HIDHotPathIdempotencyTests {
         await withCheckedContinuation { continuation in
             DispatchQueue.main.async { continuation.resume() }
         }
-        if model.pendingHIDServiceMappingRefresh {
-            await withCheckedContinuation { continuation in
-                DispatchQueue.main.async { continuation.resume() }
-            }
-        }
 
         #expect(!model.pendingHIDServiceMappingRefresh)
         #expect(counters.secondaryService.mappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey))
         #expect(counters.secondaryService.mappings.contains(RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey))
-        #expect(counters.serviceProviderCallCount >= callsBeforeRefresh + 2)
-        #expect(counters.serviceProviderCallCount <= callsBeforeRefresh + 3)
+        #expect(counters.serviceProviderCallCount == callsBeforeRefresh + 2)
         #expect(counters.setMappingsCount == writesBeforeRefresh + 2)
 
         // Sleeping retains deferred refresh flag and flushes once wake clears suspension.
@@ -1229,8 +1316,8 @@ struct HIDHotPathIdempotencyTests {
         #expect(!model.pendingHIDServiceMappingRefresh)
         #expect(counters.secondaryService.mappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey))
 
-        // stop() -> started = true invalidates stale queued async refresh via generation bump.
-        // Note: stop() runs voiceFunctionMapper.restore(), so sample writesAfterStop right after stop().
+        // stop() generation bump invalidates queued async closures even if started and pendingHIDServiceMappingRefresh
+        // are re-armed before the stale main-queue closure runs.
         counters.secondaryService.mappings = []
         monitor.onCandidateAvailable?()
         #expect(model.pendingHIDServiceMappingRefresh)
@@ -1238,15 +1325,77 @@ struct HIDHotPathIdempotencyTests {
         #expect(!model.pendingHIDServiceMappingRefresh)
         let writesAfterStop = counters.setMappingsCount
         model.started = true
+        model.pendingHIDServiceMappingRefresh = true
         await withCheckedContinuation { continuation in
             DispatchQueue.main.async { continuation.resume() }
         }
         #expect(counters.setMappingsCount == writesAfterStop)
+        #expect(model.pendingHIDServiceMappingRefresh)
         #expect(counters.secondaryService.mappings.isEmpty)
+        model.pendingHIDServiceMappingRefresh = false
 
         // prepareForTermination() blocks further queueing.
         model.prepareForTermination()
         monitor.onCandidateAvailable?()
         #expect(!model.pendingHIDServiceMappingRefresh)
+    }
+
+    @Test func dualPendingFlagsCoalesceAndEmptyServiceRefreshSchedulesRecovery() async throws {
+        let harness = try makeHarness(
+            customMappingEnabled: true,
+            voiceKeyMode: .function,
+            voiceTool: .unselected,
+            hasMatchingHIDServices: true,
+            secondaryServiceEnabled: false
+        )
+        defer { harness.cleanup() }
+        let model = harness.model
+        let counters = harness.counters
+        let monitor = try #require(model.hidMonitors["test-remote"])
+
+        // 1. Both pendingVoiceToolMappingRefresh and pendingHIDServiceMappingRefresh set while streaming
+        // coalesce into a single applyHIDSettings() pass on endVoiceSessionIfNeeded.
+        model.beginVoiceSessionIfNeeded()
+        counters.secondaryService.enabled = true
+        counters.secondaryService.mappings = []
+        let writesBeforeVoiceEnd = counters.setMappingsCount
+        let probesBeforeVoiceEnd = counters.serviceProviderCallCount
+        model.voiceToolDidChange()
+        monitor.onCandidateAvailable?()
+        #expect(model.pendingVoiceToolMappingRefresh)
+        #expect(model.pendingHIDServiceMappingRefresh)
+        #expect(counters.setMappingsCount == writesBeforeVoiceEnd)
+
+        model.endVoiceSessionIfNeeded(flushAudio: false)
+        #expect(!model.pendingVoiceToolMappingRefresh)
+        #expect(!model.pendingHIDServiceMappingRefresh)
+        #expect(counters.serviceProviderCallCount == probesBeforeVoiceEnd + 1)
+        #expect(counters.setMappingsCount == writesBeforeVoiceEnd + 2)
+        #expect(counters.secondaryService.mappings.contains(RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey))
+
+        // 2. When flush sees .noServices while custom mapping is enabled, it schedules active recovery instead of dropping silently.
+        counters.hasMatchingHIDServices = false
+        counters.secondaryService.enabled = false
+        model.cancelHIDMappingRecovery(reason: "reset_before_no_services_flush")
+        #expect(model.hidMappingRecoveryWorkItem == nil)
+        monitor.onCandidateAvailable?()
+        #expect(model.pendingHIDServiceMappingRefresh)
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+        #expect(!model.pendingHIDServiceMappingRefresh)
+        #expect(model.hidMappingRecoveryWorkItem != nil)
+        #expect(model.hidMappingRecoveryAttempt == 1)
+        model.cancelHIDMappingRecovery(reason: "test_step")
+
+        // 3. Pure .function + customMappingEnabled with empty HID services skips immediate applyHIDSettings
+        // on voice start yet still schedules active HID mapping recovery for non-Chromecast profiles.
+        #expect(model.voiceFunctionMapper.refreshAppliedMappingsValidity(
+            expectedPowerKeySuppression: true,
+            expectedVoiceKeyNeutralization: false
+        ) == false)
+        harness.startAndVerifyVoice()
+        #expect(model.hidMappingRecoveryWorkItem != nil)
+        #expect(model.hidMappingRecoveryAttempt == 1)
     }
 }

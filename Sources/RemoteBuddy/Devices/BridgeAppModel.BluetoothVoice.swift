@@ -84,6 +84,9 @@ extension BridgeAppModel {
             currentPermissionSnapshot: currentPermissionSnapshot
         ) {
             applyHIDSettings(allowVoiceKeyModeFallback: false)
+        } else if !voiceFunctionMapper.hasMatchingServices,
+                  settings.customMappingEnabled || neutralizeVoiceKey {
+            scheduleHIDMappingRecoveryIfNeeded(restartSiriRemote: false)
         }
         guard Self.canStartBluetoothVoice(
             mode: settings.voiceKeyMode,

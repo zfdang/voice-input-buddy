@@ -208,7 +208,7 @@ final class RemoteHIDKeyMapper {
         let services = matchingServices()
         matchedServiceCount = services.count
         if expectedVoiceKeyNeutralization, !isVoiceKeyNeutralized {
-            appliedConfiguration = nil
+            resetAppliedState()
             return false
         }
         switch evaluateAppliedServices(
@@ -218,18 +218,10 @@ final class RemoteHIDKeyMapper {
         ) {
         case .upToDate:
             return true
-        case .noServices:
-            // Never retain stale neutralization across an empty service list: clear both
-            // applied state and `isVoiceKeyNeutralized` so hardware-key remotes cannot
-            // accept software voice before reconnecting HID services are neutralized.
-            appliedConfiguration = nil
-            isVoiceKeyNeutralized = false
-            return false
-        case .needsReapply:
-            appliedConfiguration = nil
-            if expectedVoiceKeyNeutralization {
-                isVoiceKeyNeutralized = false
-            }
+        case .noServices, .needsReapply:
+            // Reset all applied flags (isApplied, power-key suppression, neutralization,
+            // and cached service IDs) whenever no services remain or live mappings diverge.
+            resetAppliedState()
             return false
         }
     }
@@ -247,16 +239,23 @@ final class RemoteHIDKeyMapper {
 
     /// Removes vanished HID services from cached applied state when a Bluetooth bridge leaves `.ready`.
     func pruneAppliedServices() {
-        guard var applied = appliedConfiguration else { return }
         let services = matchingServices()
         matchedServiceCount = services.count
+        guard !services.isEmpty, var applied = appliedConfiguration else {
+            resetAppliedState()
+            return
+        }
         let liveIDs = Set(services.compactMap(\.registryID))
         applied.serviceRegistryIDs.formIntersection(liveIDs)
         if applied.serviceRegistryIDs.isEmpty {
-            appliedConfiguration = nil
-            isVoiceKeyNeutralized = false
+            resetAppliedState()
         } else {
             appliedConfiguration = applied
+            if let suppressedLocations = powerSuppressedLocationIDs {
+                let liveLocations = suppressedLocations.intersection(services.compactMap(\.locationID))
+                powerSuppressedLocationIDs = liveLocations.isEmpty ? nil : liveLocations
+                isPowerKeySuppressed = powerSuppressedLocationIDs != nil
+            }
         }
     }
 
