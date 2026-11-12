@@ -52,6 +52,22 @@ enum RemoteHIDKeyMappingPolicy {
         source: 0x0000_0007_0000_0066,
         destination: 0x0000_0007_0000_006F
     )
+    /// Neutralize T1-Remote Consumer AC Search (0x0221) so Voice press never opens Spotlight.
+    static let neutralT1VoiceSearchKey = HIDUsageMapping(
+        source: 0x000C_0000_0221,
+        destination: 0x0
+    )
+    /// Neutralize T1-Remote reserved keyboard hold usage (0xAA) sent while Voice stays held.
+    static let neutralT1VoiceHoldKey = HIDUsageMapping(
+        source: 0x0007_0000_00AA,
+        destination: 0x0
+    )
+    /// Remap T1-Remote System Power Down (Page 0x01, Usage 0x81) to F20 so pressing Power
+    /// never triggers macOS display sleep while custom mapping is enabled.
+    static let suppressedT1PowerKey = HIDUsageMapping(
+        source: 0x0001_0000_0081,
+        destination: 0x0007_0000_006F
+    )
 
     static func applying(
         to existing: [HIDUsageMapping],
@@ -62,6 +78,21 @@ enum RemoteHIDKeyMappingPolicy {
             $0.source != remoteVoiceKey.source &&
                 $0.source != suppressedRemotePowerKey.source
         } + [voiceMapping]
+        if let powerMapping {
+            desired.append(powerMapping)
+        }
+        return desired
+    }
+
+    static func applyingT1(
+        to existing: [HIDUsageMapping],
+        powerMapping: HIDUsageMapping? = nil
+    ) -> [HIDUsageMapping] {
+        var desired = existing.filter {
+            $0.source != neutralT1VoiceSearchKey.source &&
+                $0.source != neutralT1VoiceHoldKey.source &&
+                $0.source != suppressedT1PowerKey.source
+        } + [neutralT1VoiceSearchKey, neutralT1VoiceHoldKey]
         if let powerMapping {
             desired.append(powerMapping)
         }
@@ -84,11 +115,37 @@ enum RemoteHIDKeyMappingPolicy {
         if restorePower, let originalPowerMapping { restored.append(originalPowerMapping) }
         return restored
     }
+
+    static func restoringT1(
+        originalSearchMapping: HIDUsageMapping?,
+        originalHoldMapping: HIDUsageMapping?,
+        originalPowerMapping: HIDUsageMapping?,
+        in current: [HIDUsageMapping]
+    ) -> [HIDUsageMapping] {
+        let restoreSearch = current.first { $0.source == neutralT1VoiceSearchKey.source } == neutralT1VoiceSearchKey
+        let restoreHold = current.first { $0.source == neutralT1VoiceHoldKey.source } == neutralT1VoiceHoldKey
+        let restorePower = current.first { $0.source == suppressedT1PowerKey.source } == suppressedT1PowerKey
+        var restored = current.filter {
+            !(restoreSearch && $0.source == neutralT1VoiceSearchKey.source) &&
+                !(restoreHold && $0.source == neutralT1VoiceHoldKey.source) &&
+                !(restorePower && $0.source == suppressedT1PowerKey.source)
+        }
+        if restoreSearch, let originalSearchMapping { restored.append(originalSearchMapping) }
+        if restoreHold, let originalHoldMapping { restored.append(originalHoldMapping) }
+        if restorePower, let originalPowerMapping { restored.append(originalPowerMapping) }
+        return restored
+    }
+}
+
+enum RemoteHIDMappingFamily: String, Codable, Equatable {
+    case xiaomi
+    case t1Remote = "t1_remote"
 }
 
 struct RemoteHIDMappingService {
     let registryID: UInt64?
     let locationID: UInt32?
+    let family: RemoteHIDMappingFamily
     private let retainedOwner: AnyObject?
     let readMappings: () -> [HIDUsageMapping]
     let setMappings: ([HIDUsageMapping]) -> Bool
@@ -96,12 +153,14 @@ struct RemoteHIDMappingService {
     init(
         registryID: UInt64?,
         locationID: UInt32? = nil,
+        family: RemoteHIDMappingFamily = .xiaomi,
         retainedOwner: AnyObject? = nil,
         readMappings: @escaping () -> [HIDUsageMapping],
         setMappings: @escaping ([HIDUsageMapping]) -> Bool
     ) {
         self.registryID = registryID
         self.locationID = locationID
+        self.family = family
         self.retainedOwner = retainedOwner
         self.readMappings = readMappings
         self.setMappings = setMappings
@@ -116,6 +175,26 @@ final class RemoteHIDKeyMapper {
     private struct OriginalMappings: Codable {
         let voice: HIDUsageMapping?
         let power: HIDUsageMapping?
+        let family: RemoteHIDMappingFamily?
+        let t1Search: HIDUsageMapping?
+        let t1Hold: HIDUsageMapping?
+        let t1Power: HIDUsageMapping?
+
+        init(
+            voice: HIDUsageMapping? = nil,
+            power: HIDUsageMapping? = nil,
+            family: RemoteHIDMappingFamily? = nil,
+            t1Search: HIDUsageMapping? = nil,
+            t1Hold: HIDUsageMapping? = nil,
+            t1Power: HIDUsageMapping? = nil
+        ) {
+            self.voice = voice
+            self.power = power
+            self.family = family
+            self.t1Search = t1Search
+            self.t1Hold = t1Hold
+            self.t1Power = t1Power
+        }
     }
 
     private struct RecoveryJournal: Codable {
@@ -131,6 +210,11 @@ final class RemoteHIDKeyMapper {
         willSet {
             // Restore while the old identity list can still find its services.
             if newValue != additionalIdentities { restore() }
+        }
+    }
+    var t1Identities = Set<RemoteHIDIdentity>() {
+        willSet {
+            if newValue != t1Identities { restore() }
         }
     }
     private struct AppliedConfiguration: Equatable {
@@ -158,7 +242,10 @@ final class RemoteHIDKeyMapper {
     }
 
     private func matchingServices() -> [RemoteHIDMappingService] {
-        serviceProvider?() ?? Self.systemServices(additionalIdentities: additionalIdentities)
+        serviceProvider?() ?? Self.systemServices(
+            additionalIdentities: additionalIdentities,
+            t1Identities: t1Identities
+        )
     }
 
     private func evaluateAppliedServices(
@@ -182,10 +269,21 @@ final class RemoteHIDKeyMapper {
                   applied.serviceRegistryIDs.contains(registryID)
             else { return .needsReapply }
             let mappings = service.readMappings()
-            guard mappings.contains(expectedVoiceMapping) else { return .needsReapply }
-            if suppressPowerKey,
-               !mappings.contains(RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey) {
-                return .needsReapply
+            switch service.family {
+            case .xiaomi:
+                guard mappings.contains(expectedVoiceMapping) else { return .needsReapply }
+                if suppressPowerKey,
+                   !mappings.contains(RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey) {
+                    return .needsReapply
+                }
+            case .t1Remote:
+                guard mappings.contains(RemoteHIDKeyMappingPolicy.neutralT1VoiceSearchKey),
+                      mappings.contains(RemoteHIDKeyMappingPolicy.neutralT1VoiceHoldKey)
+                else { return .needsReapply }
+                if suppressPowerKey,
+                   !mappings.contains(RemoteHIDKeyMappingPolicy.suppressedT1PowerKey) {
+                    return .needsReapply
+                }
             }
             liveRegistryIDs.insert(registryID)
         }
@@ -365,21 +463,44 @@ final class RemoteHIDKeyMapper {
             let current = service.readMappings()
             snapshots[index] = current
             if originalMappings[registryID] == nil {
-                let currentPower = current.first {
-                    $0.source == RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey.source
+                switch service.family {
+                case .xiaomi:
+                    let currentPower = current.first {
+                        $0.source == RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey.source
+                    }
+                    let currentVoice = current.first {
+                        $0.source == RemoteHIDKeyMappingPolicy.remoteVoiceKey.source
+                    }
+                    // Recover older unjournaled sessions without saving our own output as input.
+                    originalMappings[registryID] = OriginalMappings(
+                        voice: [RemoteHIDKeyMappingPolicy.remoteVoiceKey,
+                                RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey].contains(currentVoice)
+                            ? nil : currentVoice,
+                        power: currentPower == RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey
+                            ? nil
+                            : currentPower,
+                        family: .xiaomi
+                    )
+                case .t1Remote:
+                    let currentSearch = current.first {
+                        $0.source == RemoteHIDKeyMappingPolicy.neutralT1VoiceSearchKey.source
+                    }
+                    let currentHold = current.first {
+                        $0.source == RemoteHIDKeyMappingPolicy.neutralT1VoiceHoldKey.source
+                    }
+                    let currentPower = current.first {
+                        $0.source == RemoteHIDKeyMappingPolicy.suppressedT1PowerKey.source
+                    }
+                    originalMappings[registryID] = OriginalMappings(
+                        family: .t1Remote,
+                        t1Search: currentSearch == RemoteHIDKeyMappingPolicy.neutralT1VoiceSearchKey
+                            ? nil : currentSearch,
+                        t1Hold: currentHold == RemoteHIDKeyMappingPolicy.neutralT1VoiceHoldKey
+                            ? nil : currentHold,
+                        t1Power: currentPower == RemoteHIDKeyMappingPolicy.suppressedT1PowerKey
+                            ? nil : currentPower
+                    )
                 }
-                let currentVoice = current.first {
-                    $0.source == RemoteHIDKeyMappingPolicy.remoteVoiceKey.source
-                }
-                // Recover older unjournaled sessions without saving our own output as input.
-                originalMappings[registryID] = OriginalMappings(
-                    voice: [RemoteHIDKeyMappingPolicy.remoteVoiceKey,
-                            RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey].contains(currentVoice)
-                        ? nil : currentVoice,
-                    power: currentPower == RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey
-                        ? nil
-                        : currentPower
-                )
                 newlyStoredRegistryIDs.insert(registryID)
             }
         }
@@ -391,7 +512,7 @@ final class RemoteHIDKeyMapper {
 
         for (index, service) in services.enumerated() {
             guard let registryID = service.registryID else {
-                if neutralizeVoiceKey {
+                if neutralizeVoiceKey, service.family == .xiaomi {
                     rollback(
                         services: services,
                         snapshots: snapshots,
@@ -404,17 +525,28 @@ final class RemoteHIDKeyMapper {
                 continue
             }
             let current = snapshots[index] ?? service.readMappings()
-            let desired = RemoteHIDKeyMappingPolicy.applying(
-                to: current,
-                voiceMapping: neutralizeVoiceKey
-                    ? RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey
-                    : RemoteHIDKeyMappingPolicy.remoteVoiceKey,
-                powerMapping: suppressPowerKey
-                    ? RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey
-                    : originalMappings[registryID]?.power
-            )
+            let desired: [HIDUsageMapping]
+            switch service.family {
+            case .xiaomi:
+                desired = RemoteHIDKeyMappingPolicy.applying(
+                    to: current,
+                    voiceMapping: neutralizeVoiceKey
+                        ? RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey
+                        : RemoteHIDKeyMappingPolicy.remoteVoiceKey,
+                    powerMapping: suppressPowerKey
+                        ? RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey
+                        : originalMappings[registryID]?.power
+                )
+            case .t1Remote:
+                desired = RemoteHIDKeyMappingPolicy.applyingT1(
+                    to: current,
+                    powerMapping: suppressPowerKey
+                        ? RemoteHIDKeyMappingPolicy.suppressedT1PowerKey
+                        : originalMappings[registryID]?.t1Power
+                )
+            }
             guard service.setMappings(desired) else {
-                if neutralizeVoiceKey {
+                if neutralizeVoiceKey, service.family == .xiaomi {
                     rollback(
                         services: services,
                         snapshots: snapshots,
@@ -434,6 +566,16 @@ final class RemoteHIDKeyMapper {
 
         let appliedCount = appliedIndices.count
         let allTargetsApplied = appliedCount == matchedCount
+        let xiaomiServicesCount = services.filter { $0.family == .xiaomi }.count
+        let appliedXiaomiCount = appliedIndices.filter { services[$0].family == .xiaomi }.count
+        let allXiaomiApplied = xiaomiServicesCount > 0 && appliedXiaomiCount == xiaomiServicesCount
+        let t1ServicesCount = services.filter { $0.family == .t1Remote }.count
+        let appliedT1Count = appliedIndices.filter { services[$0].family == .t1Remote }.count
+        let allT1Applied = t1ServicesCount > 0 && appliedT1Count == t1ServicesCount
+        let hasNeutralizableServices = (xiaomiServicesCount + t1ServicesCount) > 0
+        let allNeutralized = hasNeutralizableServices &&
+            (xiaomiServicesCount == 0 || allXiaomiApplied) &&
+            (t1ServicesCount == 0 || allT1Applied)
         let fullySuppressedLocations = Set(matchedCountsByLocation.compactMap { locationID, count in
             appliedCountsByLocation[locationID] == count ? locationID : nil
         })
@@ -447,8 +589,8 @@ final class RemoteHIDKeyMapper {
         } else {
             appliedConfiguration = nil
         }
-        isApplied = neutralizeVoiceKey ? allTargetsApplied : appliedCount > 0
-        isVoiceKeyNeutralized = neutralizeVoiceKey && allTargetsApplied
+        isApplied = (neutralizeVoiceKey && xiaomiServicesCount > 0) ? allXiaomiApplied && allTargetsApplied : appliedCount > 0
+        isVoiceKeyNeutralized = neutralizeVoiceKey && allNeutralized
         if suppressPowerKey, !fullySuppressedLocations.isEmpty {
             isPowerKeySuppressed = true
             powerSuppressedLocationIDs = fullySuppressedLocations
@@ -479,11 +621,22 @@ final class RemoteHIDKeyMapper {
             guard let registryID = service.registryID,
                   let original = originalMappings[registryID]
             else { continue }
-            let restored = RemoteHIDKeyMappingPolicy.restoring(
-                originalVoiceMapping: original.voice,
-                originalPowerMapping: original.power,
-                in: service.readMappings()
-            )
+            let restored: [HIDUsageMapping]
+            switch original.family ?? service.family {
+            case .xiaomi:
+                restored = RemoteHIDKeyMappingPolicy.restoring(
+                    originalVoiceMapping: original.voice,
+                    originalPowerMapping: original.power,
+                    in: service.readMappings()
+                )
+            case .t1Remote:
+                restored = RemoteHIDKeyMappingPolicy.restoringT1(
+                    originalSearchMapping: original.t1Search,
+                    originalHoldMapping: original.t1Hold,
+                    originalPowerMapping: original.t1Power,
+                    in: service.readMappings()
+                )
+            }
             if service.setMappings(restored) {
                 restoredCount += 1
                 originalMappings.removeValue(forKey: registryID)
@@ -532,13 +685,22 @@ final class RemoteHIDKeyMapper {
         isVoiceKeyNeutralized = false
     }
 
-    private static func systemServices(additionalIdentities: Set<RemoteHIDIdentity>) -> [RemoteHIDMappingService] {
+    private static func systemServices(
+        additionalIdentities: Set<RemoteHIDIdentity>,
+        t1Identities: Set<RemoteHIDIdentity>
+    ) -> [RemoteHIDMappingService] {
         let client = IOHIDEventSystemClientCreateSimpleClient(kCFAllocatorDefault)
         let services = IOHIDEventSystemClientCopyServices(client) as? [IOHIDServiceClient] ?? []
-        return services.filter { isTarget($0, additionalIdentities: additionalIdentities) }.map { service in
-            RemoteHIDMappingService(
+        return services.compactMap { service in
+            guard let family = targetFamily(
+                service,
+                additionalIdentities: additionalIdentities,
+                t1Identities: t1Identities
+            ) else { return nil }
+            return RemoteHIDMappingService(
                 registryID: registryID(service),
                 locationID: locationID(service),
+                family: family,
                 retainedOwner: client,
                 readMappings: { readMappings(service) },
                 setMappings: { mappings in
@@ -552,7 +714,11 @@ final class RemoteHIDKeyMapper {
         }
     }
 
-    private static func isTarget(_ service: IOHIDServiceClient, additionalIdentities: Set<RemoteHIDIdentity>) -> Bool {
+    private static func targetFamily(
+        _ service: IOHIDServiceClient,
+        additionalIdentities: Set<RemoteHIDIdentity>,
+        t1Identities: Set<RemoteHIDIdentity>
+    ) -> RemoteHIDMappingFamily? {
         let vendor = IOHIDServiceClientCopyProperty(
             service,
             kIOHIDVendorIDKey as CFString
@@ -562,9 +728,15 @@ final class RemoteHIDKeyMapper {
             kIOHIDProductIDKey as CFString
         ) as? NSNumber
         guard let vendor, let product,
-              (1...65535).contains(vendor.intValue), (0...65535).contains(product.intValue) else { return false }
+              (1...65535).contains(vendor.intValue), (0...65535).contains(product.intValue) else { return nil }
         let identity = RemoteHIDIdentity(vendorID: UInt16(vendor.intValue), productID: UInt16(product.intValue))
-        return identity == .xiaomi || additionalIdentities.contains(identity)
+        if identity == .t1Remote || t1Identities.contains(identity) {
+            return .t1Remote
+        }
+        if identity == .xiaomi || additionalIdentities.contains(identity) {
+            return .xiaomi
+        }
+        return nil
     }
 
     private static func registryID(_ service: IOHIDServiceClient) -> UInt64? {

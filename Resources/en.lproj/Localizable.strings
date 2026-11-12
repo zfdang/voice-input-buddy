@@ -255,6 +255,7 @@
 "remote.device.model.apple_siri_remote_a2854" = "Apple Remote (7th Generation)";
 "remote.device.model.apple_siri_remote_a2540" = "Apple Remote (6th Generation)";
 "remote.device.model.chromecast_voice_remote" = "Chromecast Remote";
+"remote.device.model.t1_remote" = "T1-Remote Air Mouse & Keyboard";
 "remote.device.model.unknown" = "Xiaomi Remote";
 "remote.device.custom_name" = "Custom name";
 "remote.device.bind_button" = "Set Up Button Controls";
@@ -320,6 +321,8 @@
 "button_mapping.page.title" = "Button Mapping";
 "button_mapping.page.subtitle" = "Click a button to change its settings";
 "button_mapping.google.subtitle" = "G9N9N supports OK + direction for Enter; single-button mapping is unavailable";
+"button_mapping.t1.subtitle" = "Click any front button to customize; Hold Voice to talk (air mouse & back keyboard pass straight through)";
+"t1.remote.keyboard_airmouse_note" = "Front control buttons support single, double, and long-press mapping. Air mouse cursor movement and the back QWERTY keyboard work natively.";
 "button_mapping.google.enter.title" = "OK + direction → Enter (fixed)";
 "button_mapping.google.enter.detail" = "When Custom Buttons is enabled and the app has exclusive access, briefly press OK + any direction to send Enter. This fixed combination is not affected by the individual settings below.";
 "button_mapping.google.enter.limit" = "Because G9N9N key reports violate macOS specifications, single-key and release events are dropped by the system, making individual button mappings ineffective on this device. Only OK + direction sends Enter; holding may repeat input.";
@@ -653,6 +656,8 @@
 "onboarding.control_source.unselected.detail" = "Choose a controller.";
 "onboarding.control_source.xiaomi_remote.title" = "Xiaomi Bluetooth Remote 2 / 2 Pro";
 "onboarding.control_source.xiaomi_remote.detail" = "Hold the physical voice button and release it to stop.";
+"onboarding.control_source.t1_remote.title" = "T1-Remote Air Mouse & Keyboard";
+"onboarding.control_source.t1_remote.detail" = "Hold the physical voice button and release to stop. Back QWERTY keyboard types directly.";
 "onboarding.control_source.siri_remote.title" = "Apple Remote (6th / 7th Generation)";
 "onboarding.control_source.siri_remote.detail" = "Use the physical voice button: hold to speak and release to stop.";
 "onboarding.control_source.apple_remote.generation_6.title" = "Apple Remote (6th Generation)";
@@ -706,6 +711,10 @@
 "onboarding.remote.chromecast_pairing.title" = "Pair a Google remote (G9N9N / GY3LE)";
 "onboarding.remote.chromecast_pairing.first" = "Open System Settings → Bluetooth and keep the remote near your Mac.";
 "onboarding.remote.chromecast_pairing.second" = "Hold Back + Home together for about 3 seconds until the indicator starts flashing.";
+"onboarding.remote.t1_pairing.title" = "Pair a T1-Remote (or compatible clone)";
+"onboarding.remote.t1_pairing.first" = "Open System Settings → Bluetooth and keep the remote near your Mac.";
+"onboarding.remote.t1_pairing.second" = "Hold Home + Back together until the indicator flashes slowly to enter Bluetooth pairing mode.";
+"onboarding.remote.t1_pairing.third" = "Connect “T1-Remote” (or your compatible clone’s Bluetooth name) in System Settings, then press OK or an arrow key.";
 "onboarding.remote.connected" = "Selected remote connected";
 "onboarding.remote.connected_detail" = "Remote Buddy has a working connection to the remote.";
 "onboarding.remote.hid_connected" = "Physical remote recognized";
@@ -765,6 +774,7 @@
 "onboarding.controls.xiaomi.detail" = "Press three different control buttons on the Xiaomi remote, such as an arrow, OK, Back, Home, or volume.";
 "onboarding.controls.siri.detail" = "Press three different control buttons on the Apple Remote, such as an arrow, center, Back, TV, Play, or volume.";
 "onboarding.controls.chromecast.detail" = "Press three different control buttons on Chromecast Voice Remote, such as an arrow, OK, Back, Home, Mute, or volume.";
+"onboarding.controls.t1.detail" = "Press three different control buttons on the front of T1-Remote, such as an arrow, OK, Back, Home, Menu, Mute, or volume.";
 "onboarding.controls.g9n9n.detail" = "For G9N9N, test using two-button pairs: press OK + Up, release both; then press Back + Up, release both. Detecting 3 distinct buttons lets you continue.";
 "onboarding.controls.g9n9n.ready" = "Button checks passed; continue setup";
 "onboarding.side.g9n9n_test_enabled" = "Button test enabled";
@@ -1086,8 +1096,9 @@
 "update.dialog.latest_version" = "Latest on this channel";
 
 
-// Four-device product scope. Upcoming adapters show an inline notice on Continue.
+// Five-device product scope. Upcoming adapters show an inline notice on Continue.
 "remote.catalog.xiaomi.title" = "Xiaomi Bluetooth Remote 2 / 2 Pro";
+"remote.catalog.t1Remote.title" = "T1-Remote Air Mouse & Keyboard (and clones)";
 "remote.catalog.chromecastG9N9N.title" = "Chromecast Voice Remote (G9N9N)";
 "remote.catalog.googleStreamerGY3LE.title" = "Google TV Streamer Voice Remote (GY3LE)";
 "remote.catalog.siriRemote.title" = "Apple Siri Remote";

@@ -156,7 +156,7 @@ extension OnboardingView {
         switch settings.onboardingControlSource {
         case .xiaomiRemote, .siriRemote:
             model.applyHIDSettings()
-        case .chromecastRemote:
+        case .t1Remote, .chromecastRemote:
             prepareSelectedControlConnection()
         case .unselected:
             break

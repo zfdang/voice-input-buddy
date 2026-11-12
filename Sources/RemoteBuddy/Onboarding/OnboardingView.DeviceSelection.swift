@@ -36,7 +36,7 @@ extension OnboardingView {
                     Image(nsImage: image)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 34, height: 76)
+                        .frame(width: 54, height: 76)
                         .accessibilityLabel(localization.text("remote.catalog.illustration"))
                 }
                 VStack(alignment: .leading, spacing: 4) {

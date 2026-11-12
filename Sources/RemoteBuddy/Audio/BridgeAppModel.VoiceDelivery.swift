@@ -139,6 +139,8 @@ extension BridgeAppModel {
     func applyVoiceFunctionMapping(neutralizeVoiceKey: Bool) -> Bool {
         voiceFunctionMapper.additionalIdentities = Set(settings.compatibleHIDIdentities(
             includeXiaomi: true, includeGoogle: false))
+        voiceFunctionMapper.t1Identities = Set(settings.compatibleHIDIdentities(
+            includeXiaomi: false, includeGoogle: false, includeT1: true))
         let applied = voiceFunctionMapper.apply(
             suppressPowerKey: settings.customMappingEnabled,
             neutralizeVoiceKey: neutralizeVoiceKey

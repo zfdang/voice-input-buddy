@@ -103,8 +103,13 @@ enum VoiceRemoteAdmissionDecision: Equatable {
 enum VoiceRemoteAdmission {
     /// Recheck a name learned after discovery using the same product policy.
     /// Candidate admission still requires the model/codec handshake before ready.
-    static func rejectsConnectedProduct(name: String?, allowsG9N9N: Bool) -> Bool {
+    static func rejectsConnectedProduct(
+        name: String?,
+        allowsG9N9N: Bool,
+        allowsT1Remote: Bool = false
+    ) -> Bool {
         if allowsG9N9N, G9N9NProtocol.isCandidateName(name) { return false }
+        if allowsT1Remote, T1RemoteProtocol.isCandidateName(name) { return false }
         return ForeignVoiceRemoteProduct.isRejected(name: name)
     }
 
@@ -114,12 +119,18 @@ enum VoiceRemoteAdmission {
         advertisesVoiceService: Bool,
         name: String?,
         advertisedName: String?,
-        allowsG9N9N: Bool = false
+        allowsG9N9N: Bool = false,
+        allowsT1Remote: Bool = false,
+        adoptUnidentifiedATVVAsT1: Bool = false
     ) -> VoiceRemoteAdmissionDecision {
         let nameForMatch = advertisedName ?? name
         if allowsG9N9N, G9N9NProtocol.isCandidateName(nameForMatch) {
             if let targetIdentifier, identifier != targetIdentifier { return .ignore }
             return targetIdentifier == nil ? .adoptRecognizedName(nameForMatch ?? "G9N9N") : .adoptSavedIdentity
+        }
+        if allowsT1Remote, T1RemoteProtocol.isCandidateName(nameForMatch) {
+            if let targetIdentifier, identifier != targetIdentifier { return .ignore }
+            return targetIdentifier == nil ? .adoptRecognizedName(nameForMatch ?? "T1-Remote") : .adoptSavedIdentity
         }
         // 别的产品优先否决，且优先于已保存身份：早先版本误把 Chromecast Remote 存成
         // Xiaomi 档案的情况真实发生过，只按 UUID 采纳会让这个错误一直重连下去。
@@ -134,6 +145,9 @@ enum VoiceRemoteAdmission {
             return .adoptRecognizedName(recognized)
         }
         guard advertisesVoiceService else { return .ignore }
+        if adoptUnidentifiedATVVAsT1, allowsT1Remote {
+            return .adoptRecognizedName(nameForMatch ?? "T1-Remote")
+        }
         if let nameForMatch, !nameForMatch.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return .rejectUnrecognizedName(nameForMatch)
         }

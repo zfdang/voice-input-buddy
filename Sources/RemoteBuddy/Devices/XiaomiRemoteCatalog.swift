@@ -72,6 +72,7 @@ enum XiaomiRemoteCatalog {
     /// 调用方必须显示「未识别」占位，不允许套用任何真机图。
     static func photoResource(for model: RemoteModel) -> String? {
         if model.isChromecastRemote { return RemoteSetupDevice.chromecastG9N9N.illustrationResource }
+        if model.isT1Remote { return "T1RemoteIllustration" }
         return entries.first(where: { $0.model == model })?.photoResource
     }
 }

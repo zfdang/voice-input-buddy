@@ -119,6 +119,13 @@ extension OnboardingView {
                 "onboarding.remote.chromecast_pairing.second",
                 "onboarding.remote.chromecast_pairing.third"
             )
+        case .t1Remote:
+            return (
+                "onboarding.remote.t1_pairing.title",
+                "onboarding.remote.t1_pairing.first",
+                "onboarding.remote.t1_pairing.second",
+                "onboarding.remote.t1_pairing.third"
+            )
         case .xiaomiRemote, .unselected:
             return (
                 "onboarding.remote.first_pairing.title",
@@ -139,6 +146,8 @@ extension OnboardingView {
         switch source {
         case .xiaomiRemote:
             return "onboarding.controls.xiaomi.detail"
+        case .t1Remote:
+            return "onboarding.controls.t1.detail"
         case .siriRemote:
             return "onboarding.controls.siri.detail"
         case .chromecastRemote:
@@ -158,6 +167,11 @@ extension OnboardingView {
         switch source {
         case .xiaomiRemote:
             return RemoteButton.xiaomiCases
+        case .t1Remote:
+            return [
+                .power, .up, .left, .ok, .right, .down,
+                .back, .home, .menu, .mute, .volumeUp, .volumeDown,
+            ]
         case .siriRemote:
             return [
                 .power, .up, .left, .ok, .right, .down,
@@ -333,7 +347,7 @@ extension OnboardingView {
 
     static func remoteNotFoundRecoveryDetailKey(for source: OnboardingControlSource) -> String {
         switch source {
-        case .xiaomiRemote, .siriRemote, .chromecastRemote:
+        case .xiaomiRemote, .t1Remote, .siriRemote, .chromecastRemote:
             return "onboarding.recovery.remote.not_found.physical_detail"
         case .unselected:
             return "onboarding.recovery.remote.not_found.detail"

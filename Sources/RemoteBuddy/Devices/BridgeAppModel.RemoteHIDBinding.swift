@@ -17,9 +17,12 @@ extension BridgeAppModel {
         guard case .ready = bridge.state,
               let profileID = remoteProfileID(for: bridge),
               let profile = settings.remoteDeviceProfiles.first(where: { $0.id == profileID }),
-              [RemoteModel.rc001, .rc003, .chromecastVoiceRemote].contains(profile.model)
+              [RemoteModel.rc001, .rc003, .chromecastVoiceRemote, .t1Remote].contains(profile.model)
         else { return }
-        let identity = bridge.reportedHIDIdentity ?? (profile.model.isChromecastRemote ? .chromecast : .xiaomi)
+        let fallbackIdentity: RemoteHIDIdentity = profile.model.isChromecastRemote
+            ? .chromecast
+            : (profile.model.isT1Remote ? .t1Remote : .xiaomi)
+        let identity = bridge.reportedHIDIdentity ?? fallbackIdentity
         if !identity.isStandard {
             guard !settings.isOnboardingComplete, settings.selectedRemoteProfileID == profileID,
                   settings.onboardingStep == .remote || settings.onboardingStep == .controls,
@@ -35,6 +38,7 @@ extension BridgeAppModel {
     static func canLearnHIDIdentity(model: RemoteModel, source: OnboardingControlSource) -> Bool {
         switch source {
         case .chromecastRemote: return model.isChromecastRemote
+        case .t1Remote: return model.isT1Remote
         case .xiaomiRemote: return model == .rc001 || model == .rc003
         default: return false
         }
@@ -47,8 +51,10 @@ extension BridgeAppModel {
               let identifier = profile.bluetoothIdentifier,
               let bridge = connections.bridges[identifier], case .ready = bridge.state,
               !profile.model.isChromecastRemote || bridge.identifiedModel == .chromecastVoiceRemote,
-              candidate.binding.identity != .xiaomi || !profile.model.isChromecastRemote,
+              !profile.model.isT1Remote || bridge.identifiedModel == .t1Remote,
+              candidate.binding.identity != .xiaomi || !profile.model.isATVVRemote,
               candidate.binding.identity != .chromecast || profile.model.isChromecastRemote,
+              candidate.binding.identity != .t1Remote || profile.model.isT1Remote,
               RemoteHIDCandidate.available().contains(candidate),
               !isStreaming, !voiceKeyLatch.isHeld,
               !voiceFnTapSession.requiresCleanupBeforeMapping else { return false }

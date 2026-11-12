@@ -223,7 +223,7 @@ struct ProductBoundaryTests {
             .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources")
         let bundle = try #require(Bundle(path: resources.path))
         let planned = RemoteSetupDevice.allCases.filter { $0 != .xiaomi }
-        #expect(Set(planned.map(\.illustrationResource)).count == 3)
+        #expect(Set(planned.map(\.illustrationResource)).count == 4)
         for device in planned {
             #expect(device.illustrationResource != RemoteSetupDevice.xiaomi.illustrationResource)
             let url = try #require(bundle.url(forResource: device.illustrationResource, withExtension: "png"))
@@ -232,16 +232,35 @@ struct ProductBoundaryTests {
         }
     }
 
-    @Test func deviceScopeKeepsGoogleModelsDistinctAndSelectable() {
+    @Test func deviceScopeKeepsAllFiveRemotesOrderedAndDistinct() {
         #expect(RemoteSetupDevice.allCases == [
-            .xiaomi, .chromecastG9N9N, .googleStreamerGY3LE, .siriRemote,
+            .xiaomi, .t1Remote, .chromecastG9N9N, .googleStreamerGY3LE, .siriRemote,
         ])
         #expect(RemoteSetupDevice.chromecastG9N9N.googleHardwareModelNumber == "G9N9N")
         #expect(RemoteSetupDevice.googleStreamerGY3LE.googleHardwareModelNumber == "GY3LE")
-        #expect(RemoteSetupDevice.allCases.filter(\.canStartSetup) == [.xiaomi, .chromecastG9N9N, .googleStreamerGY3LE])
-        // Listing a planned device must not admit it through the Xiaomi hardware bridge.
+        #expect(RemoteSetupDevice.allCases.filter(\.canStartSetup) == [
+            .xiaomi, .t1Remote, .chromecastG9N9N, .googleStreamerGY3LE,
+        ])
+        // Listing non-Xiaomi devices must not admit them through the Xiaomi hardware bridge.
         #expect(XiaomiRemoteCatalog.entry(matchingDISModelNumber: "G9N9N") == nil)
         #expect(XiaomiRemoteCatalog.entry(matchingDISModelNumber: "GY3LE") == nil)
+        #expect(XiaomiRemoteCatalog.entry(matchingDISModelNumber: "hid_mouse") == nil)
+    }
+
+    @Test @MainActor func t1RemoteSelectionPersistsAndResolvesCombinedSetupIllustration() throws {
+        let suite = "remote-buddy.tests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = AppSettings(defaults: defaults)
+        let model = BridgeAppModel(settings: settings, initialAudioDevices: [])
+        let view = OnboardingView(model: model)
+        view.selectControlSource(.t1Remote)
+        #expect(settings.onboardingControlSource == .t1Remote)
+        #expect(settings.onboardingControlMethod == .physicalRemote)
+        #expect(AppSettings(defaults: defaults).onboardingControlSource == .t1Remote)
+        #expect(!model.isOnboardingControlSourceConnected(.t1Remote))
+        #expect(OnboardingRemotePhotoKind.resolve(source: .t1Remote, selectedModel: .rc003)
+            == .bundled(resourceName: "T1RemoteSetupIllustration"))
     }
 
     @Test @MainActor func g9n9nSelectionPersistsWithoutClaimingAConnection() throws {
@@ -323,7 +342,7 @@ struct ProductBoundaryTests {
     }
 
     @Test func wizardRequiresEachPermissionAndKeepsRemoteControl() {
-        #expect(OnboardingBuildCapabilities.availableControlSources == [.xiaomiRemote, .chromecastRemote])
+        #expect(OnboardingBuildCapabilities.availableControlSources == [.xiaomiRemote, .t1Remote, .chromecastRemote])
         let ready = OnboardingCapabilities(
             bluetoothGranted: true,
             inputMonitoringGranted: true,

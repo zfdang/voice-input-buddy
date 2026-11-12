@@ -126,7 +126,7 @@ extension OnboardingView {
         switch settings.onboardingControlSource {
         case .siriRemote:
             prepareSelectedControlConnection()
-        case .xiaomiRemote, .chromecastRemote, .unselected:
+        case .xiaomiRemote, .t1Remote, .chromecastRemote, .unselected:
             prepareSelectedControlConnection()
         }
     }

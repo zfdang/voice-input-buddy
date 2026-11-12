@@ -73,7 +73,7 @@ extension BridgeAppModel {
             mode: settings.voiceKeyMode,
             fnTapModeEnabled: settings.voiceFnTapModeEnabled,
             requiresOrderedFn: requiresOrderedVoiceFn,
-            hasHardwareVoiceKey: bridge.identifiedModel?.isChromecastRemote != true,
+            hasHardwareVoiceKey: !(bridge.identifiedModel?.isATVVRemote == true),
             hasMatchingHIDServices: voiceFunctionMapper.hasMatchingServices,
             isVoiceKeyNeutralized: voiceFunctionMapper.isVoiceKeyNeutralized,
             currentServicesMatchDesiredMapping: currentServicesMatchDesiredMapping,
@@ -92,7 +92,7 @@ extension BridgeAppModel {
             mode: settings.voiceKeyMode,
             voiceFnTapModeEnabled: settings.voiceFnTapModeEnabled,
             isVoiceKeyNeutralized: voiceFunctionMapper.isVoiceKeyNeutralized,
-            hasHardwareVoiceKey: bridge.identifiedModel?.isChromecastRemote != true,
+            hasHardwareVoiceKey: !(bridge.identifiedModel?.isATVVRemote == true),
             accessibilityGranted: currentPermissionSnapshot.accessibilityGranted,
             requiresOrderedFn: requiresOrderedVoiceFn
         ) else {
@@ -124,7 +124,7 @@ extension BridgeAppModel {
         updateVoiceKeyState(
             streaming: true,
             forceSoftware: requiresOrderedVoiceFn ||
-                (bridge.identifiedModel?.isChromecastRemote == true && !settings.voiceFnTapModeEnabled),
+                (bridge.identifiedModel?.isATVVRemote == true && !settings.voiceFnTapModeEnabled),
             owner: .bluetooth,
             completion: { [self] activated in
             guard activated else {
@@ -175,7 +175,7 @@ extension BridgeAppModel {
                     _ = voiceFnTapSession.startVoice()
                 }
                 beginVoiceSessionIfNeeded()
-                if rc003VoiceExtensionTestEnabled, bridge.identifiedModel?.isChromecastRemote != true {
+                if rc003VoiceExtensionTestEnabled, !(bridge.identifiedModel?.isATVVRemote == true) {
                     rc003VoiceExtensionActive = true
                     rc003VoiceExtensionAwaitingReopen = false
                     rc003VoiceExtensionDidReceiveAudio = false
@@ -613,6 +613,22 @@ extension BridgeAppModel {
             voiceFnTapSession.suspend { [weak self] _ in
                 self?.releaseVirtualAudioOutputIfUnused(reason: "bluetooth_not_ready")
             }
+        }
+    }
+
+    func handleT1VoiceHoldRelease(profileID: UUID?) {
+        let targetIdentifier = profileID.flatMap { id in
+            settings.remoteDeviceProfiles.first(where: { $0.id == id })?.bluetoothIdentifier
+        } ?? voiceSession.activeDeviceIdentifier ?? voiceSession.pendingStart.identifier
+        guard let targetIdentifier,
+              let bridge = connections.bridges[targetIdentifier],
+              bridge.identifiedModel?.isT1Remote == true
+        else { return }
+        guard voiceSession.activeDeviceIdentifier == targetIdentifier ||
+                voiceSession.pendingStart.identifier == targetIdentifier
+        else { return }
+        if bridge.requestMicrophoneClose() {
+            AppLogger.shared.write("ATVV MIC_CLOSE requested reason=t1_voice_release")
         }
     }
 }

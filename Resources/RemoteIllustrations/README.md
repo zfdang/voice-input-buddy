@@ -19,6 +19,8 @@ Official visual and button-layout references:
 
 Manufacturer images remain on their official sites and are not included in the distribution.
 
+`T1RemoteIllustration.svg` provides the editable geometric front layout for `T1-Remote`, paired with original GPL-3.0-only studio renders (`T1RemoteIllustration.png` for the button-mapping canvas and `T1RemoteSetupIllustration.png` combining front and rear QWERTY layouts for device setup).
+
 To regenerate a thumbnail from its editable vector source, from the repo root:
 
 ```sh

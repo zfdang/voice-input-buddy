@@ -136,6 +136,7 @@ extension OnboardingView {
     func controlSourceIcon(_ source: OnboardingControlSource) -> String {
         switch source {
         case .xiaomiRemote: return "appletvremote.gen4.fill"
+        case .t1Remote: return "keyboard"
         case .siriRemote: return "appletvremote.gen4.fill"
         case .chromecastRemote: return "tv.and.hifispeaker.fill"
         case .unselected: return "circle"

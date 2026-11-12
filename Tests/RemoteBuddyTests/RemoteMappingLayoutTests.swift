@@ -63,4 +63,39 @@ struct RemoteMappingLayoutTests {
             #expect(abs(point.y - (85 + anchor.y * 480)) < 0.01)
         }
     }
+
+    @Test func t1RenderedAspectRatioAndAnchorsMatchFrontIllustrationWithoutOverlap() throws {
+        let url = try #require(RemoteBuddyResourceBundle.mainOrDevelopment.url(
+            forResource: "T1RemoteIllustration", withExtension: "png"))
+        let bitmap = try #require(NSBitmapImageRep(data: Data(contentsOf: url)))
+        let imageRatio = Double(bitmap.pixelsHigh) / Double(bitmap.pixelsWide)
+        let layoutRatio = T1RemoteMappingLayout.remoteSize.height / T1RemoteMappingLayout.remoteSize.width
+        #expect(abs(imageRatio - layoutRatio) < 0.0001)
+        #expect(T1RemoteMappingLayout.remoteSize.height < T1RemoteMappingLayout.canvasHeight)
+        #expect(T1RemoteMappingLayout.placements.count == 12)
+        #expect(Set(T1RemoteMappingLayout.placements.map(\.button)).count == 12)
+
+        for anchor in T1RemoteMappingLayout.placements.map(\.anchor) + [T1RemoteMappingLayout.voiceAnchor] {
+            let point = RemoteMappingLayout.remotePoint(
+                for: anchor,
+                canvasWidth: 1000,
+                remoteSize: T1RemoteMappingLayout.remoteSize,
+                canvasHeight: T1RemoteMappingLayout.canvasHeight
+            )
+            let originX = (1000 - T1RemoteMappingLayout.remoteSize.width) / 2
+            let originY = (T1RemoteMappingLayout.canvasHeight - T1RemoteMappingLayout.remoteSize.height) / 2
+            #expect(abs(point.x - (originX + anchor.x * T1RemoteMappingLayout.remoteSize.width)) < 0.01)
+            #expect(abs(point.y - (originY + anchor.y * T1RemoteMappingLayout.remoteSize.height)) < 0.01)
+        }
+
+        let leftYs = T1RemoteMappingLayout.placements.filter { $0.side == .left }.map(\.targetY).sorted()
+        for pair in zip(leftYs, leftYs.dropFirst()) {
+            #expect((pair.1 - pair.0) * T1RemoteMappingLayout.canvasHeight > 72)
+        }
+        let rightYs = (T1RemoteMappingLayout.placements.filter { $0.side == .right }.map(\.targetY)
+            + [T1RemoteMappingLayout.voiceTargetY]).sorted()
+        for pair in zip(rightYs, rightYs.dropFirst()) {
+            #expect((pair.1 - pair.0) * T1RemoteMappingLayout.canvasHeight > 72)
+        }
+    }
 }

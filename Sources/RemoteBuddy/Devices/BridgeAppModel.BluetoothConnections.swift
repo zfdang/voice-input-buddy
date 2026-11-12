@@ -18,7 +18,8 @@ extension BridgeAppModel {
                 settings: settings,
                 delegate: self,
                 targetIdentifier: identifier,
-                allowsG9N9N: true
+                allowsG9N9N: true,
+                allowsT1Remote: true
             )
             observeRemoteHIDIdentity(bridge)
             connections.bridges[identifier] = bridge
@@ -37,6 +38,12 @@ extension BridgeAppModel {
             settings: settings,
             delegate: self,
             allowsG9N9N: true,
+            allowsT1Remote: true,
+            adoptUnidentifiedATVVAsT1: { [weak self] in
+                guard let self else { return false }
+                return self.settings.onboardingStep == .remote &&
+                    self.settings.onboardingControlSource == .t1Remote
+            },
             excludedIdentifiers: { [weak self] in
                 guard let self else { return [] }
                 return Set(self.connections.bridges.keys).union(self.settings.forgottenBluetoothIdentifiers)

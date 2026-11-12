@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 770" width="260" height="770">
+  <defs>
+    <linearGradient id="bodyTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3c4046"/>
+      <stop offset="50%" stop-color="#2b2e33"/>
+      <stop offset="100%" stop-color="#22252a"/>
+    </linearGradient>
+    <linearGradient id="bodyBottom" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#24272c"/>
+      <stop offset="100%" stop-color="#17191d"/>
+    </linearGradient>
+    <linearGradient id="bezel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#c8cdd4"/>
+      <stop offset="50%" stop-color="#8b929c"/>
+      <stop offset="100%" stop-color="#b5bbc2"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Right-edge volume rocker -->
+  <rect x="247" y="126" width="6" height="96" rx="3" fill="#23262b" stroke="#6d747e" stroke-width="1"/>
+  <text x="250" y="150" fill="#d0d5dc" font-family="sans-serif" font-size="8" text-anchor="middle">+</text>
+  <text x="250" y="204" fill="#d0d5dc" font-family="sans-serif" font-size="8" text-anchor="middle">-</text>
+
+  <!-- Remote outer silver rim & body -->
+  <rect x="12" y="10" width="236" height="750" rx="36" ry="36" fill="url(#bodyTop)" stroke="url(#bezel)" stroke-width="3.5"/>
+  <path d="M13.5 328 H246.5 V724 A34.5 34.5 0 0 1 212 758.5 H48 A34.5 34.5 0 0 1 13.5 724 Z" fill="url(#bodyBottom)"/>
+  <line x1="14" y1="328" x2="246" y2="328" stroke="#454a52" stroke-width="1"/>
+
+  <!-- Top mic pinhole & status LED -->
+  <circle cx="130" cy="27" r="2.2" fill="#0f1012"/>
+  <rect x="128.5" y="40" width="3" height="12" rx="1.5" fill="#38b6d8"/>
+
+  <!-- Power button (top right) -->
+  <circle cx="200" cy="56" r="15" fill="#2b2f36" stroke="#535963" stroke-width="1.2"/>
+  <path d="M200 49 v6 M195.2 51.8 a6.5 6.5 0 1 0 9.6 0" fill="none" stroke="#e2e6ec" stroke-width="1.6" stroke-linecap="round"/>
+
+  <!-- D-Pad ring & OK button -->
+  <circle cx="130" cy="180" r="68" fill="#1e2024" stroke="#4e545e" stroke-width="1.5"/>
+  <circle cx="130" cy="180" r="32" fill="#2c3036" stroke="#565c67" stroke-width="1.2"/>
+
+  <!-- Back button (left) -->
+  <circle cx="80" cy="286" r="24" fill="#26292f" stroke="#4f5560" stroke-width="1.2"/>
+  <path d="M86 286 H74 M78 282 L73.5 286 L78 290" fill="none" stroke="#e2e6ec" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Voice button (right) -->
+  <circle cx="180" cy="286" r="24" fill="#26292f" stroke="#4f5560" stroke-width="1.2"/>
+  <circle cx="176" cy="284" r="4.5" fill="#e2e6ec"/>
+  <circle cx="184" cy="281" r="2.1" fill="#e2e6ec"/>
+  <circle cx="184" cy="288" r="2.7" fill="#e2e6ec"/>
+  <circle cx="188.5" cy="283.5" r="1.4" fill="#e2e6ec"/>
+
+  <!-- Mute / Air Mouse vertical pill (left) -->
+  <rect x="56" y="352" width="48" height="132" rx="24" fill="#202328" stroke="#4b515c" stroke-width="1.2"/>
+  <!-- Mute icon (top half) -->
+  <path d="M71 373 h4 l5 -4.5 v15 l-5 -4.5 h-4 z M84 373 l6 6 M90 373 l-6 6" fill="none" stroke="#e2e6ec" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Air Mouse icon (bottom half) -->
+  <rect x="75.5" y="452" width="9" height="14" rx="4.5" fill="none" stroke="#e2e6ec" stroke-width="1.5"/>
+  <line x1="80" y1="452" x2="80" y2="457" stroke="#e2e6ec" stroke-width="1.3"/>
+  <path d="M71 456 q-2 3 0 6 M89 456 q2 3 0 6" fill="none" stroke="#cfd5de" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- Home button (right upper) -->
+  <circle cx="180" cy="376" r="24" fill="#202328" stroke="#4b515c" stroke-width="1.2"/>
+  <path d="M172.5 376 L180 369 L187.5 376 V383 H182.5 V378.5 H177.5 V383 H172.5 Z" fill="#e2e6ec"/>
+
+  <!-- Menu button (right lower) -->
+  <circle cx="180" cy="460" r="24" fill="#202328" stroke="#4b515c" stroke-width="1.2"/>
+  <line x1="173" y1="455.5" x2="187" y2="455.5" stroke="#e2e6ec" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="173" y1="460" x2="187" y2="460" stroke="#e2e6ec" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="173" y1="464.5" x2="187" y2="464.5" stroke="#e2e6ec" stroke-width="1.8" stroke-linecap="round"/>
+</svg>

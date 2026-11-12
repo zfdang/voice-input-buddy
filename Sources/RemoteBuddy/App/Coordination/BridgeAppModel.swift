@@ -62,7 +62,11 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
                 guard let model = settings.remoteDeviceProfiles.first(where: {
                     $0.id == profileID
                 })?.model else { return false }
-                return !model.usesPrivateAdapter && !model.isChromecastRemote
+                return !model.usesPrivateAdapter && !model.isATVVRemote
+            }
+        case .t1Remote:
+            return connectedRemoteProfileIDs.contains { id in
+                settings.remoteDeviceProfiles.first(where: { $0.id == id })?.model.isT1Remote == true
             }
         case .siriRemote:
             return false
@@ -79,7 +83,13 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
         if voiceSession.isActive {
             let profile = voiceSession.activeDeviceIdentifier.flatMap { settings.profileID(forBluetoothIdentifier: $0) }
                 .flatMap { id in settings.remoteDeviceProfiles.first { $0.id == id } }
-            return profile?.model.isChromecastRemote == true ? .chromecastRemote : .xiaomiRemote
+            if profile?.model.isChromecastRemote == true {
+                return .chromecastRemote
+            }
+            if profile?.model.isT1Remote == true {
+                return .t1Remote
+            }
+            return .xiaomiRemote
         }
         return nil
     }
