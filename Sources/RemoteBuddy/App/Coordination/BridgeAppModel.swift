@@ -174,6 +174,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     var rc003VoiceExtensionDeadlineTimer: DispatchSourceTimer?
     let hidEventSuppressor: KeyboardEventSuppressor
     let permissionSnapshotProvider: () -> HIDPermissionSnapshot
+    var onboardingWindowIsActive: () -> Bool
     var hidMonitoringInterrupted = false
     var hidMonitors: [String: HIDRemoteMonitor] = [:]
     var discoveryHIDMonitor: HIDRemoteMonitor?
@@ -235,6 +236,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
         voiceFunctionMapper: RemoteHIDKeyMapper? = nil,
         hidEventSuppressor: KeyboardEventSuppressor? = nil,
         permissionSnapshotProvider: @escaping () -> HIDPermissionSnapshot = { .current },
+        onboardingWindowIsActive: @escaping () -> Bool = { true },
         rc003VoiceExtensionTestEnabled: Bool =
             ProcessInfo.processInfo.arguments.contains("--rc003-voice-extension-test") ||
             (Bundle.main.object(forInfoDictionaryKey: "RC003VoiceExtensionTestEnabled") as? Bool == true)
@@ -245,6 +247,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
         self.voiceFunctionMapper = voiceFunctionMapper ?? RemoteHIDKeyMapper()
         self.hidEventSuppressor = hidEventSuppressor ?? KeyboardEventSuppressor()
         self.permissionSnapshotProvider = permissionSnapshotProvider
+        self.onboardingWindowIsActive = onboardingWindowIsActive
 
         self.loginItemService = loginItemService
         self.rc003VoiceExtensionTestEnabled = rc003VoiceExtensionTestEnabled

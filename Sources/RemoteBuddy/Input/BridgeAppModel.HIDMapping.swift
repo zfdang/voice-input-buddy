@@ -480,7 +480,7 @@ extension BridgeAppModel {
         }
     }
 
-    private func makeHIDMonitor(
+    func makeHIDMonitor(
         profileID: UUID?,
         targetFingerprint: String?,
         excludedFingerprints: @escaping () -> Set<String> = { [] }
@@ -499,6 +499,9 @@ extension BridgeAppModel {
                 self?.performExternalConfiguredAction(configured) ?? false
             }
         )
+        monitor.onboardingWindowIsActive = { [weak self] in
+            self?.onboardingWindowIsActive() ?? true
+        }
         monitor.onCandidateAvailable = { [weak self] in
             guard let self else { return }
             self.scheduleHIDServiceMappingRefreshIfNeeded()
@@ -561,10 +564,14 @@ extension BridgeAppModel {
             self.scheduleRemoteWakeRecovery(profileID: resolvedProfileID, reason: "hid_button")
             self.selectRemoteProfile(resolvedProfileID)
             self.lastRemoteButtonPress = button
+            let reportingModel = self.settings.remoteDeviceProfiles
+                .first(where: { $0.id == resolvedProfileID })?.model ?? monitor.reportedModel
             let suppressConfiguredAction = OnboardingControlValidationPolicy
                 .suppressConfiguredActions(
                     at: self.settings.onboardingStep,
-                    source: self.settings.onboardingControlSource
+                    source: self.settings.onboardingControlSource,
+                    reportingModel: reportingModel,
+                    onboardingWindowIsActive: self.onboardingWindowIsActive()
                 )
             if suppressConfiguredAction {
                 AppLogger.shared.write(

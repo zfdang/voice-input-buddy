@@ -4,9 +4,15 @@ import Foundation
 enum OnboardingControlValidationPolicy {
     static func suppressConfiguredActions(
         at step: OnboardingStep,
-        source: OnboardingControlSource
+        source: OnboardingControlSource,
+        reportingModel: RemoteModel? = nil,
+        onboardingWindowIsActive: Bool = true
     ) -> Bool {
+        guard onboardingWindowIsActive else { return false }
         guard step == .remote || step == .controls else { return false }
+        if let reportingModel {
+            return source.matches(reportingModel)
+        }
         switch source {
         case .xiaomiRemote, .t1Remote, .siriRemote, .chromecastRemote:
             return true

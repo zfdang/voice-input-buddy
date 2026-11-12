@@ -298,6 +298,9 @@ private final class RemoteBuddyAppDelegate: NSObject, NSApplicationDelegate, NSM
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        model.onboardingWindowIsActive = { [weak self] in
+            (self?.isSettingsWindowOpen ?? false) && NSApp.isActive
+        }
         if let environmentEvent = AppEnvironmentSnapshot.current(
             settings: model.settings
         ).publicEvent {

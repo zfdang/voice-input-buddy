@@ -705,4 +705,76 @@ struct T1RemoteProtocolTests {
         #expect(spy.stopCount == 3)
         #expect(!bridge.hasPendingVoiceWork)
     }
+
+    @Test @MainActor func t1MonitorObservesDPadAndOKPassthroughWithoutExecutingCustomActions() throws {
+        // Decoder exposes unmodified OK (0x28) and arrows (0x4F..0x52) only as passthrough observation,
+        // keeping decodeHIDReport empty and ignoring modified rear-keyboard chords (e.g. Shift+Enter).
+        let okReport = Data([0x01, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x00, 0x00])
+        let shiftOkReport = Data([0x01, 0x02, 0x00, 0x28, 0x00, 0x00, 0x00, 0x00, 0x00])
+        let upReport = Data([0x01, 0x00, 0x00, 0x52, 0x00, 0x00, 0x00, 0x00, 0x00])
+        let releaseReport = Data([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+
+        let decodedOK = T1RemoteProtocol.decodeHIDReportForMonitor(
+            reportID: T1RemoteProtocol.keyboardReportID,
+            data: okReport
+        )
+        #expect(decodedOK.result == .usages([], voiceHoldPressed: false))
+        #expect(decodedOK.observedPassthroughUsages == [RemoteButton.ok.hidUsage])
+
+        let decodedShiftOK = T1RemoteProtocol.decodeHIDReportForMonitor(
+            reportID: T1RemoteProtocol.keyboardReportID,
+            data: shiftOkReport
+        )
+        #expect(decodedShiftOK.result == .usages([], voiceHoldPressed: false))
+        #expect(decodedShiftOK.observedPassthroughUsages.isEmpty)
+
+        let suite = "t1-passthrough-observe-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = AppSettings(defaults: defaults)
+        settings.customMappingEnabled = true
+        let profileID = UUID()
+        settings.setBaseBinding(
+            .init(action: .commandCopy, shortcut: nil),
+            for: .ok,
+            trigger: .singleClick,
+            profileID: profileID
+        )
+
+        var performedActions: [RemoteButton] = []
+        let monitor = HIDRemoteMonitor(
+            settings: settings,
+            allowsT1Remote: true,
+            profileID: profileID,
+            runtimePermissions: { true },
+            nativeSuppressionAvailable: { true },
+            actionPerformer: { button, _, _ in
+                performedActions.append(button)
+                return true
+            },
+            diagnosticLogger: { _ in }
+        )
+        defer { monitor.cancelMappingInteractions() }
+
+        var activeHistory: [Set<RemoteButton>] = []
+        var pressedButtons: [RemoteButton] = []
+        monitor.onActiveButtons = { _, buttons in
+            activeHistory.append(buttons)
+        }
+        monitor.onButtonPressed = { id, _, button in
+            pressedButtons.append(button)
+            return (id ?? profileID, true)
+        }
+
+        monitor.connectSimulatedDevice(fingerprint: "t1-fp", profileID: profileID, isSeized: false)
+        activeHistory.removeAll()
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: okReport)
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: releaseReport)
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: upReport)
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: releaseReport)
+
+        #expect(pressedButtons == [.ok, .up])
+        #expect(activeHistory == [[.ok], [], [.up], []])
+        #expect(performedActions.isEmpty)
+    }
 }
