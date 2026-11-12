@@ -8,7 +8,8 @@ import Foundation
 extension BridgeAppModel {
     func applyHIDSettings(
         allowVoiceKeyModeFallback: Bool = true,
-        restartSiriRemote: Bool = true
+        restartSiriRemote: Bool = true,
+        forceRestartMonitors: Bool = false
     ) {
         if audio.suspensionState.suspendsHIDMonitoring {
             suspendHIDMonitoring(reason: "system_suspended")
@@ -52,7 +53,8 @@ extension BridgeAppModel {
                 guard cleaned else { return }
                 self?.applyHIDSettings(
                     allowVoiceKeyModeFallback: allowVoiceKeyModeFallback,
-                    restartSiriRemote: restartSiriRemote
+                    restartSiriRemote: restartSiriRemote,
+                    forceRestartMonitors: forceRestartMonitors
                 )
             }
             return
@@ -67,7 +69,10 @@ extension BridgeAppModel {
             let googlePowerKeySuppressed = applyVoiceFunctionMapping(
                 neutralizeVoiceKey: shouldNeutralizeNativeVoiceKey)
             voiceFnTapSession.setEnabled(requestedFnTapMode && accessibilityGranted)
-            startHIDMonitors(powerKeySuppressed: googlePowerKeySuppressed)
+            startHIDMonitors(
+                powerKeySuppressed: googlePowerKeySuppressed,
+                forceRestart: forceRestartMonitors
+            )
             refreshVoiceKeyCompatibilityWarning()
             return
         }
@@ -165,7 +170,10 @@ extension BridgeAppModel {
             voiceFnTapSession.setEnabled(false)
             powerKeySuppressed = applyVoiceFunctionMapping(neutralizeVoiceKey: false)
         }
-        startHIDMonitors(powerKeySuppressed: powerKeySuppressed)
+        startHIDMonitors(
+            powerKeySuppressed: powerKeySuppressed,
+            forceRestart: forceRestartMonitors
+        )
         completeHIDMappingRecoveryIfNeeded()
         if !voiceFunctionMapper.hasMatchingServices,
            settings.customMappingEnabled || shouldNeutralizeNativeVoiceKey {
@@ -265,9 +273,9 @@ extension BridgeAppModel {
         )
     }
 
-    func startHIDMonitors(powerKeySuppressed: Bool) {
-        stopHIDMonitors()
+    func startHIDMonitors(powerKeySuppressed: Bool, forceRestart: Bool = false) {
         guard !audio.suspensionState.suspendsHIDMonitoring else {
+            stopHIDMonitors()
             hidMonitoringInterrupted = true
             return
         }
@@ -276,38 +284,92 @@ extension BridgeAppModel {
             settings.onboardingRemoteAvailability == .hasRemote ||
             settings.remoteDeviceProfiles.contains { $0.hidFingerprint != nil }
         )
-        hidPowerKeySuppressed = powerKeySuppressed
-        hidAllowedLocationIDs = settings.customMappingEnabled
+        let allowedLocationIDs: Set<UInt32>? = settings.customMappingEnabled
             ? voiceFunctionMapper.powerSuppressedLocationIDs
             : nil
-        guard settings.customMappingEnabled || backOnlyMode else {
-            hidStatus = LocalizedMessage("button_mapping.status.system_managed")
-            hidMonitoringInterrupted = false // No monitoring is requested by the current configuration.
-            return
-        }
-        if settings.customMappingEnabled { _ = hidEventSuppressor.start() }
-        for profile in settings.remoteDeviceProfiles {
+        let targets = settings.remoteDeviceProfiles.compactMap { profile -> HIDMonitorTargetConfiguration? in
             // Siri keeps a separate adapter. Xiaomi and G9N9N share the public HID engine.
             guard !profile.model.usesPrivateAdapter,
                   let fingerprint = profile.hidFingerprint
-            else { continue }
-            let monitor = makeHIDMonitor(
+            else { return nil }
+            return HIDMonitorTargetConfiguration(
                 profileID: profile.id,
-                targetFingerprint: fingerprint
+                fingerprint: fingerprint,
+                model: profile.model
             )
-            hidMonitors[fingerprint] = monitor
+        }
+        let desiredConfiguration = HIDMonitoringConfiguration(
+            customMappingEnabled: settings.customMappingEnabled,
+            backOnlyMode: backOnlyMode,
+            powerKeySuppressed: powerKeySuppressed,
+            allowedLocationIDs: allowedLocationIDs,
+            targets: targets,
+            compatibleHIDIdentities: settings.compatibleHIDIdentities(
+                includeXiaomi: true,
+                includeGoogle: true
+            ),
+            permissionSnapshot: permissionSnapshotProvider()
+        )
+        if canReuseRunningHIDMonitors(for: desiredConfiguration, forceRestart: forceRestart) {
+            hidPowerKeySuppressed = powerKeySuppressed
+            hidAllowedLocationIDs = allowedLocationIDs
+            return
+        }
+
+        stopHIDMonitors()
+        hidPowerKeySuppressed = powerKeySuppressed
+        hidAllowedLocationIDs = allowedLocationIDs
+        guard desiredConfiguration.customMappingEnabled || backOnlyMode else {
+            hidStatus = LocalizedMessage("button_mapping.status.system_managed")
+            hidMonitoringInterrupted = false // No monitoring is requested by the current configuration.
+            appliedHIDMonitoringConfiguration = desiredConfiguration
+            return
+        }
+        if desiredConfiguration.customMappingEnabled { _ = hidEventSuppressor.start() }
+        for target in targets {
+            let monitor = makeHIDMonitor(
+                profileID: target.profileID,
+                targetFingerprint: target.fingerprint
+            )
+            hidMonitors[target.fingerprint] = monitor
             monitor.start(
                 powerKeySuppressed: powerKeySuppressed,
-                allowedLocationIDs: hidAllowedLocationIDs,
+                allowedLocationIDs: allowedLocationIDs,
                 allowBackOnly: backOnlyMode
             )
         }
         startHIDDiscoveryIfNeeded(allowBackOnly: backOnlyMode)
         let monitors = Array(hidMonitors.values) + (discoveryHIDMonitor.map { [$0] } ?? [])
-        if !monitors.isEmpty, monitors.allSatisfy({ $0.isMonitoring }),
-           !settings.customMappingEnabled || hidEventSuppressor.isRunning {
+        let allMonitorsHealthy = !monitors.isEmpty && monitors.allSatisfy { $0.isMonitoring }
+        let suppressorHealthy = desiredConfiguration.customMappingEnabled
+            ? hidEventSuppressor.isRunning
+            : !hidEventSuppressor.isRunning
+        if allMonitorsHealthy, suppressorHealthy {
             hidMonitoringInterrupted = false
+            appliedHIDMonitoringConfiguration = desiredConfiguration
         }
+    }
+
+    private func canReuseRunningHIDMonitors(
+        for desiredConfiguration: HIDMonitoringConfiguration,
+        forceRestart: Bool
+    ) -> Bool {
+        guard !forceRestart,
+              !hidMonitoringInterrupted,
+              appliedHIDMonitoringConfiguration == desiredConfiguration
+        else { return false }
+        if !desiredConfiguration.customMappingEnabled && !desiredConfiguration.backOnlyMode {
+            return hidMonitors.isEmpty && discoveryHIDMonitor == nil && !hidEventSuppressor.isRunning
+        }
+        let expectedFingerprints = Set(desiredConfiguration.targets.map(\.fingerprint))
+        guard Set(hidMonitors.keys) == expectedFingerprints,
+              let discoveryHIDMonitor
+        else { return false }
+        let monitors = Array(hidMonitors.values) + [discoveryHIDMonitor]
+        let suppressorHealthy = desiredConfiguration.customMappingEnabled
+            ? hidEventSuppressor.isRunning
+            : !hidEventSuppressor.isRunning
+        return monitors.allSatisfy { $0.isMonitoring } && suppressorHealthy
     }
 
     func cancelButtonMappingInteractions(device: UUID?) {
@@ -318,6 +380,7 @@ extension BridgeAppModel {
 
     func stopHIDMonitors() {
         // Detach the blocking event tap before any synchronous IOKit close.
+        appliedHIDMonitoringConfiguration = nil
         hidEventSuppressor.stop()
         hidMonitors.values.forEach { $0.stop() }
         discoveryHIDMonitor?.stop()
@@ -433,6 +496,7 @@ extension BridgeAppModel {
             else { return nil }
             let isNewBinding = existingProfileID == nil
             if isNewBinding {
+                self.appliedHIDMonitoringConfiguration = nil
                 monitor.assignProfileID(resolvedProfileID)
                 self.hidMonitors[fingerprint] = monitor
                 if self.discoveryHIDMonitor === monitor {

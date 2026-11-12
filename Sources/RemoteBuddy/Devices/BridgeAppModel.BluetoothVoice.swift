@@ -61,7 +61,17 @@ extension BridgeAppModel {
             return
         }
         let profileID = activateRemoteProfile(for: bridge)
-        if settings.voiceKeyMode != .function || settings.voiceFnTapModeEnabled || requiresOrderedVoiceFn {
+        if Self.shouldReapplyHIDSettingsBeforeVoiceStart(
+            mode: settings.voiceKeyMode,
+            fnTapModeEnabled: settings.voiceFnTapModeEnabled,
+            requiresOrderedFn: requiresOrderedVoiceFn,
+            hasHardwareVoiceKey: bridge.identifiedModel?.isChromecastRemote != true,
+            isVoiceKeyNeutralized: voiceFunctionMapper.isVoiceKeyNeutralized,
+            fnTapSessionEnabled: voiceFnTapSession.isEnabled,
+            monitoringInterrupted: hidMonitoringInterrupted,
+            appliedPermissionSnapshot: appliedHIDPermissionSnapshot,
+            currentPermissionSnapshot: permissionSnapshotProvider()
+        ) {
             applyHIDSettings(allowVoiceKeyModeFallback: false)
         }
         guard Self.canStartBluetoothVoice(
@@ -147,7 +157,9 @@ extension BridgeAppModel {
                     "RC003 EXTENSION physical_segment_reopened trace=\(voiceSession.activeBluetoothVoiceTraceID ?? 0)"
                 )
             } else {
-                _ = voiceFnTapSession.startVoice()
+                if voiceFnTapSession.isEnabled {
+                    _ = voiceFnTapSession.startVoice()
+                }
                 beginVoiceSessionIfNeeded()
                 if rc003VoiceExtensionTestEnabled, bridge.identifiedModel?.isChromecastRemote != true {
                     rc003VoiceExtensionActive = true
