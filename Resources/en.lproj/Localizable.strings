@@ -255,7 +255,6 @@
 "remote.device.model.apple_siri_remote_a2854" = "Apple Remote (7th Generation)";
 "remote.device.model.apple_siri_remote_a2540" = "Apple Remote (6th Generation)";
 "remote.device.model.chromecast_voice_remote" = "Chromecast Remote";
-"remote.device.model.t1_remote" = "T1-Remote Air Mouse & Keyboard";
 "remote.device.model.unknown" = "Xiaomi Remote";
 "remote.device.custom_name" = "Custom name";
 "remote.device.bind_button" = "Set Up Button Controls";
@@ -1112,6 +1111,7 @@
 "google.remote.unsupported_protocol" = "This remote does not offer supported ATVV v1.0 / 16 kHz audio. Buttons and audio require separate validation.";
 "google.remote.unconfirmed_identity" = "The Bluetooth PnP identity could not be confirmed as Chromecast Remote (18D1:9450).";
 "t1.remote.unconfirmed_identity" = "The Bluetooth PnP identity could not be confirmed as a compatible T1-Remote.";
+"t1.remote.microphone_refused" = "The T1 remote refused to open its microphone. Pair it again in Bluetooth settings and retry.";
 "google.remote.microphone_refused" = "The remote refused to open its microphone. Pair it again and retry.";
 "google.remote.pairing_required" = "Bluetooth authentication is incomplete. Remove and pair the remote again in macOS Bluetooth settings, then reconnect.";
 "google.remote.ir_controls" = "Power and input can be mapped when Bluetooth reports are received. If the remote uses infrared for these keys, the app cannot receive them.";
@@ -1133,6 +1133,11 @@
 "onboarding.audio.automatic_ready" = "Driver and audio output are ready. Click Continue to proceed.";
 
 "onboarding.audio.checking" = "Checking the driver and audio output.";
+"onboarding.voice_prompt.t1.fn_tap" = "Press and release the T1 voice button to start speaking, then press it once more to stop (Fn tap conversion enabled).";
+"onboarding.voice_prompt.t1.hold" = "Press and release the T1 voice button to start speaking, then press it once more to stop (Remote Buddy holds the voice key for you while speaking).";
+"onboarding.voice_prompt.generic.fn_tap" = "Hold the voice button while speaking, then release it (Fn tap conversion enabled).";
+"onboarding.voice_prompt.generic.hold" = "Hold the voice button while speaking, then release it.";
+"onboarding.voice_prompt.generic.toggle" = "Press the voice button once to start, then once more to finish.";
 
 "onboarding.action.dismiss" = "Exit setup";
 "onboarding.add_device.complete.title" = "Device setup complete";

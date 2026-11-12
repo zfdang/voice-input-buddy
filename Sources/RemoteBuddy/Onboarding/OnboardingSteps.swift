@@ -127,6 +127,9 @@ enum OnboardingControlSource: String, CaseIterable, Codable, Identifiable {
         case .unselected:
             return []
         case .xiaomiRemote, .t1Remote, .siriRemote, .chromecastRemote:
+            // From the input-tool / macOS Fn output perspective, Remote Buddy holds the configured
+            // voice key continuously until audio stops (even though T1's physical voice button
+            // operates as press-and-release to start / second-press to stop).
             return [.hold]
         }
     }

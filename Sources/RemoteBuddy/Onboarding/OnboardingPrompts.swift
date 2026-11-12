@@ -42,26 +42,22 @@ enum OnboardingVoiceGesturePrompt {
         locale: Locale
     ) -> String {
         let isChinese = locale.identifier.lowercased().hasPrefix("zh")
+        let snapshot = LocalizationSnapshot(language: isChinese ? .simplifiedChinese : .english)
         if controlSource == .t1Remote {
-            if fnTapModeEnabled {
-                return isChinese
-                    ? "按一下 T1 语音键并松开开始说话，说完后再按一下结束（已自动开启点按转换）。"
-                    : "Press and release the T1 voice button to start speaking, then press it once more to stop (Fn tap conversion enabled)."
-            }
-            return isChinese
-                ? "按一下 T1 语音键并松开开始说话，说完后再按一下结束（期间遥控搭子会全程替你按住语音键）。"
-                : "Press and release the T1 voice button to start speaking, then press it once more to stop (Remote Buddy holds the voice key for you while speaking)."
+            return snapshot.text(
+                fnTapModeEnabled
+                    ? "onboarding.voice_prompt.t1.fn_tap"
+                    : "onboarding.voice_prompt.t1.hold"
+            )
         }
         if fnTapModeEnabled {
-            return isChinese
-                ? "按住语音键说话，说完松开（已自动开启点按转换）。"
-                : "Hold the voice button while speaking, then release it (Fn tap conversion enabled)."
+            return snapshot.text("onboarding.voice_prompt.generic.fn_tap")
         }
-        switch (isChinese, mode) {
-        case (true, .hold): return "按住语音键说话，说完松开。"
-        case (true, .toggle): return "按一下语音键开始说话，再按一下结束。"
-        case (false, .hold): return "Hold the voice button while speaking, then release it."
-        case (false, .toggle): return "Press the voice button once to start, then once more to finish."
+        switch mode {
+        case .hold:
+            return snapshot.text("onboarding.voice_prompt.generic.hold")
+        case .toggle:
+            return snapshot.text("onboarding.voice_prompt.generic.toggle")
         }
     }
 }

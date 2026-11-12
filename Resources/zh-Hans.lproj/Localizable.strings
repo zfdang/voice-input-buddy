@@ -255,7 +255,6 @@
 "remote.device.model.apple_siri_remote_a2854" = "苹果遥控器第 7 代";
 "remote.device.model.apple_siri_remote_a2540" = "苹果遥控器第 6 代";
 "remote.device.model.chromecast_voice_remote" = "Chromecast 遥控器";
-"remote.device.model.t1_remote" = "T1 飞鼠键盘语音遥控器";
 "remote.device.model.unknown" = "小米遥控器";
 "remote.device.custom_name" = "自定义名称";
 "remote.device.bind_button" = "绑定普通按键";
@@ -1114,6 +1113,7 @@
 "google.remote.unsupported_protocol" = "此遥控器未提供受支持的 ATVV v1.0／16kHz 音频能力。按键和音频需分别验证。";
 "google.remote.unconfirmed_identity" = "无法确认蓝牙 PnP 标识为 Chromecast Remote（18D1:9450）。";
 "t1.remote.unconfirmed_identity" = "无法确认蓝牙 PnP 标识为兼容的 T1 遥控器。";
+"t1.remote.microphone_refused" = "T1 遥控器拒绝开启麦克风。请在系统蓝牙设置中重新配对后重试。";
 "google.remote.microphone_refused" = "遥控器拒绝开启麦克风。请重新配对后重试。";
 "google.remote.pairing_required" = "蓝牙认证尚未完成。请在 macOS 蓝牙设置中移除并重新配对遥控器，再重新连接。";
 "google.remote.ir_controls" = "电源和信源键收到蓝牙报文时可以映射；如果遥控器将它们配置为红外发射，应用无法收到这些按键。";
@@ -1133,6 +1133,11 @@
 "settings.driver.fixed_output_help" = "所有设备共用此虚拟麦克风，程序会自动配置语音输出。";
 
 "onboarding.audio.automatic_ready" = "驱动与语音输出已就绪，点击“继续”进入下一步。";
+"onboarding.voice_prompt.t1.fn_tap" = "按一下 T1 语音键并松开开始说话，说完后再按一下结束（已自动开启点按转换）。";
+"onboarding.voice_prompt.t1.hold" = "按一下 T1 语音键并松开开始说话，说完后再按一下结束（期间遥控搭子会全程替你按住语音键）。";
+"onboarding.voice_prompt.generic.fn_tap" = "按住语音键说话，说完松开（已自动开启点按转换）。";
+"onboarding.voice_prompt.generic.hold" = "按住语音键说话，说完松开。";
+"onboarding.voice_prompt.generic.toggle" = "按一下语音键开始说话，再按一下结束。";
 
 "onboarding.audio.checking" = "正在检查驱动与语音输出。";
 

@@ -86,13 +86,22 @@ enum RemoteHIDKeyMappingPolicy {
 
     static func applyingT1(
         to existing: [HIDUsageMapping],
+        neutralizeVoiceKeys: Bool = true,
+        originalSearchMapping: HIDUsageMapping? = nil,
+        originalHoldMapping: HIDUsageMapping? = nil,
         powerMapping: HIDUsageMapping? = nil
     ) -> [HIDUsageMapping] {
         var desired = existing.filter {
             $0.source != neutralT1VoiceSearchKey.source &&
                 $0.source != neutralT1VoiceHoldKey.source &&
                 $0.source != suppressedT1PowerKey.source
-        } + [neutralT1VoiceSearchKey, neutralT1VoiceHoldKey]
+        }
+        if neutralizeVoiceKeys {
+            desired.append(contentsOf: [neutralT1VoiceSearchKey, neutralT1VoiceHoldKey])
+        } else {
+            if let originalSearchMapping { desired.append(originalSearchMapping) }
+            if let originalHoldMapping { desired.append(originalHoldMapping) }
+        }
         if let powerMapping {
             desired.append(powerMapping)
         }
@@ -277,9 +286,21 @@ final class RemoteHIDKeyMapper {
                     return .needsReapply
                 }
             case .t1Remote:
-                guard mappings.contains(RemoteHIDKeyMappingPolicy.neutralT1VoiceSearchKey),
-                      mappings.contains(RemoteHIDKeyMappingPolicy.neutralT1VoiceHoldKey)
-                else { return .needsReapply }
+                let original = originalMappings[registryID]
+                if suppressPowerKey || neutralizeVoiceKey {
+                    guard mappings.contains(RemoteHIDKeyMappingPolicy.neutralT1VoiceSearchKey),
+                          mappings.contains(RemoteHIDKeyMappingPolicy.neutralT1VoiceHoldKey)
+                    else { return .needsReapply }
+                } else {
+                    if original?.t1Search != RemoteHIDKeyMappingPolicy.neutralT1VoiceSearchKey,
+                       mappings.contains(RemoteHIDKeyMappingPolicy.neutralT1VoiceSearchKey) {
+                        return .needsReapply
+                    }
+                    if original?.t1Hold != RemoteHIDKeyMappingPolicy.neutralT1VoiceHoldKey,
+                       mappings.contains(RemoteHIDKeyMappingPolicy.neutralT1VoiceHoldKey) {
+                        return .needsReapply
+                    }
+                }
                 if suppressPowerKey,
                    !mappings.contains(RemoteHIDKeyMappingPolicy.suppressedT1PowerKey) {
                     return .needsReapply
@@ -512,7 +533,7 @@ final class RemoteHIDKeyMapper {
 
         for (index, service) in services.enumerated() {
             guard let registryID = service.registryID else {
-                if neutralizeVoiceKey, service.family == .xiaomi {
+                if neutralizeVoiceKey {
                     rollback(
                         services: services,
                         snapshots: snapshots,
@@ -538,15 +559,19 @@ final class RemoteHIDKeyMapper {
                         : originalMappings[registryID]?.power
                 )
             case .t1Remote:
+                let original = originalMappings[registryID]
                 desired = RemoteHIDKeyMappingPolicy.applyingT1(
                     to: current,
+                    neutralizeVoiceKeys: suppressPowerKey || neutralizeVoiceKey,
+                    originalSearchMapping: original?.t1Search,
+                    originalHoldMapping: original?.t1Hold,
                     powerMapping: suppressPowerKey
                         ? RemoteHIDKeyMappingPolicy.suppressedT1PowerKey
-                        : originalMappings[registryID]?.t1Power
+                        : original?.t1Power
                 )
             }
             guard service.setMappings(desired) else {
-                if neutralizeVoiceKey, service.family == .xiaomi {
+                if neutralizeVoiceKey {
                     rollback(
                         services: services,
                         snapshots: snapshots,
@@ -566,16 +591,6 @@ final class RemoteHIDKeyMapper {
 
         let appliedCount = appliedIndices.count
         let allTargetsApplied = appliedCount == matchedCount
-        let xiaomiServicesCount = services.filter { $0.family == .xiaomi }.count
-        let appliedXiaomiCount = appliedIndices.filter { services[$0].family == .xiaomi }.count
-        let allXiaomiApplied = xiaomiServicesCount > 0 && appliedXiaomiCount == xiaomiServicesCount
-        let t1ServicesCount = services.filter { $0.family == .t1Remote }.count
-        let appliedT1Count = appliedIndices.filter { services[$0].family == .t1Remote }.count
-        let allT1Applied = t1ServicesCount > 0 && appliedT1Count == t1ServicesCount
-        let hasNeutralizableServices = (xiaomiServicesCount + t1ServicesCount) > 0
-        let allNeutralized = hasNeutralizableServices &&
-            (xiaomiServicesCount == 0 || allXiaomiApplied) &&
-            (t1ServicesCount == 0 || allT1Applied)
         let fullySuppressedLocations = Set(matchedCountsByLocation.compactMap { locationID, count in
             appliedCountsByLocation[locationID] == count ? locationID : nil
         })
@@ -589,8 +604,8 @@ final class RemoteHIDKeyMapper {
         } else {
             appliedConfiguration = nil
         }
-        isApplied = (neutralizeVoiceKey && xiaomiServicesCount > 0) ? allXiaomiApplied && allTargetsApplied : appliedCount > 0
-        isVoiceKeyNeutralized = neutralizeVoiceKey && allNeutralized
+        isApplied = neutralizeVoiceKey ? allTargetsApplied : appliedCount > 0
+        isVoiceKeyNeutralized = neutralizeVoiceKey && allTargetsApplied
         if suppressPowerKey, !fullySuppressedLocations.isEmpty {
             isPowerKeySuppressed = true
             powerSuppressedLocationIDs = fullySuppressedLocations

@@ -52,13 +52,14 @@ enum T1RemoteProtocol {
             guard let payload = stripLeadingReportID(UInt8(keyboardReportID), expectedLength: 8, data: data),
                   payload.count >= 8
             else { return .invalid }
-            let modifier = payload[0]
             var usages: Set<UInt16> = []
             var voiceHoldPressed = false
             for byte in payload[2..<8] where byte != 0 {
                 if byte == UInt8(voiceHoldUsage) {
                     voiceHoldPressed = true
-                } else if modifier == 0, mappedKeyboardUsages.contains(byte) {
+                } else if mappedKeyboardUsages.contains(byte) {
+                    // Keep mapped front-panel buttons (Menu 0x65) active even when rear QWERTY
+                    // modifiers change mid-hold so modifier chords cannot drop an active hold.
                     usages.insert(UInt16(byte))
                 }
             }
@@ -70,6 +71,8 @@ enum T1RemoteProtocol {
             else { return .invalid }
             let usage = UInt16(payload[0]) | (UInt16(payload[1]) << 8)
             switch usage {
+            case 0x0000:
+                return .usages([], voiceHoldPressed: false)
             case 0x0224:
                 return .usages([RemoteButton.back.hidUsage], voiceHoldPressed: false)
             case 0x0223:
@@ -81,9 +84,9 @@ enum T1RemoteProtocol {
             case 0x00EA:
                 return .usages([RemoteButton.volumeDown.hidUsage], voiceHoldPressed: false)
             default:
-                // Includes `0x0000` release, `0x0221` (AC Search handled by ATVV + UserKeyMapping),
-                // and unmapped back-keyboard multimedia keys.
-                return .usages([], voiceHoldPressed: false)
+                // Non-release unmapped consumer usages (such as 0x0221 AC Search or back-keyboard
+                // media keys) must not wipe currently held Report 2 buttons when interleaved.
+                return .ignore
             }
 
         case systemControlReportID:
@@ -115,7 +118,7 @@ enum T1RemoteProtocol {
         expectedLength: Int,
         data: Data
     ) -> [UInt8]? {
-        if data.count == expectedLength + 1, data.first == expectedID {
+        if data.count >= expectedLength + 1, data.first == expectedID {
             return Array(data.dropFirst())
         }
         if data.count >= expectedLength {
@@ -144,11 +147,32 @@ struct T1RemoteReadiness {
         allowCustomIdentity: Bool = false
     ) -> Bool {
         let accepted = identity == .t1Remote ||
-            (allowCustomIdentity && identity.vendorID != 0 && identity != .xiaomi && identity != .chromecast)
+            (allowCustomIdentity &&
+                identity.vendorID != 0 &&
+                !Self.foreignVendorIDs.contains(identity.vendorID))
         guard accepted else { return false }
         matchedIdentity = true
         return true
     }
+
+    static func shouldAllowCustomIdentity(
+        adoptUnidentifiedATVVAsT1: Bool,
+        isTargetedPeripheral: Bool,
+        savedModelIsT1Remote: Bool,
+        savedCustomIdentity: RemoteHIDIdentity?,
+        reportedIdentity: RemoteHIDIdentity
+    ) -> Bool {
+        if adoptUnidentifiedATVVAsT1 { return true }
+        guard isTargetedPeripheral, savedModelIsT1Remote else { return false }
+        return savedCustomIdentity == nil || savedCustomIdentity == reportedIdentity
+    }
+
+    private static let foreignVendorIDs: Set<UInt16> = [
+        RemoteHIDIdentity.xiaomi.vendorID,
+        RemoteHIDIdentity.chromecast.vendorID,
+        0x05AC,
+        0x004C,
+    ]
 
     var isReady: Bool { capabilitiesAccepted && matchedIdentity }
 }

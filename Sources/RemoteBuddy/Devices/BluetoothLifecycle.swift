@@ -44,6 +44,27 @@ enum ForeignVoiceRemoteProduct {
         return rejectedNames.contains(normalized) ? normalized : nil
     }
 
+    private static let nonT1ProductKeywords: [String] = [
+        "gy3le",
+        "google tv",
+        "streamer",
+        "siri",
+        "apple tv",
+        "apple remote",
+        "nvidia shield",
+        "shield tv",
+        "fire tv",
+        "roku",
+    ]
+
+    static func isExcludedFromT1CloneFallback(_ name: String?) -> Bool {
+        guard let normalized = normalized(name) else { return false }
+        if rejectedNames.contains(normalized) || G9N9NProtocol.isCandidateName(name) {
+            return true
+        }
+        return nonT1ProductKeywords.contains { normalized.contains($0) }
+    }
+
     private static func normalized(_ name: String?) -> String? {
         guard let name else { return nil }
         let trimmed = name
@@ -145,8 +166,11 @@ enum VoiceRemoteAdmission {
             return .adoptRecognizedName(recognized)
         }
         guard advertisesVoiceService else { return .ignore }
-        if adoptUnidentifiedATVVAsT1, allowsT1Remote {
-            return .adoptRecognizedName(nameForMatch ?? "T1-Remote")
+        if adoptUnidentifiedATVVAsT1, allowsT1Remote,
+           let trimmedName = nameForMatch?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !trimmedName.isEmpty,
+           !ForeignVoiceRemoteProduct.isExcludedFromT1CloneFallback(trimmedName) {
+            return .adoptRecognizedName(trimmedName)
         }
         if let nameForMatch, !nameForMatch.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return .rejectUnrecognizedName(nameForMatch)
