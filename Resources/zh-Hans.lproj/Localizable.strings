@@ -59,10 +59,10 @@
 "button_mapping.permission.accessibility_expired" = "辅助功能权限已失效；已释放遥控器";
 "button_mapping.permission.system_expired" = "系统权限已失效；已释放遥控器";
 "common.status.stopped" = "已停止";
-"connection.status.searching" = "正在查找小米遥控器";
+"connection.status.searching" = "正在查找遥控器";
 "connection.status.connecting" = "正在连接遥控器";
 "connection.status.initializing_voice" = "正在初始化语音服务";
-"connection.status.connected_to_device" = "小米遥控器已连接";
+"connection.status.connected_to_device" = "遥控器已连接";
 "connection.status.apple_remote_connected" = "苹果遥控器已连接";
 "connection.status.chromecast_connected" = "Chromecast 遥控器已连接";
 "connection.status.reconnecting" = "连接断开，准备重连";
@@ -359,7 +359,7 @@
 "permissions.page.subtitle" = "按顺序完成权限设置，确保遥控器正常连接和发送按键";
 "permissions.required.title" = "所需权限";
 "permission.bluetooth.title" = "蓝牙";
-"permission.bluetooth.description" = "连接小米蓝牙遥控器 2 Pro 并接收语音";
+"permission.bluetooth.description" = "连接蓝牙遥控器并接收语音";
 "permission.bluetooth.open_settings" = "打开蓝牙设置";
 "permission.input_monitoring.title" = "输入监控";
 "permission.input_monitoring.description" = "读取遥控器按键，并尽量避免系统原操作重复触发";
@@ -684,14 +684,14 @@
 "onboarding.remote_availability.title" = "你现在有实体遥控器吗？";
 "onboarding.remote_availability.detail" = "实体遥控器可以获得完整、稳定的遥控搭子体验。如果当前没有，也可以继续使用手机。";
 "onboarding.remote_availability.has_remote.title" = "有遥控器";
-"onboarding.remote_availability.has_remote.detail" = "连接小米蓝牙遥控器，使用实体按键和遥控器麦克风。";
+"onboarding.remote_availability.has_remote.detail" = "连接支持的蓝牙遥控器，使用实体按键和遥控器麦克风。";
 "onboarding.remote_availability.no_remote.title" = "当前没有遥控器";
 "onboarding.remote_availability.no_remote.detail" = "下一步选择 iPhone App 或微信小程序完成体验。";
 "onboarding.remote_availability.recommended" = "优先推荐";
 "onboarding.remote_availability.illustration" = "优先使用实体遥控器";
 "onboarding.control_method.title" = "没有遥控器时，选择手机控制方式";
 "onboarding.control_method.physical_remote.title" = "使用实体遥控器";
-"onboarding.control_method.physical_remote.detail" = "连接小米蓝牙遥控器，使用实体按键和遥控器麦克风。";
+"onboarding.control_method.physical_remote.detail" = "连接支持的蓝牙遥控器，使用实体按键和遥控器麦克风。";
 "onboarding.control_method.illustration" = "选择现在就能使用的控制方式";
 "onboarding.permissions.title" = "允许遥控搭子连接和控制 Mac";
 "onboarding.permissions.detail" = "先开启三项权限，再选择和连接设备。麦克风驱动将在第 4 步检查。";
@@ -1061,7 +1061,7 @@
 
 "common_phrases.key.ok" = "确认键";
 
-"button_mapping.unsupported_device" = "此遥控器目前尚未支持。请选择小米或 G9N9N 遥控器进行按键设置。";
+"button_mapping.unsupported_device" = "此遥控器目前尚未支持。请选择小米、T1-Remote 或 G9N9N 遥控器进行按键设置。";
 
 
 "onboarding.voice_tool.guide.screenshot.doubao_input_microphone" = "豆包输入法：选择遥控搭子的麦克风";
