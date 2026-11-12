@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import Testing
 @testable import RemoteBuddy
@@ -841,5 +842,182 @@ struct T1RemoteProtocolTests {
         #expect(model.lastRemoteButtonPress == .ok)
         t1Monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: releaseReport)
         #expect(model.activeRemoteButtons.isEmpty)
+    }
+
+    @Test @MainActor func t1DirectionalAndOKPassthroughTemporarilyInterceptedForCommonPhrases() throws {
+        let suite = "t1-common-phrases-modal-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = AppSettings(defaults: defaults)
+        settings.customMappingEnabled = true
+
+        let profileID = UUID()
+        let suppressor = KeyboardEventSuppressor(uptime: { 0 }, permissionsGranted: { true })
+        let monitor = HIDRemoteMonitor(
+            settings: settings,
+            allowsT1Remote: true,
+            profileID: profileID,
+            eventSuppressor: suppressor,
+            ownsEventSuppressor: false,
+            runtimePermissions: { true },
+            nativeSuppressionAvailable: { true },
+            diagnosticLogger: { _ in }
+        )
+
+        var claimActive = true
+        var runtimeEvents: [(RemoteButton, RemoteButtonPhase)] = []
+        let modalButtons: Set<RemoteButton> = [.up, .down, .left, .right, .ok]
+        monitor.claimsRuntimeButton = { id, button in
+            guard id == profileID, claimActive else { return false }
+            return modalButtons.contains(button)
+        }
+        monitor.onRuntimeButton = { id, button, phase in
+            guard id == profileID else { return false }
+            runtimeEvents.append((button, phase))
+            if phase == .press {
+                // Mirror CommonPhraseRouting: pressing closes panel / stops claiming new presses,
+                // while physical release must still arrive and be suppressed.
+                claimActive = false
+            }
+            return true
+        }
+        monitor.connectSimulatedDevice(fingerprint: "t1-fp", profileID: profileID, isSeized: false)
+
+        let releaseReport = Data([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+        let testCases: [(UInt8, RemoteButton, CGKeyCode)] = [
+            (0x52, .up, 126),
+            (0x51, .down, 125),
+            (0x50, .left, 123),
+            (0x4F, .right, 124),
+            (0x28, .ok, 36),
+        ]
+
+        for (usageByte, expectedButton, keyCode) in testCases {
+            claimActive = true
+            runtimeEvents.removeAll()
+            let downEvent = try #require(CGEvent(keyboardEventSource: nil, virtualKey: keyCode, keyDown: true))
+            let upEvent = try #require(CGEvent(keyboardEventSource: nil, virtualKey: keyCode, keyDown: false))
+            let pressReport = Data([0x01, 0x00, 0x00, usageByte, 0x00, 0x00, 0x00, 0x00, 0x00])
+
+            monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: pressReport)
+            #expect(runtimeEvents.count == 1)
+            #expect(runtimeEvents[0].0 == expectedButton)
+            #expect(runtimeEvents[0].1 == .press)
+            #expect(suppressor.handle(type: .keyDown, event: downEvent))
+
+            monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: releaseReport)
+            #expect(runtimeEvents.count == 2)
+            #expect(runtimeEvents[1].0 == expectedButton)
+            #expect(runtimeEvents[1].1 == .release)
+            #expect(suppressor.handle(type: .keyUp, event: upEvent))
+        }
+
+        // Once closed, subsequent D-pad / OK presses remain native passthrough.
+        claimActive = false
+        runtimeEvents.removeAll()
+        let upDown = try #require(CGEvent(keyboardEventSource: nil, virtualKey: 126, keyDown: true))
+        let upUp = try #require(CGEvent(keyboardEventSource: nil, virtualKey: 126, keyDown: false))
+        monitor.handleSimulatedT1Report(
+            reportID: T1RemoteProtocol.keyboardReportID,
+            data: Data([0x01, 0x00, 0x00, 0x52, 0x00, 0x00, 0x00, 0x00, 0x00])
+        )
+        #expect(runtimeEvents.isEmpty)
+        #expect(!suppressor.handle(type: .keyDown, event: upDown))
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: releaseReport)
+        #expect(!suppressor.handle(type: .keyUp, event: upUp))
+        monitor.disconnectSimulatedDevice()
+    }
+
+    @Test @MainActor func t1DirectionalAndOKPassthroughDrivesAppSwitcherSessionWithoutDismissing() throws {
+        let suite = "t1-app-switcher-modal-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = AppSettings(defaults: defaults)
+        settings.customMappingEnabled = true
+
+        let profile = RemoteDeviceProfile(
+            model: .t1Remote,
+            customName: "T1-Remote",
+            hidFingerprint: "t1-fp",
+            mappings: RemoteDeviceMappings(
+                buttonBindings: [.home: .appSwitcher],
+                buttonShortcuts: [:],
+                secondaryButtonBindings: [:]
+            )
+        )
+        settings.remoteDeviceProfiles = [profile]
+        let profileID = profile.id
+        settings.selectRemoteProfile(profileID)
+
+        let suppressor = KeyboardEventSuppressor(uptime: { 0 }, permissionsGranted: { true })
+        var postedEvents: [(CGKeyCode, Bool, CGEventFlags)] = []
+        let monitor = HIDRemoteMonitor(
+            settings: settings,
+            allowsT1Remote: true,
+            profileID: profileID,
+            eventSuppressor: suppressor,
+            ownsEventSuppressor: false,
+            runtimePermissions: { true },
+            nativeSuppressionAvailable: { true },
+            diagnosticLogger: { _ in },
+            appSwitcherKeyStatePoster: { code, down, flags in
+                postedEvents.append((code, down, flags))
+                return true
+            }
+        )
+        monitor.connectSimulatedDevice(fingerprint: "t1-fp", profileID: profileID, isSeized: false)
+
+        let homePress = Data([0x02, 0x23, 0x02])
+        let consumerRelease = Data([0x02, 0x00, 0x00])
+        let leftPress = Data([0x01, 0x00, 0x00, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00])
+        let rightPress = Data([0x01, 0x00, 0x00, 0x4F, 0x00, 0x00, 0x00, 0x00, 0x00])
+        let okPress = Data([0x01, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x00, 0x00])
+        let kbRelease = Data([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+
+        // Open App Switcher via T1 Home key -> Cmd down + Tab down/up.
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.consumerReportID, data: homePress)
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.consumerReportID, data: consumerRelease)
+        #expect(postedEvents.map(\.0) == [55, 48, 48])
+
+        // Multiple Left/Right presses navigate inside App Switcher while suppressing native arrows.
+        postedEvents.removeAll()
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: leftPress)
+        let leftDown = try #require(CGEvent(keyboardEventSource: nil, virtualKey: 123, keyDown: true))
+        #expect(suppressor.handle(type: .keyDown, event: leftDown))
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: kbRelease)
+        let leftUp = try #require(CGEvent(keyboardEventSource: nil, virtualKey: 123, keyDown: false))
+        #expect(suppressor.handle(type: .keyUp, event: leftUp))
+
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: rightPress)
+        let rightDown = try #require(CGEvent(keyboardEventSource: nil, virtualKey: 124, keyDown: true))
+        #expect(suppressor.handle(type: .keyDown, event: rightDown))
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: kbRelease)
+        let rightUp = try #require(CGEvent(keyboardEventSource: nil, virtualKey: 124, keyDown: false))
+        #expect(suppressor.handle(type: .keyUp, event: rightUp))
+
+        #expect(postedEvents.map(\.0) == [123, 123, 124, 124])
+        #expect(postedEvents.allSatisfy { $0.2.contains(.maskCommand) })
+
+        // T1 OK confirms App Switcher (Cmd up) and still suppresses its own release edge.
+        postedEvents.removeAll()
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: okPress)
+        let okDown = try #require(CGEvent(keyboardEventSource: nil, virtualKey: 36, keyDown: true))
+        #expect(suppressor.handle(type: .keyDown, event: okDown))
+        #expect(postedEvents.count == 1)
+        #expect(postedEvents[0].0 == 55)
+        #expect(!postedEvents[0].1)
+
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: kbRelease)
+        let okUp = try #require(CGEvent(keyboardEventSource: nil, virtualKey: 36, keyDown: false))
+        #expect(suppressor.handle(type: .keyUp, event: okUp))
+
+        // After confirmation, T1 Left returns to native passthrough.
+        postedEvents.removeAll()
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: leftPress)
+        let postConfirmLeftDown = try #require(CGEvent(keyboardEventSource: nil, virtualKey: 123, keyDown: true))
+        #expect(!suppressor.handle(type: .keyDown, event: postConfirmLeftDown))
+        #expect(postedEvents.isEmpty)
+        monitor.handleSimulatedT1Report(reportID: T1RemoteProtocol.keyboardReportID, data: kbRelease)
+        monitor.disconnectSimulatedDevice()
     }
 }
