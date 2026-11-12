@@ -228,7 +228,13 @@ extension BridgeAppModel {
 
     func refreshRemoteDiscovery() {
         guard started else { return }
-        if connections.discoveryBridge == nil {
+        if settings.allowsForgottenRemoteDuringActiveControlSetup,
+           let discovery = connections.discoveryBridge {
+            connections.discoveryBridge = nil
+            discovery.stop()
+            connections.states.removeValue(forKey: ObjectIdentifier(discovery))
+            startBluetoothDiscoveryIfNeeded()
+        } else if connections.discoveryBridge == nil {
             startBluetoothDiscoveryIfNeeded()
         } else {
             connections.discoveryBridge?.reconnectNow()

@@ -16,6 +16,7 @@ private struct OnboardingReturnConfiguration: Codable {
     let chromecastVoiceMode: ChromecastVoiceMode
     let customMappingEnabled: Bool
     let selectedRemoteProfileID: UUID?
+    let initialRemoteProfileIDs: [UUID]
 }
 
 extension AppSettings {
@@ -48,15 +49,32 @@ extension AppSettings {
             fnTapModeEnabled: voiceFnTapModeEnabled,
             chromecastVoiceMode: chromecastVoiceMode,
             customMappingEnabled: customMappingEnabled,
-            selectedRemoteProfileID: selectedRemoteProfileID
+            selectedRemoteProfileID: selectedRemoteProfileID,
+            initialRemoteProfileIDs: remoteDeviceProfiles.map(\.id)
         )
         if let data = try? JSONEncoder().encode(configuration) {
             defaults.set(data, forKey: Self.onboardingReturnConfigurationKey)
         }
     }
 
+    func uncommittedOnboardingRemoteProfileIDs() -> [UUID] {
+        guard let configuration = onboardingReturnConfiguration else { return [] }
+        let initialIDs = Set(configuration.initialRemoteProfileIDs)
+        let forgottenBluetooth = forgottenBluetoothIdentifiers
+        let forgottenHID = forgottenHIDFingerprints
+        return remoteDeviceProfiles.compactMap { profile in
+            guard !initialIDs.contains(profile.id) else { return nil }
+            let matchesForgottenBluetooth = profile.bluetoothIdentifier.map { forgottenBluetooth.contains($0) } ?? false
+            let matchesForgottenHID = profile.hidFingerprint.map { forgottenHID.contains($0) } ?? false
+            return (matchesForgottenBluetooth || matchesForgottenHID) ? profile.id : nil
+        }
+    }
+
     func dismissOnboarding() {
         guard canDismissOnboarding, let configuration = onboardingReturnConfiguration else { return }
+        for profileID in uncommittedOnboardingRemoteProfileIDs() {
+            _ = removeRemoteProfile(profileID)
+        }
         discardOnboardingVoiceTrial()
         onboardingVoiceTool = configuration.voiceTool
         onboardingControlSource = configuration.controlSource
@@ -300,6 +318,7 @@ extension AppSettings {
     }
 
     func completeOnboarding() {
+        unforgetRemotes(remoteDeviceProfiles)
         defaults.removeObject(forKey: Self.onboardingReturnConfigurationKey)
         recordFirstUseEvent(.completed, step: .complete)
         onboardingStep = .complete

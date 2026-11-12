@@ -321,6 +321,7 @@ extension BridgeAppModel {
                 includeGoogle: true,
                 includeT1: true
             ),
+            excludedDiscoveryFingerprints: settings.excludedForgottenHIDFingerprints(),
             permissionSnapshot: permissionSnapshotProvider()
         )
         if canReuseRunningHIDMonitors(for: desiredConfiguration, forceRestart: forceRestart) {
@@ -422,7 +423,7 @@ extension BridgeAppModel {
             targetFingerprint: nil,
             excludedFingerprints: { [weak self] in
                 guard let self else { return [] }
-                return Set(self.hidMonitors.keys).union(self.settings.forgottenHIDFingerprints)
+                return Set(self.hidMonitors.keys).union(self.settings.excludedForgottenHIDFingerprints())
             }
         )
         discoveryHIDMonitor = monitor
@@ -542,7 +543,10 @@ extension BridgeAppModel {
             guard let self, let monitor else {
                 return profileID.map { ($0, true) }
             }
-            guard !self.settings.forgottenHIDFingerprints.contains(fingerprint) else { return nil }
+            guard self.settings.allowsSetupCandidate(
+                hidFingerprint: fingerprint,
+                model: monitor.reportedModel
+            ) else { return nil }
             let existingProfileID = profileID
                 ?? self.settings.profileID(forHIDFingerprint: fingerprint)
             guard let resolvedProfileID = existingProfileID
