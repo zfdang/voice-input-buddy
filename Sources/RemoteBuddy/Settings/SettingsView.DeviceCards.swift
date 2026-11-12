@@ -133,11 +133,12 @@ extension SettingsView {
     }
 
     private func remoteConnectionLabel(connected: Bool) -> some View {
-        Label(
-            localization.text(connected ? "common.status.connected" : "remote.device.disconnected"),
-            systemImage: "circle.fill"
-        )
-        .foregroundStyle(connected ? Color.green : Color.secondary)
+        HStack(spacing: 4) {
+            Image(systemName: connected ? "checkmark.circle.fill" : "circle")
+                .foregroundStyle(connected ? Color.green : Color.secondary)
+            Text(localization.text(connected ? "common.status.connected" : "remote.device.disconnected"))
+                .foregroundStyle(.secondary)
+        }
     }
 
     private func remoteBatteryLabel(
