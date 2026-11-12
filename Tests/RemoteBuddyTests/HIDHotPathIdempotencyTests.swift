@@ -178,7 +178,7 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: false,
             requiresOrderedFn: false,
             hasHardwareVoiceKey: true,
-            isVoiceKeyNeutralized: false,
+            currentServicesVoiceKeyNeutralized: false,
             fnTapSessionEnabled: false,
             monitoringInterrupted: true,
             appliedPermissionSnapshot: deniedAccessibility,
@@ -191,7 +191,7 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: false,
             requiresOrderedFn: true,
             hasHardwareVoiceKey: true,
-            isVoiceKeyNeutralized: true,
+            currentServicesVoiceKeyNeutralized: true,
             fnTapSessionEnabled: false,
             monitoringInterrupted: false,
             appliedPermissionSnapshot: granted,
@@ -204,7 +204,7 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: false,
             requiresOrderedFn: true,
             hasHardwareVoiceKey: true,
-            isVoiceKeyNeutralized: false,
+            currentServicesVoiceKeyNeutralized: false,
             fnTapSessionEnabled: false,
             monitoringInterrupted: false,
             appliedPermissionSnapshot: granted,
@@ -215,7 +215,7 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: false,
             requiresOrderedFn: true,
             hasHardwareVoiceKey: true,
-            isVoiceKeyNeutralized: true,
+            currentServicesVoiceKeyNeutralized: true,
             fnTapSessionEnabled: false,
             monitoringInterrupted: true,
             appliedPermissionSnapshot: granted,
@@ -226,7 +226,7 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: false,
             requiresOrderedFn: true,
             hasHardwareVoiceKey: true,
-            isVoiceKeyNeutralized: true,
+            currentServicesVoiceKeyNeutralized: true,
             fnTapSessionEnabled: false,
             monitoringInterrupted: false,
             appliedPermissionSnapshot: deniedAccessibility,
@@ -239,7 +239,7 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: false,
             requiresOrderedFn: false,
             hasHardwareVoiceKey: false,
-            isVoiceKeyNeutralized: false,
+            currentServicesVoiceKeyNeutralized: false,
             fnTapSessionEnabled: false,
             monitoringInterrupted: false,
             appliedPermissionSnapshot: granted,
@@ -252,7 +252,7 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: true,
             requiresOrderedFn: false,
             hasHardwareVoiceKey: false,
-            isVoiceKeyNeutralized: false,
+            currentServicesVoiceKeyNeutralized: false,
             fnTapSessionEnabled: false,
             monitoringInterrupted: false,
             appliedPermissionSnapshot: granted,
@@ -263,7 +263,7 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: true,
             requiresOrderedFn: false,
             hasHardwareVoiceKey: false,
-            isVoiceKeyNeutralized: false,
+            currentServicesVoiceKeyNeutralized: false,
             fnTapSessionEnabled: false,
             monitoringInterrupted: false,
             appliedPermissionSnapshot: deniedAccessibility,
@@ -274,7 +274,7 @@ struct HIDHotPathIdempotencyTests {
             fnTapModeEnabled: true,
             requiresOrderedFn: false,
             hasHardwareVoiceKey: true,
-            isVoiceKeyNeutralized: true,
+            currentServicesVoiceKeyNeutralized: true,
             fnTapSessionEnabled: true,
             monitoringInterrupted: false,
             appliedPermissionSnapshot: granted,
@@ -443,5 +443,289 @@ struct HIDHotPathIdempotencyTests {
         #expect(messages == [
             "REMOTE PROFILE phase=completed result=persisted reason=verified_remote_path created=false"
         ])
+    }
+
+    @Test func voiceStartRevalidatesWhenSecondXiaomiHIDServiceAppearsLater() throws {
+        let suite = "hid-two-remotes-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        let settings = AppSettings(defaults: defaults)
+        settings.customMappingEnabled = true
+        settings.voiceKeyMode = .function
+        settings.setOnboardingVoiceTool(.weixin)
+
+        let bridge1ID = UUID()
+        let bridge2ID = UUID()
+        let mappings = RemoteDeviceMappings(
+            buttonBindings: AppSettings.defaultBindings,
+            buttonShortcuts: [:],
+            secondaryButtonBindings: [:]
+        )
+        let profile1 = RemoteDeviceProfile(
+            model: .rc003,
+            bluetoothIdentifier: bridge1ID,
+            hidFingerprint: "remote-1",
+            mappings: mappings
+        )
+        let profile2 = RemoteDeviceProfile(
+            model: .rc003,
+            bluetoothIdentifier: bridge2ID,
+            hidFingerprint: "remote-2",
+            mappings: mappings
+        )
+        settings.remoteDeviceProfiles = [profile1, profile2]
+        settings.selectedRemoteProfileID = profile1.id
+
+        var hasService2 = false
+        var mappings1: [HIDUsageMapping] = []
+        var mappings2: [HIDUsageMapping] = []
+        var writeCount = 0
+
+        let mapper = RemoteHIDKeyMapper(
+            serviceProvider: {
+                var result = [RemoteHIDMappingService(
+                    registryID: 101,
+                    locationID: 9,
+                    readMappings: { mappings1 },
+                    setMappings: {
+                        writeCount += 1
+                        mappings1 = $0
+                        return true
+                    }
+                )]
+                if hasService2 {
+                    result.append(RemoteHIDMappingService(
+                        registryID: 202,
+                        locationID: 10,
+                        readMappings: { mappings2 },
+                        setMappings: {
+                            writeCount += 1
+                            mappings2 = $0
+                            return true
+                        }
+                    ))
+                }
+                return result
+            },
+            recoveryDefaults: defaults,
+            bootID: "two-remotes-test"
+        )
+
+        var tapEnabled = false
+        var tapStarts = 0
+        let suppressor = KeyboardEventSuppressor(
+            permissionsGranted: { true },
+            tapOperations: .init(
+                start: { tapStarts += 1; tapEnabled = true; return true },
+                stop: { tapEnabled = false },
+                isEnabled: { tapEnabled }
+            )
+        )
+        let model = BridgeAppModel(
+            settings: settings,
+            initialAudioDevices: [],
+            voiceFunctionMapper: mapper,
+            hidEventSuppressor: suppressor,
+            permissionSnapshotProvider: {
+                HIDPermissionSnapshot(inputMonitoringGranted: true, accessibilityGranted: true)
+            }
+        )
+        model.preferredInputSourceMonitor = PreferredInputSourceMonitor(
+            voiceTool: { .weixin },
+            prepareInputSource: { _ in .selected },
+            currentInputSourceID: { "test.input.source" },
+            restoreInputSource: { _ in .selected },
+            waitForInputSourceActivation: { _, _, _, done in done(false) },
+            installMonitor: { _ in MonitorToken() },
+            removeMonitor: { _ in },
+            logger: { _ in }
+        )
+
+        let bridge1 = BluetoothRemoteBridge(
+            settings: settings,
+            delegate: model,
+            targetIdentifier: bridge1ID,
+            scheduleReconnect: { _, _ in }
+        )
+        let bridge2 = BluetoothRemoteBridge(
+            settings: settings,
+            delegate: model,
+            targetIdentifier: bridge2ID,
+            scheduleReconnect: { _, _ in }
+        )
+        model.connections.bridges[bridge1ID] = bridge1
+        model.connections.bridges[bridge2ID] = bridge2
+        bridge1.simulateReadyStateForTesting()
+        model.started = true
+        defer {
+            model.stopHIDMonitors()
+            model.preferredInputSourceMonitor.stop()
+            model.cancelHIDMappingRecovery(reason: "test_cleanup")
+            bridge1.stop()
+            bridge2.stop()
+            model.connections.bridges.removeAll()
+            model.connections.states.removeAll()
+            model.started = false
+            defaults.removePersistentDomain(forName: suite)
+        }
+
+        // Only remote 1's HID service is present when bridge 2 becomes Bluetooth-ready.
+        #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
+        #expect(mappings1.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey))
+        #expect(mappings2.isEmpty)
+
+        bridge2.simulateReadyStateForTesting()
+        #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
+        #expect(mappings2.isEmpty)
+
+        // Remote 2's HID service appears after Bluetooth readiness reported success for remote 1.
+        hasService2 = true
+        model.bluetoothBridgeDidStartVoice(bridge2)
+        _ = model.voiceSession.pendingStart.cancel(ifOwnedBy: bridge2ID)
+        model.voiceSession.stopRequested = false
+        model.voiceSession.end()
+
+        #expect(mappings2.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey))
+        #expect(mappings2.contains(RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey))
+        #expect(model.hidAllowedLocationIDs == Set([9, 10]))
+
+        // Subsequent voice press on remote 2 reuses the healthy neutralized set without extra writes.
+        let writesAfterCatchup = writeCount
+        let tapStartsAfterCatchup = tapStarts
+        let monitor2AfterCatchup = try #require(model.hidMonitors["remote-2"])
+        model.bluetoothBridgeDidStartVoice(bridge2)
+        _ = model.voiceSession.pendingStart.cancel(ifOwnedBy: bridge2ID)
+        model.voiceSession.stopRequested = false
+        model.voiceSession.end()
+
+        #expect(writeCount == writesAfterCatchup)
+        #expect(tapStarts == tapStartsAfterCatchup)
+        #expect(model.hidMonitors["remote-2"] === monitor2AfterCatchup)
+    }
+
+    @Test func voiceStartDetectsDisconnectedServiceAndReusedOrResetRegistryID() throws {
+        let harness = try makeHarness(
+            customMappingEnabled: true,
+            voiceKeyMode: .function,
+            voiceTool: .weixin,
+            hasMatchingHIDServices: true
+        )
+        defer { harness.cleanup() }
+        let model = harness.model
+        let counters = harness.counters
+
+        #expect(model.voiceFunctionMapper.isVoiceKeyNeutralized)
+
+        // Simulate disconnect dropping the HID service, then reconnecting with cleared mappings.
+        counters.hasMatchingHIDServices = false
+        model.bluetoothBridge(harness.bridge, didChange: .reconnecting)
+        #expect(!model.voiceFunctionMapper.isVoiceKeyNeutralized)
+
+        counters.hasMatchingHIDServices = true
+        counters.hidMappings = []
+        let writesBeforeReconnectVoice = counters.setMappingsCount
+        model.bluetoothBridgeDidStartVoice(harness.bridge)
+        _ = model.voiceSession.pendingStart.cancel(ifOwnedBy: harness.bridgeID)
+        model.voiceSession.stopRequested = false
+        model.voiceSession.end()
+
+        #expect(counters.setMappingsCount == writesBeforeReconnectVoice + 1)
+        #expect(counters.hidMappings.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey))
+    }
+
+    @Test func hidDeviceConnectedSchedulesMappingRefreshForUnmappedService() async throws {
+        let suite = "hid-connect-refresh-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        let settings = AppSettings(defaults: defaults)
+        settings.customMappingEnabled = true
+        settings.voiceKeyMode = .leftCommand
+
+        let bridgeID = UUID()
+        let mappings = RemoteDeviceMappings(
+            buttonBindings: AppSettings.defaultBindings,
+            buttonShortcuts: [:],
+            secondaryButtonBindings: [:]
+        )
+        let profile = RemoteDeviceProfile(
+            model: .rc003,
+            bluetoothIdentifier: bridgeID,
+            hidFingerprint: "remote-1",
+            mappings: mappings
+        )
+        settings.remoteDeviceProfiles = [profile]
+        settings.selectedRemoteProfileID = profile.id
+
+        var hasService2 = false
+        var mappings1: [HIDUsageMapping] = []
+        var mappings2: [HIDUsageMapping] = []
+        let mapper = RemoteHIDKeyMapper(
+            serviceProvider: {
+                var result = [RemoteHIDMappingService(
+                    registryID: 101,
+                    locationID: 9,
+                    readMappings: { mappings1 },
+                    setMappings: { mappings1 = $0; return true }
+                )]
+                if hasService2 {
+                    result.append(RemoteHIDMappingService(
+                        registryID: 202,
+                        locationID: 10,
+                        readMappings: { mappings2 },
+                        setMappings: { mappings2 = $0; return true }
+                    ))
+                }
+                return result
+            },
+            recoveryDefaults: defaults,
+            bootID: "hid-connect-refresh-test"
+        )
+        var tapEnabled = false
+        let suppressor = KeyboardEventSuppressor(
+            permissionsGranted: { true },
+            tapOperations: .init(
+                start: { tapEnabled = true; return true },
+                stop: { tapEnabled = false },
+                isEnabled: { tapEnabled }
+            )
+        )
+        let model = BridgeAppModel(
+            settings: settings,
+            initialAudioDevices: [],
+            voiceFunctionMapper: mapper,
+            hidEventSuppressor: suppressor,
+            permissionSnapshotProvider: {
+                HIDPermissionSnapshot(inputMonitoringGranted: true, accessibilityGranted: true)
+            }
+        )
+        model.preferredInputSourceMonitor = PreferredInputSourceMonitor(
+            voiceTool: { .unselected },
+            installMonitor: { _ in MonitorToken() },
+            removeMonitor: { _ in },
+            logger: { _ in }
+        )
+        model.started = true
+        defer {
+            model.stopHIDMonitors()
+            model.preferredInputSourceMonitor.stop()
+            model.cancelHIDMappingRecovery(reason: "test_cleanup")
+            model.started = false
+            defaults.removePersistentDomain(forName: suite)
+        }
+
+        model.applyHIDSettings()
+        #expect(mappings1.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey))
+        #expect(mappings2.isEmpty)
+
+        hasService2 = true
+        let monitor = try #require(model.hidMonitors["remote-1"])
+        monitor.onDeviceConnected?(profile.id, "remote-1")
+
+        // Drain the main-queue dispatch queued by onDeviceConnected.
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+
+        #expect(mappings2.contains(RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey))
+        #expect(mappings2.contains(RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey))
+        #expect(model.hidAllowedLocationIDs == Set([9, 10]))
     }
 }

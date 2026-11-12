@@ -430,6 +430,21 @@ extension BridgeAppModel {
         }
     }
 
+    private func scheduleHIDServiceMappingRefreshIfNeeded() {
+        // Defer outside IOHIDManager callbacks before probing/reapplying IOHIDEventSystem mappings.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.started,
+                  !self.audio.suspensionState.suspendsHIDMonitoring,
+                  !self.isStreaming,
+                  self.voiceFunctionMapper.needsReapply(
+                      suppressPowerKey: self.settings.customMappingEnabled,
+                      neutralizeVoiceKey: self.shouldNeutralizeNativeVoiceKey
+                  )
+            else { return }
+            self.applyHIDSettings(restartSiriRemote: false)
+        }
+    }
+
     private func makeHIDMonitor(
         profileID: UUID?,
         targetFingerprint: String?,
@@ -456,7 +471,9 @@ extension BridgeAppModel {
             }
         }
         monitor.onDeviceConnected = { [weak self] profileID, fingerprint in
-            guard let self, let resolvedProfileID = profileID
+            guard let self else { return }
+            self.scheduleHIDServiceMappingRefreshIfNeeded()
+            guard let resolvedProfileID = profileID
                 ?? self.settings.profileID(forHIDFingerprint: fingerprint) else { return }
             self.scheduleRemoteWakeRecovery(profileID: resolvedProfileID, reason: "hid_connected")
         }

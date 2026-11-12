@@ -61,12 +61,13 @@ extension BridgeAppModel {
             return
         }
         let profileID = activateRemoteProfile(for: bridge)
+        let currentServicesVoiceKeyNeutralized = voiceFunctionMapper.refreshVoiceKeyNeutralizationValidity()
         if Self.shouldReapplyHIDSettingsBeforeVoiceStart(
             mode: settings.voiceKeyMode,
             fnTapModeEnabled: settings.voiceFnTapModeEnabled,
             requiresOrderedFn: requiresOrderedVoiceFn,
             hasHardwareVoiceKey: bridge.identifiedModel?.isChromecastRemote != true,
-            isVoiceKeyNeutralized: voiceFunctionMapper.isVoiceKeyNeutralized,
+            currentServicesVoiceKeyNeutralized: currentServicesVoiceKeyNeutralized,
             fnTapSessionEnabled: voiceFnTapSession.isEnabled,
             monitoringInterrupted: hidMonitoringInterrupted,
             appliedPermissionSnapshot: appliedHIDPermissionSnapshot,
@@ -541,6 +542,7 @@ extension BridgeAppModel {
                 scheduleHIDMappingRecoveryIfNeeded()
             }
         } else {
+            voiceFunctionMapper.pruneAppliedServices()
             if readyBluetoothBridgeCount == 0 {
                 cancelHIDMappingRecovery(reason: "bluetooth_not_ready")
             }

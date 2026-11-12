@@ -133,7 +133,14 @@ final class RemoteHIDKeyMapper {
             if newValue != additionalIdentities { restore() }
         }
     }
+    private struct AppliedConfiguration: Equatable {
+        let suppressPowerKey: Bool
+        let neutralizeVoiceKey: Bool
+        var serviceRegistryIDs: Set<UInt64>
+    }
+
     private var originalMappings: [UInt64: OriginalMappings] = [:]
+    private var appliedConfiguration: AppliedConfiguration?
     private(set) var isApplied = false
     private(set) var isPowerKeySuppressed = false
     private(set) var powerSuppressedLocationIDs: Set<UInt32>?
@@ -142,6 +149,87 @@ final class RemoteHIDKeyMapper {
 
     var hasMatchingServices: Bool {
         matchedServiceCount > 0
+    }
+
+    private func matchingServices() -> [RemoteHIDMappingService] {
+        serviceProvider?() ?? Self.systemServices(additionalIdentities: additionalIdentities)
+    }
+
+    private func verifyAppliedServices(
+        _ services: [RemoteHIDMappingService],
+        suppressPowerKey: Bool?,
+        neutralizeVoiceKey: Bool
+    ) -> Bool {
+        guard let applied = appliedConfiguration,
+              applied.neutralizeVoiceKey == neutralizeVoiceKey,
+              suppressPowerKey == nil || applied.suppressPowerKey == suppressPowerKey,
+              !services.isEmpty
+        else { return false }
+
+        let expectedVoiceMapping = neutralizeVoiceKey
+            ? RemoteHIDKeyMappingPolicy.neutralRemoteVoiceKey
+            : RemoteHIDKeyMappingPolicy.remoteVoiceKey
+        let checkPowerSuppression = suppressPowerKey ?? applied.suppressPowerKey
+
+        var liveRegistryIDs = Set<UInt64>()
+        for service in services {
+            guard let registryID = service.registryID,
+                  applied.serviceRegistryIDs.contains(registryID)
+            else { return false }
+            let mappings = service.readMappings()
+            guard mappings.contains(expectedVoiceMapping) else { return false }
+            if checkPowerSuppression,
+               !mappings.contains(RemoteHIDKeyMappingPolicy.suppressedRemotePowerKey) {
+                return false
+            }
+            liveRegistryIDs.insert(registryID)
+        }
+
+        // Prune vanished service IDs so a reconnecting device cannot reuse stale readiness.
+        appliedConfiguration?.serviceRegistryIDs = liveRegistryIDs
+        return true
+    }
+
+    /// Revalidates `isVoiceKeyNeutralized` against currently attached HID services so newly
+    /// connected or reconnected remotes never inherit stale readiness from an earlier pass.
+    @discardableResult
+    func refreshVoiceKeyNeutralizationValidity() -> Bool {
+        guard isVoiceKeyNeutralized else { return false }
+        let services = matchingServices()
+        matchedServiceCount = services.count
+        if verifyAppliedServices(services, suppressPowerKey: nil, neutralizeVoiceKey: true) {
+            return true
+        }
+        isVoiceKeyNeutralized = false
+        appliedConfiguration = nil
+        return false
+    }
+
+    /// Returns whether currently attached HID services require reapplying key mappings.
+    func needsReapply(suppressPowerKey: Bool, neutralizeVoiceKey: Bool) -> Bool {
+        let services = matchingServices()
+        matchedServiceCount = services.count
+        guard !services.isEmpty else { return false }
+        return !verifyAppliedServices(
+            services,
+            suppressPowerKey: suppressPowerKey,
+            neutralizeVoiceKey: neutralizeVoiceKey
+        )
+    }
+
+    /// Removes vanished HID services from cached applied state when a device disconnects.
+    func pruneAppliedServices() {
+        guard var applied = appliedConfiguration else { return }
+        let services = matchingServices()
+        matchedServiceCount = services.count
+        let liveIDs = Set(services.compactMap(\.registryID))
+        applied.serviceRegistryIDs.formIntersection(liveIDs)
+        if applied.serviceRegistryIDs.isEmpty {
+            appliedConfiguration = nil
+            isVoiceKeyNeutralized = false
+        } else {
+            appliedConfiguration = applied
+        }
     }
 
     init(
@@ -224,7 +312,7 @@ final class RemoteHIDKeyMapper {
         neutralizeVoiceKey: Bool = false
     ) -> Bool {
         guard bootID != nil else { resetAppliedState(); return false }
-        let services = serviceProvider?() ?? Self.systemServices(additionalIdentities: additionalIdentities)
+        let services = matchingServices()
         let matchedCount = services.count
         matchedServiceCount = matchedCount
         guard matchedCount > 0 else {
@@ -322,6 +410,16 @@ final class RemoteHIDKeyMapper {
         let fullySuppressedLocations = Set(matchedCountsByLocation.compactMap { locationID, count in
             appliedCountsByLocation[locationID] == count ? locationID : nil
         })
+        let appliedRegistryIDs = Set(appliedIndices.compactMap { services[$0].registryID })
+        if allTargetsApplied, appliedRegistryIDs.count == matchedCount {
+            appliedConfiguration = AppliedConfiguration(
+                suppressPowerKey: suppressPowerKey,
+                neutralizeVoiceKey: neutralizeVoiceKey,
+                serviceRegistryIDs: appliedRegistryIDs
+            )
+        } else {
+            appliedConfiguration = nil
+        }
         isApplied = neutralizeVoiceKey ? allTargetsApplied : appliedCount > 0
         isVoiceKeyNeutralized = neutralizeVoiceKey && allTargetsApplied
         if suppressPowerKey, !fullySuppressedLocations.isEmpty {
@@ -348,7 +446,7 @@ final class RemoteHIDKeyMapper {
             return
         }
 
-        let services = serviceProvider?() ?? Self.systemServices(additionalIdentities: additionalIdentities)
+        let services = matchingServices()
         var restoredCount = 0
         for service in services {
             guard let registryID = service.registryID,
@@ -400,6 +498,7 @@ final class RemoteHIDKeyMapper {
     }
 
     private func resetAppliedState() {
+        appliedConfiguration = nil
         isApplied = false
         isPowerKeySuppressed = false
         powerSuppressedLocationIDs = nil
