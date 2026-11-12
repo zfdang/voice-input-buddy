@@ -28,6 +28,8 @@ SwiftPM 主执行目标为 RemoteBuddy。采用公开源码的默认构建，不
 
 已配置遥控器处于扫描或失败重试等待时，每 2 秒查询其系统蓝牙连接状态；只有标识匹配的设备已连接，才取消剩余退避并接入语音服务。该查询不重启广播扫描，也不向离线设备追加连接请求。已绑定 HID 的连接通知或按键活动也会在输入回调结束后触发提前重试。正在连接、初始化、已就绪、断开清理或系统挂起时不重复触发。原有 20 秒扫描兜底和离线失败退避保留，本地日志中的 `BLE WAKE RECOVERY` 记录恢复原因、结果和耗时。真机验收应覆盖遥控器休眠后唤醒、长时间离线后按键、连续按键及 Mac 睡眠恢复。
 
+系统睡眠（`.systemWillSleep`）或会话失活（`.sessionDidResignActive`）时，应用会调用 `suspendHIDMonitoring(reason:)` 统一停止 `HIDRemoteMonitor`（释放 `IOHIDManager` 与每秒权限轮询）、`KeyboardEventSuppressor` 事件监听端口、`PreferredInputSourceMonitor` 与延迟映射恢复任务、阻止 `startHIDDiscoveryIfNeeded` 在挂起期间新建发现监听器，同时关闭／清理常用语待插入队列并挂起活跃音频与非就绪蓝牙扫描重试；并在系统停机或停止路径清理未消费的唤醒恢复标记。设计上 `SystemAudioSuspensionState.suspendsHIDMonitoring` 仅包含 `.systemSleeping` 与 `.sessionInactive`、刻意排除 `.screenSleeping`：这优先保证主机未睡仅息屏以及系统先行唤醒而屏幕尚未点亮时的 HID 恢复（自定义动作与语音触发仍受 `!audio.suspensionState.isSuspended` 门控）。若系统停留在仅有 `.screenSleeping` 的 DarkWake 阶段，提前重新持有 `IOHIDManager` 与 `CGEventTap` 与“最小化后台唤醒”存在产品取舍，如需验证实际唤醒行为应在真机对照 `pmset -g assertions` 与 `pmset -g log`。对于 `.screenDidSleep` 或 `.sessionDidResignActive` 先行挂起导致 `.systemDidWake` 被错序拆分的场景，`AudioRuntime.pendingSystemWakeRecovery` 会跨延迟分支与 `startupPending` / `finishAudioStartup` 阶段保留待消费状态，待全部挂起原因解除后触发 `recoverBluetoothVoiceLink(reason: "system_wake")`；并在系统全部恢复且蓝牙仍处于就绪态时同步调用 `voiceFnTapSession.resume()`，防止因无连接状态跃迁而保持停用。
+
 权限状态模拟测试和构建成功不证明 macOS 在真实撤权时不会挂起。强制关机前未留下线程采样或 panic 栈时，不应把上述加固直接认定为系统死机根因或硬件验收结论。
 
 ## 异步操作生命周期

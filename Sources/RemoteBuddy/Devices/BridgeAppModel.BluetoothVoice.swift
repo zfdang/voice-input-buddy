@@ -523,7 +523,7 @@ extension BridgeAppModel {
         if case .ready = state {
             _ = registerBluetoothBridgeIfNeeded(bridge)
             learnSelectedRemoteHIDIdentity(bridge)
-            voiceFnTapSession.resume()
+            if !audio.suspensionState.isSuspended { voiceFnTapSession.resume() }
             if shouldReapplyHIDSettings {
                 applyHIDSettings()
                 scheduleHIDMappingRecoveryIfNeeded()
@@ -571,7 +571,7 @@ extension BridgeAppModel {
         refreshBluetoothPresentation()
         if case .ready = state { refreshRemoteDeviceNames(reason: .connection) }
         if isConnected {
-            voiceFnTapSession.resume()
+            if !audio.suspensionState.isSuspended { voiceFnTapSession.resume() }
             if shouldKeepVirtualAudioActive {
                 cancelVirtualAudioReleaseIfPending(trigger: "bluetooth_ready")
                 _ = ensureVirtualAudioOutputReady(reason: "bluetooth_ready")

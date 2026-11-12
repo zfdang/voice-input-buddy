@@ -77,6 +77,7 @@ struct BluetoothLifecycleTests {
     @Test func onlySystemWakeForcesBluetoothRecovery() {
         #expect(BluetoothWakeRecoveryPolicy.shouldForceReconnect(
             event: .systemDidWake,
+            pendingSystemWake: false,
             started: true
         ))
         #expect(BluetoothWakeRecoveryPolicy.shouldForceReconnect(
@@ -91,10 +92,12 @@ struct BluetoothLifecycleTests {
         ))
         #expect(!BluetoothWakeRecoveryPolicy.shouldForceReconnect(
             event: .screenDidWake,
+            pendingSystemWake: false,
             started: true
         ))
         #expect(!BluetoothWakeRecoveryPolicy.shouldForceReconnect(
             event: .systemDidWake,
+            pendingSystemWake: true,
             started: false
         ))
         #expect(!BluetoothWakeRecoveryPolicy.shouldForceReconnect(

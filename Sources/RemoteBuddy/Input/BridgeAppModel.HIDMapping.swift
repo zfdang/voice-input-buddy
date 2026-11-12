@@ -328,12 +328,15 @@ extension BridgeAppModel {
         cancelHIDMappingRecovery(reason: reason)
         stopHIDMonitors()
         preferredInputSourceMonitor.stop(preservingExplicitVoiceSession: false)
-        voiceFnTapSession.suspend()
         hidMonitoringInterrupted = true
     }
 
     func startHIDDiscoveryIfNeeded(allowBackOnly: Bool = false) {
         guard (settings.customMappingEnabled || allowBackOnly), discoveryHIDMonitor == nil else { return }
+        guard !audio.suspensionState.suspendsHIDMonitoring else {
+            hidMonitoringInterrupted = true
+            return
+        }
         let monitor = makeHIDMonitor(
             profileID: nil,
             targetFingerprint: nil,
