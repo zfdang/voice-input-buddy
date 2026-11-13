@@ -474,13 +474,6 @@
 "settings.overview.disconnected" = "Disconnected";
 "settings.overview.optional" = "Optional · not enabled";
 "settings.overview.not_configured" = "Not configured";
-"about.info.title" = "Version information";
-"about.info.build" = "Build";
-"about.info.architecture" = "Architecture";
-"about.info.updates" = "Software updates";
-"about.info.project" = "Project and links";
-"about.info.releases" = "Latest releases";
-"about.info.open_releases" = "View releases";
 "settings.general.display_group" = "App display";
 "settings.general.language_group" = "Language";
 "settings.overview.ready" = "Permissions and microphone ready";
@@ -515,6 +508,13 @@
 "about.preferences.title" = "App Preferences";
 "about.support.title" = "Updates & Support";
 "about.version.current" = "Current Version";
+"about.info.title" = "Version information";
+"about.info.build" = "Build";
+"about.info.architecture" = "Architecture";
+"about.info.updates" = "Software updates";
+"about.info.project" = "Project and links";
+"about.info.releases" = "Latest releases";
+"about.info.open_releases" = "View releases";
 "about.version.latest" = "Latest Version";
 "about.version.available" = "Update Available";
 "about.version.update_to" = "Update to %1$@";

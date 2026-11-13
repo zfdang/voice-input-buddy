@@ -11,12 +11,12 @@ APP_PATH = ROOT / "dist/Remote Buddy.app/Contents/MacOS/RemoteBuddy"
 OUTPUT_DIR = ROOT / "pages/assets/screenshots"
 
 SETTINGS_SECTIONS = [
+    ("general", "general-1020x772.png", "general"),
+    ("permissions", "permissions-1020x772.png", "permissions"),
     ("connection", "connection-1020x772.png", "connection"),
     ("mapping", "mapping-1020x772.png", "mapping"),
     ("commonPhrases", "commonPhrases-1020x772.png", "phrases"),
     ("integration", "integration-1020x772.png", "integration"),
-    ("permissions", "permissions-1020x772.png", "permissions"),
-    ("general", "general-1020x772.png", "general"),
     ("about", "about-1020x772.png", "about"),
 ]
 

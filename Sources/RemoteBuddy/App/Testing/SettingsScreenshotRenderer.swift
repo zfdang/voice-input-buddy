@@ -27,9 +27,7 @@ enum SettingsScreenshotRenderer {
         }
     }
 
-    private static let sections: [SettingsSection] = [
-        .connection, .mapping, .integration, .permissions, .general, .about, .commonPhrases,
-    ]
+    private static let sections = SettingsPageBehavior.sidebarSectionOrder + [.commonPhrases]
 
     static func renderAll(
         to outputDirectory: URL,

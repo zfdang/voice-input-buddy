@@ -474,13 +474,6 @@
 "settings.overview.disconnected" = "未连接";
 "settings.overview.optional" = "可选 · 未启用";
 "settings.overview.not_configured" = "未设置";
-"about.info.title" = "版本信息";
-"about.info.build" = "构建号";
-"about.info.architecture" = "芯片架构";
-"about.info.updates" = "软件更新";
-"about.info.project" = "项目介绍与链接";
-"about.info.releases" = "最新发布与下载";
-"about.info.open_releases" = "查看发布";
 "settings.general.display_group" = "应用显示";
 "settings.general.language_group" = "语言";
 "settings.overview.ready" = "权限与麦克风均已就绪";
@@ -515,6 +508,13 @@
 "about.preferences.title" = "应用偏好";
 "about.support.title" = "更新与支持";
 "about.version.current" = "当前版本";
+"about.info.title" = "版本信息";
+"about.info.build" = "构建号";
+"about.info.architecture" = "芯片架构";
+"about.info.updates" = "软件更新";
+"about.info.project" = "项目介绍与链接";
+"about.info.releases" = "最新发布与下载";
+"about.info.open_releases" = "查看发布";
 "about.version.latest" = "最新版本";
 "about.version.available" = "可更新";
 "about.version.update_to" = "更新到 %1$@";
