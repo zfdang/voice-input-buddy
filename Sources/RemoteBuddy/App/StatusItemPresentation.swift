@@ -11,7 +11,15 @@ enum StatusItemPresentation: String, Equatable {
     var descriptionKey: String { "status_item.state.\(rawValue)" }
 
     static func resolve(physicalConnected: Bool, isStreaming: Bool, isPreparing: Bool = false) -> Self {
-        isStreaming ? .streaming : (isPreparing ? .preparing : (physicalConnected ? .connected : .disconnected))
+        guard physicalConnected else { return .disconnected }
+        return isStreaming ? .streaming : (isPreparing ? .preparing : .connected)
+    }
+
+    @MainActor
+    static func publisher(model: BridgeAppModel) -> AnyPublisher<Self, Never> {
+        publisher(physicalConnected: model.$isConnected.eraseToAnyPublisher(),
+            isStreaming: model.$isStreaming.eraseToAnyPublisher(),
+            isPreparing: model.$applicationIntegrationStatus.map { $0?.isPreparingVoiceInput == true }.eraseToAnyPublisher())
     }
 
     static func publisher(physicalConnected: AnyPublisher<Bool, Never>,
@@ -24,11 +32,10 @@ enum StatusItemPresentation: String, Equatable {
 
     @MainActor
     func apply(to button: NSStatusBarButton, description: String) {
-        let active = self == .streaming || self == .preparing
-        let resourceName = active ? "StatusIconActiveTemplate" : "StatusIconTemplate"
-        let fallbackSymbol = active ? "mic.fill" : "mic"
+        let resourceName: String? = self == .preparing ? nil : (self == .streaming ? "StatusIconActiveTemplate" : "StatusIconTemplate")
+        let fallbackSymbol = self == .preparing ? "hourglass" : (self == .streaming ? "mic.fill" : "mic")
         // Named images are shared. Keep localized descriptions local to this status item.
-        let image = (NSImage(named: NSImage.Name(resourceName))?.copy() as? NSImage)
+        let image = resourceName.flatMap { NSImage(named: NSImage.Name($0))?.copy() as? NSImage }
             ?? NSImage(systemSymbolName: fallbackSymbol, accessibilityDescription: description)
         // Let macOS tint the monochrome artwork for light and dark menu bars.
         image?.isTemplate = true

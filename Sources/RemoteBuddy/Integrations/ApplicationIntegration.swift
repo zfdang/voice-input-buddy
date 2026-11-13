@@ -49,6 +49,13 @@ enum ApplicationFocusResult: Equatable {
 enum ApplicationIntegrationPreparationState: Equatable {
     case waiting, ready, preserved, unavailable, focusTimedOut, voiceTriggered, voiceTriggeredPreserved, voiceTriggeredWithoutFocus
     case cancelled(VoiceInputDestinationCancellation)
+
+    var isPreparingVoiceInput: Bool {
+        switch self {
+        case .waiting, .ready, .preserved, .unavailable, .focusTimedOut: return true
+        default: return false
+        }
+    }
 }
 
 @MainActor
