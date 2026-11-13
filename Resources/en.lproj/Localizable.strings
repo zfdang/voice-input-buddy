@@ -241,7 +241,7 @@
 "custom_application.error.open_failed" = "The target app could not be opened.";
 "settings.section.connection" = "Devices";
 "settings.section.buttons" = "Buttons";
-"settings.section.permissions" = "Permissions";
+"settings.section.permissions" = "Permissions & Microphone";
 "permission.status.enabled" = "Enabled";
 "permission.status.pending" = "Needs Permission";
 "connection.page.title" = "Device Connection";
@@ -978,7 +978,7 @@
 
 // Independent setup sections.
 "settings.section.integration" = "Integration";
-"settings.permissions.page_title" = "Permissions & Environment";
+"settings.permissions.page_title" = "Permissions & Microphone";
 "settings.permissions.introduction" = "Check these requirements before connecting a device or configuring input tools.";
 "settings.permissions.privacy_title" = "Privacy and data handling";
 "settings.permissions.privacy_detail" = "Remote Buddy does not collect usage statistics, save transcript history or audio recordings, or upload logs. Bluetooth receives remote audio; Input Monitoring reads remote buttons; Accessibility triggers configured actions. Speech recognition is provided by the selected input tool and follows its own privacy settings.";

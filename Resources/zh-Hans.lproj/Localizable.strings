@@ -241,7 +241,7 @@
 "custom_application.error.open_failed" = "无法打开目标 APP。";
 "settings.section.connection" = "遥控器连接";
 "settings.section.buttons" = "按键映射";
-"settings.section.permissions" = "权限与环境";
+"settings.section.permissions" = "权限与麦克风";
 "permission.status.enabled" = "已开启";
 "permission.status.pending" = "待授权";
 "connection.page.title" = "遥控器连接";
@@ -976,7 +976,7 @@
 
 // Independent setup sections.
 "settings.section.integration" = "输入法集成";
-"settings.permissions.page_title" = "权限与环境";
+"settings.permissions.page_title" = "权限与麦克风";
 "settings.permissions.introduction" = "先确认权限和麦克风驱动，再连接设备、配置输入工具。";
 "settings.permissions.privacy_title" = "隐私与数据处理";
 "settings.permissions.privacy_detail" = "Remote Buddy 不采集使用统计，不保存回眸文本和录音，不上传日志。蓝牙用于接收遥控器音频，输入监控用于读取遥控器按键，辅助功能用于触发所配置的动作。语音识别由所选输入工具提供，请同时检查该工具的隐私设置。";
