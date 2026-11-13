@@ -494,17 +494,3 @@ enum OnboardingLaunchPolicy {
         !isComplete || completedUpdate || openMainWindowAtLaunch
     }
 }
-
-enum CompletedUpdatePermissionRepairPolicy {
-    static func shouldOpenPermissions(
-        isOnboardingComplete: Bool,
-        completedUpdate: Bool,
-        bluetoothGranted: Bool,
-        inputMonitoringGranted: Bool,
-        accessibilityGranted: Bool
-    ) -> Bool {
-        isOnboardingComplete &&
-            completedUpdate &&
-            (!bluetoothGranted || !inputMonitoringGranted || !accessibilityGranted)
-    }
-}

@@ -237,11 +237,11 @@ enum SettingsPageBehavior {
     static let sidebarTopDragHeight: CGFloat = 5
 
     static let sidebarSectionOrder: [SettingsSection] = [
+        .general,
+        .permissions,
         .connection,
         .mapping,
         .integration,
-        .permissions,
-        .general,
         .about,
     ]
 

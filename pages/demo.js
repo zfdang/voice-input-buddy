@@ -35,6 +35,22 @@ button.addEventListener('blur', stop);
   const galleryDataZh = {
     settings: [
       {
+        title: '通用设置',
+        badge: '偏好设置',
+        windowTitle: '通用设置 · Remote Buddy',
+        src: 'assets/screenshots/general-zh.png',
+        alt: 'Remote Buddy 通用设置界面：四项状态概览、向导入口与分组偏好',
+        desc: '查看权限与麦克风、遥控器、按键映射和输入工具状态，点击卡片进入设置。下方可重新运行向导，或调整应用显示、启动行为和语言。'
+      },
+      {
+        title: '权限与麦克风',
+        badge: '权限与驱动',
+        windowTitle: '权限与麦克风 · Remote Buddy',
+        src: 'assets/screenshots/permissions-zh.png',
+        alt: 'Remote Buddy 权限与麦克风界面：蓝牙、输入监控、辅助功能权限与虚拟麦克风驱动状态',
+        desc: '检查蓝牙、输入监控和辅助功能权限，以及 Remote Buddy Mic 驱动状态。缺少权限或驱动时，按页面提示处理。'
+      },
+      {
         title: '遥控器连接',
         badge: '多设备管理',
         windowTitle: '遥控器连接 · Remote Buddy',
@@ -67,34 +83,18 @@ button.addEventListener('blur', stop);
         desc: '查看当前输入工具和麦克风状态，打开对应的设置向导。也可调整语音触发键及 Fn 点按设置。'
       },
       {
-        title: '权限与环境',
-        badge: '环境检测',
-        windowTitle: '权限与环境 · Remote Buddy',
-        src: 'assets/screenshots/permissions-zh.png',
-        alt: 'Remote Buddy 权限与环境界面：蓝牙、输入监控、辅助功能权限与虚拟麦克风驱动状态',
-        desc: '检查蓝牙、输入监控和辅助功能权限，以及 Remote Buddy Mic 驱动状态。缺少权限或驱动时，按页面提示处理。'
-      },
-      {
-        title: '通用设置',
-        badge: '偏好设置',
-        windowTitle: '通用设置 · Remote Buddy',
-        src: 'assets/screenshots/general-zh.png',
-        alt: 'Remote Buddy 通用设置界面：图标显示、启动行为、界面语言与向导重置',
-        desc: '管理菜单栏和 Dock 图标显示、开机自动启动、主窗口展示逻辑、界面语言，或重新开始配置向导。'
-      },
-      {
         title: '关于搭子',
         badge: '版本与更新',
         windowTitle: '关于搭子 · Remote Buddy',
         src: 'assets/screenshots/about-zh.png',
-        alt: 'Remote Buddy 关于界面：应用版本、软件更新检查、诊断与本地日志、开源许可与项目链接',
-        desc: '集中查看当前版本、检查软件更新、复制排障诊断信息、打开本地日志，并查看开源许可与项目支持链接。'
+        alt: 'Remote Buddy 关于界面：应用版本、软件更新检查、诊断与本地日志、项目链接',
+        desc: '集中查看当前版本、检查软件更新、复制排障诊断信息、打开本地日志，并访问官网、发布下载、代码仓库与反馈链接。'
       }
     ],
     wizard: [
       {
         title: '第 1 步 · 系统权限',
-        badge: '向导 · 环境检测',
+        badge: '向导 · 权限与驱动',
         windowTitle: '系统权限 · 首次使用向导',
         src: 'assets/screenshots/wizard-permissions-zh.png',
         alt: '首次使用向导：蓝牙、输入监控与辅助功能权限检查',
@@ -154,6 +154,22 @@ button.addEventListener('blur', stop);
   const galleryDataEn = {
     settings: [
       {
+        title: 'General Settings',
+        badge: 'Preferences',
+        windowTitle: 'General Settings · Remote Buddy',
+        src: 'assets/screenshots/general-en.png',
+        alt: 'Remote Buddy General Settings interface: four status cards, setup wizard entry, and grouped preferences',
+        desc: 'Review permissions and microphone, connected remotes, optional mapping, and input integration. Open settings from each status card, restart setup, or adjust grouped display, launch, and language preferences.'
+      },
+      {
+        title: 'Permissions & Microphone',
+        badge: 'Permissions & Driver',
+        windowTitle: 'Permissions & Microphone · Remote Buddy',
+        src: 'assets/screenshots/permissions-en.png',
+        alt: 'Remote Buddy Permissions interface: Bluetooth, Input Monitoring, Accessibility permissions and virtual microphone driver status',
+        desc: 'Check Bluetooth, Input Monitoring, and Accessibility permissions, plus the Remote Buddy Mic driver. Follow the page’s instructions if anything is missing.'
+      },
+      {
         title: 'Devices',
         badge: 'Multi-device',
         windowTitle: 'Devices · Remote Buddy',
@@ -186,28 +202,12 @@ button.addEventListener('blur', stop);
         desc: 'Check the selected input tool and microphone status, then open its setup guide. Adjust the voice trigger key and Fn tap settings here too.'
       },
       {
-        title: 'Permissions & Environment',
-        badge: 'System Environment',
-        windowTitle: 'Permissions & Environment · Remote Buddy',
-        src: 'assets/screenshots/permissions-en.png',
-        alt: 'Remote Buddy Permissions interface: Bluetooth, Input Monitoring, Accessibility permissions and virtual microphone driver status',
-        desc: 'Check Bluetooth, Input Monitoring, and Accessibility permissions, plus the Remote Buddy Mic driver. Follow the page’s instructions if anything is missing.'
-      },
-      {
-        title: 'General Settings',
-        badge: 'Preferences',
-        windowTitle: 'General Settings · Remote Buddy',
-        src: 'assets/screenshots/general-en.png',
-        alt: 'Remote Buddy General Settings interface: icon visibility, launch behavior, interface language, and setup wizard reset',
-        desc: 'Manage menu bar and Dock icons, launch at login, main window visibility, interface language, or restart the setup wizard.'
-      },
-      {
         title: 'About Remote Buddy',
         badge: 'Version & Updates',
         windowTitle: 'About Remote Buddy · Remote Buddy',
         src: 'assets/screenshots/about-en.png',
-        alt: 'Remote Buddy About interface: version, software update check, diagnostics and local logs, license, and repository links',
-        desc: 'Check the current version, check for updates, copy diagnostic information, view local logs, and access open-source license and support links.'
+        alt: 'Remote Buddy About interface: version, software update check, diagnostics and local logs, project and repository links',
+        desc: 'Check the current version, check for updates, copy diagnostic information, view local logs, and access the website, releases, repository, and support links.'
       }
     ],
     wizard: [

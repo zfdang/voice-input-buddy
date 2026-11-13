@@ -155,15 +155,19 @@ struct ProductBoundaryTests {
         #expect(!SettingsSection.allCases.map(\.rawValue).contains("membership"))
     }
 
-    @Test func dailyNavigationKeepsPermissionRepairBeforeSettings() {
+    @Test func generalOverviewIsFirstInNavigation() {
         let sections = SettingsPageBehavior.sidebarSections()
-        #expect(sections == [.connection, .mapping, .integration, .permissions, .general, .about])
+        #expect(sections == [.general, .permissions, .connection, .mapping, .integration, .about])
         #expect(SettingsPageBehavior.visibleSection(for: .permissions) == .permissions)
         #expect(SettingsPageBehavior.visibleSection(for: .general) == .general)
         #expect(SettingsPageBehavior.visibleSection(for: .about) == .about)
+        #expect(SettingsPageBehavior.marksUpdateAsSeen(whenSelecting: .about))
+        for section in [SettingsSection.general, .permissions, .connection, .mapping, .integration] {
+            #expect(!SettingsPageBehavior.marksUpdateAsSeen(whenSelecting: section))
+        }
         #expect(SettingsPageBehavior.initialSection(
             requestedSection: nil
-        ) == .connection)
+        ) == .general)
         #expect(SettingsPageBehavior.initialSection(
             requestedSection: .permissions
         ) == .permissions)

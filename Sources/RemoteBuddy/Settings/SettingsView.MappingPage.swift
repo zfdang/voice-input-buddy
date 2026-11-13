@@ -80,7 +80,7 @@ extension SettingsView {
                         trigger: trigger
                     )
                 },
-                onVoiceSettings: { selectedSection = .integration },
+                onVoiceSettings: { selectSection(.integration) },
                 remoteModel: settings.selectedRemoteProfile?.model ?? .unknown
             )
             .onReceive(model.$activeRemoteButtons) { buttons in
@@ -300,7 +300,7 @@ extension SettingsView {
                     mappingSelectionLockControl
                     Spacer()
                     Button {
-                        selectedSection = .commonPhrases
+                        selectSection(.commonPhrases)
                     } label: {
                         Label(localization.text("common_phrases.adjust"), systemImage: "text.quote")
                     }

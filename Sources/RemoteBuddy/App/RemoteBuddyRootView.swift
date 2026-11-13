@@ -8,7 +8,6 @@ struct RemoteBuddyRootView: View {
     let refreshUpdateInformation: () -> Void
     let setDockIconVisible: (Bool) -> Void
     let setStatusBarIconVisible: (Bool) -> Void
-    private let initialSettingsSection: SettingsSection?
     private let completedUpdateVersion: String?
 
     init(
@@ -18,7 +17,6 @@ struct RemoteBuddyRootView: View {
         refreshUpdateInformation: @escaping () -> Void,
         setDockIconVisible: @escaping (Bool) -> Void,
         setStatusBarIconVisible: @escaping (Bool) -> Void,
-        initialSettingsSection: SettingsSection? = nil,
         completedUpdateVersion: String? = nil
     ) {
         self.model = model
@@ -28,7 +26,6 @@ struct RemoteBuddyRootView: View {
         self.refreshUpdateInformation = refreshUpdateInformation
         self.setDockIconVisible = setDockIconVisible
         self.setStatusBarIconVisible = setStatusBarIconVisible
-        self.initialSettingsSection = initialSettingsSection
         self.completedUpdateVersion = completedUpdateVersion
     }
 
@@ -41,8 +38,7 @@ struct RemoteBuddyRootView: View {
                     checkForUpdates: checkForUpdates,
                     refreshUpdateInformation: refreshUpdateInformation,
                     setDockIconVisible: setDockIconVisible,
-                    setStatusBarIconVisible: setStatusBarIconVisible,
-                    initialSection: initialSettingsSection
+                    setStatusBarIconVisible: setStatusBarIconVisible
                 )
             } else {
                 OnboardingView(model: model)

@@ -241,7 +241,7 @@
 "custom_application.error.open_failed" = "The target app could not be opened.";
 "settings.section.connection" = "Devices";
 "settings.section.buttons" = "Buttons";
-"settings.section.permissions" = "Permissions";
+"settings.section.permissions" = "Permissions & Microphone";
 "permission.status.enabled" = "Enabled";
 "permission.status.pending" = "Needs Permission";
 "connection.page.title" = "Device Connection";
@@ -466,13 +466,25 @@
 "common.status.copied" = "Copied";
 "settings.section.about" = "About";
 "settings.section.general" = "General";
+
+"settings.overview.title" = "Readiness status";
+"settings.overview.remote" = "Remote connection";
+"settings.overview.mapping" = "Button mapping";
+"settings.overview.integration" = "Input integration";
+"settings.overview.disconnected" = "Disconnected";
+"settings.overview.optional" = "Optional · not enabled";
+"settings.overview.not_configured" = "Not configured";
+"settings.general.display_group" = "App display";
+"settings.general.language_group" = "Language";
+"settings.overview.ready" = "Permissions and microphone ready";
+"settings.overview.missing_requirements" = "Needs setup: %@";
+"settings.overview.open_section" = "Open %@ settings";
+
 "settings.section.settings" = "Settings";
 "settings.update_badge.accessibility_value" = "New version available";
 "settings.page.title" = "Settings";
 "settings.permissions.title" = "System Permissions";
-"settings.general.title" = "General";
 "settings.general.launch_behavior" = "Launch Behavior";
-"settings.general.launch_behavior_help" = "Choose whether to launch at login and open the main window when the app starts.";
 "settings.diagnostics.title" = "Diagnostics & Logs";
 "settings.application_updates.title" = "App & Updates";
 "settings.application.tagline" = "Voice within reach";
@@ -492,12 +504,17 @@
 "about.preferences.language" = "App Language";
 "about.preferences.rc003_voice_extension_test" = "Test extended voice feature";
 "about.page.hero_subtitle" = "Version, preferences, and support for your wireless voice workspace";
-"about.page.hero_description" = "Turn your remote into an always-ready voice and shortcut controller for your Mac.";
 "about.privacy.local_only" = "Data stays on this Mac";
 "about.preferences.title" = "App Preferences";
 "about.support.title" = "Updates & Support";
-"about.version.title" = "Version & Updates";
 "about.version.current" = "Current Version";
+"about.info.title" = "Version information";
+"about.info.build" = "Build";
+"about.info.architecture" = "Architecture";
+"about.info.updates" = "Software updates";
+"about.info.project" = "Project and links";
+"about.info.releases" = "Latest releases";
+"about.info.open_releases" = "View releases";
 "about.version.latest" = "Latest Version";
 "about.version.available" = "Update Available";
 "about.version.update_to" = "Update to %1$@";
@@ -520,7 +537,6 @@
 "about.support.website" = "Website";
 "about.support.feedback" = "Feedback";
 "about.support.feedback_action" = "Send Feedback";
-"about.support.feedback_description" = "Report a problem or suggest an improvement for Remote Buddy.";
 "share.action" = "Share";
 "share.sidebar.accessibility_label" = "Share Remote Buddy";
 "share.title" = "Share Remote Buddy";
@@ -911,7 +927,6 @@
 
 "button_mapping.manage_macros" = "Manage action sequences";
 
-
 "button_mapping.macro_step_count" = "%d-step sequence";
 
 /* Common phrases */
@@ -978,10 +993,10 @@
 
 // Independent setup sections.
 "settings.section.integration" = "Integration";
-"settings.permissions.page_title" = "Permissions & Environment";
-"settings.permissions.introduction" = "Check these requirements before connecting a device or configuring input tools.";
+"settings.permissions.page_title" = "Permissions & Microphone";
+"settings.permissions.introduction" = "Check system permissions and the virtual microphone driver before connecting a device or configuring input tools.";
 "settings.permissions.privacy_title" = "Privacy and data handling";
-"settings.permissions.privacy_detail" = "Remote Buddy does not collect usage statistics, save transcript history or audio recordings, or upload logs. Bluetooth receives remote audio; Input Monitoring reads remote buttons; Accessibility triggers configured actions. Speech recognition is provided by the selected input tool and follows its own privacy settings.";
+"settings.permissions.privacy_detail" = "Remote Buddy does not collect usage statistics, save transcript history or audio recordings, or upload logs. Bluetooth receives remote audio; Input Monitoring reads remote buttons; Accessibility triggers configured actions. The virtual microphone driver delivers remote audio to the selected input tool. Speech recognition is provided by the selected input tool and follows its own privacy settings.";
 "settings.driver.title" = "Virtual microphone driver";
 "settings.driver.detail" = "A loopback device carries remote audio to your input tool.";
 "settings.driver.installed" = "Compatible microphone detected";
@@ -1026,9 +1041,6 @@
 "onboarding.step.controls" = "Button test";
 "onboarding.step.complete" = "Done";
 
-
-
-
 "onboarding.voice_tool.guide.open_voice_buddy" = "Open Voice Buddy";
 "onboarding.voice_tool.guide.open_voice_buddy.detail" = "Open Voice Buddy → General to configure its trigger key, matching recording mode, and microphone input source.";
 "onboarding.voice_tool.guide.configure_voice_buddy" = "Set Trigger key to Fn / 🌐 and Hold to talk";
@@ -1063,13 +1075,11 @@
 "update.dialog.retry_quit" = "Quit App and Continue";
 "update.dialog.history" = "Release Notes";
 
-
 "update.dialog.install_later" = "Install Later";
 
 "common_phrases.key.ok" = "Select button";
 
 "button_mapping.unsupported_device" = "This remote is not supported yet. Choose a Xiaomi, T1-Remote, or G9N9N remote to configure buttons.";
-
 
 "voice_button.status.cleanup_failed" = "Could not release Fn. Restore Accessibility permission and try again.";
 
@@ -1093,7 +1103,6 @@
 
 "update.dialog.waiting_for_quit.detail" = "The app is still running. Quit it to continue installing.";
 
-
 "update.dialog.close" = "Close";
 
 "update.dialog.done" = "Done";
@@ -1103,7 +1112,6 @@
 "update.dialog.available_version" = "Update version";
 
 "update.dialog.latest_version" = "Latest on this channel";
-
 
 // Five-device product scope. Upcoming adapters show an inline notice on Continue.
 "remote.catalog.xiaomi.title" = "Xiaomi Bluetooth Remote 2 / 2 Pro";
