@@ -157,7 +157,7 @@ struct ProductBoundaryTests {
 
     @Test func generalOverviewIsFirstInNavigation() {
         let sections = SettingsPageBehavior.sidebarSections()
-        #expect(sections == [.general, .permissions, .connection, .mapping, .integration, .about])
+        #expect(sections == [.general, .permissions, .connection, .mapping, .integration, .applicationIntegration, .about])
         #expect(SettingsPageBehavior.visibleSection(for: .permissions) == .permissions)
         #expect(SettingsPageBehavior.visibleSection(for: .general) == .general)
         #expect(SettingsPageBehavior.visibleSection(for: .about) == .about)

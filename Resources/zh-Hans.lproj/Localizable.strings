@@ -1206,3 +1206,14 @@
 
 "action.repeat_single_click" = "持续连发";
 "button_mapping.hold_repeat.help" = "长按选择“持续连发”时，按住约 0.35 秒后重复执行单击动作，松开即停止。也可以选择下方其他动作，长按时只执行一次；双击设置不受影响。";
+
+// Foreground application integration at voice start
+"application_integration.title" = "应用集成";
+"application_integration.introduction" = "按下语音键开始语音输入时，如果前台应用已开启集成，会自动聚焦到对应输入框。平时切换应用不会调整焦点。默认全部关闭。";
+"application_integration.supported" = "支持的应用";
+"application_integration.enable_all" = "全部开启";
+"application_integration.disable_all" = "全部关闭";
+"application_integration.chatGPT.detail" = "开启后，开始语音输入时，如果前台应用是 ChatGPT，会自动聚焦到当前对话的消息输入框。";
+"application_integration.antigravity.detail" = "开启后，开始语音输入时，如果前台应用是 Antigravity，会自动聚焦到当前窗口的 Agent 聊天输入框。";
+"application_integration.weChat.detail" = "开启后，开始语音输入时，如果前台应用是微信，会自动聚焦到当前会话的消息输入框。请先打开一个会话。";
+"application_integration.accessibility_help" = "需要辅助功能权限。无法识别输入框时保持原焦点；语音识别和文字输入仍由所选语音工具完成。";

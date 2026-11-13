@@ -11,6 +11,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
     case commonPhrases
     case permissions
     case general
+    case applicationIntegration
     case about
 
     var id: String { rawValue }
@@ -23,6 +24,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .commonPhrases: return "common_phrases.title"
         case .permissions: return "settings.section.permissions"
         case .general: return "settings.section.general"
+        case .applicationIntegration: return "application_integration.title"
         case .about: return "settings.section.about"
         }
     }
@@ -35,6 +37,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .commonPhrases: return "text.quote"
         case .permissions: return "shield.lefthalf.filled"
         case .general: return "slider.horizontal.3"
+        case .applicationIntegration: return "app.connected.to.app.below.fill"
         case .about: return "info.circle"
         }
     }
@@ -242,6 +245,7 @@ enum SettingsPageBehavior {
         .connection,
         .mapping,
         .integration,
+        .applicationIntegration,
         .about,
     ]
 

@@ -95,6 +95,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     }
 
     let voiceFunctionMapper: RemoteHIDKeyMapper
+    lazy var applicationIntegrationController = ApplicationIntegrationController(settings: settings)
     lazy var preferredInputSourceMonitor = PreferredInputSourceMonitor(
         voiceTool: { [weak self] in
             self?.settings.onboardingVoiceTool ?? .unselected
@@ -283,6 +284,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     func startIfNeeded() {
         guard !started else { return }
         started = true
+        applicationIntegrationController.start()
         startAudioSubsystem()
         applyHIDSettings()
         refreshRemoteDeviceNames(reason: .startup)
@@ -313,6 +315,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     }
 
     func stop() {
+        applicationIntegrationController.stop()
         commonPhrases.close(reason: "app_stop")
         preferredInputSourceMonitor.stop()
         pendingHIDServiceMappingRefresh = false

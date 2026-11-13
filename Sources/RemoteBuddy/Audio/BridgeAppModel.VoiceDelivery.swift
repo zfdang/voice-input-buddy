@@ -169,10 +169,15 @@ extension BridgeAppModel {
             completion(false)
             return false
         }
+        if !streaming { applicationIntegrationController.cancelPending() }
         let mode = streaming
             ? settings.voiceKeyMode
             : (heldVoiceKeyMode ?? pendingVoiceKeyMode ?? settings.voiceKeyMode)
-        guard forceSoftware || !mode.usesHardwareMapping else { completion(true); return true }
+        guard forceSoftware || !mode.usesHardwareMapping else {
+            if streaming { applicationIntegrationController.voiceInputStarted() }
+            completion(true)
+            return true
+        }
         if VoiceKeyPendingDownPolicy.shouldRejectStart(
             streaming: streaming,
             pendingDown: pendingVoiceKeyMode != nil || voiceKeyActivationInProgress
@@ -192,6 +197,7 @@ extension BridgeAppModel {
         }
         let shouldHold = transition == .press
         if shouldHold {
+            applicationIntegrationController.voiceInputStarted()
             pendingVoiceKeyMode = mode
             voiceKeyActivationInProgress = true
             voiceKeyActivationGeneration &+= 1
@@ -321,6 +327,7 @@ extension BridgeAppModel {
             KeyboardInjector.setVoiceKeyPressed($0, isPressed: false)
         }
     ) -> Bool {
+        applicationIntegrationController.cancelPending()
         defer { flushPendingVoiceToolMappingRefresh() }
         voiceKeyReleaseRetry?.cancel()
         voiceKeyReleaseRetry = nil

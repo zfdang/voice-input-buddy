@@ -149,6 +149,105 @@ extension KeyboardInjector {
         return false
     }
 
+    /// Only invoked by an accepted voice start. A separate gate keeps this from
+    /// cancelling explicit application-launch/focus button actions.
+    static func focusIntegratedApplication(_ integration: ApplicationIntegration,
+                                           processIdentifier: pid_t) -> ScheduledOperation {
+        let gate = ApplicationFocusRequestGate()
+        let requestID = gate.begin()
+        let bundleIdentifier = NSRunningApplication(processIdentifier: processIdentifier)?.bundleIdentifier
+            ?? integration.bundleIdentifier
+        func attempt(_ number: Int) {
+            focusQueue.asyncAfter(deadline: .now() + (number == 0 ? 0 : 0.15)) {
+                let canContinue = {
+                    gate.isCurrent(requestID) && applicationIsFrontmost(processIdentifier) &&
+                        isAccessibilityTrusted && !SecureInputMonitor.isEnabled()
+                }
+                guard canContinue() else { return }
+                announceManualAccessibility(processIdentifier: processIdentifier,
+                    bundleIdentifier: bundleIdentifier, attempt: number)
+                if focusIntegratedComposer(integration, processIdentifier: processIdentifier,
+                                           canContinue: canContinue) {
+                    AppLogger.shared.write("APP INTEGRATION focused bundle=\(bundleIdentifier)")
+                } else if number < 2, canContinue() {
+                    attempt(number + 1)
+                }
+            }
+        }
+        attempt(0)
+        return ScheduledOperation { _ = gate.begin() }
+    }
+
+    private static func focusIntegratedComposer(_ integration: ApplicationIntegration,
+                                                processIdentifier: pid_t,
+                                                canContinue: () -> Bool) -> Bool {
+        let app = AXUIElementCreateApplication(processIdentifier)
+        guard canContinue(),
+              !VoiceInputDestinationSnapshot.system().isSensitiveDestination,
+              let window = axElement(app, attribute: kAXFocusedWindowAttribute),
+              axString(window, attribute: kAXSubroleAttribute) != "AXDialog",
+              axString(window, attribute: kAXSubroleAttribute) != "AXSystemDialog",
+              axBool(window, attribute: "AXModal") != true,
+              axElements(window, attribute: "AXSheets").isEmpty else { return false }
+        let frame = axFrame(window)
+        let candidates = accessibilityTextCandidates(in: window)
+        let ranked = candidates.indices.compactMap { index -> (Int, Int)? in
+            integratedComposerScore(candidates[index].snapshot, integration: integration,
+                                    windowFrame: frame).map { (index, $0) }
+        }.sorted { $0.1 > $1.1 }
+        guard let best = ranked.first,
+              // Ambiguous composers must be left to the user.
+              ranked.count == 1 || best.1 > ranked[1].1,
+              canContinue(),
+              !VoiceInputDestinationSnapshot.system().isSensitiveDestination,
+              let currentWindow = axElement(app, attribute: kAXFocusedWindowAttribute),
+              CFEqual(window, currentWindow) else { return false }
+        return focusAccessibilityElement(candidates[best.0].element, applicationElement: app,
+                                         requiresApplicationFocusedElement: true, allowPress: false)
+    }
+
+    static func integratedComposerScore(_ candidate: AccessibilityTextCandidate,
+                                        integration: ApplicationIntegration,
+                                        windowFrame: CGRect?) -> Int? {
+        guard candidate.enabled, !candidate.protectedContent,
+              candidate.subrole != "AXSecureTextField",
+              candidate.role == "AXTextArea" || candidate.role == "AXTextField",
+              let frame = candidate.frame, frame.width > 0, frame.height > 0,
+              let windowFrame, windowFrame.contains(CGPoint(x: frame.midX, y: frame.midY)) else { return nil }
+        // Ancestor/window titles are not evidence that a field is a composer.
+        let ownText = [candidate.identifier, candidate.title, candidate.description,
+                       candidate.help, candidate.placeholder].joined(separator: " ").lowercased()
+        let excluded = ["search", "find", "filter", "password", "passcode", "secret", "api key",
+                        "token", "rename", "title", "terminal", "console", "monaco", "code editor",
+                        "搜索", "查找", "筛选", "密码", "密钥", "令牌", "重命名", "标题", "终端", "代码编辑器"]
+        guard !containsSensitiveAccessibilityTerms(ownText),
+              !excluded.contains(where: ownText.contains),
+              !["monaco", "code editor", "terminal content area"].contains(where: candidate.context.lowercased().contains)
+        else { return nil }
+        let common = ["composer", "prompt-editor", "prompt_editor", "chat-input", "chat_input",
+                      "message-input", "message_input", "message input", "prompt input", "chat input",
+                      "输入消息", "消息输入", "发送消息"]
+        let specific: [String]
+        switch integration {
+        case .chatGPT: specific = ["work with chatgpt", "message chatgpt", "ask anything", "ask chatgpt", "询问任何问题", "询问 chatgpt"]
+        case .antigravity: specific = ["ask anything", "ask agent", "message agent", "agent input", "向 agent 提问"]
+        case .weChat: specific = ["message", "输入", "编辑消息"]
+        }
+        // Verified in the live WeChat accessibility tree. Avoid its unlabeled
+        // search field and message list even if they move or resize.
+        if integration == .weChat {
+            return candidate.identifier == "chat_input_field" ? 400 : nil
+        }
+        // Verified Antigravity's current conversation composer is labeled Message input.
+        if integration == .antigravity,
+           [candidate.title, candidate.description, candidate.help, candidate.placeholder]
+            .contains(where: { $0.lowercased() == "message input" }) { return 400 }
+        if (common + specific).contains(where: ownText.contains) {
+            return 200 + (candidate.role == "AXTextArea" ? 20 : 0)
+        }
+        return nil
+    }
+
     static func weChatComposerFocusPoint(windowFrame: CGRect) -> CGPoint? {
         guard windowFrame.width >= 700, windowFrame.height >= 500 else { return nil }
         return CGPoint(
@@ -570,7 +669,8 @@ extension KeyboardInjector {
     private static func focusAccessibilityElement(
         _ element: AXUIElement,
         applicationElement: AXUIElement,
-        requiresApplicationFocusedElement: Bool = false
+        requiresApplicationFocusedElement: Bool = false,
+        allowPress: Bool = true
     ) -> Bool {
         if accessibilityElementIsFocused(
             element,
@@ -592,6 +692,7 @@ extension KeyboardInjector {
         ) {
             return true
         }
+        guard allowPress else { return false }
         _ = AXUIElementPerformAction(element, kAXPressAction as CFString)
         return accessibilityElementIsFocused(
             element,
