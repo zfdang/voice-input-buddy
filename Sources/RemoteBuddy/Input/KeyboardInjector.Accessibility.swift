@@ -233,6 +233,7 @@ extension KeyboardInjector {
                       CFEqual(window, current), axElements(window, attribute: "AXSheets").isEmpty else { return false }
                 return true
             },
+            hitTest: { accessibilityHitTestMatchesTarget(candidate.element, processIdentifier: processIdentifier, point: $0) },
             isFocused: {
                 accessibilityElementIsFocused(candidate.element, applicationElement: app,
                                               requiresApplicationFocusedElement: true)
@@ -243,7 +244,8 @@ extension KeyboardInjector {
                                              integration: ApplicationIntegration,
                                              windowFrame: CGRect?) -> CGPoint? {
         guard integration == .antigravity,
-              integratedComposerScore(candidate, integration: integration, windowFrame: windowFrame) == 400,
+              isAntigravityMessageInput(candidate),
+              integratedComposerScore(candidate, integration: integration, windowFrame: windowFrame) != nil,
               let frame = candidate.frame, let windowFrame else { return nil }
         let point = CGPoint(x: frame.minX + min(24, frame.width / 2),
                             y: frame.minY + min(16, frame.height / 2))
@@ -255,11 +257,12 @@ extension KeyboardInjector {
                                         integration: ApplicationIntegration,
                                         windowFrame: CGRect?,
                                         canContinue: () -> Bool,
+                                        hitTest: (CGPoint) -> Bool,
                                         postClick: (CGPoint) -> Bool = postAccessibilityFocusClick,
                                         isFocused: () -> Bool,
                                         pause: () -> Void = { usleep(50_000) }) -> Bool {
         guard let point = integratedComposerClickPoint(candidate, integration: integration, windowFrame: windowFrame),
-              canContinue(), postClick(point) else { return false }
+              canContinue(), hitTest(point), canContinue(), postClick(point) else { return false }
         // The click is delivered asynchronously. Verify the actual focused input
         // before reporting completion or allowing the voice trigger through.
         for _ in 0..<5 {
@@ -285,10 +288,43 @@ extension KeyboardInjector {
         if let previousLocation,
            let restore = CGEvent(mouseEventSource: source, mouseType: .mouseMoved,
                                  mouseCursorPosition: previousLocation, mouseButton: .left) {
+            restore.flags = []
             restore.setIntegerValueField(.eventSourceUserData, value: syntheticEventMarker)
             restore.post(tap: .cghidEventTap)
         }
         return true
+    }
+
+    private static func accessibilityHitTestMatchesTarget(_ target: AXUIElement,
+                                                          processIdentifier: pid_t, point: CGPoint) -> Bool {
+        var hit: AXUIElement?
+        guard AXUIElementCopyElementAtPosition(AXUIElementCreateSystemWide(), Float(point.x), Float(point.y), &hit) == .success,
+              let hit else { return false }
+        var hitPID: pid_t = 0
+        guard AXUIElementGetPid(hit, &hitPID) == .success, hitPID == processIdentifier else { return false }
+        return accessibilityAncestorChainContains(hit: hit, target: target, equal: CFEqual,
+            parent: { axElement($0, attribute: kAXParentAttribute) })
+    }
+
+    /// Hit testing must start at the system-wide element so overlapping windows
+    /// from any application are considered. Only the target or a descendant is safe.
+    static func accessibilityAncestorChainContains<Element>(hit: Element?, target: Element,
+                                                           equal: (Element, Element) -> Bool,
+                                                           parent: (Element) -> Element?) -> Bool {
+        var current = hit
+        var visited: [Element] = []
+        for _ in 0..<32 {
+            guard let element = current, !visited.contains(where: { equal($0, element) }) else { return false }
+            if equal(element, target) { return true }
+            visited.append(element)
+            current = parent(element)
+        }
+        return false
+    }
+
+    static func isAntigravityMessageInput(_ candidate: AccessibilityTextCandidate) -> Bool {
+        [candidate.title, candidate.description, candidate.help, candidate.placeholder]
+            .contains { $0.lowercased() == "message input" }
     }
 
     static func integratedComposerScore(_ candidate: AccessibilityTextCandidate,
@@ -324,9 +360,7 @@ extension KeyboardInjector {
             return candidate.identifier == "chat_input_field" ? 400 : nil
         }
         // Verified Antigravity's current conversation composer is labeled Message input.
-        if integration == .antigravity,
-           [candidate.title, candidate.description, candidate.help, candidate.placeholder]
-            .contains(where: { $0.lowercased() == "message input" }) { return 400 }
+        if integration == .antigravity, isAntigravityMessageInput(candidate) { return 400 }
         if (common + specific).contains(where: ownText.contains) {
             return 200 + (candidate.role == "AXTextArea" ? 20 : 0)
         }

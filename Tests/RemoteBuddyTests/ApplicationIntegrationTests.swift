@@ -307,7 +307,7 @@ struct ApplicationIntegrationTests {
             var queries = 0
             let result = KeyboardInjector.clickIntegratedComposer(candidate("Message input"),
                 integration: .antigravity, windowFrame: window,
-                canContinue: { !cancelled || waits == 0 },
+                canContinue: { !cancelled || waits == 0 }, hitTest: { _ in true },
                 postClick: { _ in clicks += 1; return true },
                 isFocused: { queries += 1; return waits >= 2 }, pause: { waits += 1 })
             #expect(clicks == 1)
@@ -316,10 +316,27 @@ struct ApplicationIntegrationTests {
             #expect(queries == (cancelled ? 1 : 3))
         }
         let result = KeyboardInjector.clickIntegratedComposer(candidate("Message input"),
-            integration: .antigravity, windowFrame: window, canContinue: { false },
+            integration: .antigravity, windowFrame: window, canContinue: { false }, hitTest: { _ in true },
             postClick: { _ in Issue.record("Cancelled work must not click"); return true },
             isFocused: { Issue.record("Cancelled work must not query focus"); return true }, pause: {})
         #expect(!result)
+    }
+
+    @Test func occludedOrUnverifiedComposerNeverReceivesSyntheticClick() {
+        for hit in [Int?.none, 7, 8] {
+            let result = KeyboardInjector.clickIntegratedComposer(candidate("Message input"), integration: .antigravity,
+                windowFrame: window, canContinue: { true }, hitTest: { _ in
+                    KeyboardInjector.accessibilityAncestorChainContains(hit: hit, target: 1,
+                        equal: ==, parent: { $0 == 8 ? 7 : nil })
+                }, postClick: { _ in Issue.record("Occluded input must not be clicked"); return true },
+                isFocused: { false }, pause: {})
+            #expect(!result)
+        }
+        #expect(KeyboardInjector.accessibilityAncestorChainContains(hit: 3, target: 1,
+            equal: ==, parent: { [3: 2, 2: 1][$0] }))
+        #expect(KeyboardInjector.accessibilityAncestorChainContains(hit: 1, target: 1, equal: ==, parent: { _ in nil }))
+        #expect(!KeyboardInjector.accessibilityAncestorChainContains(hit: 3, target: 1,
+            equal: ==, parent: { [3: 2, 2: 3][$0] }))
     }
 
     @Test func appSpecificComposersAreRecognized() {
