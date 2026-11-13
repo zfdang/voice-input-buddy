@@ -261,6 +261,11 @@ enum SettingsScreenshotRenderer {
             window.contentView?.layoutSubtreeIfNeeded()
             scrollCanvasToEndIfRequested(in: window.contentView)
             window.contentView?.displayIfNeeded()
+            // Layout can enqueue another SwiftUI symbol-rendering pass. Let it
+            // finish before caching pixels from this newly created window.
+            RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+            window.contentView?.layoutSubtreeIfNeeded()
+            window.contentView?.displayIfNeeded()
 
             guard let contentView = window.contentView,
                   contentView.bounds.size == size,
