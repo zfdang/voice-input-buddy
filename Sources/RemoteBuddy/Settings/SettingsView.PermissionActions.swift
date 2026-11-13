@@ -48,7 +48,7 @@ extension SettingsView {
         .padding(.vertical, 8)
     }
 
-    private func openSettingsURL(_ string: String) {
+    func openSettingsURL(_ string: String) {
         guard let url = URL(string: string) else { return }
         NSWorkspace.shared.open(url)
     }
@@ -106,7 +106,12 @@ extension SettingsView {
             voiceKeyMode: settings.voiceKeyMode.rawValue,
             runtimeLogAvailable: logExists,
             runtimeLogPath: SettingsDiagnosticSnapshot.sanitizePath(logURL.path),
-            runtimeLogSizeBytes: logSizeBytes
+            runtimeLogSizeBytes: logSizeBytes,
+            runtimePermissionIssue: model.runtimePermissionIssue?.diagnosticIdentifier ?? "none",
+            runtimePermissionIssueUpdatedAt: model.runtimePermissionIssueUpdatedAt,
+            runtimePermissionDiagnosisTrigger: model.runtimePermissionDiagnosisTrigger ?? "none",
+            connectionStatusKey: model.connectionStatus.key,
+            hidStatusKey: model.hidStatus.key
         )
         SettingsPageBehavior.copyDiagnosticSummary(
             snapshot,

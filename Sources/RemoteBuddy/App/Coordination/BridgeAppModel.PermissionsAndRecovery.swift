@@ -132,7 +132,10 @@ extension BridgeAppModel {
             monitoringInterrupted: hidMonitoringInterrupted,
             previous: appliedHIDPermissionSnapshot,
             current: current
-        ) else { return }
+        ) else {
+            refreshRuntimePermissionDiagnosis(trigger: "permission_poll")
+            return
+        }
         let previous = appliedHIDPermissionSnapshot
         AppLogger.shared.write(
             "HID PERMISSIONS changed " +
@@ -142,6 +145,7 @@ extension BridgeAppModel {
         )
 
         applyHIDSettings()
+        refreshRuntimePermissionDiagnosis(trigger: "permission_poll_reapplied")
     }
 
     func reconnect() {
@@ -160,10 +164,15 @@ extension BridgeAppModel {
     }
 
     func recheckRemoteInput() {
-        guard started, !isStreaming else { return }
+        guard started else { return }
+        guard !isStreaming else {
+            refreshRuntimePermissionDiagnosis(trigger: "user_recheck_streaming")
+            return
+        }
         AppLogger.shared.write("HID USER_RECHECK requested")
         applyHIDSettings(forceRestartMonitors: true)
         refreshVoiceKeyCompatibilityWarning()
+        refreshRuntimePermissionDiagnosis(trigger: "user_recheck")
     }
 
     func refreshVoiceKeyCompatibilityWarning() {
@@ -240,5 +249,101 @@ extension BridgeAppModel {
             connections.discoveryBridge?.reconnectNow()
         }
         AppLogger.shared.write("BLE DISCOVERY refreshed_from_foreground")
+    }
+
+    func refreshRuntimePermissionDiagnosis(
+        trigger: String = "state_change",
+        bluetoothGranted: Bool = CBManager.authorization == .allowedAlways
+    ) {
+        let permissions = permissionSnapshotProvider()
+        let nextIssue = RuntimePermissionDiagnosisPolicy.diagnose(
+            bluetoothGranted: bluetoothGranted,
+            inputMonitoringGranted: permissions.inputMonitoringGranted,
+            accessibilityGranted: permissions.accessibilityGranted,
+            connectionStatusKey: connectionStatus.key,
+            hidStatusKey: hidStatus.key,
+            hidFilterFailure: hidFilterFailureState
+        )
+        let changed = runtimePermissionIssue != nextIssue
+        if changed {
+            runtimePermissionIssue = nextIssue
+            runtimePermissionIssueUpdatedAt = nextIssue == nil ? nil : Date()
+            runtimePermissionDiagnosisTrigger = nextIssue == nil ? nil : trigger
+        } else if nextIssue != nil {
+            runtimePermissionDiagnosisTrigger = trigger
+        }
+        let nextKey = nextIssue?.diagnosticIdentifier
+        if nextKey != lastLoggedRuntimePermissionIssueKey {
+            lastLoggedRuntimePermissionIssueKey = nextKey
+            if let nextIssue {
+                AppLogger.shared.write(
+                    "RUNTIME PERMISSION ISSUE detected trigger=\(trigger) " +
+                        "issue=\(nextIssue.diagnosticIdentifier) " +
+                        "bt_auth=\(bluetoothGranted) " +
+                        "input_monitoring=\(permissions.inputMonitoringGranted) " +
+                        "accessibility=\(permissions.accessibilityGranted) " +
+                        "connection_status=\(connectionStatus.key) " +
+                        "hid_status=\(hidStatus.key) " +
+                        "hid_filter_failure=\(hidFilterFailureState)"
+                )
+            } else {
+                AppLogger.shared.write("RUNTIME PERMISSION ISSUE cleared trigger=\(trigger)")
+            }
+        }
+    }
+
+    var canRelaunchApplication: Bool {
+        Self.canRelaunchAppBundle(Bundle.main.bundleURL)
+    }
+
+    nonisolated static func canRelaunchAppBundle(_ bundleURL: URL) -> Bool {
+        bundleURL.pathExtension.lowercased() == "app" &&
+            FileManager.default.fileExists(atPath: bundleURL.path)
+    }
+
+    @discardableResult
+    func relaunchApplication(
+        bundleURL: URL = Bundle.main.bundleURL,
+        pid: Int32 = ProcessInfo.processInfo.processIdentifier,
+        launchProcess: ((_ executablePath: String, _ arguments: [String]) throws -> Void)? = nil,
+        terminateHandler: (() -> Void)? = nil
+    ) -> Bool {
+        guard !isTerminating else {
+            AppLogger.shared.write("APP RELAUNCH skipped reason=already_terminating")
+            return false
+        }
+        guard Self.canRelaunchAppBundle(bundleURL) else {
+            AppLogger.shared.write("APP RELAUNCH skipped reason=not_app_bundle path=\(bundleURL.path)")
+            return false
+        }
+        let issueLabel = runtimePermissionIssue?.diagnosticIdentifier ?? "none"
+        AppLogger.shared.write("APP RELAUNCH requested pid=\(pid) bundle=\(bundleURL.path) issue=\(issueLabel)")
+        let executablePath = "/bin/sh"
+        let arguments = [
+            "-c",
+            "i=0; while kill -0 \"$1\" 2>/dev/null && [ $i -lt 250 ]; do sleep 0.1; i=$((i+1)); done; /usr/bin/open \"$2\"",
+            "_",
+            String(pid),
+            bundleURL.path
+        ]
+        do {
+            if let launchProcess {
+                try launchProcess(executablePath, arguments)
+            } else {
+                let process = Process()
+                process.executableURL = URL(fileURLWithPath: executablePath)
+                process.arguments = arguments
+                try process.run()
+            }
+        } catch {
+            AppLogger.shared.write("APP RELAUNCH failed reason=\(error.localizedDescription)")
+            return false
+        }
+        if let terminateHandler {
+            terminateHandler()
+        } else {
+            NSApp.terminate(nil)
+        }
+        return true
     }
 }

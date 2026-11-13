@@ -440,12 +440,9 @@ final class HIDRemoteMonitor {
                 result: monitorResult,
                 karabinerElementsInstalled: karabinerInstalled
             ))
-            if Self.deviceOpenFailureMessageKey(
-                result: monitorResult,
-                karabinerElementsInstalled: karabinerInstalled
-            ) != nil {
+            if let reason = Self.deviceOpenFailureLogReason(result: monitorResult) {
                 AppLogger.shared.write(
-                    "HID DEVICE PROBE BLOCKED reason=exclusive_access " +
+                    "HID DEVICE PROBE BLOCKED reason=\(reason) " +
                         "karabiner_installed=\(karabinerInstalled) monitor=\(monitorResult)"
                 )
             }
@@ -545,13 +542,14 @@ final class HIDRemoteMonitor {
         case let .failed(seizeAttemptResult, monitorResult):
             let karabinerInstalled = karabinerElementsInstalled()
             let seizeLabel = seizeAttemptResult.map(String.init) ?? "skipped"
-            if let exclusiveMessageKey = Self.deviceOpenFailureMessageKey(
+            if let failureMessageKey = Self.deviceOpenFailureMessageKey(
                 result: monitorResult,
                 karabinerElementsInstalled: karabinerInstalled
             ) {
-                updateStatus(LocalizedMessage(exclusiveMessageKey))
+                let reason = Self.deviceOpenFailureLogReason(result: monitorResult) ?? "blocked"
+                updateStatus(LocalizedMessage(failureMessageKey))
                 AppLogger.shared.write(
-                    "HID DEVICE OPEN BLOCKED reason=exclusive_access " +
+                    "HID DEVICE OPEN BLOCKED reason=\(reason) " +
                         "karabiner_installed=\(karabinerInstalled) " +
                         "seize=\(seizeLabel) monitor=\(monitorResult)"
                 )
@@ -1537,10 +1535,21 @@ final class HIDRemoteMonitor {
         result: IOReturn,
         karabinerElementsInstalled: Bool
     ) -> String? {
-        guard result == kIOReturnExclusiveAccess else { return nil }
-        return karabinerElementsInstalled
-            ? "button_mapping.error.exclusive_access.karabiner"
-            : "button_mapping.error.exclusive_access"
+        if result == kIOReturnExclusiveAccess {
+            return karabinerElementsInstalled
+                ? "button_mapping.error.exclusive_access.karabiner"
+                : "button_mapping.error.exclusive_access"
+        }
+        if result == kIOReturnNotPermitted {
+            return HIDStatusKeys.notPermitted
+        }
+        return nil
+    }
+
+    private nonisolated static func deviceOpenFailureLogReason(result: IOReturn) -> String? {
+        if result == kIOReturnExclusiveAccess { return "exclusive_access" }
+        if result == kIOReturnNotPermitted { return "not_permitted" }
+        return nil
     }
 
     nonisolated static func isKarabinerElementsInstalled(

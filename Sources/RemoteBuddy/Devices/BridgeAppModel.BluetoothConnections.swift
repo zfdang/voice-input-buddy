@@ -384,5 +384,6 @@ extension BridgeAppModel {
         } else {
             connectionStatus = LocalizedMessage("connection.status.searching")
         }
+        refreshRuntimePermissionDiagnosis(trigger: "bluetooth_presentation")
     }
 }

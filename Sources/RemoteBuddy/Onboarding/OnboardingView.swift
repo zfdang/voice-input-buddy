@@ -59,6 +59,7 @@ struct OnboardingView: View {
     @State var secureInputWaitStartedAtUptime: TimeInterval?
     @State var lastLoggedSecureInputState: Bool?
     @State var aiPromptCopyResult: Bool?
+    @State var isPermissionRelaunchConfirmationPresented = false
 
     init(
         model: BridgeAppModel,
@@ -162,6 +163,17 @@ struct OnboardingView: View {
         .onReceive(model.$isConnected.removeDuplicates()) { isConnected in
             guard isConnected else { return }
             routeConnectedPhysicalRemoteIfNeeded()
+        }
+        .confirmationDialog(
+            localization.text("permission.desync.restart_confirm.title"),
+            isPresented: $isPermissionRelaunchConfirmationPresented
+        ) {
+            Button(localization.text("permission.desync.action.restart"), role: .destructive) {
+                _ = model.relaunchApplication()
+            }
+            Button(localization.text("common.action.cancel"), role: .cancel) {}
+        } message: {
+            Text(localization.text("permission.desync.restart_confirm.message"))
         }
     }
 

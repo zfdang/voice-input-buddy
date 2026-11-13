@@ -261,10 +261,19 @@ extension OnboardingView {
                 onboardingActionButton(id: "recovery.\(failure.rawValue)") {
                     performRecovery(for: failure)
                 } label: {
-                    Text(localization.text("onboarding.recovery.\(failure.rawValue).action"))
+                    Text(localization.text(recoveryActionKey(for: failure)))
                         .font(.system(size: 13, weight: .semibold))
                 }
                 .buttonStyle(.borderedProminent)
+
+                if failure == .permissionDesynced, canOfferPermissionRelaunch {
+                    onboardingActionButton(id: "recovery.\(failure.rawValue).restart") {
+                        isPermissionRelaunchConfirmationPresented = true
+                    } label: {
+                        Text(localization.text("permission.desync.action.restart"))
+                    }
+                    .buttonStyle(.bordered)
+                }
 
                 onboardingActionButton(id: "diagnostics.copy") {
                     copyDiagnosticSummary()
@@ -298,6 +307,17 @@ extension OnboardingView {
         return "onboarding.recovery.\(failure.rawValue).title"
     }
 
+    private var canOfferPermissionRelaunch: Bool {
+        model.canRelaunchApplication && interactionProbe == nil
+    }
+
+    private func recoveryActionKey(for failure: FirstUseFailureReason) -> String {
+        if failure == .permissionDesynced {
+            return "permission.desync.action.open_settings"
+        }
+        return "onboarding.recovery.\(failure.rawValue).action"
+    }
+
     private func recoveryDetailKey(for failure: FirstUseFailureReason) -> String {
         if usesG9N9NButtonTestWorkaround {
             switch failure {
@@ -305,6 +325,11 @@ extension OnboardingView {
             case .controlsNotConfirmed: return "onboarding.controls.g9n9n.detail"
             default: break
             }
+        }
+        if failure == .permissionDesynced {
+            return canOfferPermissionRelaunch
+                ? "onboarding.recovery.permission.desynced.detail.with_restart"
+                : "onboarding.recovery.permission.desynced.detail"
         }
         guard failure == .remoteNotFound else {
             return "onboarding.recovery.\(failure.rawValue).detail"

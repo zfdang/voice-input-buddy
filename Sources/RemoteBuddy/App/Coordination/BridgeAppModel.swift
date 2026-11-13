@@ -28,6 +28,11 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     @Published var applicationIntegrationStatus: ApplicationIntegrationPreparationState?
     @Published var connectionStatus = LocalizedMessage("bluetooth.status.initializing")
     @Published var hidStatus = LocalizedMessage("button_mapping.status.disabled")
+    @Published var hidFilterFailureState: HIDFilterFailureState = .none
+    @Published var runtimePermissionIssue: RuntimePermissionIssue?
+    @Published var runtimePermissionIssueUpdatedAt: Date?
+    @Published var runtimePermissionDiagnosisTrigger: String?
+    var lastLoggedRuntimePermissionIssueKey: String?
     @Published var audioStatus = LocalizedMessage("audio.output.none_selected")
     @Published var buddyMicrophoneStatus = LocalizedMessage("audio.compatibility.checking")
     @Published var isStreaming = false
@@ -271,14 +276,16 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
             // Stop mapping as well: an unseized remote must not inject actions without filtering.
             guard let self else { return }
             self.hidMonitoringInterrupted = true
+            self.hidFilterFailureState = .systemDisabled
             self.stopHIDMonitors()
             let permissions = self.permissionSnapshotProvider()
             self.appliedHIDPermissionSnapshot = permissions
             self.hidStatus = LocalizedMessage(
-                !permissions.inputMonitoringGranted ? "button_mapping.permission.input_monitoring_required" :
+                !permissions.inputMonitoringGranted ? HIDStatusKeys.inputMonitoringRequired :
                     (!permissions.accessibilityGranted ? "button_mapping.permission.accessibility_required" :
-                        "button_mapping.status.interrupted")
+                        HIDStatusKeys.interrupted)
             )
+            self.refreshRuntimePermissionDiagnosis(trigger: "hid_filter_disabled")
         }
         voiceToolCancellable = settings.$onboardingVoiceTool
             .removeDuplicates()

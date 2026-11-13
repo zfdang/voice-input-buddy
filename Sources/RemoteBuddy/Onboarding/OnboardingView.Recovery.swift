@@ -86,6 +86,11 @@ extension OnboardingView {
             requestInputMonitoringPermission()
         case .accessibilityPermissionDenied:
             requestAccessibilityPermission()
+        case .permissionDesynced:
+            openPrivacySecuritySettings(
+                urlString: model.runtimePermissionIssue?.preferredPrivacySettingsURLString
+                    ?? "x-apple.systempreferences:com.apple.preference.security?Privacy"
+            )
         case .remoteNotFound:
             restartSelectedControlConnection()
         case .remoteButtonNotReady, .controlsNotConfirmed:

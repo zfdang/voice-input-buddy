@@ -61,6 +61,37 @@ extension SettingsView {
                 }
             }
 
+            if let runtimeIssue = model.runtimePermissionIssue, runtimeIssue.isPermissionDesynced {
+                Divider().padding(.leading, 48)
+                VStack(alignment: .leading, spacing: 8) {
+                    Label {
+                        Text(localization.text(
+                            model.canRelaunchApplication
+                                ? "permission.desync.banner.detail.with_restart"
+                                : "permission.desync.banner.detail"
+                        ))
+                            .font(.system(size: 12))
+                            .fixedSize(horizontal: false, vertical: true)
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                    }
+                    HStack(spacing: 10) {
+                        Button(localization.text("permission.desync.action.open_settings")) {
+                            openSettingsURL(runtimeIssue.preferredPrivacySettingsURLString)
+                        }
+                        .compatibilityButtonStyle(.prominent)
+                        if model.canRelaunchApplication {
+                            Button(localization.text("permission.desync.action.restart")) {
+                                isPermissionRelaunchConfirmationPresented = true
+                            }
+                            .compatibilityButtonStyle(.standard)
+                        }
+                    }
+                }
+                .padding(.vertical, 9)
+            }
+
             if settings.isOnboardingComplete,
                !inputMonitoringGranted || !accessibilityGranted {
                 Divider().padding(.leading, 48)

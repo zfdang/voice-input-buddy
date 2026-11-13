@@ -116,6 +116,12 @@ extension OnboardingView {
         if bluetoothAuthorization != bluetooth { bluetoothAuthorization = bluetooth }
         if inputMonitoringGranted != input { inputMonitoringGranted = input }
         if accessibilityGranted != accessibility { accessibilityGranted = accessibility }
+        if permissionOverrides == nil {
+            model.refreshRuntimePermissionDiagnosis(
+                trigger: "onboarding_permission_refresh",
+                bluetoothGranted: bluetooth == .allowedAlways
+            )
+        }
     }
 
     func refreshSecureInputState() {
@@ -202,6 +208,13 @@ extension OnboardingView {
         guard let url = URL(
             string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Bluetooth"
         ) else { return }
+        openOnboardingURL(url)
+    }
+
+    func openPrivacySecuritySettings(
+        urlString: String = "x-apple.systempreferences:com.apple.preference.security?Privacy"
+    ) {
+        guard let url = URL(string: urlString) else { return }
         openOnboardingURL(url)
     }
 
