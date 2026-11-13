@@ -175,8 +175,6 @@ extension KeyboardInjector {
                         isAccessibilityTrusted && !SecureInputMonitor.isEnabled()
                 }
                 guard canContinue() else { finish(false); return }
-                announceManualAccessibility(processIdentifier: processIdentifier,
-                    bundleIdentifier: bundleIdentifier, attempt: number)
                 if focusIntegratedComposer(integration, processIdentifier: processIdentifier,
                                            clickAttempted: &clickAttempted, canContinue: canContinue) {
                     AppLogger.shared.write("APP INTEGRATION focused bundle=\(bundleIdentifier)")
@@ -797,39 +795,30 @@ extension KeyboardInjector {
         return priority
     }
 
-    private static func focusAccessibilityElement(
+    static func focusAccessibilityElement(
         _ element: AXUIElement,
         applicationElement: AXUIElement,
         requiresApplicationFocusedElement: Bool = false,
-        allowPress: Bool = true
+        allowPress: Bool = true,
+        isFocused: (() -> Bool)? = nil,
+        setAttribute: (AXUIElement, CFString, CFTypeRef) -> AXError = AXUIElementSetAttributeValue,
+        performAction: (AXUIElement, CFString) -> AXError = AXUIElementPerformAction
     ) -> Bool {
-        if accessibilityElementIsFocused(
-            element,
-            applicationElement: applicationElement,
-            requiresApplicationFocusedElement: requiresApplicationFocusedElement
-        ) {
-            return true
+        let focused = isFocused ?? {
+            accessibilityElementIsFocused(element, applicationElement: applicationElement,
+                requiresApplicationFocusedElement: requiresApplicationFocusedElement)
         }
-        _ = AXUIElementSetAttributeValue(element, kAXFocusedAttribute as CFString, kCFBooleanTrue)
-        _ = AXUIElementSetAttributeValue(
+        if focused() { return true }
+        _ = setAttribute(element, kAXFocusedAttribute as CFString, kCFBooleanTrue)
+        _ = setAttribute(
             applicationElement,
             kAXFocusedUIElementAttribute as CFString,
             element
         )
-        if accessibilityElementIsFocused(
-            element,
-            applicationElement: applicationElement,
-            requiresApplicationFocusedElement: requiresApplicationFocusedElement
-        ) {
-            return true
-        }
+        if focused() { return true }
         guard allowPress else { return false }
-        _ = AXUIElementPerformAction(element, kAXPressAction as CFString)
-        return accessibilityElementIsFocused(
-            element,
-            applicationElement: applicationElement,
-            requiresApplicationFocusedElement: requiresApplicationFocusedElement
-        )
+        _ = performAction(element, kAXPressAction as CFString)
+        return focused()
     }
 
     private static func accessibilityElementIsFocused(

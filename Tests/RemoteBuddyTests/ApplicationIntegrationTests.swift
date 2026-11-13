@@ -1,4 +1,5 @@
 import AppKit
+import ApplicationServices
 import Foundation
 import Testing
 @testable import RemoteBuddy
@@ -380,6 +381,33 @@ struct ApplicationIntegrationTests {
         #expect(KeyboardInjector.accessibilityAncestorChainContains(hit: 1, target: 1, equal: ==, parent: { _ in nil }))
         #expect(!KeyboardInjector.accessibilityAncestorChainContains(hit: 3, target: 1,
             equal: ==, parent: { [3: 2, 2: 3][$0] }))
+    }
+
+    @Test func automaticIntegrationSourceCannotEnableUndocumentedAccessibilityAttributes() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let source = try String(contentsOf: root.appendingPathComponent("Sources/RemoteBuddy/Input/KeyboardInjector.Accessibility.swift"))
+        let start = try #require(source.range(of: "static func focusIntegratedApplication("))
+        let end = try #require(source.range(of: "static func weChatComposerFocusPoint", range: start.upperBound..<source.endIndex))
+        let automaticPath = source[start.lowerBound..<end.lowerBound]
+        for forbidden in ["announceManualAccessibility", "AXManualAccessibility", "AXEnhancedUserInterface"] {
+            #expect(!automaticPath.contains(forbidden))
+        }
+    }
+
+    @Test(arguments: [false, true])
+    func focusWritesOnlyDocumentedFocusAttributes(pressFallback: Bool) {
+        let input = AXUIElementCreateApplication(1234)
+        let app = AXUIElementCreateApplication(1235)
+        var writes: [String] = []
+        var actions: [String] = []
+        let result = KeyboardInjector.focusAccessibilityElement(input, applicationElement: app,
+            requiresApplicationFocusedElement: true, allowPress: pressFallback,
+            isFocused: { pressFallback ? !actions.isEmpty : writes.count == 2 },
+            setAttribute: { _, key, _ in writes.append(key as String); return .success },
+            performAction: { _, action in actions.append(action as String); return .success })
+        #expect(result)
+        #expect(writes == ["AXFocused", "AXFocusedUIElement"])
+        #expect(actions == (pressFallback ? ["AXPress"] : []))
     }
 
     @Test func composerDiscoveryOnlyReadsMetadataAndCannotReadOrWriteMessageText() {
