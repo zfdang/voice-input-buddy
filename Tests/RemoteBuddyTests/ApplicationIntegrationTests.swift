@@ -489,7 +489,7 @@ struct ApplicationIntegrationTests {
         #expect(actions == (pressFallback ? ["AXPress"] : []))
     }
 
-    @Test func composerDiscoveryOnlyReadsMetadataAndCannotReadOrWriteMessageText() {
+    @Test func composerDiscoveryOnlyReadsControlMetadata() {
         var reads: [String] = []
         let field = KeyboardInjector.accessibilityTextMetadata(role: "AXTextArea", frame: window,
             context: "conversation", selectedContext: false, read: { key in
@@ -579,7 +579,10 @@ struct ApplicationIntegrationTests {
             for language in [AppLanguage.english, .simplifiedChinese] {
                 localization.select(language)
                 for key in ["application_integration.title", "application_integration.introduction"] +
-                    ApplicationIntegration.allCases.map(\.detailKey) {
+                    ApplicationIntegration.allCases.map(\.detailKey) +
+                    [ApplicationIntegrationPreparationState.waiting, .ready, .unavailable, .focusTimedOut,
+                     .voiceTriggered, .voiceTriggeredWithoutFocus, .cancelled(.timedOut), .cancelled(.actionFailed)]
+                        .map(ApplicationIntegrationStatus.messageKey) + ["application_integration.permission.missing"] {
                     #expect(localization.text(key) != key)
                 }
             }

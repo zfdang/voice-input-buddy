@@ -328,8 +328,33 @@ microphone audio, end-to-end stop behavior, long sessions, or sleep/wake accepta
 See the [hardware debugging record](g9n9n-hardware-debugging.md) for the completed
 test attempts, evidence limits, signing checks, and next acceptance steps.
 
-## 应用集成的辅助功能边界
+## App integration accessibility and preparation boundaries
 
-自动语音集成只读取公开辅助功能控件元数据并请求聚焦；不设置 `AXManualAccessibility` 或 `AXEnhancedUserInterface`，不读取 `AXValue`、选中文本、消息正文，也不发送文本或消息。目标应用未公开可用的控件树时，自动集成会报告聚焦失败，但同一应用中的语音仍继续，以便用户在需要时手动粘贴；应用切换、松开和结束操作仍会取消待启动语音。
+Automatic voice integration reads public accessibility control metadata and requests
+focus. Its focus writer sets only `AXFocused` and `AXFocusedUIElement`; it may use
+`AXPress` or one hit-tested click on Antigravity's identified input. The automatic
+entry point does not call `announceManualAccessibility` or set `AXManualAccessibility`
+or `AXEnhancedUserInterface`. Tests guard that entry point and inject the real focus
+writer's attribute/action backend to check the complete write list. Metadata reads
+are tested separately; a metadata-only test is not evidence about attribute writes.
+No message values, selected text, transcripts, text insertion, or message submission
+are part of this focus operation.
 
-现有显式应用启动／聚焦按键路径仍保留框架特定的 `AXManualAccessibility` / `AXEnhancedUserInterface` 请求。这两个属性未获 Apple 公开文档承诺，不能称为标准 AX 属性；它们不参与自动语音集成。
+Existing explicit application launch/focus button actions still use the
+framework-specific `AXManualAccessibility` / `AXEnhancedUserInterface` requests.
+These are undocumented attributes, not standard Apple AX attributes; they are not
+used by automatic voice integration.
+
+Focus is optional: failed or expired attempts continue to the next voice-preparation
+step in the same application. Release, application/session changes, shutdown, and
+failed destination validation still cancel pending starts. Fn-tap preparation shares
+one four-second focus/destination deadline, with optional focus limited to three
+seconds. Hold mode instead waits for the same three-second optional focus step and
+then the existing bounded input-source activation (roughly half a second); it does
+not run the Fn-tap sequence. Both fit within the five-second pre-roll capacity.
+The hold and Fn-tap paths retain their existing destination-validation differences.
+
+Integration feedback is independent of the voice shortcut configuration status.
+Preparing feedback does not claim that a trigger was sent. Only a successful key
+post promotes it to triggered; new attempts, settings changes and stop clear it,
+and completed attempt feedback expires after 15 seconds.

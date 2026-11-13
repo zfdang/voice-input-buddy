@@ -1215,7 +1215,7 @@
 "application_integration.chatGPT.detail" = "When enabled, starting voice input while ChatGPT is in front focuses the message box in the current conversation.";
 "application_integration.antigravity.detail" = "When enabled, starting voice input while Antigravity is in front focuses the Agent chat input in the current window.";
 "application_integration.weChat.detail" = "When enabled, starting voice input while WeChat is in front focuses the message box in the current conversation. Open a conversation first.";
-"application_integration.accessibility_help" = "Requires Accessibility permission. Focusing is optional. If it fails, voice input continues; use Command+V to paste the result if needed. Text recognition and insertion are handled by your voice input tool.";
+"application_integration.accessibility_help" = "Automatic focus uses Accessibility permission. Focusing is optional. If it fails, voice input continues; use Command+V to paste the result if needed. Text recognition and insertion are handled by your voice input tool.";
 
 "application_integration.status.waiting" = "Preparing the input field…";
 "application_integration.status.ready" = "Input focus confirmed. Preparing voice input…";
@@ -1223,7 +1223,7 @@
 "application_integration.status.timed_out" = "Input preparation timed out. Voice input was cancelled; try again.";
 "application_integration.status.cancelled" = "Input preparation was cancelled. No voice trigger was sent.";
 "application_integration.permission.granted" = "Accessibility permission granted";
-"application_integration.permission.missing" = "Accessibility permission is required before an enabled integration can start voice input.";
+"application_integration.permission.missing" = "Automatic focus needs Accessibility permission. Without it, focus is skipped and voice input is still attempted. A software voice shortcut may separately need this permission.";
 "application_integration.permission.open" = "Open Accessibility Settings";
 
 "application_integration.fn_behavior" = "Enabling any app integration makes Remote Buddy send the Fn hold trigger for all foreground apps so focusing can finish first. This requires Accessibility permission. Only enabled foreground apps have their input focus adjusted. Disable all integrations to return to the original trigger behavior.";
