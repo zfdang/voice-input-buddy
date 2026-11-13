@@ -195,6 +195,13 @@ extension KeyboardInjector {
                                                 clickAttempted: inout Bool,
                                                 canContinue: @escaping () -> Bool) -> Bool {
         let app = AXUIElementCreateApplication(processIdentifier)
+        let preserveCurrentFocus = {
+            guard canContinue(), shouldPreserveIntegratedInput(
+                VoiceInputDestinationSnapshot.system(), integration: integration) else { return false }
+            AppLogger.shared.write("APP INTEGRATION preserved bundle=\(integration.bundleIdentifier) reason=editable_focus")
+            return true
+        }
+        if preserveCurrentFocus() { return true }
         guard canContinue(),
               !VoiceInputDestinationSnapshot.system().isSensitiveDestination,
               let window = axElement(app, attribute: kAXFocusedWindowAttribute),
@@ -216,13 +223,16 @@ extension KeyboardInjector {
         }
         return focusIntegratedCandidates(candidates, integration: integration, windowFrame: frame,
             canContinue: targetIsCurrent,
+            preserveFocus: preserveCurrentFocus,
             focus: { focusAccessibilityElement($0, applicationElement: app,
-                requiresApplicationFocusedElement: true, allowPress: integration == .antigravity) },
+                requiresApplicationFocusedElement: true, allowPress: integration == .antigravity,
+                preserveFocus: preserveCurrentFocus) },
             click: { element, snapshot in
                 guard !clickAttempted else { return false }
                 clickAttempted = true
                 return clickIntegratedComposer(snapshot, integration: integration, windowFrame: frame,
                     canContinue: targetIsCurrent,
+                    preserveFocus: preserveCurrentFocus,
                     hitTest: { accessibilityHitTestMatchesTarget(element, processIdentifier: processIdentifier, point: $0) },
                     isFocused: { accessibilityElementIsFocused(element, applicationElement: app,
                         requiresApplicationFocusedElement: true) })
@@ -233,16 +243,21 @@ extension KeyboardInjector {
     /// injected test elements. Its only actions are focus and a verified click.
     static func focusIntegratedCandidates<Element>(_ candidates: [(element: Element, snapshot: AccessibilityTextCandidate)],
                                                    integration: ApplicationIntegration, windowFrame: CGRect?,
-                                                   canContinue: () -> Bool, focus: (Element) -> Bool,
+                                                   canContinue: () -> Bool, preserveFocus: () -> Bool = { false },
+                                                   focus: (Element) -> Bool,
                                                    click: (Element, AccessibilityTextCandidate) -> Bool) -> Bool {
         guard canContinue() else { return false }
+        if preserveFocus() { return true }
         let ranked = candidates.indices.compactMap { index -> (Int, Int)? in
             integratedComposerScore(candidates[index].snapshot, integration: integration,
                                     windowFrame: windowFrame).map { (index, $0) }
         }.sorted { $0.1 > $1.1 }
         guard let best = ranked.first, ranked.count == 1 || best.1 > ranked[1].1, canContinue() else { return false }
         let candidate = candidates[best.0]
+        if preserveFocus() { return true }
         if focus(candidate.element) { return true }
+        guard canContinue() else { return false }
+        if preserveFocus() { return true }
         guard canContinue(),
               integratedComposerClickPoint(candidate.snapshot, integration: integration, windowFrame: windowFrame) != nil
         else { return false }
@@ -265,12 +280,17 @@ extension KeyboardInjector {
                                         integration: ApplicationIntegration,
                                         windowFrame: CGRect?,
                                         canContinue: () -> Bool,
+                                        preserveFocus: () -> Bool = { false },
                                         hitTest: (CGPoint) -> Bool,
                                         postClick: (CGPoint) -> Bool = postAccessibilityFocusClick,
                                         isFocused: () -> Bool,
                                         pause: () -> Void = { usleep(50_000) }) -> Bool {
+        guard canContinue() else { return false }
+        if preserveFocus() { return true }
         guard let point = integratedComposerClickPoint(candidate, integration: integration, windowFrame: windowFrame),
-              canContinue(), hitTest(point), canContinue(), postClick(point) else { return false }
+              hitTest(point), canContinue() else { return false }
+        if preserveFocus() { return true }
+        guard postClick(point) else { return false }
         // The click is delivered asynchronously. Verify the actual focused input
         // before reporting completion or allowing the voice trigger through.
         for _ in 0..<5 {
@@ -333,6 +353,13 @@ extension KeyboardInjector {
     static func isAntigravityMessageInput(_ candidate: AccessibilityTextCandidate) -> Bool {
         [candidate.title, candidate.description, candidate.help, candidate.placeholder]
             .contains { $0.lowercased() == "message input" }
+    }
+
+    static func shouldPreserveIntegratedInput(_ destination: VoiceInputDestinationSnapshot,
+                                              integration: ApplicationIntegration) -> Bool {
+        ApplicationIntegration.matching(destination.bundleIdentifier) == integration &&
+            destination.enabled && destination.editable && !destination.isSensitiveDestination &&
+            ["AXTextArea", "AXTextField", "AXComboBox"].contains(destination.role)
     }
 
     /// Labels observed in the applications' user-visible accessibility trees.
@@ -866,6 +893,7 @@ extension KeyboardInjector {
         applicationElement: AXUIElement,
         requiresApplicationFocusedElement: Bool = false,
         allowPress: Bool = true,
+        preserveFocus: () -> Bool = { false },
         isFocused: (() -> Bool)? = nil,
         setAttribute: (AXUIElement, CFString, CFTypeRef) -> AXError = AXUIElementSetAttributeValue,
         performAction: (AXUIElement, CFString) -> AXError = AXUIElementPerformAction
@@ -874,14 +902,15 @@ extension KeyboardInjector {
             accessibilityElementIsFocused(element, applicationElement: applicationElement,
                 requiresApplicationFocusedElement: requiresApplicationFocusedElement)
         }
-        if focused() { return true }
+        if focused() || preserveFocus() { return true }
         _ = setAttribute(element, kAXFocusedAttribute as CFString, kCFBooleanTrue)
+        if preserveFocus() { return true }
         _ = setAttribute(
             applicationElement,
             kAXFocusedUIElementAttribute as CFString,
             element
         )
-        if focused() { return true }
+        if focused() || preserveFocus() { return true }
         guard allowPress else { return false }
         _ = performAction(element, kAXPressAction as CFString)
         return focused()

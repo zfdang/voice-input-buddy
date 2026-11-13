@@ -345,6 +345,12 @@ not editable values. Search, code editors, modal dialogs, ambiguous targets, and
 sensitive fields remain excluded. UI inspection identified both controls and
 confirmed WorkBuddy focus; physical remote acceptance remains required.
 
+All enabled integrations preserve an already focused, enabled, non-sensitive
+editable field in the same application, including question/approval response
+fields. This check runs before scanning and again before focus/click actions.
+A `preserved` diagnostic distinguishes this path from selecting a composer.
+Only when no such field has focus does automatic composer discovery run.
+
 Automatic voice integration reads public accessibility control metadata and requests
 focus. Its focus writer sets only `AXFocused` and `AXFocusedUIElement`; it may use
 `AXPress` for Antigravity or one hit-tested click on an explicitly identified

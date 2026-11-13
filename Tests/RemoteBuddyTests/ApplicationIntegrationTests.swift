@@ -548,6 +548,52 @@ struct ApplicationIntegrationTests {
         #expect(ApplicationIntegration.matching("com.openai.chat") == .chatGPT)
     }
 
+    @Test(arguments: ApplicationIntegration.allCases)
+    func existingEditableFocusWinsOverTheComposer(app: ApplicationIntegration) {
+        func destination(role: String = "AXTextArea", enabled: Bool = true, editable: Bool = true,
+                         protected: Bool = false, bundle: String? = nil) -> VoiceInputDestinationSnapshot {
+            .init(bundleIdentifier: bundle ?? app.bundleIdentifier, role: role, subrole: "", enabled: enabled,
+                editable: editable, protectedContent: protected, semanticText: "question response")
+        }
+        for role in ["AXTextArea", "AXTextField", "AXComboBox"] {
+            let current = destination(role: role)
+            #expect(KeyboardInjector.shouldPreserveIntegratedInput(current, integration: app))
+            #expect(KeyboardInjector.focusIntegratedCandidates([(element: "composer", snapshot: candidate("Message input"))],
+                integration: app, windowFrame: window, canContinue: { true },
+                preserveFocus: { KeyboardInjector.shouldPreserveIntegratedInput(current, integration: app) },
+                focus: { _ in Issue.record("Existing input must not lose focus"); return false },
+                click: { _, _ in Issue.record("Existing input must not be replaced by a click"); return false }))
+        }
+        for invalid in [destination(role: "AXButton"), destination(enabled: false), destination(editable: false),
+                        destination(protected: true), destination(role: "AXSecureTextField"),
+                        destination(bundle: "com.apple.TextEdit")] {
+            #expect(!KeyboardInjector.shouldPreserveIntegratedInput(invalid, integration: app))
+        }
+    }
+
+    @Test func inputSelectedWhileScanningOrBeforeClickIsPreserved() {
+        let nodes = [(element: "composer", snapshot: candidate("Message input"))]
+        var checks = 0
+        var editing = false
+        #expect(KeyboardInjector.focusIntegratedCandidates(nodes, integration: .antigravity, windowFrame: window,
+            canContinue: { checks += 1; if checks == 2 { editing = true }; return true },
+            preserveFocus: { editing }, focus: { _ in Issue.record("Scan must recheck current input"); return false },
+            click: { _, _ in Issue.record("Scan must not click"); return false }))
+        editing = false
+        #expect(KeyboardInjector.focusIntegratedCandidates(nodes, integration: .antigravity, windowFrame: window,
+            canContinue: { true }, preserveFocus: { editing }, focus: { _ in editing = true; return false },
+            click: { _, _ in Issue.record("Do not click after the user selects an input"); return false }))
+        #expect(KeyboardInjector.clickIntegratedComposer(candidate("Message input"), integration: .antigravity,
+            windowFrame: window, canContinue: { true }, preserveFocus: { editing },
+            hitTest: { _ in Issue.record("Existing focus needs no hit test"); return false },
+            postClick: { _ in Issue.record("Existing focus needs no click"); return false }, isFocused: { false }, pause: {}))
+        let input = AXUIElementCreateApplication(1234)
+        #expect(KeyboardInjector.focusAccessibilityElement(input, applicationElement: input,
+            preserveFocus: { true }, isFocused: { false },
+            setAttribute: { _, _, _ in Issue.record("Preserved focus must not write AX attributes"); return .failure },
+            performAction: { _, _ in Issue.record("Preserved focus must not press a control"); return .failure }))
+    }
+
     @Test func workBuddyUnlabeledComposerUsesOnlyItsSurroundingControls() {
         let roles = [0: "AXGroup", 1: "AXTextArea", 2: "AXPopUpButton", 3: "AXGroup", 4: "AXButton", 5: "AXButton", 6: "AXStaticText"]
         let tree = [0: [1, 2, 3, 6], 1: [99], 3: [4, 5]]
