@@ -17,6 +17,7 @@ SETTINGS_SECTIONS = [
     ("mapping", "mapping-1020x772.png", "mapping"),
     ("commonPhrases", "commonPhrases-1020x772.png", "phrases"),
     ("integration", "integration-1020x772.png", "integration"),
+    ("applicationIntegration", "applicationIntegration-1020x772.png", "application-integration"),
     ("about", "about-1020x772.png", "about"),
 ]
 

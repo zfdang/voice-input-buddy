@@ -83,6 +83,14 @@ button.addEventListener('blur', stop);
         desc: '查看当前输入工具和麦克风状态，打开对应的设置向导。也可调整语音触发键及 Fn 点按设置。'
       },
       {
+        title: '应用集成',
+        badge: '可选自动聚焦',
+        windowTitle: '应用集成 · Remote Buddy',
+        src: 'assets/screenshots/application-integration-zh.png',
+        alt: '应用集成界面：微信、Antigravity 和 ChatGPT 的开关、辅助功能状态与 Fn 行为说明',
+        desc: '分别或批量开启集成，在语音触发前尝试聚焦输入框。聚焦失败仍可继续语音，必要时用 Command+V 粘贴结果。'
+      },
+      {
         title: '关于搭子',
         badge: '版本与更新',
         windowTitle: '关于搭子 · Remote Buddy',
@@ -200,6 +208,14 @@ button.addEventListener('blur', stop);
         src: 'assets/screenshots/integration-en.png',
         alt: 'Remote Buddy Voice Tools interface: setup guides for WeType, Doubao, Voice Buddy, NetEase Bageshuo, Typeless, macOS Dictation, and other tools',
         desc: 'Check the selected input tool and microphone status, then open its setup guide. Adjust the voice trigger key and Fn tap settings here too.'
+      },
+      {
+        title: 'App Integrations',
+        badge: 'Optional Focus',
+        windowTitle: 'App Integrations · Remote Buddy',
+        src: 'assets/screenshots/application-integration-en.png',
+        alt: 'App integrations: switches for WeChat, Antigravity, and ChatGPT, Accessibility status, and Fn behavior',
+        desc: 'Enable individual or all integrations to attempt input focus before voice starts. Voice continues if focus fails; use Command+V to paste the result if needed.'
       },
       {
         title: 'About Remote Buddy',
@@ -385,6 +401,8 @@ button.addEventListener('blur', stop);
   if (nextBtn) nextBtn.addEventListener('click', () => goToIndex(currentIndex + 1));
 
   categoryBtns.forEach(btn => {
+    const label = btn.textContent.replace(/\s*\(\d+\)\s*$/, '');
+    btn.textContent = `${label} (${(galleryData[btn.dataset.track] || []).length})`;
     btn.addEventListener('click', () => {
       categoryBtns.forEach(b => b.classList.remove('is-active'));
       btn.classList.add('is-active');

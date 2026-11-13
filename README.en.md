@@ -19,9 +19,12 @@ Supports **macOS 14 and later**, on Apple Silicon and Intel Macs. Windows suppor
 - Use a remote's microphone for voice input, without reaching for the keyboard.
 - Map Xiaomi remote control buttons to keyboard shortcuts, application actions, or common phrases, with category filtering, independent single/double/long-press actions, and individual trigger reset. Phrase content can mix languages and stays the same when the interface language changes.
 - Configure hold-to-talk or press-to-start/stop behavior for your input tool.
+- Optional app integrations focus the current conversation input before voice input starts in WeChat, Antigravity, and ChatGPT, with individual and bulk switches.
 - Set up permissions, the microphone driver, device connection, and input integration in one guide.
 
 Remote Buddy does not collect usage statistics, save recordings or transcript history, or upload logs. Recognition and text cleanup are handled by your selected input tool, with that tool's own network and privacy settings.
+
+Enabling any app integration makes Remote Buddy send the Fn hold trigger for all foreground apps, requiring Accessibility permission so focus can finish first. Only enabled foreground apps have their focus adjusted. Focusing is optional: if it fails, voice input continues and you can use Command+V to paste the result if needed. Disable all integrations to restore the original trigger behavior. Antigravity integration targets the Agent desktop app, not the separate Antigravity IDE.
 
 ## How does it work?
 
