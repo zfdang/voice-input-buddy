@@ -8,6 +8,8 @@ final class VoiceInputPreparationSequence {
     typealias Completion = (VoiceInputDestinationWaitResult) -> Void
     typealias Stage = (@escaping Completion) -> VoiceInputDestinationWait
     static let maximumWait: TimeInterval = 4
+    // Reserve time for destination validation after optional focus expires.
+    static let maximumFocusWait: TimeInterval = 3
 
     private let schedule: OperationScheduler
     private var stages: [Stage] = []

@@ -1216,11 +1216,11 @@
 "application_integration.chatGPT.detail" = "开启后，开始语音输入时，如果前台应用是 ChatGPT，会自动聚焦到当前对话的消息输入框。";
 "application_integration.antigravity.detail" = "开启后，开始语音输入时，如果前台应用是 Antigravity，会自动聚焦到当前窗口的 Agent 聊天输入框。";
 "application_integration.weChat.detail" = "开启后，开始语音输入时，如果前台应用是微信，会自动聚焦到当前会话的消息输入框。请先打开一个会话。";
-"application_integration.accessibility_help" = "需要辅助功能权限。无法确认输入焦点时取消语音输入；语音识别和文字输入仍由所选语音工具完成。";
+"application_integration.accessibility_help" = "需要辅助功能权限。聚焦是可选环节，失败时语音仍会继续，必要时可用 Command+V 粘贴结果；语音识别和文字输入仍由所选语音工具完成。";
 
 "application_integration.status.waiting" = "正在准备输入框…";
 "application_integration.status.ready" = "已确认输入焦点，可以开始语音输入。";
-"application_integration.status.failed" = "无法确认输入焦点，已取消语音输入。请打开会话后重试。";
+"application_integration.status.failed" = "未自动聚焦，语音将继续；必要时可用 Command+V 粘贴识别结果。";
 "application_integration.status.timed_out" = "输入准备超时，已取消语音输入，请重试。";
 "application_integration.status.cancelled" = "输入准备已取消，未发送语音触发键。";
 "application_integration.permission.granted" = "已获得辅助功能权限";
@@ -1228,3 +1228,5 @@
 "application_integration.permission.open" = "打开辅助功能设置";
 
 "application_integration.fn_behavior" = "开启任一应用集成后，Fn 按住模式会在所有前台应用中改由遥控搭子发送触发键，以保证先聚焦再触发，因此需要辅助功能权限。只有已开启集成且位于前台的应用会调整焦点；全部关闭后恢复原有触发方式。";
+
+"application_integration.status.focus_timed_out" = "自动聚焦超时，语音将继续；必要时可用 Command+V 粘贴识别结果。";

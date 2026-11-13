@@ -162,7 +162,7 @@ struct ApplicationIntegrationTests {
     }
 
     @Test(arguments: [false, true])
-    func unsuccessfulFocusNeverTriggersHoldVoiceOrFnTap(tapMode: Bool) throws {
+    func unsuccessfulOptionalFocusStillStartsHoldVoiceAndFnTap(tapMode: Bool) throws {
         try withSettings { settings, _ in
             settings.setAllApplicationIntegrations(enabled: true)
             settings.voiceKeyMode = .function
@@ -171,7 +171,7 @@ struct ApplicationIntegrationTests {
             var done: ((Bool) -> Void)?
             var edges: [Bool] = []
             var results: [Bool] = []
-            var states: [VoiceInputDestinationState] = []
+            var states: [ApplicationIntegrationPreparationState] = []
             let controller = ApplicationIntegrationController(settings: settings, notifications: NotificationCenter(),
                 frontmost: { (ApplicationIntegration.weChat.bundleIdentifier, 42) }, focus: { _, _, callback in
                     done = callback
@@ -180,6 +180,11 @@ struct ApplicationIntegrationTests {
             model.applicationIntegrationController = controller
             controller.start()
             defer { controller.stop() }
+            model.voiceInputDestinationCoordinator = VoiceInputDestinationCoordinator(snapshot: {
+                VoiceInputDestinationSnapshot(bundleIdentifier: ApplicationIntegration.weChat.bundleIdentifier,
+                    role: "AXTextArea", subrole: "", enabled: true, editable: true, protectedContent: false,
+                    semanticText: "chat_input_field")
+            })
             let clock = ControlledTestScheduler()
             let session = VoiceFnTapSessionController(schedule: clock.voiceSchedule,
                 destinationReadiness: { model.prepareIntegratedVoiceInputDestination(completion: $0, schedule: clock.voiceSchedule) },
@@ -196,15 +201,20 @@ struct ApplicationIntegrationTests {
             finish(false)
             finish(true) // A late success must not undo a failure.
             clock.runAll()
-            #expect(edges.isEmpty)
-            #expect(states == [.waiting, .cancelled(.actionFailed)])
-            if tapMode { #expect(session.phase == .idle) }
-            else { #expect(results == [false]); #expect(!model.voiceKeyLatch.isHeld) }
+            #expect(states == [.waiting, .unavailable])
+            if tapMode { #expect(edges == [true, false]) }
+            else {
+                #expect(edges == [true])
+                #expect(results == [true])
+                #expect(model.voiceKeyLatch.isHeld)
+                #expect(model.updateVoiceKeyState(streaming: false, forceSoftware: true, owner: .bluetooth,
+                    keySetter: { _, down in edges.append(down); return true }))
+            }
             session.shutdown()
         }
     }
 
-    @Test func focusTimeoutCancelsExactlyOnceAndIgnoresLateSuccess() throws {
+    @Test func optionalFocusTimeoutContinuesExactlyOnceAndIgnoresLateSuccess() throws {
         try withSettings { settings, _ in
             settings.setAllApplicationIntegrations(enabled: true)
             let clock = ControlledTestScheduler()
@@ -218,10 +228,10 @@ struct ApplicationIntegrationTests {
             controller.start()
             defer { controller.stop() }
             _ = controller.prepareForVoiceInput { results.append($0) }
-            clock.advance(to: 4000)
+            clock.advance(to: 3000)
             let finishFocus = try #require(focusDone)
             finishFocus(true)
-            #expect(results == [.cancelled(.timedOut)])
+            #expect(results == [.ready])
         }
     }
 

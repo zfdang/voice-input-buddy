@@ -330,6 +330,6 @@ test attempts, evidence limits, signing checks, and next acceptance steps.
 
 ## 应用集成的辅助功能边界
 
-自动语音集成只读取公开辅助功能控件元数据并请求聚焦；不设置 `AXManualAccessibility` 或 `AXEnhancedUserInterface`，不读取 `AXValue`、选中文本、消息正文，也不发送文本或消息。目标应用未公开可用的控件树时，自动集成会失败并取消本次语音输入。
+自动语音集成只读取公开辅助功能控件元数据并请求聚焦；不设置 `AXManualAccessibility` 或 `AXEnhancedUserInterface`，不读取 `AXValue`、选中文本、消息正文，也不发送文本或消息。目标应用未公开可用的控件树时，自动集成会报告聚焦失败，但同一应用中的语音仍继续，以便用户在需要时手动粘贴；应用切换、松开和结束操作仍会取消待启动语音。
 
 现有显式应用启动／聚焦按键路径仍保留框架特定的 `AXManualAccessibility` / `AXEnhancedUserInterface` 请求。这两个属性未获 Apple 公开文档承诺，不能称为标准 AX 属性；它们不参与自动语音集成。

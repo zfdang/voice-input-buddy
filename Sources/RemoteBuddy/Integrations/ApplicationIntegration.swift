@@ -30,6 +30,11 @@ enum ApplicationIntegration: String, CaseIterable, Identifiable {
     }
 }
 
+enum ApplicationIntegrationPreparationState: Equatable {
+    case waiting, ready, unavailable, focusTimedOut
+    case cancelled(VoiceInputDestinationCancellation)
+}
+
 @MainActor
 final class ApplicationIntegrationController {
     typealias Focuser = (ApplicationIntegration, pid_t, @escaping (Bool) -> Void) -> ScheduledOperation
@@ -37,7 +42,7 @@ final class ApplicationIntegrationController {
     private let notifications: NotificationCenter
     private let frontmost: () -> (bundleIdentifier: String?, pid: pid_t)?
     private let focus: Focuser
-    private let onStateChange: (VoiceInputDestinationState) -> Void
+    private let onStateChange: (ApplicationIntegrationPreparationState) -> Void
     private var observers: [NSObjectProtocol] = []
     private var settingsSubscription: AnyCancellable?
     private var pendingFocus: ScheduledOperation?
@@ -55,7 +60,7 @@ final class ApplicationIntegrationController {
          },
          focus: @escaping Focuser = KeyboardInjector.focusIntegratedApplication,
          schedule: @escaping OperationScheduler = ScheduledOperation.mainQueue,
-         onStateChange: @escaping (VoiceInputDestinationState) -> Void = { _ in }) {
+         onStateChange: @escaping (ApplicationIntegrationPreparationState) -> Void = { _ in }) {
         self.settings = settings
         self.notifications = notifications
         self.frontmost = frontmost
@@ -79,8 +84,8 @@ final class ApplicationIntegrationController {
             .receive(on: RunLoop.main).sink { [weak self] _ in self?.cancelPending() }
     }
 
-    /// Enabled integrations require confirmed focus before a voice trigger.
-    /// Failing or cancelling preparation must never send voice to the original field.
+    /// Focus is optional. A failed/expired attempt is reported and voice continues
+    /// in the same application; release, app changes, and shutdown still cancel.
     func prepareForVoiceInput(completion: @escaping (VoiceInputDestinationWaitResult) -> Void) -> VoiceInputDestinationWait {
         cancelPending()
         guard started, let application = frontmost(),
@@ -91,21 +96,18 @@ final class ApplicationIntegrationController {
         pendingCompletion = completion
         pendingBundleIdentifier = application.bundleIdentifier
         onStateChange(.waiting)
-        deadline = schedule(VoiceInputPreparationSequence.maximumWait) { [weak self] in
-            guard self?.generation == requestID else { return }
-            self?.cancelPending(reason: .timedOut)
-        }
-        let task = focus(integration, application.pid) { [weak self] focused in
+        let finishFocus: (Bool, Bool) -> Void = { [weak self] focused, timedOut in
             guard let self, self.generation == requestID, self.pendingCompletion != nil else { return }
             let current = self.frontmost()
-            let result: VoiceInputDestinationWaitResult
             if current?.pid != application.pid || current?.bundleIdentifier != application.bundleIdentifier {
-                result = .cancelled(.targetChanged)
+                self.finish(requestID: requestID, result: .cancelled(.targetChanged))
             } else {
-                result = focused ? .ready : .cancelled(.actionFailed)
+                self.finish(requestID: requestID, result: .ready,
+                    focusStatus: focused ? .ready : (timedOut ? .focusTimedOut : .unavailable))
             }
-            self.finish(requestID: requestID, result: result)
         }
+        deadline = schedule(VoiceInputPreparationSequence.maximumFocusWait) { finishFocus(false, true) }
+        let task = focus(integration, application.pid) { finishFocus($0, false) }
         if generation == requestID, pendingCompletion != nil { pendingFocus = task }
         else { task.cancel() }
         return .waiting(.mainQueueCancellation { [weak self] in
@@ -114,7 +116,8 @@ final class ApplicationIntegrationController {
         })
     }
 
-    private func finish(requestID: UInt64, result: VoiceInputDestinationWaitResult) {
+    private func finish(requestID: UInt64, result: VoiceInputDestinationWaitResult,
+                        focusStatus: ApplicationIntegrationPreparationState? = nil) {
         guard generation == requestID else { return }
         generation &+= 1
         let completion = pendingCompletion
@@ -128,7 +131,12 @@ final class ApplicationIntegrationController {
         let bundle = pendingBundleIdentifier ?? "unknown"
         pendingBundleIdentifier = nil
         switch result {
-        case .ready: onStateChange(.ready)
+        case .ready:
+            let state = focusStatus ?? .ready
+            if state == .unavailable || state == .focusTimedOut {
+                AppLogger.shared.write("APP INTEGRATION continuing bundle=\(bundle) focus=unavailable")
+            }
+            onStateChange(state)
         case let .cancelled(reason):
             AppLogger.shared.write("APP INTEGRATION cancelled bundle=\(bundle) reason=\(reason.rawValue)")
             onStateChange(.cancelled(reason))
@@ -166,12 +174,14 @@ extension AppSettings {
 
 /// Shared by the settings status and menu-bar voice status.
 enum ApplicationIntegrationStatus {
-    static func messageKey(_ state: VoiceInputDestinationState) -> String {
+    static func messageKey(_ state: ApplicationIntegrationPreparationState) -> String {
         switch state {
         case .waiting: return "application_integration.status.waiting"
         case .ready: return "application_integration.status.ready"
+        case .unavailable: return "application_integration.status.failed"
+        case .focusTimedOut: return "application_integration.status.focus_timed_out"
         case .cancelled(.timedOut): return "application_integration.status.timed_out"
-        case .cancelled(.actionFailed): return "application_integration.status.failed"
+        case .cancelled(.actionFailed): return "application_integration.status.cancelled"
         case .cancelled: return "application_integration.status.cancelled"
         }
     }

@@ -22,7 +22,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     lazy var commonPhrases = CommonPhraseController(store: commonPhraseStore)
     let loginItemService: LoginItemService
 
-    @Published var applicationIntegrationStatus: VoiceInputDestinationState?
+    @Published var applicationIntegrationStatus: ApplicationIntegrationPreparationState?
     @Published var connectionStatus = LocalizedMessage("bluetooth.status.initializing")
     @Published var hidStatus = LocalizedMessage("button_mapping.status.disabled")
     @Published var audioStatus = LocalizedMessage("audio.output.none_selected")
