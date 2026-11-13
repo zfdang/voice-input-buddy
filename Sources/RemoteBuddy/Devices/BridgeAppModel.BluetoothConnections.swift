@@ -207,7 +207,9 @@ extension BridgeAppModel {
             let ownsActiveVoice = BluetoothVoiceDeviceOwnershipPolicy.matches(
                 identifier,
                 active: voiceSession.activeDeviceIdentifier
-            ) || voiceSession.activeDeviceIdentifier == nil
+            ) || BluetoothVoiceDeviceOwnershipPolicy.matches(
+                identifier, active: voiceSession.pendingKeyRelease?.deviceIdentifier
+            ) || (voiceSession.activeDeviceIdentifier == nil && voiceSession.pendingKeyRelease == nil)
             if ownsActiveVoice && (voiceSession.isActive || isVoiceConfigurationBusy) {
                 voiceSession.isActive = false
                 voiceSession.activeDeviceIdentifier = nil

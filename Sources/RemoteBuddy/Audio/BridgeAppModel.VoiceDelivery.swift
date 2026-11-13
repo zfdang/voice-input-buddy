@@ -10,7 +10,8 @@ extension BridgeAppModel {
     /// publish isStreaming. Transport-specific identity checks remain at each entry.
     func canAcceptNewVoiceSession(from owner: VoiceKeyLatch.Owner) -> Bool {
         guard !isTerminating, !audio.suspensionState.isSuspended,
-              voiceKeyReleaseRetry == nil else { return false }
+              voiceKeyReleaseRetry == nil,
+              voiceSession.pendingKeyRelease == nil else { return false }
         if let pending = pendingVoiceKeyActivationOwner, pending != owner { return false }
         if owner != .bluetooth,
            voiceSession.isActive || hasPendingBluetoothVoiceWork || voiceSession.pendingStart.identifier != nil ||
@@ -169,7 +170,10 @@ extension BridgeAppModel {
             completion(false)
             return false
         }
-        if !streaming { applicationIntegrationController.cancelPending() }
+        if !streaming {
+            voiceSession.pendingKeyRelease = nil
+            applicationIntegrationController.cancelPending()
+        }
         let mode = streaming
             ? settings.voiceKeyMode
             : (heldVoiceKeyMode ?? pendingVoiceKeyMode ?? settings.voiceKeyMode)
@@ -344,6 +348,7 @@ extension BridgeAppModel {
             KeyboardInjector.setVoiceKeyPressed($0, isPressed: false)
         }
     ) -> Bool {
+        voiceSession.pendingKeyRelease = nil
         applicationIntegrationController.cancelPending()
         defer { flushPendingVoiceToolMappingRefresh() }
         voiceKeyReleaseRetry?.cancel()

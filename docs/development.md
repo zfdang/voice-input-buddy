@@ -284,6 +284,13 @@ activation completing across session and screen suspension. Both replace keyboar
 injection and audio hardware scheduling; real remote reconnect, HAL routing and
 external dictation still require hardware acceptance.
 
+Bluetooth hold-to-talk keeps its software dictation key pressed after capture
+stops until queued virtual-microphone audio drains. The deadline is the remaining
+playback duration plus 750 ms; forced drain completion also releases the key.
+New voice starts are rejected during this tail. Disconnect, suspension and forced
+key cleanup invalidate the pending completion so it cannot release a later
+session's key. Fn-tap retains its separate drain and stop-pulse sequence.
+
 Compact window checks: the settings window fits the current screen's visible
 frame on opening and screen changes. Settings keep a readable
 980×732 scrollable canvas. Onboarding uses the actual viewport height with

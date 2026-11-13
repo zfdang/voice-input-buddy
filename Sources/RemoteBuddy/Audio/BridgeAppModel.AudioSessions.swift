@@ -23,7 +23,8 @@ extension BridgeAppModel {
     }
 
     var hasActiveVirtualAudioSource: Bool {
-        voiceSession.isActive || isPlayingTestTone || hasPendingBluetoothVoiceWork
+        voiceSession.isActive || voiceSession.pendingKeyRelease != nil ||
+            isPlayingTestTone || hasPendingBluetoothVoiceWork
     }
 
     func resumeVirtualAudioOutputIfNeeded(reason: String) {
