@@ -195,7 +195,7 @@ extension KeyboardInjector {
     private static func focusIntegratedComposer(_ integration: ApplicationIntegration,
                                                 processIdentifier: pid_t,
                                                 clickAttempted: inout Bool,
-                                                canContinue: () -> Bool) -> Bool {
+                                                canContinue: @escaping () -> Bool) -> Bool {
         let app = AXUIElementCreateApplication(processIdentifier)
         guard canContinue(),
               !VoiceInputDestinationSnapshot.system().isSensitiveDestination,
@@ -206,38 +206,45 @@ extension KeyboardInjector {
               axElements(window, attribute: "AXSheets").isEmpty else { return false }
         let frame = axFrame(window)
         let candidates = accessibilityTextCandidates(in: window)
+        let targetIsCurrent = {
+            guard canContinue(), !VoiceInputDestinationSnapshot.system().isSensitiveDestination,
+                  let current = axElement(app, attribute: kAXFocusedWindowAttribute),
+                  CFEqual(window, current), axElements(window, attribute: "AXSheets").isEmpty else { return false }
+            return true
+        }
+        return focusIntegratedCandidates(candidates, integration: integration, windowFrame: frame,
+            canContinue: targetIsCurrent,
+            focus: { focusAccessibilityElement($0, applicationElement: app,
+                requiresApplicationFocusedElement: true, allowPress: integration == .antigravity) },
+            click: { element, snapshot in
+                guard !clickAttempted else { return false }
+                clickAttempted = true
+                return clickIntegratedComposer(snapshot, integration: integration, windowFrame: frame,
+                    canContinue: targetIsCurrent,
+                    hitTest: { accessibilityHitTestMatchesTarget(element, processIdentifier: processIdentifier, point: $0) },
+                    isFocused: { accessibilityElementIsFocused(element, applicationElement: app,
+                        requiresApplicationFocusedElement: true) })
+            })
+    }
+
+    /// The same candidate-to-action pipeline runs against native AX elements and
+    /// injected test elements. Its only actions are focus and a verified click.
+    static func focusIntegratedCandidates<Element>(_ candidates: [(element: Element, snapshot: AccessibilityTextCandidate)],
+                                                   integration: ApplicationIntegration, windowFrame: CGRect?,
+                                                   canContinue: () -> Bool, focus: (Element) -> Bool,
+                                                   click: (Element, AccessibilityTextCandidate) -> Bool) -> Bool {
+        guard canContinue() else { return false }
         let ranked = candidates.indices.compactMap { index -> (Int, Int)? in
             integratedComposerScore(candidates[index].snapshot, integration: integration,
-                                    windowFrame: frame).map { (index, $0) }
+                                    windowFrame: windowFrame).map { (index, $0) }
         }.sorted { $0.1 > $1.1 }
-        guard let best = ranked.first,
-              // Ambiguous composers must be left to the user.
-              ranked.count == 1 || best.1 > ranked[1].1,
-              canContinue(),
-              !VoiceInputDestinationSnapshot.system().isSensitiveDestination,
-              let currentWindow = axElement(app, attribute: kAXFocusedWindowAttribute),
-              CFEqual(window, currentWindow) else { return false }
+        guard let best = ranked.first, ranked.count == 1 || best.1 > ranked[1].1, canContinue() else { return false }
         let candidate = candidates[best.0]
-        if focusAccessibilityElement(candidate.element, applicationElement: app,
-                                     requiresApplicationFocusedElement: true,
-                                     allowPress: integration == .antigravity) { return true }
-        // Some web editors expose their input via AX but only transfer DOM focus
-        // after a mouse click. Restrict this fallback to the verified input control.
-        guard !clickAttempted,
-              integratedComposerClickPoint(candidate.snapshot, integration: integration, windowFrame: frame) != nil
+        if focus(candidate.element) { return true }
+        guard canContinue(),
+              integratedComposerClickPoint(candidate.snapshot, integration: integration, windowFrame: windowFrame) != nil
         else { return false }
-        clickAttempted = true
-        return clickIntegratedComposer(candidate.snapshot, integration: integration, windowFrame: frame,
-            canContinue: {
-                guard canContinue(), let current = axElement(app, attribute: kAXFocusedWindowAttribute),
-                      CFEqual(window, current), axElements(window, attribute: "AXSheets").isEmpty else { return false }
-                return true
-            },
-            hitTest: { accessibilityHitTestMatchesTarget(candidate.element, processIdentifier: processIdentifier, point: $0) },
-            isFocused: {
-                accessibilityElementIsFocused(candidate.element, applicationElement: app,
-                                              requiresApplicationFocusedElement: true)
-            })
+        return click(candidate.element, candidate.snapshot)
     }
 
     static func integratedComposerClickPoint(_ candidate: AccessibilityTextCandidate,

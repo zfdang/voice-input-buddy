@@ -397,6 +397,35 @@ struct ApplicationIntegrationTests {
                                "AXHelp", "AXPlaceholderValue", "AXEnabled", "AXFocused"])
     }
 
+    @Test func injectedCandidatePipelineOnlyFocusesTheUniqueComposerAndNeverSubmitsText() {
+        let nodes = [(element: "search", snapshot: candidate("Search messages")),
+                     (element: "editor", snapshot: candidate("code editor")),
+                     (element: "composer", snapshot: candidate("Message input"))]
+        var actions: [String] = []
+        let focused = KeyboardInjector.focusIntegratedCandidates(nodes, integration: .antigravity,
+            windowFrame: window, canContinue: { true }, focus: { actions.append("focus:\($0)"); return true },
+            click: { _, _ in Issue.record("Direct focus must not click"); return false })
+        #expect(focused && actions == ["focus:composer"])
+        for current in [false, true] {
+            actions.removeAll()
+            let ambiguous = nodes + [(element: "other_composer", snapshot: candidate("Message input"))]
+            let result = KeyboardInjector.focusIntegratedCandidates(ambiguous, integration: .antigravity,
+                windowFrame: window, canContinue: { current },
+                focus: { actions.append("focus:\($0)"); return true },
+                click: { _, _ in actions.append("click"); return true })
+            #expect(!result && actions.isEmpty)
+        }
+        actions.removeAll()
+        let clicked = KeyboardInjector.focusIntegratedCandidates(nodes, integration: .antigravity,
+            windowFrame: window, canContinue: { true }, focus: { actions.append("focus:\($0)"); return false },
+            click: { element, snapshot in
+                actions.append("click:\(element)")
+                return KeyboardInjector.clickIntegratedComposer(snapshot, integration: .antigravity, windowFrame: window,
+                    canContinue: { true }, hitTest: { _ in true }, postClick: { _ in true }, isFocused: { true }, pause: {})
+            })
+        #expect(clicked && actions == ["focus:composer", "click:composer"])
+    }
+
     @Test func appSpecificComposersAreRecognized() {
         #expect(KeyboardInjector.integratedComposerScore(candidate("输入消息", identifier: "chat_input_field"),
             integration: .weChat, windowFrame: window) == 400)

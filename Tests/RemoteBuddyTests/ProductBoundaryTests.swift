@@ -162,7 +162,7 @@ struct ProductBoundaryTests {
         #expect(SettingsPageBehavior.visibleSection(for: .general) == .general)
         #expect(SettingsPageBehavior.visibleSection(for: .about) == .about)
         #expect(SettingsPageBehavior.marksUpdateAsSeen(whenSelecting: .about))
-        for section in [SettingsSection.general, .permissions, .connection, .mapping, .integration] {
+        for section in [SettingsSection.general, .permissions, .connection, .mapping, .integration, .applicationIntegration] {
             #expect(!SettingsPageBehavior.marksUpdateAsSeen(whenSelecting: section))
         }
         #expect(SettingsPageBehavior.initialSection(
