@@ -205,6 +205,13 @@ extension OnboardingView {
         openOnboardingURL(url)
     }
 
+    func openPrivacySecuritySettings() {
+        guard let url = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy"
+        ) else { return }
+        openOnboardingURL(url)
+    }
+
     func openBluetoothSettings() {
         guard let url = URL(string: "x-apple.systempreferences:com.apple.BluetoothSettings") else {
             return

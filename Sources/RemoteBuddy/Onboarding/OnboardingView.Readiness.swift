@@ -118,7 +118,8 @@ extension OnboardingView {
             capabilities: capabilities,
             hasSelectedAudioUID: !settings.selectedAudioDeviceUID.isEmpty,
             voiceAttempt: settings.onboardingStep == .voiceTest ? voiceAttempt : nil,
-            remoteInput: remoteInputDiagnostic
+            remoteInput: remoteInputDiagnostic,
+            runtimePermissionIssue: model.runtimePermissionIssue
         )
     }
 

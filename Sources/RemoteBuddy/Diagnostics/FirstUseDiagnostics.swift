@@ -5,6 +5,7 @@ enum FirstUseFailureReason: String, Codable, Equatable {
     case bluetoothPermissionDenied = "permission.bluetooth_denied"
     case inputMonitoringPermissionDenied = "permission.input_monitoring_denied"
     case accessibilityPermissionDenied = "permission.accessibility_denied"
+    case permissionDesynced = "permission.desynced"
     case remoteNotFound = "remote.not_found"
     case remoteButtonNotReady = "remote.button_not_ready"
     case audioNoOutputDevice = "audio.no_output_device"
@@ -26,7 +27,8 @@ enum FirstUseFailureReason: String, Codable, Equatable {
         switch self {
         case .bluetoothPermissionDenied,
              .inputMonitoringPermissionDenied,
-             .accessibilityPermissionDenied:
+             .accessibilityPermissionDenied,
+             .permissionDesynced:
             return .permissions
         case .remoteNotFound, .remoteButtonNotReady:
             return .remote
@@ -217,6 +219,7 @@ struct FirstUseDiagnosticContext: Equatable {
     let hasSelectedAudioUID: Bool
     let voiceAttempt: FirstUseVoiceAttemptDiagnostic?
     let remoteInput: FirstUseRemoteInputDiagnostic
+    let runtimePermissionIssue: RuntimePermissionIssue?
 
     init(
         step: OnboardingStep,
@@ -225,7 +228,8 @@ struct FirstUseDiagnosticContext: Equatable {
         capabilities: OnboardingCapabilities,
         hasSelectedAudioUID: Bool,
         voiceAttempt: FirstUseVoiceAttemptDiagnostic? = nil,
-        remoteInput: FirstUseRemoteInputDiagnostic = FirstUseRemoteInputDiagnostic()
+        remoteInput: FirstUseRemoteInputDiagnostic = FirstUseRemoteInputDiagnostic(),
+        runtimePermissionIssue: RuntimePermissionIssue? = nil
     ) {
         self.step = step
         self.remoteAvailability = remoteAvailability
@@ -234,9 +238,14 @@ struct FirstUseDiagnosticContext: Equatable {
         self.hasSelectedAudioUID = hasSelectedAudioUID
         self.voiceAttempt = voiceAttempt
         self.remoteInput = remoteInput
+        self.runtimePermissionIssue = runtimePermissionIssue
     }
 
     var failureReason: FirstUseFailureReason? {
+        if [.permissions, .remote, .controls, .audio, .voiceTest].contains(step),
+           runtimePermissionIssue?.isPermissionDesynced == true {
+            return .permissionDesynced
+        }
         if [.remote, .controls, .audio, .voiceTest].contains(step),
            let permission = OnboardingFlowPolicy.missingRuntimePermission(
                controlMethod: controlMethod, capabilities: capabilities) {
@@ -394,6 +403,7 @@ struct FirstUseDiagnosticSnapshot {
             "remote_availability=\(context.remoteAvailability.rawValue)",
             "control_method=\(context.controlMethod.rawValue)",
             "failure=\(context.failureReason?.rawValue ?? "none")",
+            "runtime_permission_issue=\(context.runtimePermissionIssue?.diagnosticIdentifier ?? "none")",
             "permission_bluetooth=\(capabilities.bluetoothGranted)",
             "permission_input_monitoring=\(capabilities.inputMonitoringGranted)",
             "permission_accessibility=\(capabilities.accessibilityGranted)",

@@ -27,6 +27,9 @@ extension SettingsView {
                 let profiles = RemoteDeviceNamePolicy.sortedForCards(settings.remoteDeviceProfiles,
                     modelName: remoteModelName, systemName: { model.systemDeviceName(for: $0) })
                 VStack(spacing: 16) {
+                    if let runtimeIssue = model.runtimePermissionIssue {
+                        runtimePermissionIssuePanel(runtimeIssue)
+                    }
                     if profiles.isEmpty {
                         GlassPanel { remoteDeviceSelector(vertical: true) }
                     }
@@ -79,6 +82,78 @@ extension SettingsView {
                     model.recheckRemoteInput()
                 }
                 .compatibilityButtonStyle(.standard)
+            }
+        }
+    }
+
+    func runtimePermissionIssuePanel(_ issue: RuntimePermissionIssue) -> some View {
+        let titleText: String
+        let detailText: String
+        switch issue {
+        case .permissionDesynced:
+            titleText = localization.text("permission.desync.banner.title")
+            detailText = localization.text("permission.desync.banner.detail")
+        case .bluetoothPermissionDenied:
+            titleText = localization.text("onboarding.remote.bluetooth_denied.title")
+            detailText = localization.text("onboarding.remote.bluetooth_denied.detail")
+        case .inputMonitoringPermissionDenied:
+            titleText = localization.text("onboarding.remote.input_not_permitted.title")
+            detailText = localization.text("onboarding.remote.input_not_permitted.detail")
+        case .bluetoothUnavailable:
+            titleText = model.connectionStatus.text(using: localization)
+            detailText = localization.text("onboarding.remote.bluetooth_unavailable.detail")
+        }
+
+        return GlassPanel {
+            VStack(alignment: .leading, spacing: 10) {
+                Label {
+                    Text(titleText)
+                        .font(.system(size: 13, weight: .semibold))
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                }
+
+                Text(detailText)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: 10) {
+                    switch issue {
+                    case .permissionDesynced:
+                        if model.canRelaunchApplication {
+                            Button(localization.text("permission.desync.action.restart")) {
+                                _ = model.relaunchApplication()
+                            }
+                            .compatibilityButtonStyle(.prominent)
+                        }
+                        Button(localization.text("permission.desync.action.open_settings")) {
+                            openSettingsURL("x-apple.systempreferences:com.apple.preference.security?Privacy")
+                        }
+                        .compatibilityButtonStyle(.standard)
+                    case .bluetoothPermissionDenied:
+                        Button(localization.text("permission.action.open_settings")) {
+                            openSettingsURL("x-apple.systempreferences:com.apple.preference.security?Privacy_Bluetooth")
+                        }
+                        .compatibilityButtonStyle(.standard)
+                    case .inputMonitoringPermissionDenied:
+                        Button(localization.text("permission.action.open_settings")) {
+                            openSettingsURL("x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")
+                        }
+                        .compatibilityButtonStyle(.standard)
+                    case .bluetoothUnavailable:
+                        Button(localization.text("onboarding.remote.open_bluetooth")) {
+                            openSettingsURL("x-apple.systempreferences:com.apple.BluetoothSettings")
+                        }
+                        .compatibilityButtonStyle(.standard)
+                    }
+
+                    Button(localization.text("connection.voice_key_compatibility.recheck")) {
+                        model.recheckRemoteInput()
+                    }
+                    .compatibilityButtonStyle(.standard)
+                }
             }
         }
     }
