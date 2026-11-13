@@ -35,7 +35,7 @@ struct ApplicationIntegrationTests {
             var current: (bundleIdentifier: String?, pid: pid_t)? = ("com.openai.codex", 42)
             var calls: [ApplicationIntegration] = []
             let controller = ApplicationIntegrationController(settings: settings, notifications: notifications,
-                frontmost: { current }, focus: { app, pid in
+                frontmost: { current }, focus: { app, pid, _ in
                     #expect(pid == 42)
                     calls.append(app)
                     return ScheduledOperation {}
@@ -45,14 +45,14 @@ struct ApplicationIntegrationTests {
             defer { controller.stop() }
             notifications.post(name: NSWorkspace.didActivateApplicationNotification, object: nil)
             #expect(calls.isEmpty)
-            controller.voiceInputStarted()
+            _ = controller.prepareForVoiceInput { _ in }
             #expect(calls == [.chatGPT])
             settings.setApplicationIntegration(.chatGPT, enabled: false)
-            controller.voiceInputStarted()
+            _ = controller.prepareForVoiceInput { _ in }
             current = ("com.apple.TextEdit", 42)
-            controller.voiceInputStarted()
+            _ = controller.prepareForVoiceInput { _ in }
             current = nil
-            controller.voiceInputStarted()
+            _ = controller.prepareForVoiceInput { _ in }
             #expect(calls == [.chatGPT])
         }
     }
@@ -64,51 +64,175 @@ struct ApplicationIntegrationTests {
             var calls = 0
             var cancelled = 0
             let controller = ApplicationIntegrationController(settings: settings, notifications: notifications,
-                frontmost: { (ApplicationIntegration.chatGPT.bundleIdentifier, 10) }, focus: { _, _ in
+                frontmost: { (ApplicationIntegration.chatGPT.bundleIdentifier, 10) }, focus: { _, _, _ in
                     calls += 1
                     return ScheduledOperation.mainQueueCancellation { cancelled += 1 }
                 })
             controller.start()
-            controller.voiceInputStarted()
+            _ = controller.prepareForVoiceInput { _ in }
             notifications.post(name: NSWorkspace.didActivateApplicationNotification, object: nil)
             #expect(calls == 1)
             #expect(cancelled == 1)
-            controller.voiceInputStarted()
+            _ = controller.prepareForVoiceInput { _ in }
             notifications.post(name: NSWorkspace.willSleepNotification, object: nil)
             #expect(cancelled == 2)
-            controller.voiceInputStarted()
+            _ = controller.prepareForVoiceInput { _ in }
             controller.stop()
             #expect(cancelled == 3)
-            controller.voiceInputStarted()
+            _ = controller.prepareForVoiceInput { _ in }
             #expect(calls == 3)
         }
     }
 
     @Test(arguments: [VoiceKeyMode.function, .leftCommand])
-    func acceptedVoiceKeyStartsIntegrationAndReleaseCancelsIt(mode: VoiceKeyMode) throws {
+    func voiceTriggerWaitsForFocusAndThenInputSource(mode: VoiceKeyMode) throws {
         try withSettings { settings, _ in
             settings.setAllApplicationIntegrations(enabled: true)
             settings.voiceKeyMode = mode
-            var calls = 0
-            var cancelled = 0
             let model = BridgeAppModel(settings: settings)
+            var focusDone: ((Bool) -> Void)?
+            var events: [String] = []
             let controller = ApplicationIntegrationController(settings: settings, notifications: NotificationCenter(),
-                frontmost: { (ApplicationIntegration.antigravity.bundleIdentifier, 42) }, focus: { app, _ in
-                    #expect(app == .antigravity)
-                    calls += 1
-                    return ScheduledOperation.mainQueueCancellation { cancelled += 1 }
+                frontmost: { (ApplicationIntegration.weChat.bundleIdentifier, 42) }, focus: { _, _, done in
+                    events.append("focus_requested")
+                    focusDone = done
+                    return ScheduledOperation {}
+                })
+            model.applicationIntegrationController = controller
+            var source = "previous"
+            model.preferredInputSourceMonitor = PreferredInputSourceMonitor(
+                voiceTool: { .weixin }, prepareInputSource: { _ in events.append("select_source"); return .selected },
+                currentInputSourceID: { source }, restoreInputSource: { _ in .selected },
+                waitForInputSourceActivation: { target, _, _, done in
+                    source = target
+                    events.append("source_ready")
+                    done(true)
+                }, installMonitor: { _ in nil }, logger: { _ in })
+            controller.start()
+            defer { controller.stop() }
+            #expect(model.updateVoiceKeyState(streaming: true, forceSoftware: false, owner: .bluetooth,
+                keySetter: { _, down in events.append(down ? "voice_down" : "voice_up"); return true }))
+            #expect(events == ["focus_requested"])
+            let buffered = model.voiceSession.commandAudio.appendIfWaiting([1, 2, 3])
+            #expect(buffered)
+            events.append("focus_confirmed")
+            let finishFocus = try #require(focusDone)
+            finishFocus(true)
+            #expect(events == ["focus_requested", "focus_confirmed", "select_source", "source_ready", "voice_down"])
+            #expect(model.voiceSession.commandAudio.drain() == [1, 2, 3])
+            #expect(model.updateVoiceKeyState(streaming: false, forceSoftware: true, owner: .bluetooth,
+                keySetter: { _, down in events.append(down ? "voice_down" : "voice_up"); return true }))
+            #expect(events.last == "voice_up")
+        }
+    }
+
+    @Test(arguments: [false, true])
+    func releaseOrAppChangeDuringFocusCannotTriggerVoice(switchApp: Bool) throws {
+        try withSettings { settings, _ in
+            settings.setAllApplicationIntegrations(enabled: true)
+            settings.voiceKeyMode = .leftCommand
+            let model = BridgeAppModel(settings: settings)
+            let notifications = NotificationCenter()
+            var focusDone: ((Bool) -> Void)?
+            var edges: [Bool] = []
+            var completed: [Bool] = []
+            let controller = ApplicationIntegrationController(settings: settings, notifications: notifications,
+                frontmost: { (ApplicationIntegration.weChat.bundleIdentifier, 42) }, focus: { _, _, done in
+                    focusDone = done
+                    return ScheduledOperation {}
                 })
             model.applicationIntegrationController = controller
             controller.start()
             defer { controller.stop() }
-            #expect(calls == 0)
-            #expect(model.updateVoiceKeyState(streaming: true, forceSoftware: false, owner: .bluetooth,
-                                            keySetter: { _, _ in true }))
-            #expect(calls == 1)
-            #expect(model.updateVoiceKeyState(streaming: false, forceSoftware: false, owner: .bluetooth,
-                                            keySetter: { _, _ in true }))
-            #expect(cancelled == 1)
+            #expect(model.updateVoiceKeyState(streaming: true, forceSoftware: true, owner: .bluetooth,
+                keySetter: { _, down in edges.append(down); return true }, completion: { completed.append($0) }))
+            if switchApp { notifications.post(name: NSWorkspace.didActivateApplicationNotification, object: nil) }
+            else {
+                #expect(model.updateVoiceKeyState(streaming: false, forceSoftware: true, owner: .bluetooth,
+                    keySetter: { _, down in edges.append(down); return true }))
+            }
+            let finishFocus = try #require(focusDone)
+            finishFocus(true)
+            #expect(edges.isEmpty)
+            #expect(completed == [false])
+            #expect(!model.voiceKeyLatch.isHeld)
+            #expect(!model.voiceKeyActivationInProgress)
+            #expect(!model.voiceSession.commandAudio.isWaiting)
         }
+    }
+
+    @Test func focusTimeoutCancelsExactlyOnceAndIgnoresLateSuccess() throws {
+        try withSettings { settings, _ in
+            settings.setAllApplicationIntegrations(enabled: true)
+            let clock = ControlledTestScheduler()
+            var focusDone: ((Bool) -> Void)?
+            var results: [VoiceInputDestinationWaitResult] = []
+            let controller = ApplicationIntegrationController(settings: settings, notifications: NotificationCenter(),
+                frontmost: { (ApplicationIntegration.weChat.bundleIdentifier, 42) }, focus: { _, _, done in
+                    focusDone = done
+                    return ScheduledOperation {}
+                }, schedule: clock.voiceSchedule)
+            controller.start()
+            defer { controller.stop() }
+            _ = controller.prepareForVoiceInput { results.append($0) }
+            clock.advance(to: 4000)
+            let finishFocus = try #require(focusDone)
+            finishFocus(true)
+            #expect(results == [.cancelled(.timedOut)])
+        }
+    }
+
+    @Test(arguments: [false, true])
+    func fnTapWaitsForFocusAndRetainsEarlyAudioUnlessReleased(released: Bool) throws {
+        try withSettings { settings, _ in
+            settings.setAllApplicationIntegrations(enabled: true)
+            settings.voiceFnTapModeEnabled = true
+            let model = BridgeAppModel(settings: settings)
+            let clock = ControlledTestScheduler()
+            var focusDone: ((Bool) -> Void)?
+            var edges: [Bool] = []
+            var audio: [[Int16]] = []
+            let controller = ApplicationIntegrationController(settings: settings, notifications: NotificationCenter(),
+                frontmost: { (ApplicationIntegration.weChat.bundleIdentifier, 42) }, focus: { _, _, done in
+                    focusDone = done
+                    return ScheduledOperation {}
+                }, schedule: clock.voiceSchedule)
+            model.applicationIntegrationController = controller
+            model.voiceInputDestinationCoordinator = VoiceInputDestinationCoordinator(snapshot: {
+                VoiceInputDestinationSnapshot(bundleIdentifier: ApplicationIntegration.weChat.bundleIdentifier,
+                    role: "AXTextArea", subrole: "", enabled: true, editable: true, protectedContent: false,
+                    semanticText: "chat_input_field")
+            })
+            let session = VoiceFnTapSessionController(schedule: clock.voiceSchedule,
+                destinationReadiness: model.prepareIntegratedVoiceInputDestination,
+                setFunctionKeyPressed: { edges.append($0); return true }, enqueueAudio: { audio.append($0) },
+                drainAudio: { _, done in done() }, onFailure: { _ in Issue.record("Unexpected failure") })
+            controller.start()
+            defer { session.shutdown(); controller.stop() }
+            session.setEnabled(true)
+            #expect(session.startVoice())
+            #expect(session.receive([1, 2, 3]))
+            #expect(edges.isEmpty && audio.isEmpty)
+            if released { #expect(session.stopVoice()) }
+            let finishFocus = try #require(focusDone)
+            finishFocus(true)
+            clock.advance(to: 120)
+            #expect(edges == (released ? [] : [true, false]))
+            #expect(audio == (released ? [] : [[1, 2, 3]]))
+            #expect(!model.requiresOrderedVoiceFn)
+        }
+    }
+
+    @Test func integrationWaitUsesBoundedPreRollAndRestoresNormalCapacityNextSession() {
+        var buffer = CommandVoiceActivationAudioBuffer(maximumSampleCount: 4)
+        buffer.begin(maximumSampleCount: 12)
+        let bufferedDuringFocus = buffer.appendIfWaiting(Array(1...10))
+        #expect(bufferedDuringFocus)
+        #expect(buffer.drain() == Array(1...10))
+        buffer.begin()
+        let bufferedNormally = buffer.appendIfWaiting(Array(1...10))
+        #expect(bufferedNormally)
+        #expect(buffer.drain() == [7, 8, 9, 10])
     }
 
     private let window = CGRect(x: 0, y: 0, width: 1000, height: 800)

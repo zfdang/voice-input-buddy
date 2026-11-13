@@ -152,25 +152,35 @@ extension KeyboardInjector {
     /// Only invoked by an accepted voice start. A separate gate keeps this from
     /// cancelling explicit application-launch/focus button actions.
     static func focusIntegratedApplication(_ integration: ApplicationIntegration,
-                                           processIdentifier: pid_t) -> ScheduledOperation {
+                                           processIdentifier: pid_t,
+                                           completion: @escaping (Bool) -> Void) -> ScheduledOperation {
         let gate = ApplicationFocusRequestGate()
         let requestID = gate.begin()
         let bundleIdentifier = NSRunningApplication(processIdentifier: processIdentifier)?.bundleIdentifier
             ?? integration.bundleIdentifier
+        func finish(_ focused: Bool) {
+            DispatchQueue.main.async {
+                guard gate.isCurrent(requestID) else { return }
+                completion(focused)
+            }
+        }
         func attempt(_ number: Int) {
             focusQueue.asyncAfter(deadline: .now() + (number == 0 ? 0 : 0.15)) {
                 let canContinue = {
                     gate.isCurrent(requestID) && applicationIsFrontmost(processIdentifier) &&
                         isAccessibilityTrusted && !SecureInputMonitor.isEnabled()
                 }
-                guard canContinue() else { return }
+                guard canContinue() else { finish(false); return }
                 announceManualAccessibility(processIdentifier: processIdentifier,
                     bundleIdentifier: bundleIdentifier, attempt: number)
                 if focusIntegratedComposer(integration, processIdentifier: processIdentifier,
                                            canContinue: canContinue) {
                     AppLogger.shared.write("APP INTEGRATION focused bundle=\(bundleIdentifier)")
+                    finish(true)
                 } else if number < 2, canContinue() {
                     attempt(number + 1)
+                } else {
+                    finish(false)
                 }
             }
         }

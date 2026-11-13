@@ -111,7 +111,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
             self?.settings.onboardingVoiceTool.functionKeyStartTapCount ?? 1
         },
         destinationReadiness: { [weak self] completion in
-            self?.voiceInputDestinationCoordinator.waitUntilReady(completion: completion) ?? .immediate
+            self?.prepareIntegratedVoiceInputDestination(completion: completion) ?? .immediate
         },
         setFunctionKeyPressed: { KeyboardInjector.setFunctionKeyPressed($0) },
         enqueueAudio: { [weak self] samples in
@@ -146,6 +146,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
         }
     )
     private var voiceToolCancellable: AnyCancellable?
+    private var applicationIntegrationCancellable: AnyCancellable?
     var testToneGeneration = 0
     var voiceKeyLatch = VoiceKeyLatch()
     var voiceKeyReleaseRetry: ScheduledOperation?
@@ -275,6 +276,9 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
             .sink { [weak self] _ in
                 self?.voiceToolDidChange()
             }
+        applicationIntegrationCancellable = settings.$enabledApplicationIntegrations
+            .removeDuplicates().dropFirst().receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.voiceToolDidChange() }
         audio.output.onConfigurationChange = { @Sendable [weak self] in
             DispatchQueue.main.async { [weak self] in self?.scheduleAudioRecovery(reason: "engine_configuration_change") }
         }
