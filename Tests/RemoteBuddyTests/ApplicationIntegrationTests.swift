@@ -394,6 +394,10 @@ struct ApplicationIntegrationTests {
             integration: .antigravity, windowFrame: window) == 400)
         #expect(KeyboardInjector.integratedComposerScore(candidate("Work with ChatGPT"),
             integration: .chatGPT, windowFrame: window) != nil)
+        #expect(KeyboardInjector.integratedComposerScore(candidate("Do anything"),
+            integration: .chatGPT, windowFrame: window) != nil)
+        #expect(ApplicationIntegration.chatGPT.bundleIdentifier == "com.openai.codex")
+        #expect(ApplicationIntegration.matching("com.google.antigravity-ide") == nil)
         #expect(ApplicationIntegration.matching("com.openai.codex") == .chatGPT)
         #expect(ApplicationIntegration.matching("com.openai.chat") == .chatGPT)
     }

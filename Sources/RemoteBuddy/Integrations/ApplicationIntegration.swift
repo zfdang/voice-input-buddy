@@ -9,7 +9,7 @@ enum ApplicationIntegration: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var bundleIdentifier: String {
         switch self {
-        case .chatGPT: return "com.openai.chat"
+        case .chatGPT: return "com.openai.codex"
         case .antigravity: return "com.google.antigravity"
         case .weChat: return "com.tencent.xinWeChat"
         }
@@ -24,8 +24,8 @@ enum ApplicationIntegration: String, CaseIterable, Identifiable {
     var detailKey: String { "application_integration.\(rawValue).detail" }
 
     static func matching(_ bundleIdentifier: String?) -> Self? {
-        // The current ChatGPT desktop installation retains the Codex bundle ID.
-        if bundleIdentifier == "com.openai.codex" { return .chatGPT }
+        // Both current unified desktop and standalone ChatGPT installations are supported.
+        if bundleIdentifier == "com.openai.chat" { return .chatGPT }
         return allCases.first { $0.bundleIdentifier == bundleIdentifier }
     }
 }

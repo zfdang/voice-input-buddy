@@ -350,7 +350,7 @@ extension KeyboardInjector {
                       "输入消息", "消息输入", "发送消息"]
         let specific: [String]
         switch integration {
-        case .chatGPT: specific = ["work with chatgpt", "message chatgpt", "ask anything", "ask chatgpt", "询问任何问题", "询问 chatgpt"]
+        case .chatGPT: specific = ["do anything", "work with chatgpt", "message chatgpt", "ask anything", "ask chatgpt", "询问任何问题", "询问 chatgpt"]
         case .antigravity: specific = ["ask anything", "ask agent", "message agent", "agent input", "向 agent 提问"]
         case .weChat: specific = ["message", "输入", "编辑消息"]
         }
