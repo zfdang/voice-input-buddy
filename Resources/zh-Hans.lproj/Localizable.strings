@@ -1226,3 +1226,5 @@
 "application_integration.permission.granted" = "已获得辅助功能权限";
 "application_integration.permission.missing" = "需要辅助功能权限，已开启的应用集成才能启动语音输入。";
 "application_integration.permission.open" = "打开辅助功能设置";
+
+"application_integration.fn_behavior" = "开启任一应用集成后，Fn 按住模式会在所有前台应用中改由遥控搭子发送触发键，以保证先聚焦再触发，因此需要辅助功能权限。只有已开启集成且位于前台的应用会调整焦点；全部关闭后恢复原有触发方式。";

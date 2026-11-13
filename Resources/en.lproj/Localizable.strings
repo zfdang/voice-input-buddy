@@ -1225,3 +1225,5 @@
 "application_integration.permission.granted" = "Accessibility permission granted";
 "application_integration.permission.missing" = "Accessibility permission is required before an enabled integration can start voice input.";
 "application_integration.permission.open" = "Open Accessibility Settings";
+
+"application_integration.fn_behavior" = "Enabling any app integration makes Remote Buddy send the Fn hold trigger for all foreground apps so focusing can finish first. This requires Accessibility permission. Only enabled foreground apps have their input focus adjusted. Disable all integrations to return to the original trigger behavior.";
