@@ -458,6 +458,7 @@
 "status_item.accessibility_label" = "小米蓝牙遥控器 2 / 2 Pro";
 "status_item.state.disconnected" = "%@：未连接设备";
 "status_item.state.connected" = "%@：设备已连接";
+"status_item.state.preparing" = "%@：正在准备语音输入";
 "status_item.state.streaming" = "%@：正在传输语音";
 "status_item.accessibility.show_menu" = "显示菜单";
 "about.alert.description_with_version" = "版本 %1$@\n让遥控器成为你的语音输入助手，轻松说话打字，一键操作常用功能。";

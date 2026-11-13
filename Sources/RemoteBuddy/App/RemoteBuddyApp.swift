@@ -703,7 +703,8 @@ private final class RemoteBuddyAppDelegate: NSObject, NSApplicationDelegate, NSM
     private func observeModel() {
         StatusItemPresentation.publisher(
             physicalConnected: model.$isConnected.eraseToAnyPublisher(),
-            isStreaming: model.$isStreaming.eraseToAnyPublisher()
+            isStreaming: model.$isStreaming.eraseToAnyPublisher(),
+            isPreparing: model.$applicationIntegrationStatus.map { $0 == .waiting }.eraseToAnyPublisher()
         )
         .receive(on: RunLoop.main)
         .sink { [weak self] presentation in

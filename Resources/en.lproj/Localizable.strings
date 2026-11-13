@@ -458,6 +458,7 @@
 "status_item.accessibility_label" = "Xiaomi Bluetooth Remote 2 Pro";
 "status_item.state.disconnected" = "%@: No devices connected";
 "status_item.state.connected" = "%@: Device connected";
+"status_item.state.preparing" = "%@: Preparing voice input";
 "status_item.state.streaming" = "%@: Voice active";
 "status_item.accessibility.show_menu" = "Show Menu";
 "about.alert.description_with_version" = "Version %1$@\nTurn your remote into a voice typing buddy. Speak instead of typing, and keep everyday actions a button away.";
