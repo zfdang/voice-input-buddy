@@ -186,6 +186,7 @@ enum KeyboardInjector {
         let enabled: Bool
         let focused: Bool
         let selectedContext: Bool
+        let hasWorkBuddyComposerControls: Bool
 
         init(
             role: String,
@@ -200,7 +201,8 @@ enum KeyboardInjector {
             frame: CGRect?,
             enabled: Bool,
             focused: Bool = false,
-            selectedContext: Bool = false
+            selectedContext: Bool = false,
+            hasWorkBuddyComposerControls: Bool = false
         ) {
             self.subrole = subrole
             self.protectedContent = protectedContent
@@ -215,6 +217,7 @@ enum KeyboardInjector {
             self.enabled = enabled
             self.focused = focused
             self.selectedContext = selectedContext
+            self.hasWorkBuddyComposerControls = hasWorkBuddyComposerControls
         }
     }
 

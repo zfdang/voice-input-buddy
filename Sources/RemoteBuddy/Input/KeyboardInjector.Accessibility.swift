@@ -203,7 +203,11 @@ extension KeyboardInjector {
               axBool(window, attribute: "AXModal") != true,
               axElements(window, attribute: "AXSheets").isEmpty else { return false }
         let frame = axFrame(window)
-        let candidates = accessibilityTextCandidates(in: window)
+        let scanStarted = ProcessInfo.processInfo.systemUptime
+        let candidates = accessibilityTextCandidates(in: window, integration: integration)
+        AppLogger.shared.write("APP INTEGRATION scan bundle=\(integration.bundleIdentifier) candidates=\(candidates.count) " +
+            "matches=\(candidates.filter { integratedComposerScore($0.snapshot, integration: integration, windowFrame: frame) != nil }.count) " +
+            "elapsed_ms=\(Int((ProcessInfo.processInfo.systemUptime - scanStarted) * 1_000))")
         let targetIsCurrent = {
             guard canContinue(), !VoiceInputDestinationSnapshot.system().isSensitiveDestination,
                   let current = axElement(app, attribute: kAXFocusedWindowAttribute),
@@ -340,7 +344,9 @@ extension KeyboardInjector {
         switch integration {
         case .antigravity: return isAntigravityMessageInput(candidate)
         case .claude: return labels.contains("write your prompt to claude")
-        case .workBuddy: return labels.contains { $0.contains("今天帮你做些什么？") }
+        case .workBuddy:
+            return candidate.role == "AXTextArea" &&
+                (candidate.hasWorkBuddyComposerControls || labels.contains { $0.contains("今天帮你做些什么？") })
         case .weChat, .chatGPT: return false
         }
     }
@@ -705,7 +711,7 @@ extension KeyboardInjector {
     }
 
     private static func accessibilityTextCandidates(
-        in window: AXUIElement
+        in window: AXUIElement, integration: ApplicationIntegration? = nil
     ) -> [(element: AXUIElement, snapshot: AccessibilityTextCandidate)] {
         struct PendingElement {
             let element: AXUIElement
@@ -739,6 +745,8 @@ extension KeyboardInjector {
                     current.element,
                     accessibilityTextMetadata(role: role, frame: frame, context: combinedContext,
                         selectedContext: selectedContext,
+                        hasWorkBuddyComposerControls: integration == .workBuddy && role == "AXTextArea" &&
+                            workBuddyComposerControlsSurround(current.element),
                         read: { axAttribute(current.element, attribute: $0) })
                 ))
             }
@@ -771,7 +779,8 @@ extension KeyboardInjector {
     /// Metadata-only reader shared by automatic and explicit focus scans. There
     /// is deliberately no text value, text selection, or write operation here.
     static func accessibilityTextMetadata(role: String, frame: CGRect?, context: String,
-                                          selectedContext: Bool, read: (String) -> Any?) -> AccessibilityTextCandidate {
+                                          selectedContext: Bool, hasWorkBuddyComposerControls: Bool = false,
+                                          read: (String) -> Any?) -> AccessibilityTextCandidate {
         AccessibilityTextCandidate(role: role,
             subrole: read(kAXSubroleAttribute) as? String ?? "",
             protectedContent: read("AXProtectedContent") as? Bool ?? false,
@@ -782,7 +791,49 @@ extension KeyboardInjector {
             placeholder: read(kAXPlaceholderValueAttribute) as? String ?? "",
             context: context, frame: frame,
             enabled: read(kAXEnabledAttribute) as? Bool ?? true,
-            focused: read(kAXFocusedAttribute) as? Bool ?? false, selectedContext: selectedContext)
+            focused: read(kAXFocusedAttribute) as? Bool ?? false, selectedContext: selectedContext,
+            hasWorkBuddyComposerControls: hasWorkBuddyComposerControls)
+    }
+
+    static func workBuddyComposerControlsMatch(_ labels: [String]) -> Bool {
+        let labels = labels.map { $0.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) }
+        return labels.contains { ["发送", "send"].contains($0) } &&
+            labels.contains { ["更多操作", "more actions"].contains($0) } &&
+            labels.contains { $0.hasPrefix("语音输入") || $0.hasPrefix("voice input") }
+    }
+
+    /// WorkBuddy exposes its placeholder as editor content rather than stable
+    /// field metadata. Verify the same composer's surrounding controls instead;
+    /// never read the text area's value or the conversation's static text.
+    private static func workBuddyComposerControlsSurround(_ input: AXUIElement) -> Bool {
+        guard let parent = axElement(input, attribute: kAXParentAttribute) else { return false }
+        return workBuddyComposerGroupMatches(parent,
+            role: { axString($0, attribute: kAXRoleAttribute) },
+            children: { axElements($0, attribute: kAXChildrenAttribute) },
+            controlLabels: { element in
+                [axString(element, attribute: kAXTitleAttribute),
+                 axString(element, attribute: kAXDescriptionAttribute),
+                 axString(element, attribute: kAXHelpAttribute)]
+            })
+    }
+
+    static func workBuddyComposerGroupMatches<Element>(_ root: Element,
+        role: (Element) -> String, children: (Element) -> [Element],
+        controlLabels: (Element) -> [String]) -> Bool {
+        var pending: [(Element, Int)] = [(root, 0)]
+        var labels: [String] = []
+        var budget = AccessibilityTraversalBudget(maximumNodes: 64, maximumDuration: 0.15)
+        while let (element, depth) = pending.popLast(), budget.admitNode() {
+            let currentRole = role(element)
+            if currentRole == "AXButton" || currentRole == "AXPopUpButton" {
+                labels += controlLabels(element)
+            }
+            // Only descend through layout groups, not message/editor content.
+            if depth < 3 && (depth == 0 || currentRole == "AXGroup") {
+                pending += children(element).map { ($0, depth + 1) }
+            }
+        }
+        return workBuddyComposerControlsMatch(labels)
     }
 
     static func accessibilityChildPriority(role: () -> String, frame: () -> CGRect?,

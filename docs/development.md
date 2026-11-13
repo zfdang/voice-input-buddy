@@ -339,7 +339,8 @@ test attempts, evidence limits, signing checks, and next acceptance steps.
 
 Claude (`com.anthropic.claudefordesktop`) matches the visible “Write your prompt
 to Claude” composer label. WorkBuddy (`com.tencent.workbuddy.mac`) matches its
-“今天帮你做些什么？” composer label. Both are opt-in and use control metadata,
+composer by its surrounding More actions, Voice input, and Send controls when
+the placeholder is not exposed as stable field metadata. Both are opt-in and use control metadata,
 not editable values. Search, code editors, modal dialogs, ambiguous targets, and
 sensitive fields remain excluded. UI inspection identified both controls and
 confirmed WorkBuddy focus; physical remote acceptance remains required.

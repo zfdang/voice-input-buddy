@@ -548,6 +548,35 @@ struct ApplicationIntegrationTests {
         #expect(ApplicationIntegration.matching("com.openai.chat") == .chatGPT)
     }
 
+    @Test func workBuddyUnlabeledComposerUsesOnlyItsSurroundingControls() {
+        let roles = [0: "AXGroup", 1: "AXTextArea", 2: "AXPopUpButton", 3: "AXGroup", 4: "AXButton", 5: "AXButton", 6: "AXStaticText"]
+        let tree = [0: [1, 2, 3, 6], 1: [99], 3: [4, 5]]
+        for hasSend in [false, true] {
+            var inspected: [Int] = []
+            let verified = KeyboardInjector.workBuddyComposerGroupMatches(0,
+                role: { roles[$0] ?? "AXGroup" }, children: { node in
+                    #expect(node != 1 && node != 6)
+                    return tree[node] ?? []
+                }, controlLabels: { node in
+                    inspected.append(node)
+                    return [2: ["更多操作"], 4: ["语音输入 ⌘D 或长按 ⌥"], 5: hasSend ? ["发送"] : []][node] ?? []
+                })
+            #expect(verified == hasSend)
+            #expect(Set(inspected) == [2, 4, 5])
+            let field = KeyboardInjector.accessibilityTextMetadata(role: "AXTextArea", frame: window,
+                context: "", selectedContext: false, hasWorkBuddyComposerControls: verified,
+                read: { key in
+                    #expect(key != "AXValue" && key != "AXSelectedText")
+                    return nil
+                })
+            #expect((KeyboardInjector.integratedComposerScore(field, integration: .workBuddy, windowFrame: window) != nil) == hasSend)
+            #expect((KeyboardInjector.integratedComposerClickPoint(field, integration: .workBuddy, windowFrame: window) != nil) == hasSend)
+            #expect(KeyboardInjector.integratedComposerScore(field, integration: .claude, windowFrame: window) == nil)
+        }
+        #expect(!KeyboardInjector.workBuddyComposerControlsMatch(["发送", "更多操作"]))
+        #expect(!KeyboardInjector.workBuddyComposerControlsMatch(["发送", "语音输入"]))
+    }
+
     @Test(arguments: [ApplicationIntegration.claude, .workBuddy])
     func newDesktopIntegrationsSelectOnlyTheirVerifiedComposer(app: ApplicationIntegration) {
         let label = app == .claude ? "Write your prompt to Claude" : "\u{feff}\n今天帮你做些什么？@ 添加上下文，/调用技能与指令"
