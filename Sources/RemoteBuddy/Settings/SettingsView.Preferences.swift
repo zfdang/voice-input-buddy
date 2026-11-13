@@ -12,9 +12,10 @@ extension SettingsView {
             VStack(alignment: .leading, spacing: 12) {
                 Text(localization.text("settings.overview.title"))
                     .font(.title3.weight(.semibold))
+                let overview = overviewState
                 HStack(spacing: 10) {
-                    overviewCard(number: 1, titleKey: "settings.overview.permissions", status: permissionsSummary, ready: permissionsReady, section: .permissions)
-                    overviewCard(number: 2, titleKey: "settings.overview.remote", status: remoteSummary, ready: !connectedOverviewRemotes.isEmpty, section: .connection)
+                    overviewCard(number: 1, titleKey: "settings.section.permissions", status: overview.permissionsSummary(using: localization), ready: overview.permissionsReady, section: .permissions)
+                    overviewCard(number: 2, titleKey: "settings.overview.remote", status: remoteSummary, ready: overview.remoteReady, section: .connection)
                     overviewCard(number: 3, titleKey: "settings.overview.mapping", status: localization.text(settings.customMappingEnabled ? "common.status.enabled" : "settings.overview.optional"), ready: settings.customMappingEnabled, optional: true, section: .mapping)
                     overviewCard(number: 4, titleKey: "settings.overview.integration", status: localization.text(settings.onboardingVoiceTool == .unselected ? "settings.overview.not_configured" : settings.onboardingVoiceTool.titleKey), ready: settings.onboardingVoiceTool != .unselected, section: .integration)
                 }
@@ -147,27 +148,22 @@ extension SettingsView {
         .padding(.vertical, 8)
     }
 
-    private var permissionsReady: Bool {
-        bluetoothAuthorization == .allowedAlways && inputMonitoringGranted && accessibilityGranted
-    }
-
-    private var permissionsSummary: String {
-        if permissionsReady { return localization.text("settings.overview.granted") }
-        var missing: [String] = []
-        if bluetoothAuthorization != .allowedAlways { missing.append(localization.text("permission.bluetooth.title")) }
-        if !inputMonitoringGranted { missing.append(localization.text("permission.input_monitoring.title")) }
-        if !accessibilityGranted { missing.append(localization.text("permission.accessibility.title")) }
-        return String(format: localization.text("settings.overview.missing_permissions"), missing.joined(separator: ", "))
-    }
-
-    private var connectedOverviewRemotes: [RemoteDeviceProfile] {
-        settings.remoteDeviceProfiles.filter { model.isRemoteConnected($0.id) }
+    var overviewState: SettingsOverviewState {
+        SettingsOverviewState(
+            bluetoothGranted: bluetoothAuthorization == .allowedAlways,
+            inputMonitoringGranted: inputMonitoringGranted,
+            accessibilityGranted: accessibilityGranted,
+            audioDevices: model.audioDevices, profiles: settings.remoteDeviceProfiles,
+            connectedIDs: model.connectedRemoteProfileIDs,
+            mappingEnabled: settings.customMappingEnabled, integrationTool: settings.onboardingVoiceTool,
+            remoteName: remoteModelName
+        )
     }
 
     private var remoteSummary: String {
-        let names = connectedOverviewRemotes.map { remoteModelName($0) }
-        guard !names.isEmpty else { return localization.text("settings.overview.disconnected") }
-        return names.joined(separator: ", ")
+        let names = overviewState.connectedRemoteNames
+        return names.isEmpty ? localization.text("settings.overview.disconnected")
+            : SettingsOverviewState.localizedList(names, locale: localization.locale)
     }
 
     private func overviewCard(number: Int, titleKey: String, status: String, ready: Bool, optional: Bool = false, section: SettingsSection) -> some View {

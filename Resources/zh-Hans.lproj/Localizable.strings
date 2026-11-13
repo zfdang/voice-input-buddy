@@ -1222,3 +1222,6 @@
 "settings.general.display_group" = "应用显示";
 "settings.general.language_group" = "语言";
 "settings.general.open_window_help" = "启动遥控搭子时显示主面板。";
+
+"settings.overview.ready" = "权限与麦克风均已就绪";
+"settings.overview.missing_requirements" = "待设置：%@";

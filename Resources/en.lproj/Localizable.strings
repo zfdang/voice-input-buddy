@@ -1220,3 +1220,6 @@
 "settings.general.display_group" = "App display";
 "settings.general.language_group" = "Language";
 "settings.general.open_window_help" = "Open the main window when Remote Buddy starts.";
+
+"settings.overview.ready" = "Permissions and microphone ready";
+"settings.overview.missing_requirements" = "Needs setup: %@";
