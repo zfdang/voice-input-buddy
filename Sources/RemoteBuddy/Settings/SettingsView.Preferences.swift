@@ -9,6 +9,18 @@ extension SettingsView {
         settingsPage(contentPadding: 28) {
             PageHeader(title: localization.text("settings.section.general"))
         } content: {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(localization.text("settings.overview.title"))
+                    .font(.title3.weight(.semibold))
+                HStack(spacing: 10) {
+                    overviewCard(number: 1, titleKey: "settings.overview.permissions", status: permissionsSummary, ready: permissionsReady, section: .permissions)
+                    overviewCard(number: 2, titleKey: "settings.overview.remote", status: remoteSummary, ready: !connectedOverviewRemotes.isEmpty, section: .connection)
+                    overviewCard(number: 3, titleKey: "settings.overview.mapping", status: localization.text(settings.customMappingEnabled ? "common.status.enabled" : "settings.overview.optional"), ready: settings.customMappingEnabled, optional: true, section: .mapping)
+                    overviewCard(number: 4, titleKey: "settings.overview.integration", status: localization.text(settings.onboardingVoiceTool == .unselected ? "settings.overview.not_configured" : settings.onboardingVoiceTool.titleKey), ready: settings.onboardingVoiceTool != .unselected, section: .integration)
+                }
+            }
+            .padding(.bottom, 16)
+
             GlassPanel {
                 HStack(spacing: 18) {
                     Image(systemName: "wand.and.stars").font(.title2)
@@ -191,6 +203,64 @@ extension SettingsView {
                 .padding(.vertical, 12)
             }
         }
+    }
+
+    private var permissionsReady: Bool {
+        bluetoothAuthorization == .allowedAlways && inputMonitoringGranted && accessibilityGranted
+    }
+
+    private var permissionsSummary: String {
+        if permissionsReady { return localization.text("settings.overview.granted") }
+        var missing: [String] = []
+        if bluetoothAuthorization != .allowedAlways { missing.append(localization.text("permission.bluetooth.title")) }
+        if !inputMonitoringGranted { missing.append(localization.text("permission.input_monitoring.title")) }
+        if !accessibilityGranted { missing.append(localization.text("permission.accessibility.title")) }
+        return String(format: localization.text("settings.overview.missing_permissions"), missing.joined(separator: ", "))
+    }
+
+    private var connectedOverviewRemotes: [RemoteDeviceProfile] {
+        settings.remoteDeviceProfiles.filter { model.isRemoteConnected($0.id) }
+    }
+
+    private var remoteSummary: String {
+        let names = connectedOverviewRemotes.map { remoteModelName($0) }
+        guard !names.isEmpty else { return localization.text("settings.overview.disconnected") }
+        return names.joined(separator: ", ")
+    }
+
+    private func overviewCard(number: Int, titleKey: String, status: String, ready: Bool, optional: Bool = false, section: SettingsSection) -> some View {
+        let tint: Color = ready ? .green : (optional ? .secondary : .orange)
+        return Button {
+            selectedSection = section
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text("\(number)")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(tint)
+                        .frame(width: 26, height: 26)
+                        .background(tint.opacity(0.12), in: Circle())
+                    Spacer(minLength: 0)
+                    Image(systemName: ready ? "checkmark.circle.fill" : (optional ? "circle" : "exclamationmark.circle.fill"))
+                        .foregroundStyle(tint)
+                }
+                Text(localization.text(titleKey))
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Text(status)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+            .frame(maxWidth: .infinity, minHeight: 100, alignment: .topLeading)
+            .padding(12)
+            .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 12))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12).stroke(tint.opacity(0.3), lineWidth: 1)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     var aboutPage: some View {

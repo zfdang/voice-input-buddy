@@ -1199,3 +1199,14 @@
 
 "action.repeat_single_click" = "持续连发";
 "button_mapping.hold_repeat.help" = "长按选择“持续连发”时，按住约 0.35 秒后重复执行单击动作，松开即停止。也可以选择下方其他动作，长按时只执行一次；双击设置不受影响。";
+
+"settings.overview.title" = "当前状态检查";
+"settings.overview.permissions" = "权限设置";
+"settings.overview.remote" = "遥控器连接";
+"settings.overview.mapping" = "按键映射";
+"settings.overview.integration" = "输入法集成";
+"settings.overview.granted" = "已授权";
+"settings.overview.disconnected" = "未连接";
+"settings.overview.optional" = "可选 · 未启用";
+"settings.overview.not_configured" = "未设置";
+"settings.overview.missing_permissions" = "待授权：%@";

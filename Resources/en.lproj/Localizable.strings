@@ -1197,3 +1197,14 @@
 
 "action.repeat_single_click" = "Hold to Repeat";
 "button_mapping.hold_repeat.help" = "Choose Hold to Repeat to repeat the single-press action after holding for about 0.35 seconds, stopping on release. Choose another action below to run it once on a long press. Double-press settings remain independent.";
+
+"settings.overview.title" = "Readiness status";
+"settings.overview.permissions" = "Permissions";
+"settings.overview.remote" = "Remote connection";
+"settings.overview.mapping" = "Button mapping";
+"settings.overview.integration" = "Input integration";
+"settings.overview.granted" = "Granted";
+"settings.overview.disconnected" = "Disconnected";
+"settings.overview.optional" = "Optional · not enabled";
+"settings.overview.not_configured" = "Not configured";
+"settings.overview.missing_permissions" = "Missing: %@";
