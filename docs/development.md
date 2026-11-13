@@ -327,3 +327,9 @@ This inspection does not yet establish correct physical button mappings, intelli
 microphone audio, end-to-end stop behavior, long sessions, or sleep/wake acceptance.
 See the [hardware debugging record](g9n9n-hardware-debugging.md) for the completed
 test attempts, evidence limits, signing checks, and next acceptance steps.
+
+## 应用集成的辅助功能边界
+
+自动语音集成只读取公开辅助功能控件元数据并请求聚焦；不设置 `AXManualAccessibility` 或 `AXEnhancedUserInterface`，不读取 `AXValue`、选中文本、消息正文，也不发送文本或消息。目标应用未公开可用的控件树时，自动集成会失败并取消本次语音输入。
+
+现有显式应用启动／聚焦按键路径仍保留框架特定的 `AXManualAccessibility` / `AXEnhancedUserInterface` 请求。这两个属性未获 Apple 公开文档承诺，不能称为标准 AX 属性；它们不参与自动语音集成。

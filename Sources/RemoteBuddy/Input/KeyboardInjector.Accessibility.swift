@@ -717,21 +717,9 @@ extension KeyboardInjector {
             if role == "AXTextArea" || role == "AXTextField" {
                 candidates.append((
                     current.element,
-                    AccessibilityTextCandidate(
-                        role: role,
-                        subrole: axString(current.element, attribute: kAXSubroleAttribute),
-                        protectedContent: axBool(current.element, attribute: "AXProtectedContent") ?? false,
-                        identifier: axString(current.element, attribute: kAXIdentifierAttribute),
-                        title: axString(current.element, attribute: kAXTitleAttribute),
-                        description: axString(current.element, attribute: kAXDescriptionAttribute),
-                        help: axString(current.element, attribute: kAXHelpAttribute),
-                        placeholder: axString(current.element, attribute: kAXPlaceholderValueAttribute),
-                        context: combinedContext,
-                        frame: frame,
-                        enabled: axBool(current.element, attribute: kAXEnabledAttribute) ?? true,
-                        focused: axBool(current.element, attribute: kAXFocusedAttribute) ?? false,
-                        selectedContext: selectedContext
-                    )
+                    accessibilityTextMetadata(role: role, frame: frame, context: combinedContext,
+                        selectedContext: selectedContext,
+                        read: { axAttribute(current.element, attribute: $0) })
                 ))
             }
 
@@ -758,6 +746,23 @@ extension KeyboardInjector {
             })
         }
         return candidates
+    }
+
+    /// Metadata-only reader shared by automatic and explicit focus scans. There
+    /// is deliberately no text value, text selection, or write operation here.
+    static func accessibilityTextMetadata(role: String, frame: CGRect?, context: String,
+                                          selectedContext: Bool, read: (String) -> Any?) -> AccessibilityTextCandidate {
+        AccessibilityTextCandidate(role: role,
+            subrole: read(kAXSubroleAttribute) as? String ?? "",
+            protectedContent: read("AXProtectedContent") as? Bool ?? false,
+            identifier: read(kAXIdentifierAttribute) as? String ?? "",
+            title: read(kAXTitleAttribute) as? String ?? "",
+            description: read(kAXDescriptionAttribute) as? String ?? "",
+            help: read(kAXHelpAttribute) as? String ?? "",
+            placeholder: read(kAXPlaceholderValueAttribute) as? String ?? "",
+            context: context, frame: frame,
+            enabled: read(kAXEnabledAttribute) as? Bool ?? true,
+            focused: read(kAXFocusedAttribute) as? Bool ?? false, selectedContext: selectedContext)
     }
 
     static func accessibilityChildPriority(role: () -> String, frame: () -> CGRect?,

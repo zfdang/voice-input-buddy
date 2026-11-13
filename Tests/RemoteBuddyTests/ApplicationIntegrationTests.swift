@@ -372,6 +372,21 @@ struct ApplicationIntegrationTests {
             equal: ==, parent: { [3: 2, 2: 3][$0] }))
     }
 
+    @Test func composerDiscoveryOnlyReadsMetadataAndCannotReadOrWriteMessageText() {
+        var reads: [String] = []
+        let field = KeyboardInjector.accessibilityTextMetadata(role: "AXTextArea", frame: window,
+            context: "conversation", selectedContext: false, read: { key in
+                reads.append(key)
+                if key == "AXValue" || key == "AXSelectedText" { Issue.record("Message content must not be queried") }
+                return ["AXIdentifier": "chat_input_field", "AXEnabled": true][key]
+            })
+        #expect(field.identifier == "chat_input_field")
+        #expect(KeyboardInjector.integratedComposerScore(field, integration: .weChat, windowFrame: window) != nil)
+        #expect(!reads.contains("AXValue") && !reads.contains("AXSelectedText"))
+        #expect(Set(reads) == ["AXSubrole", "AXProtectedContent", "AXIdentifier", "AXTitle", "AXDescription",
+                               "AXHelp", "AXPlaceholderValue", "AXEnabled", "AXFocused"])
+    }
+
     @Test func appSpecificComposersAreRecognized() {
         #expect(KeyboardInjector.integratedComposerScore(candidate("输入消息", identifier: "chat_input_field"),
             integration: .weChat, windowFrame: window) == 400)
