@@ -18,7 +18,7 @@ extension BridgeAppModel {
     func completeApplicationIntegrationVoiceTrigger(started: Bool) {
         guard let state = applicationIntegrationStatus else { return }
         switch state {
-        case .voiceTriggered, .voiceTriggeredWithoutFocus, .cancelled: return
+        case .voiceTriggered, .voiceTriggeredPreserved, .voiceTriggeredWithoutFocus, .cancelled: return
         default: break
         }
         if !started {
@@ -27,6 +27,7 @@ extension BridgeAppModel {
         }
         switch state {
         case .ready: recordApplicationIntegrationStatus(.voiceTriggered)
+        case .preserved: recordApplicationIntegrationStatus(.voiceTriggeredPreserved)
         case .unavailable, .focusTimedOut: recordApplicationIntegrationStatus(.voiceTriggeredWithoutFocus)
         default: break // Stop pulses and repeated callbacks do not start a new attempt.
         }

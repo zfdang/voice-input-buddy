@@ -341,14 +341,23 @@ Claude (`com.anthropic.claudefordesktop`) matches the visible “Write your prom
 to Claude” composer label. WorkBuddy (`com.tencent.workbuddy.mac`) matches its
 composer by its surrounding More actions, Voice input, and Send controls when
 the placeholder is not exposed as stable field metadata. Both are opt-in and use control metadata,
-not editable values. Search, code editors, modal dialogs, ambiguous targets, and
-sensitive fields remain excluded. UI inspection identified both controls and
+not editable values. Automatic composer discovery excludes search, code editors, modal dialogs,
+ambiguous targets, and sensitive fields. Preservation is a separate user-intent
+path: an already selected writable search, code, question, or approval field
+(including a non-sensitive modal input) is deliberately retained. UI inspection identified both controls and
 confirmed WorkBuddy focus; physical remote acceptance remains required.
 
 All enabled integrations preserve an already focused, enabled, non-sensitive
-editable field in the same application, including question/approval response
+editable field in the same application, with explicit AXEditable or settable-value
+metadata as writable evidence (the value itself is never read), including question/approval response
 fields. This check runs before scanning and again before focus/click actions.
-A `preserved` diagnostic distinguishes this path from selecting a composer.
+A typed preserved result, diagnostic, and separate user feedback distinguish this
+path from verified composer focus. The focus writer rechecks its write gate before
+each public AX write/action and reports success only after target confirmation.
+Preservation checks during writes exclude the composer being targeted, so the
+writer cannot classify its own focus change as preserved. AX provides no atomic
+compare-and-focus operation across applications; an external focus change between
+a check and a system write remains a best-effort boundary, not a focus lock.
 Only when no such field has focus does automatic composer discovery run.
 
 Automatic voice integration reads public accessibility control metadata and requests

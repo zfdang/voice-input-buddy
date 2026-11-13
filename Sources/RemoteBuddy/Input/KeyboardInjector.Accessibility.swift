@@ -153,18 +153,18 @@ extension KeyboardInjector {
     /// cancelling explicit application-launch/focus button actions.
     static func focusIntegratedApplication(_ integration: ApplicationIntegration,
                                            processIdentifier: pid_t,
-                                           completion: @escaping (Bool) -> Void) -> ScheduledOperation {
+                                           completion: @escaping (ApplicationFocusResult) -> Void) -> ScheduledOperation {
         let gate = ApplicationFocusRequestGate()
         let requestID = gate.begin()
         let bundleIdentifier = NSRunningApplication(processIdentifier: processIdentifier)?.bundleIdentifier
             ?? "unknown"
-        func finish(_ focused: Bool) {
+        func finish(_ result: ApplicationFocusResult) {
             DispatchQueue.main.async {
                 guard gate.isCurrent(requestID) else { return }
-                if !focused {
+                if result == .unavailable {
                     AppLogger.shared.write("APP INTEGRATION failed bundle=\(bundleIdentifier) reason=focus_not_confirmed")
                 }
-                completion(focused)
+                completion(result)
             }
         }
         var clickAttempted = false
@@ -174,15 +174,16 @@ extension KeyboardInjector {
                     gate.isCurrent(requestID) && applicationIsFrontmost(processIdentifier) &&
                         isAccessibilityTrusted && !SecureInputMonitor.isEnabled()
                 }
-                guard canContinue() else { finish(false); return }
-                if focusIntegratedComposer(integration, processIdentifier: processIdentifier,
-                                           clickAttempted: &clickAttempted, canContinue: canContinue) {
-                    AppLogger.shared.write("APP INTEGRATION focused bundle=\(bundleIdentifier)")
-                    finish(true)
+                guard canContinue() else { finish(.unavailable); return }
+                let result = focusIntegratedComposer(integration, processIdentifier: processIdentifier,
+                    clickAttempted: &clickAttempted, canContinue: canContinue)
+                if result != .unavailable {
+                    AppLogger.shared.write("APP INTEGRATION \(result == .preserved ? "preserved" : "focused") bundle=\(bundleIdentifier)")
+                    finish(result)
                 } else if number < 2, canContinue() {
                     attempt(number + 1)
                 } else {
-                    finish(false)
+                    finish(.unavailable)
                 }
             }
         }
@@ -193,22 +194,38 @@ extension KeyboardInjector {
     private static func focusIntegratedComposer(_ integration: ApplicationIntegration,
                                                 processIdentifier: pid_t,
                                                 clickAttempted: inout Bool,
-                                                canContinue: @escaping () -> Bool) -> Bool {
+                                                canContinue: @escaping () -> Bool) -> ApplicationFocusResult {
         let app = AXUIElementCreateApplication(processIdentifier)
-        let preserveCurrentFocus = {
-            guard canContinue(), shouldPreserveIntegratedInput(
-                VoiceInputDestinationSnapshot.system(), integration: integration) else { return false }
-            AppLogger.shared.write("APP INTEGRATION preserved bundle=\(integration.bundleIdentifier) reason=editable_focus")
+        var preservedElement: AXUIElement?
+        func preserveInput(excluding target: AXUIElement? = nil) -> Bool {
+            preservedElement = nil
+            guard canContinue(), let input = axElement(app, attribute: kAXFocusedUIElementAttribute),
+                  target.map({ !CFEqual($0, input) }) ?? true else { return false }
+            var owner: pid_t = 0
+            guard AXUIElementGetPid(input, &owner) == .success, owner == processIdentifier,
+                  ["AXTextArea", "AXTextField", "AXComboBox"].contains(axString(input, attribute: kAXRoleAttribute)) else { return false }
+            let keys = [kAXRoleAttribute, kAXSubroleAttribute, kAXEnabledAttribute, "AXEditable", "AXProtectedContent",
+                        kAXIdentifierAttribute, kAXTitleAttribute, kAXDescriptionAttribute, kAXHelpAttribute, kAXPlaceholderValueAttribute]
+            let attributes = AccessibilityMessaging.attributes(input, keys: keys)
+            let destination = integratedPreservationSnapshot(bundleIdentifier: integration.bundleIdentifier,
+                read: { attributes[$0] }, valueIsSettable: {
+                    var settable = DarwinBoolean(false)
+                    return AXUIElementIsAttributeSettable(input, kAXValueAttribute as CFString, &settable) == .success && settable.boolValue
+                })
+            guard shouldPreserveIntegratedInput(destination, integration: integration), canContinue(),
+                  let current = axElement(app, attribute: kAXFocusedUIElementAttribute), CFEqual(input, current) else { return false }
+            preservedElement = input
             return true
         }
-        if preserveCurrentFocus() { return true }
+        let preserveCurrentFocus = { preserveInput() }
+        if preserveCurrentFocus() { return .preserved }
         guard canContinue(),
               !VoiceInputDestinationSnapshot.system().isSensitiveDestination,
               let window = axElement(app, attribute: kAXFocusedWindowAttribute),
               axString(window, attribute: kAXSubroleAttribute) != "AXDialog",
               axString(window, attribute: kAXSubroleAttribute) != "AXSystemDialog",
               axBool(window, attribute: "AXModal") != true,
-              axElements(window, attribute: "AXSheets").isEmpty else { return false }
+              axElements(window, attribute: "AXSheets").isEmpty else { return .unavailable }
         let frame = axFrame(window)
         let scanStarted = ProcessInfo.processInfo.systemUptime
         let candidates = accessibilityTextCandidates(in: window, integration: integration)
@@ -221,22 +238,29 @@ extension KeyboardInjector {
                   CFEqual(window, current), axElements(window, attribute: "AXSheets").isEmpty else { return false }
             return true
         }
-        return focusIntegratedCandidates(candidates, integration: integration, windowFrame: frame,
+        let resolved = focusIntegratedCandidates(candidates, integration: integration, windowFrame: frame,
             canContinue: targetIsCurrent,
             preserveFocus: preserveCurrentFocus,
-            focus: { focusAccessibilityElement($0, applicationElement: app,
+            focus: { element in focusAccessibilityElement(element, applicationElement: app,
                 requiresApplicationFocusedElement: true, allowPress: integration == .antigravity,
-                preserveFocus: preserveCurrentFocus) },
+                canWriteFocus: { targetIsCurrent() && !preserveInput(excluding: element) }) },
             click: { element, snapshot in
                 guard !clickAttempted else { return false }
                 clickAttempted = true
                 return clickIntegratedComposer(snapshot, integration: integration, windowFrame: frame,
                     canContinue: targetIsCurrent,
-                    preserveFocus: preserveCurrentFocus,
+                    preserveFocus: { preserveInput(excluding: element) },
                     hitTest: { accessibilityHitTestMatchesTarget(element, processIdentifier: processIdentifier, point: $0) },
                     isFocused: { accessibilityElementIsFocused(element, applicationElement: app,
                         requiresApplicationFocusedElement: true) })
             })
+        guard resolved, canContinue() else { return .unavailable }
+        if let preservedElement {
+            guard let current = axElement(app, attribute: kAXFocusedUIElementAttribute),
+                  CFEqual(current, preservedElement) else { return .unavailable }
+            return .preserved
+        }
+        return .focused
     }
 
     /// The same candidate-to-action pipeline runs against native AX elements and
@@ -353,6 +377,19 @@ extension KeyboardInjector {
     static func isAntigravityMessageInput(_ candidate: AccessibilityTextCandidate) -> Bool {
         [candidate.title, candidate.description, candidate.help, candidate.placeholder]
             .contains { $0.lowercased() == "message input" }
+    }
+
+    static func integratedPreservationSnapshot(bundleIdentifier: String?, read: (String) -> Any?,
+                                               valueIsSettable: () -> Bool) -> VoiceInputDestinationSnapshot {
+        let role = read(kAXRoleAttribute) as? String ?? ""
+        let inputRole = ["AXTextArea", "AXTextField", "AXComboBox"].contains(role)
+        let editable = inputRole && ((read("AXEditable") as? Bool) ?? valueIsSettable())
+        let semantic = [kAXIdentifierAttribute, kAXTitleAttribute, kAXDescriptionAttribute, kAXHelpAttribute, kAXPlaceholderValueAttribute]
+            .compactMap { read($0) as? String }.joined(separator: " ")
+        return .init(bundleIdentifier: bundleIdentifier, role: role,
+            subrole: read(kAXSubroleAttribute) as? String ?? "", enabled: read(kAXEnabledAttribute) as? Bool ?? true,
+            editable: editable, protectedContent: read("AXProtectedContent") as? Bool ?? false,
+            semanticText: semantic, secureInputEnabled: SecureInputMonitor.isEnabled())
     }
 
     static func shouldPreserveIntegratedInput(_ destination: VoiceInputDestinationSnapshot,
@@ -893,7 +930,7 @@ extension KeyboardInjector {
         applicationElement: AXUIElement,
         requiresApplicationFocusedElement: Bool = false,
         allowPress: Bool = true,
-        preserveFocus: () -> Bool = { false },
+        canWriteFocus: () -> Bool = { true },
         isFocused: (() -> Bool)? = nil,
         setAttribute: (AXUIElement, CFString, CFTypeRef) -> AXError = AXUIElementSetAttributeValue,
         performAction: (AXUIElement, CFString) -> AXError = AXUIElementPerformAction
@@ -902,16 +939,18 @@ extension KeyboardInjector {
             accessibilityElementIsFocused(element, applicationElement: applicationElement,
                 requiresApplicationFocusedElement: requiresApplicationFocusedElement)
         }
-        if focused() || preserveFocus() { return true }
+        if focused() { return true }
+        guard canWriteFocus() else { return false }
         _ = setAttribute(element, kAXFocusedAttribute as CFString, kCFBooleanTrue)
-        if preserveFocus() { return true }
+        if focused() { return true }
+        guard canWriteFocus() else { return false }
         _ = setAttribute(
             applicationElement,
             kAXFocusedUIElementAttribute as CFString,
             element
         )
-        if focused() || preserveFocus() { return true }
-        guard allowPress else { return false }
+        if focused() { return true }
+        guard allowPress, canWriteFocus() else { return false }
         _ = performAction(element, kAXPressAction as CFString)
         return focused()
     }

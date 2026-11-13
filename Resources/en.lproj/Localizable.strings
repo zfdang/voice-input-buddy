@@ -1252,3 +1252,6 @@
 
 "application_integration.status.triggered" = "Voice trigger sent.";
 "application_integration.status.triggered_without_focus" = "Voice trigger sent without automatic focus. If text is not filled in, use Command+V to paste the result.";
+
+"application_integration.status.preserved" = "Keeping your selected text box; preparing voice input…";
+"application_integration.status.triggered_preserved" = "Kept your selected text box and sent the voice input request.";

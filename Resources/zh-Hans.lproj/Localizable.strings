@@ -1253,3 +1253,6 @@
 
 "application_integration.status.triggered" = "语音触发已发送。";
 "application_integration.status.triggered_without_focus" = "未自动聚焦，语音触发已发送。如未自动回填，可用 Command+V 粘贴识别结果。";
+
+"application_integration.status.preserved" = "继续使用你选中的输入框，正在准备语音输入…";
+"application_integration.status.triggered_preserved" = "已沿用当前输入框，并请求开始语音输入。";

@@ -91,7 +91,7 @@ struct ApplicationIntegrationTests {
             settings.setAllApplicationIntegrations(enabled: true)
             settings.voiceKeyMode = mode
             let model = BridgeAppModel(settings: settings)
-            var focusDone: ((Bool) -> Void)?
+            var focusDone: ((ApplicationFocusResult) -> Void)?
             var events: [String] = []
             let controller = ApplicationIntegrationController(settings: settings, notifications: NotificationCenter(),
                 frontmost: { (ApplicationIntegration.weChat.bundleIdentifier, 42) }, focus: { _, _, done in
@@ -118,7 +118,7 @@ struct ApplicationIntegrationTests {
             #expect(buffered)
             events.append("focus_confirmed")
             let finishFocus = try #require(focusDone)
-            finishFocus(true)
+            finishFocus(.focused)
             #expect(events == ["focus_requested", "focus_confirmed", "select_source", "source_ready", "voice_down"])
             #expect(model.voiceSession.commandAudio.drain() == [1, 2, 3])
             #expect(model.applicationIntegrationStatus == .voiceTriggered)
@@ -135,7 +135,7 @@ struct ApplicationIntegrationTests {
             settings.voiceKeyMode = .leftCommand
             let model = BridgeAppModel(settings: settings)
             let notifications = NotificationCenter()
-            var focusDone: ((Bool) -> Void)?
+            var focusDone: ((ApplicationFocusResult) -> Void)?
             var edges: [Bool] = []
             var completed: [Bool] = []
             let controller = ApplicationIntegrationController(settings: settings, notifications: notifications,
@@ -154,7 +154,7 @@ struct ApplicationIntegrationTests {
                     keySetter: { _, down in edges.append(down); return true }))
             }
             let finishFocus = try #require(focusDone)
-            finishFocus(true)
+            finishFocus(.focused)
             #expect(edges.isEmpty)
             #expect(completed == [false])
             #expect(!model.voiceKeyLatch.isHeld)
@@ -170,7 +170,7 @@ struct ApplicationIntegrationTests {
             settings.voiceKeyMode = .function
             settings.voiceFnTapModeEnabled = tapMode
             let model = BridgeAppModel(settings: settings)
-            var done: ((Bool) -> Void)?
+            var done: ((ApplicationFocusResult) -> Void)?
             var edges: [Bool] = []
             var results: [Bool] = []
             var states: [ApplicationIntegrationPreparationState] = []
@@ -200,8 +200,8 @@ struct ApplicationIntegrationTests {
                     keySetter: { _, down in edges.append(down); return true }, completion: { results.append($0) }))
             }
             let finish = try #require(done)
-            finish(false)
-            finish(true) // A late success must not undo a failure.
+            finish(.unavailable)
+            finish(.focused) // A late success must not undo a failure.
             clock.runAll()
             #expect(states == [.waiting, .unavailable])
             if tapMode { #expect(edges == [true, false]) }
@@ -251,7 +251,7 @@ struct ApplicationIntegrationTests {
         try withSettings { settings, _ in
             settings.setAllApplicationIntegrations(enabled: true)
             let clock = ControlledTestScheduler()
-            var focusDone: ((Bool) -> Void)?
+            var focusDone: ((ApplicationFocusResult) -> Void)?
             var results: [VoiceInputDestinationWaitResult] = []
             let controller = ApplicationIntegrationController(settings: settings, notifications: NotificationCenter(),
                 frontmost: { (ApplicationIntegration.weChat.bundleIdentifier, 42) }, focus: { _, _, done in
@@ -263,7 +263,7 @@ struct ApplicationIntegrationTests {
             _ = controller.prepareForVoiceInput { results.append($0) }
             clock.advance(to: 3000)
             let finishFocus = try #require(focusDone)
-            finishFocus(true)
+            finishFocus(.focused)
             #expect(results == [.ready])
         }
     }
@@ -275,7 +275,7 @@ struct ApplicationIntegrationTests {
             settings.voiceFnTapModeEnabled = true
             let model = BridgeAppModel(settings: settings)
             let clock = ControlledTestScheduler()
-            var focusDone: ((Bool) -> Void)?
+            var focusDone: ((ApplicationFocusResult) -> Void)?
             var edges: [Bool] = []
             var audio: [[Int16]] = []
             let controller = ApplicationIntegrationController(settings: settings, notifications: NotificationCenter(),
@@ -301,7 +301,7 @@ struct ApplicationIntegrationTests {
             #expect(edges.isEmpty && audio.isEmpty)
             if released { #expect(session.stopVoice()) }
             let finishFocus = try #require(focusDone)
-            finishFocus(true)
+            finishFocus(.focused)
             clock.advance(to: 120)
             #expect(edges == (released ? [] : [true, false]))
             #expect(audio == (released ? [] : [[1, 2, 3]]))
@@ -489,6 +489,62 @@ struct ApplicationIntegrationTests {
         #expect(actions == (pressFallback ? ["AXPress"] : []))
     }
 
+    @Test(arguments: [0, 1, 2])
+    func realFocusWriterStopsAtEveryWriteBoundaryWhenUserMovesFocus(afterWrites: Int) {
+        let input = AXUIElementCreateApplication(1234)
+        var writes: [String] = []
+        let result = KeyboardInjector.focusAccessibilityElement(input, applicationElement: input,
+            canWriteFocus: { writes.count < afterWrites }, isFocused: { false },
+            setAttribute: { _, key, _ in writes.append(key as String); return .success },
+            performAction: { _, _ in Issue.record("A moved focus must not receive AXPress"); return .success })
+        #expect(!result)
+        #expect(writes == Array(["AXFocused", "AXFocusedUIElement"].prefix(afterWrites)))
+    }
+
+    @Test func writerOnlySucceedsAfterActualTargetConfirmation() {
+        let input = AXUIElementCreateApplication(1234)
+        for confirmed in [false, true] {
+            var writes = 0
+            let result = KeyboardInjector.focusAccessibilityElement(input, applicationElement: input,
+                allowPress: false, isFocused: { confirmed && writes > 0 },
+                setAttribute: { _, _, _ in writes += 1; return .success })
+            #expect(result == confirmed)
+            #expect(writes == (confirmed ? 1 : 2))
+        }
+    }
+
+    @Test func preservingInputRequiresWritableEvidenceWithoutReadingValues() {
+        for explicit in [Bool?.none, false, true] {
+            for settable in [false, true] {
+                let snapshot = KeyboardInjector.integratedPreservationSnapshot(bundleIdentifier: "com.openai.codex",
+                    read: { key in
+                        #expect(key != "AXValue" && key != "AXSelectedText")
+                        if key == "AXRole" { return "AXTextArea" }
+                        if key == "AXEditable" { return explicit }
+                        return nil
+                    }, valueIsSettable: { settable })
+                #expect(KeyboardInjector.shouldPreserveIntegratedInput(snapshot, integration: .chatGPT) == (explicit ?? settable))
+            }
+        }
+    }
+
+    @Test func preservedResultHasSeparatePreparingAndTriggeredFeedback() throws {
+        try withSettings { settings, _ in
+            settings.setApplicationIntegration(.chatGPT, enabled: true)
+            let model = BridgeAppModel(settings: settings)
+            let controller = ApplicationIntegrationController(settings: settings,
+                frontmost: { ("com.openai.codex", 42) }, focus: { _, _, done in
+                    done(.preserved); return ScheduledOperation {}
+                }, onStateChange: { model.recordApplicationIntegrationStatus($0) })
+            controller.start()
+            defer { controller.stop() }
+            _ = controller.prepareForVoiceInput { #expect($0 == .ready) }
+            #expect(model.applicationIntegrationStatus == .preserved)
+            model.completeApplicationIntegrationVoiceTrigger(started: true)
+            #expect(model.applicationIntegrationStatus == .voiceTriggeredPreserved)
+        }
+    }
+
     @Test func composerDiscoveryOnlyReadsControlMetadata() {
         var reads: [String] = []
         let field = KeyboardInjector.accessibilityTextMetadata(role: "AXTextArea", frame: window,
@@ -588,8 +644,8 @@ struct ApplicationIntegrationTests {
             hitTest: { _ in Issue.record("Existing focus needs no hit test"); return false },
             postClick: { _ in Issue.record("Existing focus needs no click"); return false }, isFocused: { false }, pause: {}))
         let input = AXUIElementCreateApplication(1234)
-        #expect(KeyboardInjector.focusAccessibilityElement(input, applicationElement: input,
-            preserveFocus: { true }, isFocused: { false },
+        #expect(!KeyboardInjector.focusAccessibilityElement(input, applicationElement: input,
+            canWriteFocus: { false }, isFocused: { false },
             setAttribute: { _, _, _ in Issue.record("Preserved focus must not write AX attributes"); return .failure },
             performAction: { _, _ in Issue.record("Preserved focus must not press a control"); return .failure }))
     }
@@ -697,8 +753,8 @@ struct ApplicationIntegrationTests {
                 localization.select(language)
                 for key in ["application_integration.title", "application_integration.introduction"] +
                     ApplicationIntegration.allCases.map(\.detailKey) +
-                    [ApplicationIntegrationPreparationState.waiting, .ready, .unavailable, .focusTimedOut,
-                     .voiceTriggered, .voiceTriggeredWithoutFocus, .cancelled(.timedOut), .cancelled(.actionFailed)]
+                    [ApplicationIntegrationPreparationState.waiting, .ready, .preserved, .unavailable, .focusTimedOut,
+                     .voiceTriggered, .voiceTriggeredPreserved, .voiceTriggeredWithoutFocus, .cancelled(.timedOut), .cancelled(.actionFailed)]
                         .map(ApplicationIntegrationStatus.messageKey) + ["application_integration.permission.missing"] {
                     #expect(localization.text(key) != key)
                 }
