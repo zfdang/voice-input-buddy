@@ -41,6 +41,15 @@ struct SettingsOverviewTests {
         #expect(state(mapping: true, tool: .voiceBuddy).integrationReady)
     }
 
+    @Test func changedPrerequisitesAreReflectedWithoutRestartingOnboarding() {
+        let before = state(input: false, driver: false)
+        let after = state()
+        #expect(!before.permissionsReady)
+        #expect(after.permissionsReady)
+        #expect(after.missingRequirementKeys.isEmpty)
+        #expect(!state(accessibility: false).permissionsReady)
+    }
+
     @Test func listsUseLocale() {
         let chinese = SettingsOverviewState.localizedList(["蓝牙", "辅助功能"], locale: Locale(identifier: "zh_CN"))
         #expect(!chinese.contains(", "))

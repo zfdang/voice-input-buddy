@@ -121,6 +121,16 @@ struct SettingsView: View {
                 model.refreshRemoteDeviceNames(reason: .page)
             }
         }
+        .task(id: selectedSection) { @MainActor in
+            guard selectedSection == .general || selectedSection == .permissions,
+                  !SettingsVisualRenderingPolicy.isScreenshotHarness else { return }
+            model.refreshAudioDevices()
+            while !Task.isCancelled {
+                refreshPermissionStates()
+                do { try await Task.sleep(for: .seconds(1)) }
+                catch { return }
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             refreshPermissionStates()
             loginItemService.refresh()
