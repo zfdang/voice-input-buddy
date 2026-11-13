@@ -174,6 +174,7 @@ extension BridgeAppModel {
             ? settings.voiceKeyMode
             : (heldVoiceKeyMode ?? pendingVoiceKeyMode ?? settings.voiceKeyMode)
         guard forceSoftware || !mode.usesHardwareMapping || requiresOrderedVoiceFn else {
+            if streaming { clearApplicationIntegrationStatus() }
             completion(true)
             return true
         }
@@ -196,6 +197,7 @@ extension BridgeAppModel {
         }
         let shouldHold = transition == .press
         if shouldHold {
+            clearApplicationIntegrationStatus()
             pendingVoiceKeyMode = mode
             voiceKeyActivationInProgress = true
             voiceKeyActivationGeneration &+= 1

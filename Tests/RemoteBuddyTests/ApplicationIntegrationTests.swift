@@ -215,6 +215,37 @@ struct ApplicationIntegrationTests {
         }
     }
 
+    @Test func integrationStatusExpiresAndNeverOverridesVoiceShortcutStatus() throws {
+        try withSettings { settings, _ in
+            let model = BridgeAppModel(settings: settings)
+            let clock = ControlledTestScheduler()
+            model.scheduleApplicationIntegrationStatus = clock.voiceSchedule
+            let shortcut = model.voiceShortcutStatus
+            model.recordApplicationIntegrationStatus(.unavailable)
+            #expect(model.applicationIntegrationStatus == .unavailable)
+            #expect(model.voiceShortcutStatus == shortcut)
+            clock.advance(to: 15000)
+            #expect(model.applicationIntegrationStatus == nil)
+            model.recordApplicationIntegrationStatus(.focusTimedOut)
+            let oldTimer = clock.tasks.last
+            model.recordApplicationIntegrationStatus(.waiting)
+            oldTimer?.fire(includingCancelled: true)
+            #expect(model.applicationIntegrationStatus == .waiting)
+            model.stop()
+            #expect(model.applicationIntegrationStatus == nil)
+            #expect(model.voiceShortcutStatus == shortcut)
+        }
+    }
+
+    @Test func nextNonIntegratedVoiceAttemptClearsPreviousIntegrationStatus() throws {
+        try withSettings { settings, _ in
+            let model = BridgeAppModel(settings: settings)
+            model.recordApplicationIntegrationStatus(.unavailable)
+            #expect(model.updateVoiceKeyState(streaming: true, forceSoftware: false, owner: .bluetooth))
+            #expect(model.applicationIntegrationStatus == nil)
+        }
+    }
+
     @Test func optionalFocusTimeoutContinuesExactlyOnceAndIgnoresLateSuccess() throws {
         try withSettings { settings, _ in
             settings.setAllApplicationIntegrations(enabled: true)

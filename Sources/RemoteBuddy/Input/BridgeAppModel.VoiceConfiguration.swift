@@ -12,13 +12,13 @@ extension BridgeAppModel {
         completion: @escaping (VoiceInputDestinationWaitResult) -> Void,
         schedule: @escaping OperationScheduler = ScheduledOperation.mainQueue
     ) -> VoiceInputDestinationWait {
+        clearApplicationIntegrationStatus()
         guard !settings.enabledApplicationIntegrations.isEmpty else {
             return voiceInputDestinationCoordinator.waitUntilReady(completion: completion)
         }
         let report: (VoiceInputDestinationWaitResult) -> Void = { [weak self] result in
             if case let .cancelled(reason) = result {
-                self?.applicationIntegrationStatus = .cancelled(reason)
-                self?.voiceShortcutStatus = LocalizedMessage(ApplicationIntegrationStatus.messageKey(.cancelled(reason)))
+                self?.recordApplicationIntegrationStatus(.cancelled(reason))
             }
             completion(result)
         }
@@ -28,7 +28,7 @@ extension BridgeAppModel {
             { [weak self] done in self?.voiceInputDestinationCoordinator.waitUntilReady(completion: done) ?? .cancelled(.superseded) },
         ], completion: report)
         if case let .cancelled(reason) = wait {
-            applicationIntegrationStatus = .cancelled(reason)
+            recordApplicationIntegrationStatus(.cancelled(reason))
         }
         return wait
     }

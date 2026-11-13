@@ -22,6 +22,9 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     lazy var commonPhrases = CommonPhraseController(store: commonPhraseStore)
     let loginItemService: LoginItemService
 
+    var applicationIntegrationStatusGeneration: UInt64 = 0
+    var applicationIntegrationStatusExpiry: ScheduledOperation?
+    var scheduleApplicationIntegrationStatus: OperationScheduler = ScheduledOperation.mainQueue
     @Published var applicationIntegrationStatus: ApplicationIntegrationPreparationState?
     @Published var connectionStatus = LocalizedMessage("bluetooth.status.initializing")
     @Published var hidStatus = LocalizedMessage("button_mapping.status.disabled")
@@ -98,8 +101,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     let voiceFunctionMapper: RemoteHIDKeyMapper
     lazy var applicationIntegrationController = ApplicationIntegrationController(settings: settings,
         onStateChange: { [weak self] state in
-            self?.applicationIntegrationStatus = state
-            self?.voiceShortcutStatus = LocalizedMessage(ApplicationIntegrationStatus.messageKey(state))
+            self?.recordApplicationIntegrationStatus(state)
         })
     lazy var preferredInputSourceMonitor = PreferredInputSourceMonitor(
         voiceTool: { [weak self] in
@@ -283,7 +285,11 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
             }
         applicationIntegrationCancellable = settings.$enabledApplicationIntegrations
             .removeDuplicates().dropFirst().receive(on: RunLoop.main)
-            .sink { [weak self] _ in self?.voiceToolDidChange() }
+            .sink { [weak self] _ in
+                self?.applicationIntegrationController.cancelPending()
+                self?.clearApplicationIntegrationStatus()
+                self?.voiceToolDidChange()
+            }
         audio.output.onConfigurationChange = { @Sendable [weak self] in
             DispatchQueue.main.async { [weak self] in self?.scheduleAudioRecovery(reason: "engine_configuration_change") }
         }
@@ -313,6 +319,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     }
 
     isolated deinit {
+        applicationIntegrationStatusExpiry?.cancel()
         voiceKeyReleaseRetry?.cancel()
     }
 
@@ -325,6 +332,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
 
     func stop() {
         applicationIntegrationController.stop()
+        clearApplicationIntegrationStatus()
         commonPhrases.close(reason: "app_stop")
         preferredInputSourceMonitor.stop()
         pendingHIDServiceMappingRefresh = false
