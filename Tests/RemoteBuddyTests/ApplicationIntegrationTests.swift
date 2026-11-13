@@ -161,6 +161,49 @@ struct ApplicationIntegrationTests {
         }
     }
 
+    @Test(arguments: [false, true])
+    func unsuccessfulFocusNeverTriggersHoldVoiceOrFnTap(tapMode: Bool) throws {
+        try withSettings { settings, _ in
+            settings.setAllApplicationIntegrations(enabled: true)
+            settings.voiceKeyMode = .function
+            settings.voiceFnTapModeEnabled = tapMode
+            let model = BridgeAppModel(settings: settings)
+            var done: ((Bool) -> Void)?
+            var edges: [Bool] = []
+            var results: [Bool] = []
+            var states: [VoiceInputDestinationState] = []
+            let controller = ApplicationIntegrationController(settings: settings, notifications: NotificationCenter(),
+                frontmost: { (ApplicationIntegration.weChat.bundleIdentifier, 42) }, focus: { _, _, callback in
+                    done = callback
+                    return ScheduledOperation {}
+                }, onStateChange: { states.append($0) })
+            model.applicationIntegrationController = controller
+            controller.start()
+            defer { controller.stop() }
+            let clock = ControlledTestScheduler()
+            let session = VoiceFnTapSessionController(schedule: clock.voiceSchedule,
+                destinationReadiness: model.prepareIntegratedVoiceInputDestination,
+                setFunctionKeyPressed: { edges.append($0); return true }, enqueueAudio: { _ in },
+                drainAudio: { _, callback in callback() }, onFailure: { _ in })
+            if tapMode {
+                session.setEnabled(true)
+                #expect(session.startVoice())
+            } else {
+                #expect(model.updateVoiceKeyState(streaming: true, forceSoftware: true, owner: .bluetooth,
+                    keySetter: { _, down in edges.append(down); return true }, completion: { results.append($0) }))
+            }
+            let finish = try #require(done)
+            finish(false)
+            finish(true) // A late success must not undo a failure.
+            clock.runAll()
+            #expect(edges.isEmpty)
+            #expect(states == [.waiting, .cancelled(.actionFailed)])
+            if tapMode { #expect(session.phase == .idle) }
+            else { #expect(results == [false]); #expect(!model.voiceKeyLatch.isHeld) }
+            session.shutdown()
+        }
+    }
+
     @Test func focusTimeoutCancelsExactlyOnceAndIgnoresLateSuccess() throws {
         try withSettings { settings, _ in
             settings.setAllApplicationIntegrations(enabled: true)

@@ -9,6 +9,23 @@ extension SettingsView {
                 Text(localization.text("application_integration.introduction"))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                GlassPanel {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label(localization.text(accessibilityGranted
+                            ? "application_integration.permission.granted" : "application_integration.permission.missing"),
+                              systemImage: accessibilityGranted ? "checkmark.shield" : "exclamationmark.shield")
+                        if !accessibilityGranted {
+                            Button(localization.text("application_integration.permission.open")) {
+                                model.openPrivacyPane("Privacy_Accessibility")
+                            }
+                        }
+                        if let status = model.applicationIntegrationStatus {
+                            Text(localization.text(ApplicationIntegrationStatus.messageKey(status)))
+                                .font(.callout).fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 HStack(spacing: 12) {
                     Text(localization.text("application_integration.supported")).font(.headline)
                     Spacer()

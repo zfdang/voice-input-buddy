@@ -1215,4 +1215,13 @@
 "application_integration.chatGPT.detail" = "When enabled, starting voice input while ChatGPT is in front focuses the message box in the current conversation.";
 "application_integration.antigravity.detail" = "When enabled, starting voice input while Antigravity is in front focuses the Agent chat input in the current window.";
 "application_integration.weChat.detail" = "When enabled, starting voice input while WeChat is in front focuses the message box in the current conversation. Open a conversation first.";
-"application_integration.accessibility_help" = "Requires Accessibility permission. If the input field cannot be identified, focus stays unchanged. Text recognition and insertion are handled by your voice input tool.";
+"application_integration.accessibility_help" = "Requires Accessibility permission. If input focus cannot be confirmed, voice input is cancelled. Text recognition and insertion are handled by your voice input tool.";
+
+"application_integration.status.waiting" = "Preparing the input field…";
+"application_integration.status.ready" = "Input focus confirmed. Voice input can start.";
+"application_integration.status.failed" = "Input focus could not be confirmed. Voice input was cancelled; open a conversation and try again.";
+"application_integration.status.timed_out" = "Input preparation timed out. Voice input was cancelled; try again.";
+"application_integration.status.cancelled" = "Input preparation was cancelled. No voice trigger was sent.";
+"application_integration.permission.granted" = "Accessibility permission granted";
+"application_integration.permission.missing" = "Accessibility permission is required before an enabled integration can start voice input.";
+"application_integration.permission.open" = "Open Accessibility Settings";

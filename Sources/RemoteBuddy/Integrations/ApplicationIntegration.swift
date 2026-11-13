@@ -37,6 +37,7 @@ final class ApplicationIntegrationController {
     private let notifications: NotificationCenter
     private let frontmost: () -> (bundleIdentifier: String?, pid: pid_t)?
     private let focus: Focuser
+    private let onStateChange: (VoiceInputDestinationState) -> Void
     private var observers: [NSObjectProtocol] = []
     private var settingsSubscription: AnyCancellable?
     private var pendingFocus: ScheduledOperation?
@@ -45,6 +46,7 @@ final class ApplicationIntegrationController {
     private var generation: UInt64 = 0
     private var pendingCompletion: ((VoiceInputDestinationWaitResult) -> Void)?
     private var deadline: ScheduledOperation?
+    private var pendingBundleIdentifier: String?
 
     init(settings: AppSettings,
          notifications: NotificationCenter = NSWorkspace.shared.notificationCenter,
@@ -52,12 +54,14 @@ final class ApplicationIntegrationController {
              NSWorkspace.shared.frontmostApplication.map { ($0.bundleIdentifier, $0.processIdentifier) }
          },
          focus: @escaping Focuser = KeyboardInjector.focusIntegratedApplication,
-         schedule: @escaping OperationScheduler = ScheduledOperation.mainQueue) {
+         schedule: @escaping OperationScheduler = ScheduledOperation.mainQueue,
+         onStateChange: @escaping (VoiceInputDestinationState) -> Void = { _ in }) {
         self.settings = settings
         self.notifications = notifications
         self.frontmost = frontmost
         self.focus = focus
         self.schedule = schedule
+        self.onStateChange = onStateChange
     }
 
     func start() {
@@ -75,8 +79,8 @@ final class ApplicationIntegrationController {
             .receive(on: RunLoop.main).sink { [weak self] _ in self?.cancelPending() }
     }
 
-    /// A voice trigger must wait until focus work has finished. An unavailable
-    /// composer leaves the existing focus alone; cancellation must never trigger voice.
+    /// Enabled integrations require confirmed focus before a voice trigger.
+    /// Failing or cancelling preparation must never send voice to the original field.
     func prepareForVoiceInput(completion: @escaping (VoiceInputDestinationWaitResult) -> Void) -> VoiceInputDestinationWait {
         cancelPending()
         guard started, let application = frontmost(),
@@ -85,16 +89,22 @@ final class ApplicationIntegrationController {
         generation &+= 1
         let requestID = generation
         pendingCompletion = completion
+        pendingBundleIdentifier = application.bundleIdentifier
+        onStateChange(.waiting)
         deadline = schedule(4) { [weak self] in
             guard self?.generation == requestID else { return }
             self?.cancelPending(reason: .timedOut)
         }
-        let task = focus(integration, application.pid) { [weak self] _ in
+        let task = focus(integration, application.pid) { [weak self] focused in
             guard let self, self.generation == requestID, self.pendingCompletion != nil else { return }
             let current = self.frontmost()
-            self.finish(requestID: requestID, result:
-                current?.pid == application.pid && current?.bundleIdentifier == application.bundleIdentifier
-                    ? .ready : .cancelled(.targetChanged))
+            let result: VoiceInputDestinationWaitResult
+            if current?.pid != application.pid || current?.bundleIdentifier != application.bundleIdentifier {
+                result = .cancelled(.targetChanged)
+            } else {
+                result = focused ? .ready : .cancelled(.actionFailed)
+            }
+            self.finish(requestID: requestID, result: result)
         }
         if generation == requestID, pendingCompletion != nil { pendingFocus = task }
         else { task.cancel() }
@@ -114,7 +124,16 @@ final class ApplicationIntegrationController {
         deadline?.cancel()
         deadline = nil
         focus?.cancel()
-        completion?(result)
+        guard let completion else { return }
+        let bundle = pendingBundleIdentifier ?? "unknown"
+        pendingBundleIdentifier = nil
+        switch result {
+        case .ready: onStateChange(.ready)
+        case let .cancelled(reason):
+            AppLogger.shared.write("APP INTEGRATION cancelled bundle=\(bundle) reason=\(reason.rawValue)")
+            onStateChange(.cancelled(reason))
+        }
+        completion(result)
     }
 
     func stop() {
@@ -142,5 +161,18 @@ extension AppSettings {
 
     func setAllApplicationIntegrations(enabled: Bool) {
         enabledApplicationIntegrations = enabled ? Set(ApplicationIntegration.allCases.map(\.rawValue)) : []
+    }
+}
+
+/// Shared by the settings status and menu-bar voice status.
+enum ApplicationIntegrationStatus {
+    static func messageKey(_ state: VoiceInputDestinationState) -> String {
+        switch state {
+        case .waiting: return "application_integration.status.waiting"
+        case .ready: return "application_integration.status.ready"
+        case .cancelled(.timedOut): return "application_integration.status.timed_out"
+        case .cancelled(.actionFailed): return "application_integration.status.failed"
+        case .cancelled: return "application_integration.status.cancelled"
+        }
     }
 }

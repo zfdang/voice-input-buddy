@@ -22,6 +22,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     lazy var commonPhrases = CommonPhraseController(store: commonPhraseStore)
     let loginItemService: LoginItemService
 
+    @Published var applicationIntegrationStatus: VoiceInputDestinationState?
     @Published var connectionStatus = LocalizedMessage("bluetooth.status.initializing")
     @Published var hidStatus = LocalizedMessage("button_mapping.status.disabled")
     @Published var audioStatus = LocalizedMessage("audio.output.none_selected")
@@ -95,7 +96,11 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     }
 
     let voiceFunctionMapper: RemoteHIDKeyMapper
-    lazy var applicationIntegrationController = ApplicationIntegrationController(settings: settings)
+    lazy var applicationIntegrationController = ApplicationIntegrationController(settings: settings,
+        onStateChange: { [weak self] state in
+            self?.applicationIntegrationStatus = state
+            self?.voiceShortcutStatus = LocalizedMessage(ApplicationIntegrationStatus.messageKey(state))
+        })
     lazy var preferredInputSourceMonitor = PreferredInputSourceMonitor(
         voiceTool: { [weak self] in
             self?.settings.onboardingVoiceTool ?? .unselected

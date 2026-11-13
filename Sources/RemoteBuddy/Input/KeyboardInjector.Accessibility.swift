@@ -157,10 +157,13 @@ extension KeyboardInjector {
         let gate = ApplicationFocusRequestGate()
         let requestID = gate.begin()
         let bundleIdentifier = NSRunningApplication(processIdentifier: processIdentifier)?.bundleIdentifier
-            ?? integration.bundleIdentifier
+            ?? "unknown"
         func finish(_ focused: Bool) {
             DispatchQueue.main.async {
                 guard gate.isCurrent(requestID) else { return }
+                if !focused {
+                    AppLogger.shared.write("APP INTEGRATION failed bundle=\(bundleIdentifier) reason=focus_not_confirmed")
+                }
                 completion(focused)
             }
         }
