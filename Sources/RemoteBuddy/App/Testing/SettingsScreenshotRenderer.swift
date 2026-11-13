@@ -108,8 +108,28 @@ enum SettingsScreenshotRenderer {
         }
         let model = BridgeAppModel(
             settings: settings,
-            initialAudioDevices: screenshotAudioDevices
+            initialAudioDevices: screenshotAudioDevices,
+            permissionSnapshotProvider: {
+                HIDPermissionSnapshot(
+                    inputMonitoringGranted: permissionsOverride?.inputMonitoring ?? true,
+                    accessibilityGranted: permissionsOverride?.accessibility ?? true
+                )
+            }
         )
+        switch ProcessInfo.processInfo.environment["REMOTE_BUDDY_SETTINGS_SCREENSHOT_RUNTIME_PERMISSION_ISSUE"] {
+        case "desync":
+            model.connectionStatus = LocalizedMessage(BluetoothStatusKeys.permissionDenied)
+            model.hidStatus = LocalizedMessage(HIDStatusKeys.notPermitted)
+            model.refreshRuntimePermissionDiagnosis(trigger: "screenshot_harness", bluetoothGranted: true)
+        case "bluetooth_denied":
+            model.connectionStatus = LocalizedMessage(BluetoothStatusKeys.permissionDenied)
+            model.refreshRuntimePermissionDiagnosis(trigger: "screenshot_harness", bluetoothGranted: false)
+        case "not_permitted":
+            model.hidStatus = LocalizedMessage(HIDStatusKeys.notPermitted)
+            model.refreshRuntimePermissionDiagnosis(trigger: "screenshot_harness", bluetoothGranted: true)
+        default:
+            break
+        }
         if showsRemoteCards {
             settings.customMappingEnabled = true
             let xiaomiID = settings.registerBluetoothRemote(

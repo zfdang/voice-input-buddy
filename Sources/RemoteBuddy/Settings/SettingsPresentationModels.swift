@@ -94,6 +94,8 @@ struct SettingsDiagnosticSnapshot: Equatable {
     let runtimeLogPath: String
     let runtimeLogSizeBytes: Int64?
     let runtimePermissionIssue: String
+    let runtimePermissionIssueUpdatedAt: Date?
+    let runtimePermissionDiagnosisTrigger: String
     let connectionStatusKey: String
     let hidStatusKey: String
     let generatedAt: Date
@@ -117,6 +119,8 @@ struct SettingsDiagnosticSnapshot: Equatable {
         runtimeLogPath: String = SettingsDiagnosticSnapshot.sanitizePath(AppLogger.shared.logURL.path),
         runtimeLogSizeBytes: Int64? = nil,
         runtimePermissionIssue: String = "none",
+        runtimePermissionIssueUpdatedAt: Date? = nil,
+        runtimePermissionDiagnosisTrigger: String = "none",
         connectionStatusKey: String = "unknown",
         hidStatusKey: String = "unknown",
         generatedAt: Date = Date()
@@ -139,6 +143,8 @@ struct SettingsDiagnosticSnapshot: Equatable {
         self.runtimeLogPath = Self.sanitizePath(runtimeLogPath)
         self.runtimeLogSizeBytes = runtimeLogSizeBytes
         self.runtimePermissionIssue = runtimePermissionIssue
+        self.runtimePermissionIssueUpdatedAt = runtimePermissionIssueUpdatedAt
+        self.runtimePermissionDiagnosisTrigger = runtimePermissionDiagnosisTrigger
         self.connectionStatusKey = connectionStatusKey
         self.hidStatusKey = hidStatusKey
         self.generatedAt = generatedAt
@@ -206,6 +212,8 @@ struct SettingsDiagnosticSnapshot: Equatable {
             "permission_input_monitoring: \(inputMonitoringGranted)",
             "permission_accessibility: \(accessibilityGranted)",
             "runtime_permission_issue: \"\(runtimePermissionIssue)\"",
+            "runtime_permission_trigger: \"\(runtimePermissionDiagnosisTrigger)\"",
+            "runtime_permission_updated_at: \"\(runtimePermissionIssueUpdatedAt.map(Self.timestamp) ?? "none")\"",
             "connection_status: \"\(connectionStatusKey)\"",
             "hid_status: \"\(hidStatusKey)\"",
             "remote_connected: \(remoteConnected)",

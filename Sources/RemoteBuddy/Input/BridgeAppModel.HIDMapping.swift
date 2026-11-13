@@ -335,7 +335,7 @@ extension BridgeAppModel {
         hidAllowedLocationIDs = allowedLocationIDs
         guard desiredConfiguration.customMappingEnabled || backOnlyMode else {
             hidStatus = LocalizedMessage("button_mapping.status.system_managed")
-            hidFilterStartFailed = false
+            hidFilterFailureState = .none
             hidMonitoringInterrupted = false // No monitoring is requested by the current configuration.
             appliedHIDMonitoringConfiguration = desiredConfiguration
             refreshRuntimePermissionDiagnosis(trigger: "hid_system_managed")
@@ -343,16 +343,19 @@ extension BridgeAppModel {
         }
         if desiredConfiguration.customMappingEnabled {
             let filterStarted = hidEventSuppressor.start()
-            hidFilterStartFailed = !filterStarted
+            hidFilterFailureState = (!filterStarted && hidEventSuppressor.didTapCreationFailDespitePermissions)
+                ? .tapCreateFailed
+                : .none
             if !filterStarted {
                 let permissions = permissionSnapshotProvider()
                 AppLogger.shared.write(
-                    "HID FILTER start_failed input_monitoring=\(permissions.inputMonitoringGranted) " +
+                    "HID FILTER start_failed tap_create_denied=\(hidEventSuppressor.didTapCreationFailDespitePermissions) " +
+                        "input_monitoring=\(permissions.inputMonitoringGranted) " +
                         "accessibility=\(permissions.accessibilityGranted)"
                 )
             }
         } else {
-            hidFilterStartFailed = false
+            hidFilterFailureState = .none
         }
         for target in targets {
             let monitor = makeHIDMonitor(
@@ -424,7 +427,7 @@ extension BridgeAppModel {
         cancelHIDMappingRecovery(reason: reason)
         stopHIDMonitors()
         preferredInputSourceMonitor.stop(preservingExplicitVoiceSession: false)
-        hidFilterStartFailed = false
+        hidFilterFailureState = .none
         hidMonitoringInterrupted = true
         refreshRuntimePermissionDiagnosis(trigger: "hid_suspended:\(reason)")
     }

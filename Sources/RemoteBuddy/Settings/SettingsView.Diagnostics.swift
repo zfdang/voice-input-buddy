@@ -65,7 +65,11 @@ extension SettingsView {
                 Divider().padding(.leading, 48)
                 VStack(alignment: .leading, spacing: 8) {
                     Label {
-                        Text(localization.text("permission.desync.banner.detail"))
+                        Text(localization.text(
+                            model.canRelaunchApplication
+                                ? "permission.desync.banner.detail.with_restart"
+                                : "permission.desync.banner.detail"
+                        ))
                             .font(.system(size: 12))
                             .fixedSize(horizontal: false, vertical: true)
                     } icon: {
@@ -73,16 +77,16 @@ extension SettingsView {
                             .foregroundStyle(.orange)
                     }
                     HStack(spacing: 10) {
+                        Button(localization.text("permission.desync.action.open_settings")) {
+                            openSettingsURL(runtimeIssue.preferredPrivacySettingsURLString)
+                        }
+                        .compatibilityButtonStyle(.prominent)
                         if model.canRelaunchApplication {
                             Button(localization.text("permission.desync.action.restart")) {
-                                _ = model.relaunchApplication()
+                                isPermissionRelaunchConfirmationPresented = true
                             }
-                            .compatibilityButtonStyle(.prominent)
+                            .compatibilityButtonStyle(.standard)
                         }
-                        Button(localization.text("permission.desync.action.open_settings")) {
-                            openSettingsURL("x-apple.systempreferences:com.apple.preference.security?Privacy")
-                        }
-                        .compatibilityButtonStyle(.standard)
                     }
                 }
                 .padding(.vertical, 9)

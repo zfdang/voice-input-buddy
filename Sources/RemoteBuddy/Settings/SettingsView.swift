@@ -43,6 +43,7 @@ struct SettingsView: View {
     @State var isMappingPermissionAlertPresented = false
     @State var isWaitingForMappingPermissions = false
     @State var isShowingRestoreAllDefaultsAlert = false
+    @State var isPermissionRelaunchConfirmationPresented = false
 
     init(
         model: BridgeAppModel,
@@ -122,7 +123,10 @@ struct SettingsView: View {
             }
         }
         .task(id: selectedSection) { @MainActor in
-            guard selectedSection == .general || selectedSection == .permissions || selectedSection == .applicationIntegration,
+            guard selectedSection == .general ||
+                    selectedSection == .connection ||
+                    selectedSection == .permissions ||
+                    selectedSection == .applicationIntegration,
                   !SettingsVisualRenderingPolicy.isScreenshotHarness else { return }
             model.refreshAudioDevices()
             while !Task.isCancelled {
@@ -152,6 +156,17 @@ struct SettingsView: View {
             }
         } message: {
             Text(localization.text("button_mapping.permission_prompt.message"))
+        }
+        .confirmationDialog(
+            localization.text("permission.desync.restart_confirm.title"),
+            isPresented: $isPermissionRelaunchConfirmationPresented
+        ) {
+            Button(localization.text("permission.desync.action.restart"), role: .destructive) {
+                _ = model.relaunchApplication()
+            }
+            Button(localization.text("common.action.cancel"), role: .cancel) {}
+        } message: {
+            Text(localization.text("permission.desync.restart_confirm.message"))
         }
     }
 }

@@ -71,6 +71,7 @@ final class KeyboardEventSuppressor {
     private var recentArmed: [(event: RemoteNativeEvent, until: TimeInterval)] = []
 
     private var tapReady = false
+    private(set) var didTapCreationFailDespitePermissions = false
     var isRunning: Bool {
         guard tapReady else { return false }
         if let tapOperations { return tapOperations.isEnabled() }
@@ -86,13 +87,20 @@ final class KeyboardEventSuppressor {
             return false
         }
         if let tapOperations {
-            if tapReady, tapOperations.isEnabled() { return true }
+            if tapReady, tapOperations.isEnabled() {
+                didTapCreationFailDespitePermissions = false
+                return true
+            }
             tapReady = tapOperations.start()
+            didTapCreationFailDespitePermissions = !tapReady
             return tapReady
         }
         // An installed tap may be temporarily disabled while recovery is queued.
         // Do not install a second port or claim filtering is available then.
-        if eventTap != nil { return isRunning }
+        if eventTap != nil {
+            didTapCreationFailDespitePermissions = false
+            return isRunning
+        }
 
         let eventMask = CGEventMask(1 << CGEventType.keyDown.rawValue) |
             CGEventMask(1 << CGEventType.keyUp.rawValue) |
@@ -106,6 +114,7 @@ final class KeyboardEventSuppressor {
             callback: keyboardEventSuppressorCallback,
             userInfo: context
         ) else {
+            didTapCreationFailDespitePermissions = true
             return false
         }
         guard let runLoopSource = CFMachPortCreateRunLoopSource(
@@ -116,6 +125,7 @@ final class KeyboardEventSuppressor {
             // tapCreate 成功即已在 WindowServer 侧登记端口；此处失败若不释放端口，
             // 该 tap 会残留到进程退出，必须与 stop() 走同一条清理路径。
             EventTapPort.release(port: eventTap, source: nil)
+            didTapCreationFailDespitePermissions = false
             return false
         }
 
@@ -123,6 +133,7 @@ final class KeyboardEventSuppressor {
         self.runLoopSource = runLoopSource
         EventTapPort.activate(port: eventTap, source: runLoopSource)
         tapReady = true
+        didTapCreationFailDespitePermissions = false
         return true
     }
 
@@ -130,6 +141,7 @@ final class KeyboardEventSuppressor {
 
     func stop() {
         tapRecoveryGeneration += 1
+        didTapCreationFailDespitePermissions = false
         lock.lock()
         pendingEvents.removeAll()
         heldEventCounts.removeAll()

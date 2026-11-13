@@ -108,6 +108,8 @@ extension SettingsView {
             runtimeLogPath: SettingsDiagnosticSnapshot.sanitizePath(logURL.path),
             runtimeLogSizeBytes: logSizeBytes,
             runtimePermissionIssue: model.runtimePermissionIssue?.diagnosticIdentifier ?? "none",
+            runtimePermissionIssueUpdatedAt: model.runtimePermissionIssueUpdatedAt,
+            runtimePermissionDiagnosisTrigger: model.runtimePermissionDiagnosisTrigger ?? "none",
             connectionStatusKey: model.connectionStatus.key,
             hidStatusKey: model.hidStatus.key
         )
