@@ -40,169 +40,111 @@ extension SettingsView {
             }
             .padding(.bottom, 16)
 
-            CompatibilityGlassContainer(spacing: 0) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(localization.text("settings.general.title"))
-                        .font(.title3.weight(.semibold))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    Group {
-                        VStack(spacing: 0) {
-                            HStack(spacing: 14) {
-                                Image(systemName: "dock.rectangle")
-                                    .font(.title3)
-                                    .foregroundStyle(Color.accentColor)
-                                    .frame(width: 34)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(localization.text("about.preferences.show_dock_icon"))
-                                        .font(.subheadline.weight(.semibold))
-                                    Text(localization.text("about.preferences.show_dock_icon_help"))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Toggle("", isOn: Binding(
-                                    get: { settings.showDockIcon },
-                                    set: { setDockIconVisible($0) }
-                                ))
-                                .labelsHidden()
-                                .accessibilityLabel(localization.text("about.preferences.show_dock_icon"))
-                                .toggleStyle(.switch)
-                            }
-                            .padding(.vertical, 8)
-
+            VStack(alignment: .leading, spacing: 20) {
+                aboutSection(titleKey: "settings.general.display_group") {
+                    VStack(spacing: 0) {
+                        preferenceRow(symbol: "dock.rectangle", titleKey: "about.preferences.show_dock_icon", detailKey: "about.preferences.show_dock_icon_help") {
+                            Toggle("", isOn: Binding(
+                                get: { settings.showDockIcon },
+                                set: { setDockIconVisible($0) }
+                            ))
+                            .labelsHidden()
+                            .accessibilityLabel(localization.text("about.preferences.show_dock_icon"))
+                            .toggleStyle(.switch)
+                        }
+                        Divider()
+                        preferenceRow(symbol: "menubar.rectangle", titleKey: "about.preferences.show_status_bar_icon", detailKey: "about.preferences.show_status_bar_icon_help") {
+                            Toggle("", isOn: Binding(
+                                get: { settings.showStatusBarIcon },
+                                set: { setStatusBarIconVisible($0) }
+                            ))
+                            .labelsHidden()
+                            .accessibilityLabel(localization.text("about.preferences.show_status_bar_icon"))
+                            .toggleStyle(.switch)
+                        }
+                        if appIconCatalog.options.count > 1 {
                             Divider()
-
-                            if appIconCatalog.options.count > 1 {
-                                appIconPreferenceRow
-                                Divider()
-                            }
-
-                            HStack(spacing: 14) {
-                                Image(systemName: "menubar.rectangle")
-                                    .font(.title3)
-                                    .foregroundStyle(Color.accentColor)
-                                    .frame(width: 34)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(localization.text("about.preferences.show_status_bar_icon"))
-                                        .font(.subheadline.weight(.semibold))
-                                    Text(localization.text("about.preferences.show_status_bar_icon_help"))
-                                        .font(.system(size: 12))
-                                        .foregroundStyle(.secondary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                                Spacer()
-                                Toggle("", isOn: Binding(
-                                    get: { settings.showStatusBarIcon },
-                                    set: { setStatusBarIconVisible($0) }
-                                ))
-                                .labelsHidden()
-                                .accessibilityLabel(localization.text("about.preferences.show_status_bar_icon"))
-                                .toggleStyle(.switch)
-                            }
-                            .padding(.vertical, 8)
-
-                            Divider()
-
-                            HStack(spacing: 14) {
-                                Image(systemName: "power")
-                                    .font(.title3)
-                                    .foregroundStyle(Color.accentColor)
-                                    .frame(width: 34)
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(localization.text("settings.general.launch_behavior"))
-                                        .font(.subheadline.weight(.semibold))
-                                    Text(localization.text("settings.general.launch_behavior_help"))
-                                        .font(.system(size: 12))
-                                        .foregroundStyle(.secondary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                                Spacer(minLength: 12)
-                                HStack(spacing: 10) {
-                                    VStack(alignment: .trailing, spacing: 4) {
-                                        Text(localization.text("about.preferences.launch_at_login"))
-                                            .font(.system(size: 12, weight: .medium))
-                                        Toggle("", isOn: Binding(
-                                            get: { loginItemService.isEnabled },
-                                            set: { loginItemService.setEnabled($0) }
-                                        ))
-                                        .labelsHidden()
-                                        .accessibilityLabel(localization.text("about.preferences.launch_at_login"))
-                                        .toggleStyle(.switch)
-                                    }
-
-                                    Divider()
-                                        .frame(height: 34)
-
-                                    VStack(alignment: .trailing, spacing: 4) {
-                                        Text(localization.text("about.preferences.open_main_window_at_launch"))
-                                            .font(.system(size: 12, weight: .medium))
-                                        Toggle("", isOn: $settings.openMainWindowAtLaunch)
-                                            .labelsHidden()
-                                            .accessibilityLabel(localization.text("about.preferences.open_main_window_at_launch"))
-                                            .toggleStyle(.switch)
-                                    }
-                                }
-                            }
-                            .padding(.vertical, 8)
-
-                            if loginItemService.requiresApproval {
-                                Text(localization.text("about.preferences.launch_at_login_requires_approval"))
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(.orange)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .frame(maxWidth: .infinity, alignment: .trailing)
-                                    .padding(.bottom, 8)
-                                Button(
-                                    localization.text("about.preferences.launch_at_login_open_system_settings"),
-                                    action: loginItemService.openLoginItemsSettings
-                                )
-                                .compatibilityButtonStyle(.standard)
-                                .frame(maxWidth: .infinity, alignment: .trailing)
-                            } else if loginItemService.didFailToUpdate {
-                                Text(localization.text("about.preferences.launch_at_login_update_failed"))
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(.red)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .frame(maxWidth: .infinity, alignment: .trailing)
-                                    .padding(.bottom, 8)
-                            }
-
-                            Divider()
-
-                            HStack(spacing: 14) {
-                                Image(systemName: "globe")
-                                    .font(.title3)
-                                    .foregroundStyle(.green)
-                                    .frame(width: 34)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(localization.text("about.preferences.language"))
-                                        .font(.subheadline.weight(.semibold))
-                                    Text(localization.text("about.preferences.language_description"))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer(minLength: 20)
-                                Picker(localization.text("about.preferences.language"), selection: Binding(
-                                    get: { localization.language },
-                                    set: { localization.select($0) }
-                                )) {
-                                    ForEach(AppLanguage.allCases) { language in
-                                        Text(languageTitle(language)).tag(language)
-                                    }
-                                }
-                                .labelsHidden()
-                                .pickerStyle(.segmented)
-                                .frame(width: 300)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, 8)
+                            appIconPreferenceRow
                         }
                     }
                 }
-                .padding(.vertical, 12)
+
+                aboutSection(titleKey: "settings.general.launch_behavior") {
+                    VStack(spacing: 0) {
+                        preferenceRow(symbol: "power", titleKey: "about.preferences.launch_at_login", detailKey: "about.preferences.launch_at_login_help") {
+                            Toggle("", isOn: Binding(
+                                get: { loginItemService.isEnabled },
+                                set: { loginItemService.setEnabled($0) }
+                            ))
+                            .labelsHidden()
+                            .accessibilityLabel(localization.text("about.preferences.launch_at_login"))
+                            .toggleStyle(.switch)
+                        }
+                        if loginItemService.requiresApproval {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(localization.text("about.preferences.launch_at_login_requires_approval"))
+                                    .font(.caption).foregroundStyle(.orange)
+                                Button(localization.text("about.preferences.launch_at_login_open_system_settings"), action: loginItemService.openLoginItemsSettings)
+                                    .compatibilityButtonStyle(.standard)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.leading, 48)
+                            .padding(.bottom, 10)
+                        } else if loginItemService.didFailToUpdate {
+                            Text(localization.text("about.preferences.launch_at_login_update_failed"))
+                                .font(.caption).foregroundStyle(.red)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.leading, 48)
+                                .padding(.bottom, 10)
+                        }
+                        Divider()
+                        preferenceRow(symbol: "macwindow", titleKey: "about.preferences.open_main_window_at_launch", detailKey: "settings.general.open_window_help") {
+                            Toggle("", isOn: $settings.openMainWindowAtLaunch)
+                                .labelsHidden()
+                                .accessibilityLabel(localization.text("about.preferences.open_main_window_at_launch"))
+                                .toggleStyle(.switch)
+                        }
+                    }
+                }
+
+                aboutSection(titleKey: "settings.general.language_group") {
+                    preferenceRow(symbol: "globe", titleKey: "about.preferences.language", detailKey: "about.preferences.language_description") {
+                        Picker(localization.text("about.preferences.language"), selection: Binding(
+                            get: { localization.language },
+                            set: { localization.select($0) }
+                        )) {
+                            ForEach(AppLanguage.allCases) { language in
+                                Text(languageTitle(language)).tag(language)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.segmented)
+                        .frame(width: 300)
+                    }
+                }
             }
+
         }
+    }
+
+    private func preferenceRow<Control: View>(symbol: String, titleKey: String, detailKey: String, @ViewBuilder control: () -> Control) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: symbol)
+                .font(.title3)
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 34)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(localization.text(titleKey)).font(.subheadline.weight(.semibold))
+                Text(localization.text(detailKey))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 20)
+            control()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 8)
     }
 
     private var permissionsReady: Bool {

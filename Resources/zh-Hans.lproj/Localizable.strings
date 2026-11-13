@@ -1218,3 +1218,7 @@
 "about.info.project" = "项目介绍与链接";
 "about.info.releases" = "最新发布与下载";
 "about.info.open_releases" = "查看发布";
+
+"settings.general.display_group" = "应用显示";
+"settings.general.language_group" = "语言";
+"settings.general.open_window_help" = "启动遥控搭子时显示主面板。";

@@ -1216,3 +1216,7 @@
 "about.info.project" = "Project and links";
 "about.info.releases" = "Latest releases";
 "about.info.open_releases" = "View releases";
+
+"settings.general.display_group" = "App display";
+"settings.general.language_group" = "Language";
+"settings.general.open_window_help" = "Open the main window when Remote Buddy starts.";
