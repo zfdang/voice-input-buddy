@@ -200,7 +200,7 @@ extension KeyboardInjector {
         func preserveInput(excluding target: AXUIElement? = nil) -> Bool {
             preservedElement = nil
             guard canContinue(), let input = axElement(app, attribute: kAXFocusedUIElementAttribute),
-                  target.map({ !CFEqual($0, input) }) ?? true else { return false }
+                  mayPreserveFocusedElement(input, excluding: target, equal: { CFEqual($0, $1) }) else { return false }
             var owner: pid_t = 0
             guard AXUIElementGetPid(input, &owner) == .success, owner == processIdentifier,
                   ["AXTextArea", "AXTextField", "AXComboBox"].contains(axString(input, attribute: kAXRoleAttribute)) else { return false }
@@ -390,6 +390,11 @@ extension KeyboardInjector {
             subrole: read(kAXSubroleAttribute) as? String ?? "", enabled: read(kAXEnabledAttribute) as? Bool ?? true,
             editable: editable, protectedContent: read("AXProtectedContent") as? Bool ?? false,
             semanticText: semantic, secureInputEnabled: secureInputEnabled)
+    }
+
+    static func mayPreserveFocusedElement<Element>(_ input: Element, excluding target: Element?,
+                                                    equal: (Element, Element) -> Bool) -> Bool {
+        target.map { !equal(input, $0) } ?? true
     }
 
     static func shouldPreserveIntegratedInput(_ destination: VoiceInputDestinationSnapshot,

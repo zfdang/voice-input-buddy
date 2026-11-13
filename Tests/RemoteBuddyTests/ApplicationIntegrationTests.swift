@@ -502,6 +502,30 @@ struct ApplicationIntegrationTests {
         #expect(writes == Array(["AXFocused", "AXFocusedUIElement"].prefix(afterWrites)))
     }
 
+    @Test func realWriterCannotPreserveItsOwnUnconfirmedFocusChange() {
+        let input = AXUIElementCreateApplication(1234)
+        for confirmed in [false, true] {
+            var current = "document"
+            var writes: [String] = []
+            var preserved = 0
+            let writable: Set<String> = ["composer", "question"]
+            let result = KeyboardInjector.focusAccessibilityElement(input, applicationElement: input,
+                allowPress: false, canWriteFocus: {
+                    let shouldKeep = writable.contains(current) && KeyboardInjector.mayPreserveFocusedElement(
+                        current, excluding: "composer", equal: ==)
+                    if shouldKeep { preserved += 1 }
+                    return !shouldKeep
+                }, isFocused: { confirmed && writes.count == 2 }, setAttribute: { _, key, _ in
+                    writes.append(key as String)
+                    current = "composer" // AXFocused changed, but application focus is not yet confirmed.
+                    return .success
+                })
+            #expect(result == confirmed)
+            #expect(writes == ["AXFocused", "AXFocusedUIElement"])
+            #expect(preserved == 0)
+        }
+    }
+
     @Test func writerOnlySucceedsAfterActualTargetConfirmation() {
         let input = AXUIElementCreateApplication(1234)
         for confirmed in [false, true] {
