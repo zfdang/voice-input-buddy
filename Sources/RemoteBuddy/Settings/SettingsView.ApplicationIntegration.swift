@@ -9,6 +9,9 @@ extension SettingsView {
                 Text(localization.text("application_integration.introduction"))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                Text(localization.text("application_integration.voice_key_note"))
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 if !accessibilityGranted {
                     GlassPanel {
                         VStack(alignment: .leading, spacing: 8) {
