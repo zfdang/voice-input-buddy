@@ -149,6 +149,229 @@ extension KeyboardInjector {
         return false
     }
 
+    /// Only invoked by an accepted voice start. A separate gate keeps this from
+    /// cancelling explicit application-launch/focus button actions.
+    static func focusIntegratedApplication(_ integration: ApplicationIntegration,
+                                           processIdentifier: pid_t,
+                                           completion: @escaping (Bool) -> Void) -> ScheduledOperation {
+        let gate = ApplicationFocusRequestGate()
+        let requestID = gate.begin()
+        let bundleIdentifier = NSRunningApplication(processIdentifier: processIdentifier)?.bundleIdentifier
+            ?? "unknown"
+        func finish(_ focused: Bool) {
+            DispatchQueue.main.async {
+                guard gate.isCurrent(requestID) else { return }
+                if !focused {
+                    AppLogger.shared.write("APP INTEGRATION failed bundle=\(bundleIdentifier) reason=focus_not_confirmed")
+                }
+                completion(focused)
+            }
+        }
+        var clickAttempted = false
+        func attempt(_ number: Int) {
+            focusQueue.asyncAfter(deadline: .now() + (number == 0 ? 0 : 0.15)) {
+                let canContinue = {
+                    gate.isCurrent(requestID) && applicationIsFrontmost(processIdentifier) &&
+                        isAccessibilityTrusted && !SecureInputMonitor.isEnabled()
+                }
+                guard canContinue() else { finish(false); return }
+                if focusIntegratedComposer(integration, processIdentifier: processIdentifier,
+                                           clickAttempted: &clickAttempted, canContinue: canContinue) {
+                    AppLogger.shared.write("APP INTEGRATION focused bundle=\(bundleIdentifier)")
+                    finish(true)
+                } else if number < 2, canContinue() {
+                    attempt(number + 1)
+                } else {
+                    finish(false)
+                }
+            }
+        }
+        attempt(0)
+        return ScheduledOperation { _ = gate.begin() }
+    }
+
+    private static func focusIntegratedComposer(_ integration: ApplicationIntegration,
+                                                processIdentifier: pid_t,
+                                                clickAttempted: inout Bool,
+                                                canContinue: @escaping () -> Bool) -> Bool {
+        let app = AXUIElementCreateApplication(processIdentifier)
+        guard canContinue(),
+              !VoiceInputDestinationSnapshot.system().isSensitiveDestination,
+              let window = axElement(app, attribute: kAXFocusedWindowAttribute),
+              axString(window, attribute: kAXSubroleAttribute) != "AXDialog",
+              axString(window, attribute: kAXSubroleAttribute) != "AXSystemDialog",
+              axBool(window, attribute: "AXModal") != true,
+              axElements(window, attribute: "AXSheets").isEmpty else { return false }
+        let frame = axFrame(window)
+        let candidates = accessibilityTextCandidates(in: window)
+        let targetIsCurrent = {
+            guard canContinue(), !VoiceInputDestinationSnapshot.system().isSensitiveDestination,
+                  let current = axElement(app, attribute: kAXFocusedWindowAttribute),
+                  CFEqual(window, current), axElements(window, attribute: "AXSheets").isEmpty else { return false }
+            return true
+        }
+        return focusIntegratedCandidates(candidates, integration: integration, windowFrame: frame,
+            canContinue: targetIsCurrent,
+            focus: { focusAccessibilityElement($0, applicationElement: app,
+                requiresApplicationFocusedElement: true, allowPress: integration == .antigravity) },
+            click: { element, snapshot in
+                guard !clickAttempted else { return false }
+                clickAttempted = true
+                return clickIntegratedComposer(snapshot, integration: integration, windowFrame: frame,
+                    canContinue: targetIsCurrent,
+                    hitTest: { accessibilityHitTestMatchesTarget(element, processIdentifier: processIdentifier, point: $0) },
+                    isFocused: { accessibilityElementIsFocused(element, applicationElement: app,
+                        requiresApplicationFocusedElement: true) })
+            })
+    }
+
+    /// The same candidate-to-action pipeline runs against native AX elements and
+    /// injected test elements. Its only actions are focus and a verified click.
+    static func focusIntegratedCandidates<Element>(_ candidates: [(element: Element, snapshot: AccessibilityTextCandidate)],
+                                                   integration: ApplicationIntegration, windowFrame: CGRect?,
+                                                   canContinue: () -> Bool, focus: (Element) -> Bool,
+                                                   click: (Element, AccessibilityTextCandidate) -> Bool) -> Bool {
+        guard canContinue() else { return false }
+        let ranked = candidates.indices.compactMap { index -> (Int, Int)? in
+            integratedComposerScore(candidates[index].snapshot, integration: integration,
+                                    windowFrame: windowFrame).map { (index, $0) }
+        }.sorted { $0.1 > $1.1 }
+        guard let best = ranked.first, ranked.count == 1 || best.1 > ranked[1].1, canContinue() else { return false }
+        let candidate = candidates[best.0]
+        if focus(candidate.element) { return true }
+        guard canContinue(),
+              integratedComposerClickPoint(candidate.snapshot, integration: integration, windowFrame: windowFrame) != nil
+        else { return false }
+        return click(candidate.element, candidate.snapshot)
+    }
+
+    static func integratedComposerClickPoint(_ candidate: AccessibilityTextCandidate,
+                                             integration: ApplicationIntegration,
+                                             windowFrame: CGRect?) -> CGPoint? {
+        guard integration == .antigravity,
+              isAntigravityMessageInput(candidate),
+              integratedComposerScore(candidate, integration: integration, windowFrame: windowFrame) != nil,
+              let frame = candidate.frame, let windowFrame else { return nil }
+        let point = CGPoint(x: frame.minX + min(24, frame.width / 2),
+                            y: frame.minY + min(16, frame.height / 2))
+        guard point.x.isFinite, point.y.isFinite, windowFrame.contains(point) else { return nil }
+        return point
+    }
+
+    static func clickIntegratedComposer(_ candidate: AccessibilityTextCandidate,
+                                        integration: ApplicationIntegration,
+                                        windowFrame: CGRect?,
+                                        canContinue: () -> Bool,
+                                        hitTest: (CGPoint) -> Bool,
+                                        postClick: (CGPoint) -> Bool = postAccessibilityFocusClick,
+                                        isFocused: () -> Bool,
+                                        pause: () -> Void = { usleep(50_000) }) -> Bool {
+        guard let point = integratedComposerClickPoint(candidate, integration: integration, windowFrame: windowFrame),
+              canContinue(), hitTest(point), canContinue(), postClick(point) else { return false }
+        // The click is delivered asynchronously. Verify the actual focused input
+        // before reporting completion or allowing the voice trigger through.
+        for _ in 0..<5 {
+            guard canContinue() else { return false }
+            if isFocused() { return true }
+            pause()
+        }
+        return canContinue() && isFocused()
+    }
+
+    private static func postAccessibilityFocusClick(_ point: CGPoint) -> Bool {
+        guard let source = CGEventSource(stateID: .hidSystemState),
+              let down = CGEvent(mouseEventSource: source, mouseType: .leftMouseDown,
+                                 mouseCursorPosition: point, mouseButton: .left),
+              let up = CGEvent(mouseEventSource: source, mouseType: .leftMouseUp,
+                               mouseCursorPosition: point, mouseButton: .left) else { return false }
+        let previousLocation = CGEvent(source: nil)?.location
+        for event in [down, up] {
+            event.flags = []
+            event.setIntegerValueField(.eventSourceUserData, value: syntheticEventMarker)
+            event.post(tap: .cghidEventTap)
+        }
+        if let previousLocation,
+           let restore = CGEvent(mouseEventSource: source, mouseType: .mouseMoved,
+                                 mouseCursorPosition: previousLocation, mouseButton: .left) {
+            restore.flags = []
+            restore.setIntegerValueField(.eventSourceUserData, value: syntheticEventMarker)
+            restore.post(tap: .cghidEventTap)
+        }
+        return true
+    }
+
+    private static func accessibilityHitTestMatchesTarget(_ target: AXUIElement,
+                                                          processIdentifier: pid_t, point: CGPoint) -> Bool {
+        var hit: AXUIElement?
+        guard AXUIElementCopyElementAtPosition(AXUIElementCreateSystemWide(), Float(point.x), Float(point.y), &hit) == .success,
+              let hit else { return false }
+        var hitPID: pid_t = 0
+        guard AXUIElementGetPid(hit, &hitPID) == .success, hitPID == processIdentifier else { return false }
+        return accessibilityAncestorChainContains(hit: hit, target: target, equal: CFEqual,
+            parent: { axElement($0, attribute: kAXParentAttribute) })
+    }
+
+    /// Hit testing must start at the system-wide element so overlapping windows
+    /// from any application are considered. Only the target or a descendant is safe.
+    static func accessibilityAncestorChainContains<Element>(hit: Element?, target: Element,
+                                                           equal: (Element, Element) -> Bool,
+                                                           parent: (Element) -> Element?) -> Bool {
+        var current = hit
+        var visited: [Element] = []
+        for _ in 0..<32 {
+            guard let element = current, !visited.contains(where: { equal($0, element) }) else { return false }
+            if equal(element, target) { return true }
+            visited.append(element)
+            current = parent(element)
+        }
+        return false
+    }
+
+    static func isAntigravityMessageInput(_ candidate: AccessibilityTextCandidate) -> Bool {
+        [candidate.title, candidate.description, candidate.help, candidate.placeholder]
+            .contains { $0.lowercased() == "message input" }
+    }
+
+    static func integratedComposerScore(_ candidate: AccessibilityTextCandidate,
+                                        integration: ApplicationIntegration,
+                                        windowFrame: CGRect?) -> Int? {
+        guard candidate.enabled, !candidate.protectedContent,
+              candidate.subrole != "AXSecureTextField",
+              candidate.role == "AXTextArea" || candidate.role == "AXTextField",
+              let frame = candidate.frame, frame.width > 0, frame.height > 0,
+              let windowFrame, windowFrame.contains(CGPoint(x: frame.midX, y: frame.midY)) else { return nil }
+        // Ancestor/window titles are not evidence that a field is a composer.
+        let ownText = [candidate.identifier, candidate.title, candidate.description,
+                       candidate.help, candidate.placeholder].joined(separator: " ").lowercased()
+        let excluded = ["search", "find", "filter", "password", "passcode", "secret", "api key",
+                        "token", "rename", "title", "terminal", "console", "monaco", "code editor",
+                        "搜索", "查找", "筛选", "密码", "密钥", "令牌", "重命名", "标题", "终端", "代码编辑器"]
+        guard !containsSensitiveAccessibilityTerms(ownText),
+              !excluded.contains(where: ownText.contains),
+              !["monaco", "code editor", "terminal content area"].contains(where: candidate.context.lowercased().contains)
+        else { return nil }
+        let common = ["composer", "prompt-editor", "prompt_editor", "chat-input", "chat_input",
+                      "message-input", "message_input", "message input", "prompt input", "chat input",
+                      "输入消息", "消息输入", "发送消息"]
+        let specific: [String]
+        switch integration {
+        case .chatGPT: specific = ["do anything", "work with chatgpt", "message chatgpt", "ask anything", "ask chatgpt", "询问任何问题", "询问 chatgpt"]
+        case .antigravity: specific = ["ask anything", "ask agent", "message agent", "agent input", "向 agent 提问"]
+        case .weChat: specific = ["message", "输入", "编辑消息"]
+        }
+        // Verified in the live WeChat accessibility tree. Avoid its unlabeled
+        // search field and message list even if they move or resize.
+        if integration == .weChat {
+            return candidate.identifier == "chat_input_field" ? 400 : nil
+        }
+        // Verified Antigravity's current conversation composer is labeled Message input.
+        if integration == .antigravity, isAntigravityMessageInput(candidate) { return 400 }
+        if (common + specific).contains(where: ownText.contains) {
+            return 200 + (candidate.role == "AXTextArea" ? 20 : 0)
+        }
+        return nil
+    }
+
     static func weChatComposerFocusPoint(windowFrame: CGRect) -> CGPoint? {
         guard windowFrame.width >= 700, windowFrame.height >= 500 else { return nil }
         return CGPoint(
@@ -499,21 +722,9 @@ extension KeyboardInjector {
             if role == "AXTextArea" || role == "AXTextField" {
                 candidates.append((
                     current.element,
-                    AccessibilityTextCandidate(
-                        role: role,
-                        subrole: axString(current.element, attribute: kAXSubroleAttribute),
-                        protectedContent: axBool(current.element, attribute: "AXProtectedContent") ?? false,
-                        identifier: axString(current.element, attribute: kAXIdentifierAttribute),
-                        title: axString(current.element, attribute: kAXTitleAttribute),
-                        description: axString(current.element, attribute: kAXDescriptionAttribute),
-                        help: axString(current.element, attribute: kAXHelpAttribute),
-                        placeholder: axString(current.element, attribute: kAXPlaceholderValueAttribute),
-                        context: combinedContext,
-                        frame: frame,
-                        enabled: axBool(current.element, attribute: kAXEnabledAttribute) ?? true,
-                        focused: axBool(current.element, attribute: kAXFocusedAttribute) ?? false,
-                        selectedContext: selectedContext
-                    )
+                    accessibilityTextMetadata(role: role, frame: frame, context: combinedContext,
+                        selectedContext: selectedContext,
+                        read: { axAttribute(current.element, attribute: $0) })
                 ))
             }
 
@@ -542,6 +753,23 @@ extension KeyboardInjector {
         return candidates
     }
 
+    /// Metadata-only reader shared by automatic and explicit focus scans. There
+    /// is deliberately no text value, text selection, or write operation here.
+    static func accessibilityTextMetadata(role: String, frame: CGRect?, context: String,
+                                          selectedContext: Bool, read: (String) -> Any?) -> AccessibilityTextCandidate {
+        AccessibilityTextCandidate(role: role,
+            subrole: read(kAXSubroleAttribute) as? String ?? "",
+            protectedContent: read("AXProtectedContent") as? Bool ?? false,
+            identifier: read(kAXIdentifierAttribute) as? String ?? "",
+            title: read(kAXTitleAttribute) as? String ?? "",
+            description: read(kAXDescriptionAttribute) as? String ?? "",
+            help: read(kAXHelpAttribute) as? String ?? "",
+            placeholder: read(kAXPlaceholderValueAttribute) as? String ?? "",
+            context: context, frame: frame,
+            enabled: read(kAXEnabledAttribute) as? Bool ?? true,
+            focused: read(kAXFocusedAttribute) as? Bool ?? false, selectedContext: selectedContext)
+    }
+
     static func accessibilityChildPriority(role: () -> String, frame: () -> CGRect?,
                                            windowFrame: CGRect?, budget: inout AccessibilityTraversalBudget) -> Int? {
         guard budget.admitNode() else { return nil }
@@ -567,37 +795,30 @@ extension KeyboardInjector {
         return priority
     }
 
-    private static func focusAccessibilityElement(
+    static func focusAccessibilityElement(
         _ element: AXUIElement,
         applicationElement: AXUIElement,
-        requiresApplicationFocusedElement: Bool = false
+        requiresApplicationFocusedElement: Bool = false,
+        allowPress: Bool = true,
+        isFocused: (() -> Bool)? = nil,
+        setAttribute: (AXUIElement, CFString, CFTypeRef) -> AXError = AXUIElementSetAttributeValue,
+        performAction: (AXUIElement, CFString) -> AXError = AXUIElementPerformAction
     ) -> Bool {
-        if accessibilityElementIsFocused(
-            element,
-            applicationElement: applicationElement,
-            requiresApplicationFocusedElement: requiresApplicationFocusedElement
-        ) {
-            return true
+        let focused = isFocused ?? {
+            accessibilityElementIsFocused(element, applicationElement: applicationElement,
+                requiresApplicationFocusedElement: requiresApplicationFocusedElement)
         }
-        _ = AXUIElementSetAttributeValue(element, kAXFocusedAttribute as CFString, kCFBooleanTrue)
-        _ = AXUIElementSetAttributeValue(
+        if focused() { return true }
+        _ = setAttribute(element, kAXFocusedAttribute as CFString, kCFBooleanTrue)
+        _ = setAttribute(
             applicationElement,
             kAXFocusedUIElementAttribute as CFString,
             element
         )
-        if accessibilityElementIsFocused(
-            element,
-            applicationElement: applicationElement,
-            requiresApplicationFocusedElement: requiresApplicationFocusedElement
-        ) {
-            return true
-        }
-        _ = AXUIElementPerformAction(element, kAXPressAction as CFString)
-        return accessibilityElementIsFocused(
-            element,
-            applicationElement: applicationElement,
-            requiresApplicationFocusedElement: requiresApplicationFocusedElement
-        )
+        if focused() { return true }
+        guard allowPress else { return false }
+        _ = performAction(element, kAXPressAction as CFString)
+        return focused()
     }
 
     private static func accessibilityElementIsFocused(

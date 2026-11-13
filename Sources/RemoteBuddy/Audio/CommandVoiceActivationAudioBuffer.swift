@@ -4,6 +4,7 @@ struct CommandVoiceActivationAudioBuffer {
     let maximumSampleCount: Int
     var samples: [Int16] = []
     private(set) var isWaiting = false
+    private var waitingMaximumSampleCount: Int = 0
 
     init(maximumSampleCount: Int = 8_000) {
         self.maximumSampleCount = maximumSampleCount
@@ -13,7 +14,8 @@ struct CommandVoiceActivationAudioBuffer {
         samples.count
     }
 
-    mutating func begin() {
+    mutating func begin(maximumSampleCount: Int? = nil) {
+        waitingMaximumSampleCount = maximumSampleCount ?? self.maximumSampleCount
         samples.removeAll(keepingCapacity: true)
         isWaiting = true
     }
@@ -21,8 +23,8 @@ struct CommandVoiceActivationAudioBuffer {
     mutating func appendIfWaiting(_ newSamples: [Int16]) -> Bool {
         guard isWaiting else { return false }
         samples.append(contentsOf: newSamples)
-        if samples.count > maximumSampleCount {
-            samples.removeFirst(samples.count - maximumSampleCount)
+        if samples.count > waitingMaximumSampleCount {
+            samples.removeFirst(samples.count - waitingMaximumSampleCount)
         }
         return true
     }

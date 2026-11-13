@@ -122,7 +122,7 @@ struct SettingsView: View {
             }
         }
         .task(id: selectedSection) { @MainActor in
-            guard selectedSection == .general || selectedSection == .permissions,
+            guard selectedSection == .general || selectedSection == .permissions || selectedSection == .applicationIntegration,
                   !SettingsVisualRenderingPolicy.isScreenshotHarness else { return }
             model.refreshAudioDevices()
             while !Task.isCancelled {

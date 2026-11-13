@@ -238,14 +238,16 @@ enum KeyboardInjector {
     static let functionKeyCode: CGKeyCode = 63
     static let leftCommandKeyCode: CGKeyCode = 55
     static let rightCommandKeyCode: CGKeyCode = 54
+    /// Undocumented framework-specific attributes retained for explicit focus
+    /// actions. Automatic voice integrations never set these attributes.
     /// Web content shells only build the accessibility tree once an assistive
     /// client announces itself, so the composer scan finds an empty shell until
     /// one of these attributes is set. `AXManualAccessibility` is the Chromium
-    /// and Electron convention and is tried first, because the standard
-    /// `AXEnhancedUserInterface` that VoiceOver uses is known to distort windows
+    /// and Electron convention and is tried first, because the
+    /// `AXEnhancedUserInterface` attribute is known to distort windows
     /// and animations on some Electron versions. Shells that are not Chromium
     /// based answer `attributeUnsupported` for the first attribute and only
-    /// respond to the standard one, so it is used as a fallback for exactly
+    /// respond to the fallback attribute, so it is used as a fallback for exactly
     /// those apps.
     static let manualAccessibilityAttribute = "AXManualAccessibility"
     static let enhancedUserInterfaceAttribute = "AXEnhancedUserInterface"

@@ -1205,3 +1205,30 @@
 
 "action.repeat_single_click" = "Hold to Repeat";
 "button_mapping.hold_repeat.help" = "Choose Hold to Repeat to repeat the single-press action after holding for about 0.35 seconds, stopping on release. Choose another action below to run it once on a long press. Double-press settings remain independent.";
+
+// Foreground application integration at voice start
+"application_integration.title" = "App Integrations";
+"application_integration.introduction" = "When you press the voice key to start voice input, focus the input field in an enabled foreground app. Switching apps by itself never changes input focus. Integrations are off by default.";
+"application_integration.supported" = "Supported apps";
+"application_integration.enable_all" = "Enable All";
+"application_integration.disable_all" = "Disable All";
+"application_integration.chatGPT.detail" = "When enabled, starting voice input while ChatGPT is in front focuses the message box in the current conversation.";
+"application_integration.antigravity.detail" = "When enabled, starting voice input while Antigravity is in front focuses the Agent chat input in the current window.";
+"application_integration.weChat.detail" = "When enabled, starting voice input while WeChat is in front focuses the message box in the current conversation. Open a conversation first.";
+"application_integration.accessibility_help" = "Automatic focus uses Accessibility permission. Focusing is optional. If it fails, voice input continues; use Command+V to paste the result if needed. Text recognition and insertion are handled by your voice input tool.";
+
+"application_integration.status.waiting" = "Preparing the input field…";
+"application_integration.status.ready" = "Input focus confirmed. Preparing voice input…";
+"application_integration.status.failed" = "Input was not automatically focused. Preparing voice input…";
+"application_integration.status.timed_out" = "Input preparation timed out. Voice input was cancelled; try again.";
+"application_integration.status.cancelled" = "Input preparation was cancelled. No voice trigger was sent.";
+"application_integration.permission.granted" = "Accessibility permission granted";
+"application_integration.permission.missing" = "Automatic focus needs Accessibility permission. Without it, focus is skipped and voice input is still attempted. A software voice shortcut may separately need this permission.";
+"application_integration.permission.open" = "Open Accessibility Settings";
+
+"application_integration.fn_behavior" = "Enabling any app integration makes Remote Buddy send the Fn hold trigger for all foreground apps so focusing can finish first. This requires Accessibility permission. Only enabled foreground apps have their input focus adjusted. Disable all integrations to return to the original trigger behavior.";
+
+"application_integration.status.focus_timed_out" = "Automatic focus timed out. Preparing voice input…";
+
+"application_integration.status.triggered" = "Voice trigger sent.";
+"application_integration.status.triggered_without_focus" = "Voice trigger sent without automatic focus. If text is not filled in, use Command+V to paste the result.";

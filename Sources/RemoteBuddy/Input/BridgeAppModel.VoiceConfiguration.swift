@@ -6,6 +6,33 @@ import CoreBluetooth
 import Foundation
 
 extension BridgeAppModel {
+    /// Fn-tap pre-roll covers one shared four-second focus/destination budget.
+    /// Cancelling the returned wait is silent because the Fn session owns stop.
+    func prepareIntegratedVoiceInputDestination(
+        completion: @escaping (VoiceInputDestinationWaitResult) -> Void,
+        schedule: @escaping OperationScheduler = ScheduledOperation.mainQueue
+    ) -> VoiceInputDestinationWait {
+        clearApplicationIntegrationStatus()
+        guard !settings.enabledApplicationIntegrations.isEmpty else {
+            return voiceInputDestinationCoordinator.waitUntilReady(completion: completion)
+        }
+        let report: (VoiceInputDestinationWaitResult) -> Void = { [weak self] result in
+            if case let .cancelled(reason) = result {
+                self?.recordApplicationIntegrationStatus(.cancelled(reason))
+            }
+            completion(result)
+        }
+        let sequence = VoiceInputPreparationSequence(schedule: schedule)
+        let wait = sequence.start(stages: [
+            { [weak self] done in self?.applicationIntegrationController.prepareForVoiceInput(completion: done) ?? .cancelled(.superseded) },
+            { [weak self] done in self?.voiceInputDestinationCoordinator.waitUntilReady(completion: done) ?? .cancelled(.superseded) },
+        ], completion: report)
+        if case let .cancelled(reason) = wait {
+            recordApplicationIntegrationStatus(.cancelled(reason))
+        }
+        return wait
+    }
+
     // Main-queue lifecycle, like HID settings and the remote voice callbacks.
     func voiceToolDidChange() {
         pendingVoiceToolMappingRefresh = true
@@ -35,7 +62,8 @@ extension BridgeAppModel {
         flushPendingHIDServiceMappingRefreshIfNeeded(applyMappings: applyMappings)
     }
     var requiresOrderedVoiceFn: Bool {
-        OrderedVoiceActivationPolicy.needsSoftwareFn(
+        (settings.voiceKeyMode == .function && !settings.voiceFnTapModeEnabled &&
+            !settings.enabledApplicationIntegrations.isEmpty) || OrderedVoiceActivationPolicy.needsSoftwareFn(
             mode: settings.voiceKeyMode,
             fnTapEnabled: settings.voiceFnTapModeEnabled,
             preferredInputSourceID: settings.onboardingVoiceTool.preferredInputSourceID

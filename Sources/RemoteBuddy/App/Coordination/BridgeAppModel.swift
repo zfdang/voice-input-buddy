@@ -22,6 +22,10 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     lazy var commonPhrases = CommonPhraseController(store: commonPhraseStore)
     let loginItemService: LoginItemService
 
+    var applicationIntegrationStatusGeneration: UInt64 = 0
+    var applicationIntegrationStatusExpiry: ScheduledOperation?
+    var scheduleApplicationIntegrationStatus: OperationScheduler = ScheduledOperation.mainQueue
+    @Published var applicationIntegrationStatus: ApplicationIntegrationPreparationState?
     @Published var connectionStatus = LocalizedMessage("bluetooth.status.initializing")
     @Published var hidStatus = LocalizedMessage("button_mapping.status.disabled")
     @Published var audioStatus = LocalizedMessage("audio.output.none_selected")
@@ -95,6 +99,10 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     }
 
     let voiceFunctionMapper: RemoteHIDKeyMapper
+    lazy var applicationIntegrationController = ApplicationIntegrationController(settings: settings,
+        onStateChange: { [weak self] state in
+            self?.recordApplicationIntegrationStatus(state)
+        })
     lazy var preferredInputSourceMonitor = PreferredInputSourceMonitor(
         voiceTool: { [weak self] in
             self?.settings.onboardingVoiceTool ?? .unselected
@@ -110,9 +118,13 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
             self?.settings.onboardingVoiceTool.functionKeyStartTapCount ?? 1
         },
         destinationReadiness: { [weak self] completion in
-            self?.voiceInputDestinationCoordinator.waitUntilReady(completion: completion) ?? .immediate
+            self?.prepareIntegratedVoiceInputDestination(completion: completion) ?? .immediate
         },
-        setFunctionKeyPressed: { KeyboardInjector.setFunctionKeyPressed($0) },
+        setFunctionKeyPressed: { [weak self] pressed in
+            let submitted = KeyboardInjector.setFunctionKeyPressed(pressed)
+            if pressed { self?.completeApplicationIntegrationVoiceTrigger(started: submitted) }
+            return submitted
+        },
         enqueueAudio: { [weak self] samples in
             self?.enqueueVoiceFnTapAudio(samples)
         },
@@ -145,6 +157,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
         }
     )
     private var voiceToolCancellable: AnyCancellable?
+    private var applicationIntegrationCancellable: AnyCancellable?
     var testToneGeneration = 0
     var voiceKeyLatch = VoiceKeyLatch()
     var voiceKeyReleaseRetry: ScheduledOperation?
@@ -274,6 +287,13 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
             .sink { [weak self] _ in
                 self?.voiceToolDidChange()
             }
+        applicationIntegrationCancellable = settings.$enabledApplicationIntegrations
+            .removeDuplicates().dropFirst().receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.applicationIntegrationController.cancelPending()
+                self?.clearApplicationIntegrationStatus()
+                self?.voiceToolDidChange()
+            }
         audio.output.onConfigurationChange = { @Sendable [weak self] in
             DispatchQueue.main.async { [weak self] in self?.scheduleAudioRecovery(reason: "engine_configuration_change") }
         }
@@ -283,6 +303,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     func startIfNeeded() {
         guard !started else { return }
         started = true
+        applicationIntegrationController.start()
         startAudioSubsystem()
         applyHIDSettings()
         refreshRemoteDeviceNames(reason: .startup)
@@ -302,6 +323,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     }
 
     isolated deinit {
+        applicationIntegrationStatusExpiry?.cancel()
         voiceKeyReleaseRetry?.cancel()
     }
 
@@ -313,6 +335,8 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     }
 
     func stop() {
+        applicationIntegrationController.stop()
+        clearApplicationIntegrationStatus()
         commonPhrases.close(reason: "app_stop")
         preferredInputSourceMonitor.stop()
         pendingHIDServiceMappingRefresh = false

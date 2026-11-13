@@ -6,6 +6,7 @@ final class AppSettings: ObservableObject {
     static let currentOnboardingVersion = 1
 
     enum Keys {
+        static let enabledApplicationIntegrations = "enabledApplicationIntegrations"
         static let gainDB = "gainDB"
         static let customMappingEnabled = "customMappingEnabled"
         static let buttonBindings = "buttonBindings"
@@ -40,6 +41,10 @@ final class AppSettings: ObservableObject {
         static let firstUseEvents = "onboarding.diagnostics.events"
         static let firstUseStepStartedAt = "onboarding.diagnostics.stepStartedAt"
         static let firstUseLastSignature = "onboarding.diagnostics.lastSignature"
+    }
+
+    @Published var enabledApplicationIntegrations: Set<String> {
+        didSet { defaults.set(enabledApplicationIntegrations.sorted(), forKey: Keys.enabledApplicationIntegrations) }
     }
 
     let defaults: UserDefaults
@@ -374,6 +379,8 @@ final class AppSettings: ObservableObject {
     }
 
     init(defaults: UserDefaults = .standard) {
+        enabledApplicationIntegrations = Set(defaults.stringArray(forKey: Keys.enabledApplicationIntegrations) ?? [])
+            .intersection(ApplicationIntegration.allCases.map(\.rawValue))
         var corruptedKeys: [String] = []
         self.defaults = defaults
         Self.restoreInterruptedOnboardingTrial(in: defaults)

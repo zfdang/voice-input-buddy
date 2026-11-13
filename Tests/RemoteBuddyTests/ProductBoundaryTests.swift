@@ -157,12 +157,12 @@ struct ProductBoundaryTests {
 
     @Test func generalOverviewIsFirstInNavigation() {
         let sections = SettingsPageBehavior.sidebarSections()
-        #expect(sections == [.general, .permissions, .connection, .mapping, .integration, .about])
+        #expect(sections == [.general, .permissions, .connection, .mapping, .integration, .applicationIntegration, .about])
         #expect(SettingsPageBehavior.visibleSection(for: .permissions) == .permissions)
         #expect(SettingsPageBehavior.visibleSection(for: .general) == .general)
         #expect(SettingsPageBehavior.visibleSection(for: .about) == .about)
         #expect(SettingsPageBehavior.marksUpdateAsSeen(whenSelecting: .about))
-        for section in [SettingsSection.general, .permissions, .connection, .mapping, .integration] {
+        for section in [SettingsSection.general, .permissions, .connection, .mapping, .integration, .applicationIntegration] {
             #expect(!SettingsPageBehavior.marksUpdateAsSeen(whenSelecting: section))
         }
         #expect(SettingsPageBehavior.initialSection(

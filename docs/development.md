@@ -327,3 +327,68 @@ This inspection does not yet establish correct physical button mappings, intelli
 microphone audio, end-to-end stop behavior, long sessions, or sleep/wake acceptance.
 See the [hardware debugging record](g9n9n-hardware-debugging.md) for the completed
 test attempts, evidence limits, signing checks, and next acceptance steps.
+
+## App integration accessibility and preparation boundaries
+
+Automatic voice integration reads public accessibility control metadata and requests
+focus. Its focus writer sets only `AXFocused` and `AXFocusedUIElement`; it may use
+`AXPress` or one hit-tested click on Antigravity's identified input. The automatic
+entry point does not call `announceManualAccessibility` or set `AXManualAccessibility`
+or `AXEnhancedUserInterface`. Tests guard that entry point and inject the real focus
+writer's attribute/action backend to check the complete write list. Metadata reads
+are tested separately; a metadata-only test is not evidence about attribute writes.
+No message values, selected text, transcripts, text insertion, or message submission
+are part of this focus operation.
+
+Existing explicit application launch/focus button actions and common-phrase insertion still use the
+framework-specific `AXManualAccessibility` / `AXEnhancedUserInterface` requests.
+These are undocumented attributes, not standard Apple AX attributes; they are not
+used by automatic voice integration.
+
+Focus is optional: failed or expired attempts continue to the next voice-preparation
+step in the same application. Release, application/session changes, shutdown, and
+failed destination validation still cancel pending starts. Fn-tap preparation shares
+one four-second focus/destination deadline, with optional focus limited to three
+seconds. Hold mode instead waits for the same three-second optional focus step and
+then the existing bounded input-source activation (roughly half a second); it does
+not run the Fn-tap sequence. Both fit within the five-second pre-roll capacity.
+The hold and Fn-tap paths retain their existing destination-validation differences.
+
+Integration feedback is independent of the voice shortcut configuration status.
+Preparing feedback does not claim that a trigger was sent. Only a successful key
+post promotes it to triggered; new attempts, settings changes and stop clear it,
+and completed attempt feedback expires after 15 seconds.
+
+### Integration validation samples
+
+These are individual observations against runtime revision `0d7bee6`, not a claim
+that the full suite passes or that only the listed assertions can fail. Commands
+used `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` with Apple Swift
+6.2.4 (`swiftlang-6.2.4.1.4`), targeting arm64 macOS.
+
+| Run | Command | Observed result |
+| --- | --- | --- |
+| Build | `swift build --disable-keychain` | Passed |
+| Focused | `swift test --disable-keychain --filter 'ApplicationIntegrationTests\|ProductBoundaryTests\|VoiceInputActivationTests\|VoiceFnQuickReleaseTests'` | 68 tests, 4 suites, passed |
+| Serial branch | `swift test --disable-keychain --no-parallel` | 694 tests, 104 suites; 1 issue in 1 failing HID test |
+| Parallel branch | `swift test --disable-keychain` | 694 tests, 104 suites; 2 issues in 2 failing HID tests |
+| Serial base `a7dd980` | `swift test --disable-keychain --skip-update --no-parallel --package-path /tmp/remote-buddy-review2-baseline` | 668 tests, 103 suites; 1 issue in 1 failing HID test |
+
+The serial failures were `candidateAvailableAndConnectedRefreshCoalescesDefersFlushesAndCancelsStaleWork`
+at its service-provider-count assertion. In the parallel run that test failed its
+pending-refresh assertion instead, and
+`dualPendingFlagsCoalesceAndEmptyServiceRefreshSchedulesRecovery` also failed its
+pending-refresh assertion. Baseline dependencies were taken from existing local
+SwiftPM caches with `--skip-update` after a dependency-fetch failure; its source was
+an independent unchanged checkout.
+
+Review also supplied valid independent observations on the earlier revision:
+serial branch and main runs had 4 issues in 2 failing tests, including the three
+assertions in `T1RemoteProtocolTests.swift:840-842`; a parallel branch run had
+5 issues in 3 failing tests. T1 and HID failures remain known baseline instability.
+The counts and failing assertions vary between runs; the latest samples do not
+invalidate those review observations. None of the full-suite runs is a green gate.
+
+These fixes have not been accepted on physical hardware. Previously reported
+WeChat, Antigravity, and ChatGPT success applies to the previously tested revision,
+not automatically to the revised public-AX-only path or feedback lifecycle.
