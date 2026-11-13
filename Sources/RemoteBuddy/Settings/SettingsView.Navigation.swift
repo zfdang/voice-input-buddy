@@ -68,7 +68,9 @@ extension SettingsView {
                     .font(.system(size: 12, weight: .semibold))
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
-                    .frame(minHeight: 17)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 8)
+                    .frame(height: 30)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
