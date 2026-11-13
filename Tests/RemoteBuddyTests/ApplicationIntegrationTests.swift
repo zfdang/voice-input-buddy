@@ -23,7 +23,7 @@ struct ApplicationIntegrationTests {
             settings.setAllApplicationIntegrations(enabled: true)
             settings.setApplicationIntegration(.weChat, enabled: false)
             let restored = AppSettings(defaults: defaults)
-            #expect(restored.enabledApplicationIntegrations.count == 2)
+            #expect(restored.enabledApplicationIntegrations.count == ApplicationIntegration.allCases.count - 1)
             #expect(!restored.isApplicationIntegrationEnabled(.weChat))
             settings.setAllApplicationIntegrations(enabled: false)
             #expect(AppSettings(defaults: defaults).enabledApplicationIntegrations.isEmpty)
@@ -546,6 +546,48 @@ struct ApplicationIntegrationTests {
         #expect(ApplicationIntegration.matching("com.google.antigravity-ide") == nil)
         #expect(ApplicationIntegration.matching("com.openai.codex") == .chatGPT)
         #expect(ApplicationIntegration.matching("com.openai.chat") == .chatGPT)
+    }
+
+    @Test(arguments: [ApplicationIntegration.claude, .workBuddy])
+    func newDesktopIntegrationsSelectOnlyTheirVerifiedComposer(app: ApplicationIntegration) {
+        let label = app == .claude ? "Write your prompt to Claude" : "\u{feff}\n今天帮你做些什么？@ 添加上下文，/调用技能与指令"
+        let field = candidate(label)
+        #expect(ApplicationIntegration.matching(app.bundleIdentifier) == app)
+        #expect(KeyboardInjector.integratedComposerScore(field, integration: app, windowFrame: window) == 400)
+        #expect(KeyboardInjector.integratedComposerScore(field,
+            integration: app == .claude ? .workBuddy : .claude, windowFrame: window) == nil)
+        for invalid in [candidate(), candidate("composer"), candidate("Search " + label),
+                        candidate(label, protected: true), candidate(label, enabled: false),
+                        candidate(label, context: "monaco code editor")] {
+            #expect(KeyboardInjector.integratedComposerScore(invalid, integration: app, windowFrame: window) == nil)
+        }
+        var focused: [String] = []
+        #expect(KeyboardInjector.focusIntegratedCandidates(
+            [(element: "search", snapshot: candidate("Search")), (element: "composer", snapshot: field)],
+            integration: app, windowFrame: window, canContinue: { true },
+            focus: { focused.append($0); return true },
+            click: { _, _ in Issue.record("Direct focus must not click"); return false }))
+        #expect(focused == ["composer"])
+        #expect(!KeyboardInjector.focusIntegratedCandidates(
+            [(element: "one", snapshot: field), (element: "two", snapshot: field)],
+            integration: app, windowFrame: window, canContinue: { true },
+            focus: { _ in Issue.record("Ambiguous composers must not focus"); return true },
+            click: { _, _ in Issue.record("Ambiguous composers must not click"); return true }))
+    }
+
+    @Test(arguments: [ApplicationIntegration.claude, .workBuddy])
+    func newDesktopComposerClicksRequireHitTestAndConfirmedFocus(app: ApplicationIntegration) {
+        let field = candidate(app == .claude ? "Write your prompt to Claude" : "今天帮你做些什么？")
+        for hit in [false, true] {
+            for focused in [false, true] {
+                var clicks = 0
+                let result = KeyboardInjector.clickIntegratedComposer(field, integration: app,
+                    windowFrame: window, canContinue: { true }, hitTest: { _ in hit },
+                    postClick: { _ in clicks += 1; return true }, isFocused: { focused }, pause: {})
+                #expect(result == (hit && focused))
+                #expect(clicks == (hit ? 1 : 0))
+            }
+        }
     }
 
     @Test func searchCodeSecureAndUnlabeledGenericEditorsAreNotComposers() {

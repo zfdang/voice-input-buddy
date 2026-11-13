@@ -87,7 +87,7 @@ button.addEventListener('blur', stop);
         badge: '可选自动聚焦',
         windowTitle: '应用集成 · Remote Buddy',
         src: 'assets/screenshots/application-integration-zh.png',
-        alt: '应用集成界面：微信、Antigravity 和 ChatGPT 的开关、辅助功能状态与 Fn 行为说明',
+        alt: '应用集成界面：微信、Antigravity、ChatGPT、Claude 和 WorkBuddy 的开关、辅助功能状态与 Fn 行为说明',
         desc: '分别或批量开启集成，在语音触发前尝试聚焦输入框。聚焦失败仍可继续语音，必要时用 Command+V 粘贴结果。'
       },
       {
@@ -214,7 +214,7 @@ button.addEventListener('blur', stop);
         badge: 'Optional Focus',
         windowTitle: 'App Integrations · Remote Buddy',
         src: 'assets/screenshots/application-integration-en.png',
-        alt: 'App integrations: switches for WeChat, Antigravity, and ChatGPT, Accessibility status, and Fn behavior',
+        alt: 'App integrations: switches for WeChat, Antigravity, ChatGPT, Claude, and WorkBuddy, Accessibility status, and Fn behavior',
         desc: 'Enable individual or all integrations to attempt input focus before voice starts. Voice continues if focus fails; use Command+V to paste the result if needed.'
       },
       {

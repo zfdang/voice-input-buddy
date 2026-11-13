@@ -337,9 +337,17 @@ test attempts, evidence limits, signing checks, and next acceptance steps.
 
 ## App integration accessibility and preparation boundaries
 
+Claude (`com.anthropic.claudefordesktop`) matches the visible “Write your prompt
+to Claude” composer label. WorkBuddy (`com.tencent.workbuddy.mac`) matches its
+“今天帮你做些什么？” composer label. Both are opt-in and use control metadata,
+not editable values. Search, code editors, modal dialogs, ambiguous targets, and
+sensitive fields remain excluded. UI inspection identified both controls and
+confirmed WorkBuddy focus; physical remote acceptance remains required.
+
 Automatic voice integration reads public accessibility control metadata and requests
 focus. Its focus writer sets only `AXFocused` and `AXFocusedUIElement`; it may use
-`AXPress` or one hit-tested click on Antigravity's identified input. The automatic
+`AXPress` for Antigravity or one hit-tested click on an explicitly identified
+Antigravity, Claude, or WorkBuddy input. The automatic
 entry point does not call `announceManualAccessibility` or set `AXManualAccessibility`
 or `AXEnhancedUserInterface`. Tests guard that entry point and inject the real focus
 writer's attribute/action backend to check the complete write list. Metadata reads

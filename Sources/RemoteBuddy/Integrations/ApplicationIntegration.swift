@@ -4,7 +4,7 @@ import Foundation
 
 /// Foreground integrations are opt-in and independent of application-launch button mappings.
 enum ApplicationIntegration: String, CaseIterable, Identifiable {
-    case weChat, antigravity, chatGPT
+    case weChat, antigravity, chatGPT, claude, workBuddy
 
     var id: String { rawValue }
     var bundleIdentifier: String {
@@ -12,6 +12,8 @@ enum ApplicationIntegration: String, CaseIterable, Identifiable {
         case .chatGPT: return "com.openai.codex"
         case .antigravity: return "com.google.antigravity"
         case .weChat: return "com.tencent.xinWeChat"
+        case .claude: return "com.anthropic.claudefordesktop"
+        case .workBuddy: return "com.tencent.workbuddy.mac"
         }
     }
     var title: String {
@@ -19,6 +21,8 @@ enum ApplicationIntegration: String, CaseIterable, Identifiable {
         case .chatGPT: return "ChatGPT"
         case .antigravity: return "Antigravity"
         case .weChat: return "WeChat"
+        case .claude: return "Claude"
+        case .workBuddy: return "WorkBuddy"
         }
     }
     var detailKey: String {
@@ -26,6 +30,8 @@ enum ApplicationIntegration: String, CaseIterable, Identifiable {
         case .weChat: return "application_integration.weChat.detail"
         case .antigravity: return "application_integration.antigravity.detail"
         case .chatGPT: return "application_integration.chatGPT.detail"
+        case .claude: return "application_integration.claude.detail"
+        case .workBuddy: return "application_integration.workBuddy.detail"
         }
     }
 

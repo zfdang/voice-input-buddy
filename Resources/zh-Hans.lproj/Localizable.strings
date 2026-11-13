@@ -1216,6 +1216,8 @@
 "application_integration.chatGPT.detail" = "开启后，开始语音输入时，如果前台应用是 ChatGPT，会自动聚焦到当前对话的消息输入框。";
 "application_integration.antigravity.detail" = "开启后，开始语音输入时，如果前台应用是 Antigravity，会自动聚焦到当前窗口的 Agent 聊天输入框。";
 "application_integration.weChat.detail" = "开启后，开始语音输入时，如果前台应用是微信，会自动聚焦到当前会话的消息输入框。请先打开一个会话。";
+"application_integration.claude.detail" = "开启后，开始语音输入时，如果前台应用是 Claude，会自动聚焦到当前聊天或项目的提示词输入框。请先打开带输入框的页面。";
+"application_integration.workBuddy.detail" = "开启后，开始语音输入时，如果前台应用是 WorkBuddy，会自动聚焦到当前窗口的任务消息输入框。请先打开会话或新建任务。";
 "application_integration.accessibility_help" = "自动聚焦使用辅助功能权限。聚焦是可选环节，失败时语音仍会继续，必要时可用 Command+V 粘贴结果；语音识别和文字输入仍由所选语音工具完成。";
 
 "application_integration.status.waiting" = "正在准备输入框…";

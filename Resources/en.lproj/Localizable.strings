@@ -1215,6 +1215,8 @@
 "application_integration.chatGPT.detail" = "When enabled, starting voice input while ChatGPT is in front focuses the message box in the current conversation.";
 "application_integration.antigravity.detail" = "When enabled, starting voice input while Antigravity is in front focuses the Agent chat input in the current window.";
 "application_integration.weChat.detail" = "When enabled, starting voice input while WeChat is in front focuses the message box in the current conversation. Open a conversation first.";
+"application_integration.claude.detail" = "When enabled, starting voice input while Claude is in front focuses the prompt box in the current chat or project. Open a page with a prompt box first.";
+"application_integration.workBuddy.detail" = "When enabled, starting voice input while WorkBuddy is in front focuses the task message box in the current window. Open a conversation or new task first.";
 "application_integration.accessibility_help" = "Automatic focus uses Accessibility permission. Focusing is optional. If it fails, voice input continues; use Command+V to paste the result if needed. Text recognition and insertion are handled by your voice input tool.";
 
 "application_integration.status.waiting" = "Preparing the input field…";

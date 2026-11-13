@@ -248,8 +248,7 @@ extension KeyboardInjector {
     static func integratedComposerClickPoint(_ candidate: AccessibilityTextCandidate,
                                              integration: ApplicationIntegration,
                                              windowFrame: CGRect?) -> CGPoint? {
-        guard integration == .antigravity,
-              isAntigravityMessageInput(candidate),
+        guard isVerifiedIntegratedComposer(candidate, integration: integration),
               integratedComposerScore(candidate, integration: integration, windowFrame: windowFrame) != nil,
               let frame = candidate.frame, let windowFrame else { return nil }
         let point = CGPoint(x: frame.minX + min(24, frame.width / 2),
@@ -332,6 +331,20 @@ extension KeyboardInjector {
             .contains { $0.lowercased() == "message input" }
     }
 
+    /// Labels observed in the applications' user-visible accessibility trees.
+    /// Only these explicit composers may use the hit-tested click fallback.
+    static func isVerifiedIntegratedComposer(_ candidate: AccessibilityTextCandidate,
+                                            integration: ApplicationIntegration) -> Bool {
+        let labels = [candidate.title, candidate.description, candidate.help, candidate.placeholder]
+            .map { $0.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) }
+        switch integration {
+        case .antigravity: return isAntigravityMessageInput(candidate)
+        case .claude: return labels.contains("write your prompt to claude")
+        case .workBuddy: return labels.contains { $0.contains("今天帮你做些什么？") }
+        case .weChat, .chatGPT: return false
+        }
+    }
+
     static func integratedComposerScore(_ candidate: AccessibilityTextCandidate,
                                         integration: ApplicationIntegration,
                                         windowFrame: CGRect?) -> Int? {
@@ -358,6 +371,7 @@ extension KeyboardInjector {
         case .chatGPT: specific = ["do anything", "work with chatgpt", "message chatgpt", "ask anything", "ask chatgpt", "询问任何问题", "询问 chatgpt"]
         case .antigravity: specific = ["ask anything", "ask agent", "message agent", "agent input", "向 agent 提问"]
         case .weChat: specific = ["message", "输入", "编辑消息"]
+        case .claude, .workBuddy: specific = []
         }
         // Verified in the live WeChat accessibility tree. Avoid its unlabeled
         // search field and message list even if they move or resize.
@@ -365,7 +379,8 @@ extension KeyboardInjector {
             return candidate.identifier == "chat_input_field" ? 400 : nil
         }
         // Verified Antigravity's current conversation composer is labeled Message input.
-        if integration == .antigravity, isAntigravityMessageInput(candidate) { return 400 }
+        if isVerifiedIntegratedComposer(candidate, integration: integration) { return 400 }
+        if integration == .claude || integration == .workBuddy { return nil }
         if (common + specific).contains(where: ownText.contains) {
             return 200 + (candidate.role == "AXTextArea" ? 20 : 0)
         }
