@@ -164,6 +164,7 @@ extension KeyboardInjector {
                 completion(focused)
             }
         }
+        var clickAttempted = false
         func attempt(_ number: Int) {
             focusQueue.asyncAfter(deadline: .now() + (number == 0 ? 0 : 0.15)) {
                 let canContinue = {
@@ -174,7 +175,7 @@ extension KeyboardInjector {
                 announceManualAccessibility(processIdentifier: processIdentifier,
                     bundleIdentifier: bundleIdentifier, attempt: number)
                 if focusIntegratedComposer(integration, processIdentifier: processIdentifier,
-                                           canContinue: canContinue) {
+                                           clickAttempted: &clickAttempted, canContinue: canContinue) {
                     AppLogger.shared.write("APP INTEGRATION focused bundle=\(bundleIdentifier)")
                     finish(true)
                 } else if number < 2, canContinue() {
@@ -190,6 +191,7 @@ extension KeyboardInjector {
 
     private static func focusIntegratedComposer(_ integration: ApplicationIntegration,
                                                 processIdentifier: pid_t,
+                                                clickAttempted: inout Bool,
                                                 canContinue: () -> Bool) -> Bool {
         let app = AXUIElementCreateApplication(processIdentifier)
         guard canContinue(),
@@ -212,8 +214,78 @@ extension KeyboardInjector {
               !VoiceInputDestinationSnapshot.system().isSensitiveDestination,
               let currentWindow = axElement(app, attribute: kAXFocusedWindowAttribute),
               CFEqual(window, currentWindow) else { return false }
-        return focusAccessibilityElement(candidates[best.0].element, applicationElement: app,
-                                         requiresApplicationFocusedElement: true, allowPress: false)
+        let candidate = candidates[best.0]
+        if focusAccessibilityElement(candidate.element, applicationElement: app,
+                                     requiresApplicationFocusedElement: true,
+                                     allowPress: integration == .antigravity) { return true }
+        // Some web editors expose their input via AX but only transfer DOM focus
+        // after a mouse click. Restrict this fallback to the verified input control.
+        guard !clickAttempted,
+              integratedComposerClickPoint(candidate.snapshot, integration: integration, windowFrame: frame) != nil
+        else { return false }
+        clickAttempted = true
+        return clickIntegratedComposer(candidate.snapshot, integration: integration, windowFrame: frame,
+            canContinue: {
+                guard canContinue(), let current = axElement(app, attribute: kAXFocusedWindowAttribute),
+                      CFEqual(window, current), axElements(window, attribute: "AXSheets").isEmpty else { return false }
+                return true
+            },
+            isFocused: {
+                accessibilityElementIsFocused(candidate.element, applicationElement: app,
+                                              requiresApplicationFocusedElement: true)
+            })
+    }
+
+    static func integratedComposerClickPoint(_ candidate: AccessibilityTextCandidate,
+                                             integration: ApplicationIntegration,
+                                             windowFrame: CGRect?) -> CGPoint? {
+        guard integration == .antigravity,
+              integratedComposerScore(candidate, integration: integration, windowFrame: windowFrame) == 400,
+              let frame = candidate.frame, let windowFrame else { return nil }
+        let point = CGPoint(x: frame.minX + min(24, frame.width / 2),
+                            y: frame.minY + min(16, frame.height / 2))
+        guard point.x.isFinite, point.y.isFinite, windowFrame.contains(point) else { return nil }
+        return point
+    }
+
+    static func clickIntegratedComposer(_ candidate: AccessibilityTextCandidate,
+                                        integration: ApplicationIntegration,
+                                        windowFrame: CGRect?,
+                                        canContinue: () -> Bool,
+                                        postClick: (CGPoint) -> Bool = postAccessibilityFocusClick,
+                                        isFocused: () -> Bool,
+                                        pause: () -> Void = { usleep(50_000) }) -> Bool {
+        guard let point = integratedComposerClickPoint(candidate, integration: integration, windowFrame: windowFrame),
+              canContinue(), postClick(point) else { return false }
+        // The click is delivered asynchronously. Verify the actual focused input
+        // before reporting completion or allowing the voice trigger through.
+        for _ in 0..<5 {
+            guard canContinue() else { return false }
+            if isFocused() { return true }
+            pause()
+        }
+        return canContinue() && isFocused()
+    }
+
+    private static func postAccessibilityFocusClick(_ point: CGPoint) -> Bool {
+        guard let source = CGEventSource(stateID: .hidSystemState),
+              let down = CGEvent(mouseEventSource: source, mouseType: .leftMouseDown,
+                                 mouseCursorPosition: point, mouseButton: .left),
+              let up = CGEvent(mouseEventSource: source, mouseType: .leftMouseUp,
+                               mouseCursorPosition: point, mouseButton: .left) else { return false }
+        let previousLocation = CGEvent(source: nil)?.location
+        for event in [down, up] {
+            event.flags = []
+            event.setIntegerValueField(.eventSourceUserData, value: syntheticEventMarker)
+            event.post(tap: .cghidEventTap)
+        }
+        if let previousLocation,
+           let restore = CGEvent(mouseEventSource: source, mouseType: .mouseMoved,
+                                 mouseCursorPosition: previousLocation, mouseButton: .left) {
+            restore.setIntegerValueField(.eventSourceUserData, value: syntheticEventMarker)
+            restore.post(tap: .cghidEventTap)
+        }
+        return true
     }
 
     static func integratedComposerScore(_ candidate: AccessibilityTextCandidate,

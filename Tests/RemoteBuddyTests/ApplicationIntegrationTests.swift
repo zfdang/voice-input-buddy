@@ -243,6 +243,42 @@ struct ApplicationIntegrationTests {
               help: "", placeholder: label, context: context, frame: frame, enabled: enabled)
     }
 
+    @Test func antigravityClickFallbackOnlyTargetsTheVerifiedVisibleMessageInput() {
+        let field = candidate("Message input")
+        let point = KeyboardInjector.integratedComposerClickPoint(field, integration: .antigravity, windowFrame: window)
+        #expect(point == CGPoint(x: 374, y: 636))
+        for app in [ApplicationIntegration.weChat, .chatGPT] {
+            #expect(KeyboardInjector.integratedComposerClickPoint(field, integration: app, windowFrame: window) == nil)
+        }
+        for field in [candidate("Search messages"), candidate("Message input", protected: true),
+                      candidate("composer"), candidate("Message input", enabled: false),
+                      candidate("Message input", frame: CGRect(x: 1200, y: 600, width: 600, height: 100))] {
+            #expect(KeyboardInjector.integratedComposerClickPoint(field, integration: .antigravity, windowFrame: window) == nil)
+        }
+    }
+
+    @Test func antigravityClickWaitsForRealFocusAndStopsWhenCancelled() {
+        for cancelled in [false, true] {
+            var clicks = 0
+            var waits = 0
+            var queries = 0
+            let result = KeyboardInjector.clickIntegratedComposer(candidate("Message input"),
+                integration: .antigravity, windowFrame: window,
+                canContinue: { !cancelled || waits == 0 },
+                postClick: { _ in clicks += 1; return true },
+                isFocused: { queries += 1; return waits >= 2 }, pause: { waits += 1 })
+            #expect(clicks == 1)
+            #expect(result == !cancelled)
+            #expect(waits == (cancelled ? 1 : 2))
+            #expect(queries == (cancelled ? 1 : 3))
+        }
+        let result = KeyboardInjector.clickIntegratedComposer(candidate("Message input"),
+            integration: .antigravity, windowFrame: window, canContinue: { false },
+            postClick: { _ in Issue.record("Cancelled work must not click"); return true },
+            isFocused: { Issue.record("Cancelled work must not query focus"); return true }, pause: {})
+        #expect(!result)
+    }
+
     @Test func appSpecificComposersAreRecognized() {
         #expect(KeyboardInjector.integratedComposerScore(candidate("输入消息", identifier: "chat_input_field"),
             integration: .weChat, windowFrame: window) == 400)
