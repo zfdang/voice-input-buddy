@@ -169,7 +169,7 @@ extension SettingsView {
     private func overviewCard(number: Int, titleKey: String, status: String, ready: Bool, optional: Bool = false, section: SettingsSection) -> some View {
         let tint: Color = ready ? .green : (optional ? .secondary : .orange)
         return Button {
-            selectedSection = section
+            selectSection(section)
         } label: {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {

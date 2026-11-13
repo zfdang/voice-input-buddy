@@ -143,7 +143,7 @@ struct SettingsView: View {
         ) {
             Button(localization.text("button_mapping.permission_prompt.open")) {
                 isWaitingForMappingPermissions = true
-                selectedSection = .permissions
+                selectSection(.permissions)
                 model.applyHIDSettings()
             }
             Button(localization.text("common.action.cancel"), role: .cancel) {

@@ -47,7 +47,7 @@ extension SettingsView {
     private func sidebarButton(_ section: SettingsSection) -> some View {
         let isSelected = (selectedSection == .commonPhrases ? .mapping : selectedSection) == section
         return Button {
-            selectSidebarSection(section)
+            selectSection(section)
         } label: {
             VStack(spacing: 7) {
                 ZStack(alignment: .topTrailing) {
@@ -83,7 +83,7 @@ extension SettingsView {
         )
     }
 
-    private func selectSidebarSection(_ section: SettingsSection) {
+    func selectSection(_ section: SettingsSection) {
         selectedSection = section
         if SettingsPageBehavior.marksUpdateAsSeen(whenSelecting: section) {
             updateInformation.markAvailableUpdateSeen()
@@ -111,7 +111,7 @@ extension SettingsView {
             }
         case .commonPhrases:
             CommonPhraseSettingsView(store: model.commonPhraseStore) {
-                selectedSection = .mapping
+                selectSection(.mapping)
             }
         case .permissions:
             permissionsPage

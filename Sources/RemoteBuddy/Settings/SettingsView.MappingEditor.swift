@@ -178,7 +178,7 @@ extension SettingsView {
                 }
                 if actions.contains(.openCommonPhrases) {
                     Button {
-                        selectedSection = .commonPhrases
+                        selectSection(.commonPhrases)
                     } label: {
                         mappingActionLabel(
                             title: localization.text("common_phrases.adjust"),
