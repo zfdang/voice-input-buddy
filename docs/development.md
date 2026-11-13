@@ -337,8 +337,8 @@ test attempts, evidence limits, signing checks, and next acceptance steps.
 
 ## App integration accessibility and preparation boundaries
 
-Claude (`com.anthropic.claudefordesktop`) matches the visible “Write your prompt
-to Claude” composer label. WorkBuddy (`com.tencent.workbuddy.mac`) matches its
+Claude (`com.anthropic.claudefordesktop`) recognizes prompt/reply/draft/message
+label variants, normalized ellipses, and explicit composer identifiers. WorkBuddy (`com.tencent.workbuddy.mac`) matches its
 composer by its surrounding More actions, Voice input, and Send controls when
 the placeholder is not exposed as stable field metadata. Both are opt-in and use control metadata,
 not editable values. Automatic composer discovery excludes search, code editors, modal dialogs,
@@ -423,3 +423,16 @@ invalidate those review observations. None of the full-suite runs is a green gat
 These fixes have not been accepted on physical hardware. Previously reported
 WeChat, Antigravity, and ChatGPT success applies to the previously tested revision,
 not automatically to the revised public-AX-only path or feedback lifecycle.
+
+The normalized WorkBuddy 5.11.3 composer inspection fixture is stored in
+`docs/testing-fixtures/workbuddy-composer-5.11.3.json`. It records only the observed
+composer controls and role relationships, not raw AX attribute keys, messages,
+values, accounts, or URLs. The test runs that fixture through the production group
+walker. It supports nested layout/toolbar groups but rejects multiple editors,
+truncated traversal and unrecognized controls. The bounded scan (96 nodes, five
+layout levels, 150 ms) is still version-dependent and is not hardware acceptance.
+Label tests cover English/Chinese and French/Japanese/Indonesian control aliases;
+localized installations beyond the inspected English Claude and Chinese WorkBuddy
+interfaces have not been accepted with physical hardware. Unknown translations or
+changed structures fail visibly and continue optional voice preparation. WorkBuddy
+placeholder content is never used as a selector.

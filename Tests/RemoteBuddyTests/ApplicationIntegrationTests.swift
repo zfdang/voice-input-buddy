@@ -403,10 +403,11 @@ struct ApplicationIntegrationTests {
 
     private let window = CGRect(x: 0, y: 0, width: 1000, height: 800)
     private func candidate(_ label: String = "", role: String = "AXTextArea", identifier: String = "", context: String = "",
-                           protected: Bool = false, enabled: Bool = true,
+                           protected: Bool = false, enabled: Bool = true, workBuddyControls: Bool = false,
                            frame: CGRect = CGRect(x: 350, y: 620, width: 600, height: 140)) -> KeyboardInjector.AccessibilityTextCandidate {
         .init(role: role, protectedContent: protected, identifier: identifier, title: "", description: "",
-              help: "", placeholder: label, context: context, frame: frame, enabled: enabled)
+              help: "", placeholder: label, context: context, frame: frame, enabled: enabled,
+              hasWorkBuddyComposerControls: workBuddyControls)
     }
 
     @Test func antigravityClickFallbackOnlyTargetsTheVerifiedVisibleMessageInput() {
@@ -650,6 +651,37 @@ struct ApplicationIntegrationTests {
             performAction: { _, _ in Issue.record("Preserved focus must not press a control"); return .failure }))
     }
 
+    @Test func workBuddyComposerInspectionFixtureMatchesTheProductionWalker() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let data = try Data(contentsOf: root.appendingPathComponent("docs/testing-fixtures/workbuddy-composer-5.11.3.json"))
+        let fixture = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let rows = try #require(fixture["nodes"] as? [[String: Any]])
+        let nodes = Dictionary(uniqueKeysWithValues: rows.compactMap { row -> (Int, [String: Any])? in
+            guard let id = row["id"] as? Int else { return nil }; return (id, row)
+        })
+        #expect(KeyboardInjector.workBuddyComposerGroupMatches(0,
+            role: { nodes[$0]?["role"] as? String ?? "" },
+            children: { nodes[$0]?["children"] as? [Int] ?? [] },
+            controlLabels: { nodes[$0]?["labels"] as? [String] ?? [] }))
+    }
+
+    @Test func composerLabelsHandleReplyAndLocalizedControlVariants() {
+        for label in ["Write your prompt to Claude", "Write your reply to Claude", "Write your draft…", "Write your message...", "向 Claude 发送消息"] {
+            #expect(KeyboardInjector.isVerifiedIntegratedComposer(candidate(label), integration: .claude))
+        }
+        for labels in [["Send", "More actions", "Voice input ⌘D"],
+                       ["发送", "更多操作", "语音输入"],
+                       ["Envoyer", "Plus d’actions", "Saisie vocale"],
+                       ["送信", "その他の操作", "音声入力"],
+                       ["Kirim", "Tindakan lainnya", "Input suara"]] {
+            #expect(KeyboardInjector.workBuddyComposerControlsMatch(labels))
+        }
+        #expect(!KeyboardInjector.isVerifiedIntegratedComposer(candidate("今天帮你做些什么？"), integration: .workBuddy))
+        #expect(!KeyboardInjector.workBuddyComposerGroupMatches(0,
+            role: { $0 == 0 ? "AXGroup" : "AXTextArea" }, children: { $0 == 0 ? [1, 2] : [] },
+            controlLabels: { _ in ["Send", "More actions", "Voice input"] }))
+    }
+
     @Test func workBuddyUnlabeledComposerUsesOnlyItsSurroundingControls() {
         let roles = [0: "AXGroup", 1: "AXTextArea", 2: "AXPopUpButton", 3: "AXGroup", 4: "AXButton", 5: "AXButton", 6: "AXStaticText"]
         let tree = [0: [1, 2, 3, 6], 1: [99], 3: [4, 5]]
@@ -681,8 +713,8 @@ struct ApplicationIntegrationTests {
 
     @Test(arguments: [ApplicationIntegration.claude, .workBuddy])
     func newDesktopIntegrationsSelectOnlyTheirVerifiedComposer(app: ApplicationIntegration) {
-        let label = app == .claude ? "Write your prompt to Claude" : "\u{feff}\n今天帮你做些什么？@ 添加上下文，/调用技能与指令"
-        let field = candidate(label)
+        let label = "Write your prompt to Claude"
+        let field = app == .workBuddy ? candidate(workBuddyControls: true) : candidate(label)
         #expect(ApplicationIntegration.matching(app.bundleIdentifier) == app)
         #expect(KeyboardInjector.integratedComposerScore(field, integration: app, windowFrame: window) == 400)
         #expect(KeyboardInjector.integratedComposerScore(field,
@@ -708,7 +740,7 @@ struct ApplicationIntegrationTests {
 
     @Test(arguments: [ApplicationIntegration.claude, .workBuddy])
     func newDesktopComposerClicksRequireHitTestAndConfirmedFocus(app: ApplicationIntegration) {
-        let field = candidate(app == .claude ? "Write your prompt to Claude" : "今天帮你做些什么？")
+        let field = app == .claude ? candidate("Write your prompt to Claude") : candidate(workBuddyControls: true)
         for hit in [false, true] {
             for focused in [false, true] {
                 var clicks = 0

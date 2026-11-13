@@ -404,13 +404,16 @@ extension KeyboardInjector {
     static func isVerifiedIntegratedComposer(_ candidate: AccessibilityTextCandidate,
                                             integration: ApplicationIntegration) -> Bool {
         let labels = [candidate.title, candidate.description, candidate.help, candidate.placeholder]
-            .map { $0.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) }
+            .map(normalizedComposerLabel)
         switch integration {
         case .antigravity: return isAntigravityMessageInput(candidate)
-        case .claude: return labels.contains("write your prompt to claude")
+        case .claude:
+            let identifiers = ["chat-input", "prompt-textarea", "prompt-editor"]
+            let prompts = ["write your prompt to claude", "write your reply to claude", "write your draft", "write your message",
+                           "向 claude 发送消息", "回复 claude", "给 claude 发消息", "输入消息", "输入提示词"]
+            return identifiers.contains(candidate.identifier.lowercased()) || labels.contains(where: prompts.contains)
         case .workBuddy:
-            return candidate.role == "AXTextArea" &&
-                (candidate.hasWorkBuddyComposerControls || labels.contains { $0.contains("今天帮你做些什么？") })
+            return candidate.role == "AXTextArea" && candidate.hasWorkBuddyComposerControls
         case .weChat, .chatGPT: return false
         }
     }
@@ -859,15 +862,23 @@ extension KeyboardInjector {
             hasWorkBuddyComposerControls: hasWorkBuddyComposerControls)
     }
 
-    static func workBuddyComposerControlsMatch(_ labels: [String]) -> Bool {
-        let labels = labels.map { $0.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) }
-        return labels.contains { ["发送", "send"].contains($0) } &&
-            labels.contains { ["更多操作", "more actions"].contains($0) } &&
-            labels.contains { $0.hasPrefix("语音输入") || $0.hasPrefix("voice input") }
+    static func normalizedComposerLabel(_ value: String) -> String {
+        value.precomposedStringWithCompatibilityMapping.lowercased()
+            .replacingOccurrences(of: "’", with: "'")
+            .trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: ".…")))
     }
 
-    /// WorkBuddy exposes its placeholder as editor content rather than stable
-    /// field metadata. Verify the same composer's surrounding controls instead;
+    static func workBuddyComposerControlsMatch(_ labels: [String]) -> Bool {
+        let labels = labels.map(normalizedComposerLabel)
+        let send = ["发送", "send", "send message", "envoyer", "送信", "kirim", "send-message"]
+        let more = ["更多操作", "more actions", "plus d'actions", "その他の操作", "その他のアクション", "tindakan lainnya", "aksi lainnya", "more-actions"]
+        let voice = ["语音输入", "voice input", "saisie vocale", "音声入力", "input suara", "masukan suara", "voice-input"]
+        return labels.contains(where: send.contains) && labels.contains(where: more.contains) &&
+            labels.contains { label in voice.contains { label == $0 || label.hasPrefix($0 + " ") } }
+    }
+
+    /// Do not depend on WorkBuddy's placeholder being field metadata;
+    /// it can be exposed only as editor content. Verify the same composer's surrounding controls instead;
     /// never read the text area's value or the conversation's static text.
     private static func workBuddyComposerControlsSurround(_ input: AXUIElement) -> Bool {
         guard let parent = axElement(input, attribute: kAXParentAttribute) else { return false }
@@ -875,7 +886,8 @@ extension KeyboardInjector {
             role: { axString($0, attribute: kAXRoleAttribute) },
             children: { axElements($0, attribute: kAXChildrenAttribute) },
             controlLabels: { element in
-                [axString(element, attribute: kAXTitleAttribute),
+                [axString(element, attribute: kAXIdentifierAttribute),
+                 axString(element, attribute: kAXTitleAttribute),
                  axString(element, attribute: kAXDescriptionAttribute),
                  axString(element, attribute: kAXHelpAttribute)]
             })
@@ -886,18 +898,23 @@ extension KeyboardInjector {
         controlLabels: (Element) -> [String]) -> Bool {
         var pending: [(Element, Int)] = [(root, 0)]
         var labels: [String] = []
-        var budget = AccessibilityTraversalBudget(maximumNodes: 64, maximumDuration: 0.15)
-        while let (element, depth) = pending.popLast(), budget.admitNode() {
+        var budget = AccessibilityTraversalBudget(maximumNodes: 96, maximumDuration: 0.15)
+        var editors = 0
+        while let (element, depth) = pending.popLast() {
+            guard budget.admitNode() else { return false }
             let currentRole = role(element)
+            if currentRole == "AXTextArea" { editors += 1 }
             if currentRole == "AXButton" || currentRole == "AXPopUpButton" {
                 labels += controlLabels(element)
             }
             // Only descend through layout groups, not message/editor content.
-            if depth < 3 && (depth == 0 || currentRole == "AXGroup") {
-                pending += children(element).map { ($0, depth + 1) }
+            if depth == 0 || ["AXGroup", "AXToolbar"].contains(currentRole) {
+                let nested = children(element)
+                guard depth < 5 || nested.isEmpty else { return false }
+                pending += nested.map { ($0, depth + 1) }
             }
         }
-        return workBuddyComposerControlsMatch(labels)
+        return editors == 1 && workBuddyComposerControlsMatch(labels)
     }
 
     static func accessibilityChildPriority(role: () -> String, frame: () -> CGRect?,
