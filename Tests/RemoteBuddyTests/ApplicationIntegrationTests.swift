@@ -182,7 +182,7 @@ struct ApplicationIntegrationTests {
             defer { controller.stop() }
             let clock = ControlledTestScheduler()
             let session = VoiceFnTapSessionController(schedule: clock.voiceSchedule,
-                destinationReadiness: model.prepareIntegratedVoiceInputDestination,
+                destinationReadiness: { model.prepareIntegratedVoiceInputDestination(completion: $0, schedule: clock.voiceSchedule) },
                 setFunctionKeyPressed: { edges.append($0); return true }, enqueueAudio: { _ in },
                 drainAudio: { _, callback in callback() }, onFailure: { _ in })
             if tapMode {
@@ -247,7 +247,7 @@ struct ApplicationIntegrationTests {
                     semanticText: "chat_input_field")
             })
             let session = VoiceFnTapSessionController(schedule: clock.voiceSchedule,
-                destinationReadiness: model.prepareIntegratedVoiceInputDestination,
+                destinationReadiness: { model.prepareIntegratedVoiceInputDestination(completion: $0, schedule: clock.voiceSchedule) },
                 setFunctionKeyPressed: { edges.append($0); return true }, enqueueAudio: { audio.append($0) },
                 drainAudio: { _, done in done() }, onFailure: { _ in Issue.record("Unexpected failure") })
             controller.start()
@@ -264,6 +264,39 @@ struct ApplicationIntegrationTests {
             #expect(audio == (released ? [] : [[1, 2, 3]]))
             #expect(!model.requiresOrderedVoiceFn)
         }
+    }
+
+    @Test func focusAndDestinationShareOneDeadlineWithinAudioCapacity() {
+        let clock = ControlledTestScheduler()
+        let sequence = VoiceInputPreparationSequence(schedule: clock.voiceSchedule)
+        var focusDone: ((VoiceInputDestinationWaitResult) -> Void)?
+        var destinationDone: ((VoiceInputDestinationWaitResult) -> Void)?
+        var results: [VoiceInputDestinationWaitResult] = []
+        var cancelledDestination = false
+        let wait = sequence.start(stages: [
+            { focusDone = $0; return .waiting(ScheduledOperation {}) },
+            { destinationDone = $0; return .waiting(.mainQueueCancellation { cancelledDestination = true }) },
+        ], completion: { results.append($0) })
+        clock.advance(to: 3500)
+        focusDone?(.ready)
+        clock.advance(to: 4000)
+        #expect(results == [.cancelled(.timedOut)])
+        #expect(cancelledDestination)
+        destinationDone?(.ready)
+        if case let .waiting(operation) = wait { operation.cancel() }
+        #expect(results.count == 1)
+        #expect(Int(VoiceInputPreparationSequence.maximumWait * 16_000) < VoicePlaybackQueueCapacity.maximumPreRollSamples)
+    }
+
+    @Test func cancellingPreparationIsSilentAndDiscardsAllLateCallbacks() {
+        let clock = ControlledTestScheduler()
+        let sequence = VoiceInputPreparationSequence(schedule: clock.voiceSchedule)
+        var done: ((VoiceInputDestinationWaitResult) -> Void)?
+        let wait = sequence.start(stages: [{ done = $0; return .waiting(ScheduledOperation {}) }],
+            completion: { _ in Issue.record("Owning session cancellation must be silent") })
+        if case let .waiting(operation) = wait { operation.cancel() }
+        done?(.ready)
+        clock.runAll()
     }
 
     @Test func integrationWaitUsesBoundedPreRollAndRestoresNormalCapacityNextSession() {

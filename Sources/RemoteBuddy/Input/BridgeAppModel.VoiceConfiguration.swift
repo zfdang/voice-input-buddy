@@ -6,33 +6,31 @@ import CoreBluetooth
 import Foundation
 
 extension BridgeAppModel {
-    /// Fn-tap sessions buffer audio while both the integration and any explicit
-    /// destination switch finish. Stop cancels both waits before posting Fn.
+    /// Fn-tap pre-roll covers one shared four-second focus/destination budget.
+    /// Cancelling the returned wait is silent because the Fn session owns stop.
     func prepareIntegratedVoiceInputDestination(
-        completion: @escaping (VoiceInputDestinationWaitResult) -> Void
+        completion: @escaping (VoiceInputDestinationWaitResult) -> Void,
+        schedule: @escaping OperationScheduler = ScheduledOperation.mainQueue
     ) -> VoiceInputDestinationWait {
-        var destinationWait: ScheduledOperation?
-        var cancelled = false
-        let continueToDestination: (VoiceInputDestinationWaitResult) -> Void = { [weak self] result in
-            guard !cancelled, let self else { return }
-            guard result == .ready else { completion(result); return }
-            switch self.voiceInputDestinationCoordinator.waitUntilReady(completion: completion) {
-            case .immediate: completion(.ready)
-            case let .cancelled(reason): completion(.cancelled(reason))
-            case let .waiting(task): destinationWait = task
-            }
-        }
-        switch applicationIntegrationController.prepareForVoiceInput(completion: continueToDestination) {
-        case .immediate:
+        guard !settings.enabledApplicationIntegrations.isEmpty else {
             return voiceInputDestinationCoordinator.waitUntilReady(completion: completion)
-        case let .cancelled(reason): return .cancelled(reason)
-        case let .waiting(focusWait):
-            return .waiting(.mainQueueCancellation {
-                cancelled = true
-                focusWait.cancel()
-                destinationWait?.cancel()
-            })
         }
+        let report: (VoiceInputDestinationWaitResult) -> Void = { [weak self] result in
+            if case let .cancelled(reason) = result {
+                self?.applicationIntegrationStatus = .cancelled(reason)
+                self?.voiceShortcutStatus = LocalizedMessage(ApplicationIntegrationStatus.messageKey(.cancelled(reason)))
+            }
+            completion(result)
+        }
+        let sequence = VoiceInputPreparationSequence(schedule: schedule)
+        let wait = sequence.start(stages: [
+            { [weak self] done in self?.applicationIntegrationController.prepareForVoiceInput(completion: done) ?? .cancelled(.superseded) },
+            { [weak self] done in self?.voiceInputDestinationCoordinator.waitUntilReady(completion: done) ?? .cancelled(.superseded) },
+        ], completion: report)
+        if case let .cancelled(reason) = wait {
+            applicationIntegrationStatus = .cancelled(reason)
+        }
+        return wait
     }
 
     // Main-queue lifecycle, like HID settings and the remote voice callbacks.

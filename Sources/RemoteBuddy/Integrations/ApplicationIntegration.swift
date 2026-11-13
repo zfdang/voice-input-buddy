@@ -91,7 +91,7 @@ final class ApplicationIntegrationController {
         pendingCompletion = completion
         pendingBundleIdentifier = application.bundleIdentifier
         onStateChange(.waiting)
-        deadline = schedule(4) { [weak self] in
+        deadline = schedule(VoiceInputPreparationSequence.maximumWait) { [weak self] in
             guard self?.generation == requestID else { return }
             self?.cancelPending(reason: .timedOut)
         }
