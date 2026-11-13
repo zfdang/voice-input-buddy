@@ -21,7 +21,13 @@ enum ApplicationIntegration: String, CaseIterable, Identifiable {
         case .weChat: return "WeChat"
         }
     }
-    var detailKey: String { "application_integration.\(rawValue).detail" }
+    var detailKey: String {
+        switch self {
+        case .weChat: return "application_integration.weChat.detail"
+        case .antigravity: return "application_integration.antigravity.detail"
+        case .chatGPT: return "application_integration.chatGPT.detail"
+        }
+    }
 
     static func matching(_ bundleIdentifier: String?) -> Self? {
         // Both current unified desktop and standalone ChatGPT installations are supported.
