@@ -13,6 +13,12 @@ extension SettingsView {
         bluetoothAuthorization = permissionOverrides?.bluetooth ?? CBManager.authorization
         inputMonitoringGranted = permissionOverrides?.inputMonitoring ?? HIDRemoteMonitor.isInputMonitoringGranted
         accessibilityGranted = permissionOverrides?.accessibility ?? KeyboardInjector.isAccessibilityTrusted
+        if permissionOverrides == nil {
+            model.refreshRuntimePermissionDiagnosis(
+                trigger: "settings_permission_refresh",
+                bluetoothGranted: bluetoothAuthorization == .allowedAlways
+            )
+        }
     }
 
     func setCustomMappingEnabled(_ enabled: Bool) {

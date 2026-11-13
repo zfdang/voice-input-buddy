@@ -266,11 +266,11 @@ extension OnboardingView {
                 }
                 .buttonStyle(.borderedProminent)
 
-                if failure == .permissionDesynced, model.canRelaunchApplication {
-                    onboardingActionButton(id: "recovery.\(failure.rawValue).open_settings") {
-                        openPrivacySecuritySettings()
+                if failure == .permissionDesynced, canOfferPermissionRelaunch {
+                    onboardingActionButton(id: "recovery.\(failure.rawValue).restart") {
+                        isPermissionRelaunchConfirmationPresented = true
                     } label: {
-                        Text(localization.text("onboarding.recovery.permission.desynced.open_settings"))
+                        Text(localization.text("permission.desync.action.restart"))
                     }
                     .buttonStyle(.bordered)
                 }
@@ -307,9 +307,13 @@ extension OnboardingView {
         return "onboarding.recovery.\(failure.rawValue).title"
     }
 
+    private var canOfferPermissionRelaunch: Bool {
+        model.canRelaunchApplication && interactionProbe == nil
+    }
+
     private func recoveryActionKey(for failure: FirstUseFailureReason) -> String {
-        if failure == .permissionDesynced, !model.canRelaunchApplication {
-            return "onboarding.recovery.permission.desynced.open_settings"
+        if failure == .permissionDesynced {
+            return "permission.desync.action.open_settings"
         }
         return "onboarding.recovery.\(failure.rawValue).action"
     }
@@ -321,6 +325,11 @@ extension OnboardingView {
             case .controlsNotConfirmed: return "onboarding.controls.g9n9n.detail"
             default: break
             }
+        }
+        if failure == .permissionDesynced {
+            return canOfferPermissionRelaunch
+                ? "onboarding.recovery.permission.desynced.detail.with_restart"
+                : "onboarding.recovery.permission.desynced.detail"
         }
         guard failure == .remoteNotFound else {
             return "onboarding.recovery.\(failure.rawValue).detail"

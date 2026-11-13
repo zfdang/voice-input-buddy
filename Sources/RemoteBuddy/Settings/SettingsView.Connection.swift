@@ -57,6 +57,9 @@ extension SettingsView {
         }
         .onAppear {
             model.refreshVoiceKeyCompatibilityWarning()
+            if permissionOverrides == nil {
+                model.refreshRuntimePermissionDiagnosis(trigger: "settings_connection_appear")
+            }
         }
     }
 
@@ -87,20 +90,23 @@ extension SettingsView {
     }
 
     func runtimePermissionIssuePanel(_ issue: RuntimePermissionIssue) -> some View {
+        let canRelaunch = model.canRelaunchApplication
         let titleText: String
         let detailText: String
         switch issue {
         case .permissionDesynced:
             titleText = localization.text("permission.desync.banner.title")
-            detailText = localization.text("permission.desync.banner.detail")
+            detailText = localization.text(
+                canRelaunch ? "permission.desync.banner.detail.with_restart" : "permission.desync.banner.detail"
+            )
         case .bluetoothPermissionDenied:
             titleText = localization.text("onboarding.remote.bluetooth_denied.title")
             detailText = localization.text("onboarding.remote.bluetooth_denied.detail")
         case .inputMonitoringPermissionDenied:
             titleText = localization.text("onboarding.remote.input_not_permitted.title")
             detailText = localization.text("onboarding.remote.input_not_permitted.detail")
-        case .bluetoothUnavailable:
-            titleText = model.connectionStatus.text(using: localization)
+        case let .bluetoothUnavailable(statusKey):
+            titleText = LocalizedMessage(statusKey).text(using: localization)
             detailText = localization.text("onboarding.remote.bluetooth_unavailable.detail")
         }
 
@@ -122,29 +128,24 @@ extension SettingsView {
                 HStack(spacing: 10) {
                     switch issue {
                     case .permissionDesynced:
-                        if model.canRelaunchApplication {
-                            Button(localization.text("permission.desync.action.restart")) {
-                                _ = model.relaunchApplication()
-                            }
-                            .compatibilityButtonStyle(.prominent)
-                        }
                         Button(localization.text("permission.desync.action.open_settings")) {
-                            openSettingsURL("x-apple.systempreferences:com.apple.preference.security?Privacy")
+                            openSettingsURL(issue.preferredPrivacySettingsURLString)
                         }
-                        .compatibilityButtonStyle(.standard)
-                    case .bluetoothPermissionDenied:
-                        Button(localization.text("permission.action.open_settings")) {
-                            openSettingsURL("x-apple.systempreferences:com.apple.preference.security?Privacy_Bluetooth")
+                        .compatibilityButtonStyle(.prominent)
+                        if canRelaunch {
+                            Button(localization.text("permission.desync.action.restart")) {
+                                isPermissionRelaunchConfirmationPresented = true
+                            }
+                            .compatibilityButtonStyle(.standard)
                         }
-                        .compatibilityButtonStyle(.standard)
-                    case .inputMonitoringPermissionDenied:
+                    case .bluetoothPermissionDenied, .inputMonitoringPermissionDenied:
                         Button(localization.text("permission.action.open_settings")) {
-                            openSettingsURL("x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")
+                            openSettingsURL(issue.preferredPrivacySettingsURLString)
                         }
                         .compatibilityButtonStyle(.standard)
                     case .bluetoothUnavailable:
                         Button(localization.text("onboarding.remote.open_bluetooth")) {
-                            openSettingsURL("x-apple.systempreferences:com.apple.BluetoothSettings")
+                            openSettingsURL(issue.preferredPrivacySettingsURLString)
                         }
                         .compatibilityButtonStyle(.standard)
                     }

@@ -11,13 +11,13 @@ struct RuntimePermissionDiagnosticsTests {
             HIDRemoteMonitor.deviceOpenFailureMessageKey(
                 result: kIOReturnNotPermitted,
                 karabinerElementsInstalled: false
-            ) == "button_mapping.error.not_permitted"
+            ) == HIDStatusKeys.notPermitted
         )
         #expect(
             HIDRemoteMonitor.deviceOpenFailureMessageKey(
                 result: kIOReturnNotPermitted,
                 karabinerElementsInstalled: true
-            ) == "button_mapping.error.not_permitted"
+            ) == HIDStatusKeys.notPermitted
         )
         #expect(
             HIDRemoteMonitor.deviceOpenFailureMessageKey(
@@ -39,29 +39,87 @@ struct RuntimePermissionDiagnosticsTests {
         )
     }
 
-    @Test func diagnosisDetectsDesyncedPermissionsVsGenuineDenials() {
+    @Test func diagnosisIgnoresUninitializedOrUnusedPermissionsWithoutRuntimeFailure() {
         #expect(
             RuntimePermissionDiagnosisPolicy.diagnose(
-                bluetoothGranted: true,
-                inputMonitoringGranted: true,
-                accessibilityGranted: true,
-                connectionStatusKey: "connection.status.searching",
-                hidStatusKey: "button_mapping.status.connected",
-                hidFilterStartFailed: false
+                bluetoothGranted: false,
+                inputMonitoringGranted: false,
+                accessibilityGranted: false,
+                connectionStatusKey: "bluetooth.status.initializing",
+                hidStatusKey: "button_mapping.status.disabled",
+                hidFilterFailure: .none
             ) == nil
         )
 
         #expect(
             RuntimePermissionDiagnosisPolicy.diagnose(
+                bluetoothGranted: false,
+                inputMonitoringGranted: false,
+                accessibilityGranted: true,
+                connectionStatusKey: "connection.status.searching",
+                hidStatusKey: "button_mapping.status.system_managed",
+                hidFilterFailure: .none
+            ) == nil
+        )
+
+        // Transient Bluetooth resetting should not flash a banner.
+        #expect(
+            RuntimePermissionDiagnosisPolicy.diagnose(
                 bluetoothGranted: true,
                 inputMonitoringGranted: true,
                 accessibilityGranted: true,
-                connectionStatusKey: "bluetooth.status.permission_denied",
-                hidStatusKey: "button_mapping.error.not_permitted",
-                hidFilterStartFailed: true
-            ) == .permissionDesynced(
-                signals: ["bluetooth_unauthorized", "hid_open_not_permitted", "hid_filter_start_failed"]
+                connectionStatusKey: "bluetooth.status.resetting",
+                hidStatusKey: "button_mapping.status.waiting_for_device",
+                hidFilterFailure: .none
+            ) == nil
+        )
+    }
+
+    @Test func diagnosisDetectsDesyncedSignalsGenuineRuntimeDenialsAndPreferredSettingsURLs() {
+        let combinedDesync = RuntimePermissionDiagnosisPolicy.diagnose(
+            bluetoothGranted: true,
+            inputMonitoringGranted: true,
+            accessibilityGranted: true,
+            connectionStatusKey: BluetoothStatusKeys.permissionDenied,
+            hidStatusKey: HIDStatusKeys.notPermitted,
+            hidFilterFailure: .tapCreateFailed
+        )
+        #expect(
+            combinedDesync == .permissionDesynced(
+                signals: ["bluetooth_unauthorized", "hid_open_not_permitted", "hid_filter_tap_create_failed"]
             )
+        )
+        #expect(
+            combinedDesync?.preferredPrivacySettingsURLString ==
+                "x-apple.systempreferences:com.apple.preference.security?Privacy"
+        )
+
+        let bluetoothOnlyDesync = RuntimePermissionDiagnosisPolicy.diagnose(
+            bluetoothGranted: true,
+            inputMonitoringGranted: true,
+            accessibilityGranted: true,
+            connectionStatusKey: BluetoothStatusKeys.permissionDenied,
+            hidStatusKey: "button_mapping.status.connected",
+            hidFilterFailure: .none
+        )
+        #expect(bluetoothOnlyDesync == .permissionDesynced(signals: ["bluetooth_unauthorized"]))
+        #expect(
+            bluetoothOnlyDesync?.preferredPrivacySettingsURLString ==
+                "x-apple.systempreferences:com.apple.preference.security?Privacy_Bluetooth"
+        )
+
+        let systemDisabledDesync = RuntimePermissionDiagnosisPolicy.diagnose(
+            bluetoothGranted: true,
+            inputMonitoringGranted: true,
+            accessibilityGranted: true,
+            connectionStatusKey: "connection.status.connected_to_device",
+            hidStatusKey: HIDStatusKeys.interrupted,
+            hidFilterFailure: .systemDisabled
+        )
+        #expect(systemDisabledDesync == .permissionDesynced(signals: ["hid_filter_system_disabled"]))
+        #expect(
+            systemDisabledDesync?.preferredPrivacySettingsURLString ==
+                "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
         )
 
         #expect(
@@ -69,9 +127,9 @@ struct RuntimePermissionDiagnosticsTests {
                 bluetoothGranted: false,
                 inputMonitoringGranted: true,
                 accessibilityGranted: true,
-                connectionStatusKey: "bluetooth.status.permission_denied",
+                connectionStatusKey: BluetoothStatusKeys.permissionDenied,
                 hidStatusKey: "button_mapping.status.waiting_for_device",
-                hidFilterStartFailed: false
+                hidFilterFailure: .none
             ) == .bluetoothPermissionDenied
         )
 
@@ -81,8 +139,8 @@ struct RuntimePermissionDiagnosticsTests {
                 inputMonitoringGranted: false,
                 accessibilityGranted: true,
                 connectionStatusKey: "connection.status.searching",
-                hidStatusKey: "button_mapping.error.not_permitted",
-                hidFilterStartFailed: false
+                hidStatusKey: HIDStatusKeys.notPermitted,
+                hidFilterFailure: .none
             ) == .inputMonitoringPermissionDenied
         )
 
@@ -91,15 +149,84 @@ struct RuntimePermissionDiagnosticsTests {
                 bluetoothGranted: true,
                 inputMonitoringGranted: true,
                 accessibilityGranted: true,
-                connectionStatusKey: "bluetooth.status.off",
+                connectionStatusKey: BluetoothStatusKeys.off,
                 hidStatusKey: "button_mapping.status.waiting_for_device",
-                hidFilterStartFailed: false
-            ) == .bluetoothUnavailable(statusKey: "bluetooth.status.off")
+                hidFilterFailure: .none
+            ) == .bluetoothUnavailable(statusKey: BluetoothStatusKeys.off)
         )
     }
 
-    @Test func firstUseContextSurfacesPermissionDesyncBeforeRemoteNotFound() {
-        let capabilities = OnboardingCapabilities(
+    @Test func keyboardSuppressorTracksTapCreationFailureOnlyWhenPermissionsGranted() {
+        var granted = false
+        var startResult = false
+        let deniedSuppressor = KeyboardEventSuppressor(
+            permissionsGranted: { granted },
+            tapOperations: .init(
+                start: { startResult },
+                stop: {},
+                isEnabled: { false }
+            )
+        )
+        #expect(!deniedSuppressor.start())
+        #expect(!deniedSuppressor.didTapCreationFailDespitePermissions)
+
+        granted = true
+        #expect(!deniedSuppressor.start())
+        #expect(deniedSuppressor.didTapCreationFailDespitePermissions)
+
+        startResult = true
+        #expect(deniedSuppressor.start())
+        #expect(!deniedSuppressor.didTapCreationFailDespitePermissions)
+
+        deniedSuppressor.stop()
+        #expect(!deniedSuppressor.didTapCreationFailDespitePermissions)
+    }
+
+    @Test func appModelDetectsSystemDisabledEventTapAsDesyncEvenWhenPermissionsReportGranted() throws {
+        let suiteName = "runtime-perm-tap-disabled-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let model = BridgeAppModel(
+            settings: AppSettings(defaults: defaults),
+            permissionSnapshotProvider: {
+                HIDPermissionSnapshot(inputMonitoringGranted: true, accessibilityGranted: true)
+            }
+        )
+        model.hidEventSuppressor.onSystemDisabled?()
+
+        #expect(model.hidStatus.key == HIDStatusKeys.interrupted)
+        #expect(model.hidFilterFailureState == .systemDisabled)
+        #expect(model.runtimePermissionIssue == .permissionDesynced(signals: ["hid_filter_system_disabled"]))
+        #expect(model.runtimePermissionIssueUpdatedAt != nil)
+        #expect(model.runtimePermissionDiagnosisTrigger == "hid_filter_disabled")
+
+        model.hidFilterFailureState = .none
+        model.hidStatus = LocalizedMessage("button_mapping.status.connected")
+        model.refreshRuntimePermissionDiagnosis(trigger: "recovered", bluetoothGranted: true)
+        #expect(model.runtimePermissionIssue == nil)
+        #expect(model.runtimePermissionIssueUpdatedAt == nil)
+        #expect(model.runtimePermissionDiagnosisTrigger == nil)
+    }
+
+    @Test func firstUseContextChecksStaticPermissionsOnPermissionsStepAndDesyncOnRemoteStep() {
+        let ungranted = OnboardingCapabilities(
+            bluetoothGranted: false,
+            inputMonitoringGranted: true,
+            accessibilityGranted: true,
+            remoteConnected: false,
+            remoteButtonObserved: false
+        )
+        let permissionsContext = FirstUseDiagnosticContext(
+            step: .permissions,
+            controlMethod: .physicalRemote,
+            capabilities: ungranted,
+            hasSelectedAudioUID: false,
+            runtimePermissionIssue: .permissionDesynced(signals: ["hid_filter_system_disabled"])
+        )
+        #expect(permissionsContext.failureReason == .bluetoothPermissionDenied)
+
+        let granted = OnboardingCapabilities(
             bluetoothGranted: true,
             inputMonitoringGranted: true,
             accessibilityGranted: true,
@@ -107,16 +234,16 @@ struct RuntimePermissionDiagnosticsTests {
             remoteButtonObserved: false
         )
         let issue = RuntimePermissionIssue.permissionDesynced(signals: ["bluetooth_unauthorized"])
-        let context = FirstUseDiagnosticContext(
+        let remoteContext = FirstUseDiagnosticContext(
             step: .remote,
             controlMethod: .physicalRemote,
-            capabilities: capabilities,
+            capabilities: granted,
             hasSelectedAudioUID: false,
             runtimePermissionIssue: issue
         )
 
-        #expect(context.failureReason == .permissionDesynced)
-        #expect(context.failureReason?.recoveryStep == .permissions)
+        #expect(remoteContext.failureReason == .permissionDesynced)
+        #expect(remoteContext.failureReason?.recoveryStep == .permissions)
 
         let snapshot = FirstUseDiagnosticSnapshot(
             appVersion: "1.0",
@@ -126,7 +253,7 @@ struct RuntimePermissionDiagnosticsTests {
             voiceTool: .unselected,
             voiceKeyMode: .function,
             voiceFnTapModeEnabled: false,
-            context: context,
+            context: remoteContext,
             voiceAttempt: FirstUseVoiceAttemptDiagnostic(
                 attemptID: 0,
                 phase: .idle,
@@ -142,8 +269,8 @@ struct RuntimePermissionDiagnosticsTests {
                 transcriptWaitMilliseconds: nil,
                 result: .none
             ),
-            bluetoothStatus: "bluetooth.status.permission_denied",
-            buttonStatus: "button_mapping.error.not_permitted",
+            bluetoothStatus: BluetoothStatusKeys.permissionDenied,
+            buttonStatus: HIDStatusKeys.notPermitted,
             audioStatus: "audio.output.none_selected",
             events: [],
             appLanguage: "en"
@@ -153,33 +280,24 @@ struct RuntimePermissionDiagnosticsTests {
         #expect(snapshot.redactedText.contains("runtime_permission_issue=permission_desynced(bluetooth_unauthorized)"))
     }
 
-    @Test func appModelUpdatesRuntimePermissionIssueAndRelaunchChecksAppBundle() throws {
-        let suiteName = "runtime-perm-model-" + UUID().uuidString
+    @Test func relaunchApplicationValidatesBundleTerminationAndProcessLaunch() throws {
+        let suiteName = "runtime-perm-relaunch-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
-        let model = BridgeAppModel(
-            settings: AppSettings(defaults: defaults),
-            permissionSnapshotProvider: {
-                HIDPermissionSnapshot(inputMonitoringGranted: true, accessibilityGranted: true)
-            }
-        )
-        model.connectionStatus = LocalizedMessage("bluetooth.status.permission_denied")
-        model.hidStatus = LocalizedMessage("button_mapping.error.not_permitted")
-        model.hidFilterStartFailed = true
-        model.refreshRuntimePermissionDiagnosis(trigger: "unit_test", bluetoothGranted: true)
+        let model = BridgeAppModel(settings: AppSettings(defaults: defaults))
+        var launchedCalls: [(executable: String, arguments: [String])] = []
+        var terminateCount = 0
 
-        #expect(
-            model.runtimePermissionIssue == .permissionDesynced(
-                signals: ["bluetooth_unauthorized", "hid_open_not_permitted", "hid_filter_start_failed"]
-            )
+        let nonAppResult = model.relaunchApplication(
+            bundleURL: FileManager.default.temporaryDirectory,
+            pid: 4242,
+            launchProcess: { exe, args in launchedCalls.append((exe, args)) },
+            terminateHandler: { terminateCount += 1 }
         )
-
-        model.connectionStatus = LocalizedMessage("connection.status.connected_to_device")
-        model.hidStatus = LocalizedMessage("button_mapping.status.connected")
-        model.hidFilterStartFailed = false
-        model.refreshRuntimePermissionDiagnosis(trigger: "unit_test_clear", bluetoothGranted: true)
-        #expect(model.runtimePermissionIssue == nil)
+        #expect(!nonAppResult)
+        #expect(launchedCalls.isEmpty)
+        #expect(terminateCount == 0)
 
         let tempAppURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("RemoteBuddyTest-\(UUID().uuidString).app")
@@ -187,10 +305,44 @@ struct RuntimePermissionDiagnosticsTests {
         try FileManager.default.createDirectory(at: tempAppURL, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: tempAppURL) }
         #expect(BridgeAppModel.canRelaunchAppBundle(tempAppURL))
-        #expect(!BridgeAppModel.canRelaunchAppBundle(FileManager.default.temporaryDirectory))
+
+        struct SimulatedLaunchFailure: Error {}
+        let failedLaunch = model.relaunchApplication(
+            bundleURL: tempAppURL,
+            pid: 4242,
+            launchProcess: { _, _ in throw SimulatedLaunchFailure() },
+            terminateHandler: { terminateCount += 1 }
+        )
+        #expect(!failedLaunch)
+        #expect(terminateCount == 0)
+
+        let succeededLaunch = model.relaunchApplication(
+            bundleURL: tempAppURL,
+            pid: 4242,
+            launchProcess: { exe, args in launchedCalls.append((exe, args)) },
+            terminateHandler: { terminateCount += 1 }
+        )
+        #expect(succeededLaunch)
+        #expect(launchedCalls.count == 1)
+        #expect(launchedCalls[0].executable == "/bin/sh")
+        #expect(launchedCalls[0].arguments.contains("4242"))
+        #expect(launchedCalls[0].arguments.contains(tempAppURL.path))
+        #expect(terminateCount == 1)
+
+        model.prepareForTermination()
+        let terminatingRelaunch = model.relaunchApplication(
+            bundleURL: tempAppURL,
+            pid: 4242,
+            launchProcess: { exe, args in launchedCalls.append((exe, args)) },
+            terminateHandler: { terminateCount += 1 }
+        )
+        #expect(!terminatingRelaunch)
+        #expect(launchedCalls.count == 1)
+        #expect(terminateCount == 1)
     }
 
     @Test func settingsDiagnosticSnapshotIncludesRuntimePermissionFields() {
+        let updatedAt = Date(timeIntervalSince1970: 1_763_000_000)
         let snapshot = SettingsDiagnosticSnapshot(
             appVersion: "1.0",
             bluetoothGranted: true,
@@ -198,11 +350,15 @@ struct RuntimePermissionDiagnosticsTests {
             accessibilityGranted: true,
             runtimeLogAvailable: true,
             runtimePermissionIssue: "permission_desynced(bluetooth_unauthorized)",
-            connectionStatusKey: "bluetooth.status.permission_denied",
-            hidStatusKey: "button_mapping.error.not_permitted"
+            runtimePermissionIssueUpdatedAt: updatedAt,
+            runtimePermissionDiagnosisTrigger: "hid_filter_disabled",
+            connectionStatusKey: BluetoothStatusKeys.permissionDenied,
+            hidStatusKey: HIDStatusKeys.notPermitted
         )
         let summary = snapshot.summary
         #expect(summary.contains("permission_desynced(bluetooth_unauthorized)"))
+        #expect(summary.contains("runtime_permission_trigger: \"hid_filter_disabled\""))
+        #expect(summary.contains("runtime_permission_updated_at: \"2025-11-13T"))
         #expect(summary.contains("connection_status: \"bluetooth.status.permission_denied\""))
         #expect(summary.contains("hid_status: \"button_mapping.error.not_permitted\""))
     }
@@ -214,17 +370,20 @@ struct RuntimePermissionDiagnosticsTests {
         let store = LocalizationStore(settings: AppSettings(defaults: defaults))
 
         let keys = [
-            "button_mapping.error.not_permitted",
+            HIDStatusKeys.notPermitted,
             "permission.desync.banner.title",
             "permission.desync.banner.detail",
+            "permission.desync.banner.detail.with_restart",
             "permission.desync.action.restart",
             "permission.desync.action.open_settings",
+            "permission.desync.restart_confirm.title",
+            "permission.desync.restart_confirm.message",
             "onboarding.recovery.permission.desynced.title",
             "onboarding.recovery.permission.desynced.detail",
-            "onboarding.recovery.permission.desynced.action",
-            "onboarding.recovery.permission.desynced.open_settings",
+            "onboarding.recovery.permission.desynced.detail.with_restart",
             "onboarding.remote.permission_desync.title",
             "onboarding.remote.permission_desync.detail",
+            "onboarding.remote.permission_desync.detail.with_restart",
             "onboarding.remote.bluetooth_denied.title",
             "onboarding.remote.bluetooth_denied.detail",
             "onboarding.remote.input_not_permitted.title",

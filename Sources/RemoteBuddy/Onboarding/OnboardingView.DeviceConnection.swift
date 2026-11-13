@@ -155,10 +155,15 @@ extension OnboardingView {
         }
         switch model.runtimePermissionIssue {
         case .permissionDesynced:
+            let canOfferRelaunch = model.canRelaunchApplication && interactionProbe == nil
             return (
                 "exclamationmark.triangle.fill",
                 localization.text("onboarding.remote.permission_desync.title"),
-                localization.text("onboarding.remote.permission_desync.detail"),
+                localization.text(
+                    canOfferRelaunch
+                        ? "onboarding.remote.permission_desync.detail.with_restart"
+                        : "onboarding.remote.permission_desync.detail"
+                ),
                 .orange
             )
         case .bluetoothPermissionDenied:
@@ -175,10 +180,10 @@ extension OnboardingView {
                 localization.text("onboarding.remote.input_not_permitted.detail"),
                 .orange
             )
-        case .bluetoothUnavailable:
+        case let .bluetoothUnavailable(statusKey):
             return (
                 "exclamationmark.triangle.fill",
-                model.connectionStatus.text(using: localization),
+                LocalizedMessage(statusKey).text(using: localization),
                 localization.text("onboarding.remote.bluetooth_unavailable.detail"),
                 .orange
             )

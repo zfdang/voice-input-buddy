@@ -1541,7 +1541,7 @@ final class HIDRemoteMonitor {
                 : "button_mapping.error.exclusive_access"
         }
         if result == kIOReturnNotPermitted {
-            return "button_mapping.error.not_permitted"
+            return HIDStatusKeys.notPermitted
         }
         return nil
     }

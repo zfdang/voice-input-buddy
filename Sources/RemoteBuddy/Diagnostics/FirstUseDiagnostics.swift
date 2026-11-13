@@ -242,7 +242,7 @@ struct FirstUseDiagnosticContext: Equatable {
     }
 
     var failureReason: FirstUseFailureReason? {
-        if [.permissions, .remote, .controls, .audio, .voiceTest].contains(step),
+        if [.remote, .controls, .audio, .voiceTest].contains(step),
            runtimePermissionIssue?.isPermissionDesynced == true {
             return .permissionDesynced
         }
@@ -262,6 +262,9 @@ struct FirstUseDiagnosticContext: Equatable {
                 return .inputMonitoringPermissionDenied
             }
             if !capabilities.accessibilityGranted { return .accessibilityPermissionDenied }
+            if runtimePermissionIssue?.isPermissionDesynced == true {
+                return .permissionDesynced
+            }
         case .remote:
             if !capabilities.remoteConnected { return .remoteNotFound }
             if !capabilities.remoteButtonObserved { return .remoteButtonNotReady }

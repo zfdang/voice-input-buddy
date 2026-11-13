@@ -66,6 +66,25 @@ enum HIDMappingRecoveryPolicy {
     }
 }
 
+enum BluetoothStatusKeys {
+    static let permissionDenied = "bluetooth.status.permission_denied"
+    static let off = "bluetooth.status.off"
+    static let unsupported = "bluetooth.status.unsupported"
+    static let unavailable = "bluetooth.status.unavailable"
+}
+
+enum HIDStatusKeys {
+    static let notPermitted = "button_mapping.error.not_permitted"
+    static let inputMonitoringRequired = "button_mapping.permission.input_monitoring_required"
+    static let interrupted = "button_mapping.status.interrupted"
+}
+
+enum HIDFilterFailureState: Equatable {
+    case none
+    case tapCreateFailed
+    case systemDisabled
+}
+
 enum RuntimePermissionIssue: Equatable {
     case permissionDesynced(signals: [String])
     case bluetoothPermissionDenied
@@ -75,6 +94,25 @@ enum RuntimePermissionIssue: Equatable {
     var isPermissionDesynced: Bool {
         if case .permissionDesynced = self { return true }
         return false
+    }
+
+    var preferredPrivacySettingsURLString: String {
+        switch self {
+        case let .permissionDesynced(signals):
+            if signals == ["bluetooth_unauthorized"] {
+                return "x-apple.systempreferences:com.apple.preference.security?Privacy_Bluetooth"
+            }
+            if !signals.isEmpty, signals.allSatisfy({ $0.hasPrefix("hid_") }) {
+                return "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
+            }
+            return "x-apple.systempreferences:com.apple.preference.security?Privacy"
+        case .bluetoothPermissionDenied:
+            return "x-apple.systempreferences:com.apple.preference.security?Privacy_Bluetooth"
+        case .inputMonitoringPermissionDenied:
+            return "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
+        case .bluetoothUnavailable:
+            return "x-apple.systempreferences:com.apple.BluetoothSettings"
+        }
     }
 
     var diagnosticIdentifier: String {
@@ -94,10 +132,9 @@ enum RuntimePermissionIssue: Equatable {
 
 enum RuntimePermissionDiagnosisPolicy {
     static let unavailableBluetoothStatusKeys: Set<String> = [
-        "bluetooth.status.off",
-        "bluetooth.status.unsupported",
-        "bluetooth.status.unavailable",
-        "bluetooth.status.resetting"
+        BluetoothStatusKeys.off,
+        BluetoothStatusKeys.unsupported,
+        BluetoothStatusKeys.unavailable
     ]
 
     static func diagnose(
@@ -106,11 +143,13 @@ enum RuntimePermissionDiagnosisPolicy {
         accessibilityGranted: Bool,
         connectionStatusKey: String,
         hidStatusKey: String,
-        hidFilterStartFailed: Bool
+        hidFilterFailure: HIDFilterFailureState = .none
     ) -> RuntimePermissionIssue? {
-        let bleRuntimeDenied = connectionStatusKey == "bluetooth.status.permission_denied"
-        let hidNotPermitted = hidStatusKey == "button_mapping.error.not_permitted"
-        let hidRuntimePermissionDenied = hidStatusKey == "button_mapping.permission.input_monitoring_required"
+        let bleRuntimeDenied = connectionStatusKey == BluetoothStatusKeys.permissionDenied
+        let hidNotPermitted = hidStatusKey == HIDStatusKeys.notPermitted
+        let hidRuntimePermissionDenied = hidStatusKey == HIDStatusKeys.inputMonitoringRequired
+        let hidFilterTapCreateFailed = hidFilterFailure == .tapCreateFailed
+        let hidFilterSystemDisabled = hidFilterFailure == .systemDisabled || hidStatusKey == HIDStatusKeys.interrupted
 
         var desyncSignals: [String] = []
         if bleRuntimeDenied, bluetoothGranted {
@@ -119,17 +158,20 @@ enum RuntimePermissionDiagnosisPolicy {
         if hidNotPermitted, inputMonitoringGranted {
             desyncSignals.append("hid_open_not_permitted")
         }
-        if hidFilterStartFailed, inputMonitoringGranted, accessibilityGranted {
-            desyncSignals.append("hid_filter_start_failed")
+        if hidFilterTapCreateFailed, inputMonitoringGranted, accessibilityGranted {
+            desyncSignals.append("hid_filter_tap_create_failed")
+        }
+        if hidFilterSystemDisabled, inputMonitoringGranted, accessibilityGranted {
+            desyncSignals.append("hid_filter_system_disabled")
         }
         if !desyncSignals.isEmpty {
             return .permissionDesynced(signals: desyncSignals)
         }
 
-        if bleRuntimeDenied || !bluetoothGranted {
+        if bleRuntimeDenied {
             return .bluetoothPermissionDenied
         }
-        if hidNotPermitted || hidRuntimePermissionDenied || !inputMonitoringGranted {
+        if hidNotPermitted || hidRuntimePermissionDenied {
             return .inputMonitoringPermissionDenied
         }
         if unavailableBluetoothStatusKeys.contains(connectionStatusKey) {

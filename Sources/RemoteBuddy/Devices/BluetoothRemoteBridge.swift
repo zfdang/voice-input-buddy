@@ -1641,21 +1641,21 @@ extension BluetoothRemoteBridge: @preconcurrency CBCentralManagerDelegate {
                 generation: generation
             )
             resetPeripheral()
-            state = .bluetoothUnavailable(LocalizedMessage("bluetooth.status.off"))
+            state = .bluetoothUnavailable(LocalizedMessage(BluetoothStatusKeys.off))
         case .unauthorized:
             applyCentralRecovery(
                 .unauthorized,
                 central: central,
                 generation: generation
             )
-            state = .bluetoothUnavailable(LocalizedMessage("bluetooth.status.permission_denied"))
+            state = .bluetoothUnavailable(LocalizedMessage(BluetoothStatusKeys.permissionDenied))
         case .unsupported:
             applyCentralRecovery(
                 .unsupported,
                 central: central,
                 generation: generation
             )
-            state = .bluetoothUnavailable(LocalizedMessage("bluetooth.status.unsupported"))
+            state = .bluetoothUnavailable(LocalizedMessage(BluetoothStatusKeys.unsupported))
         case .resetting:
             applyCentralRecovery(
                 .resetting,
@@ -1667,7 +1667,7 @@ extension BluetoothRemoteBridge: @preconcurrency CBCentralManagerDelegate {
         case .unknown:
             state = .bluetoothUnavailable(LocalizedMessage("bluetooth.status.initializing"))
         @unknown default:
-            state = .bluetoothUnavailable(LocalizedMessage("bluetooth.status.unavailable"))
+            state = .bluetoothUnavailable(LocalizedMessage(BluetoothStatusKeys.unavailable))
         }
     }
 
