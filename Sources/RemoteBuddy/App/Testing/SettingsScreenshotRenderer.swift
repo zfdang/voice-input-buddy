@@ -119,11 +119,11 @@ enum SettingsScreenshotRenderer {
                 )
             }
         )
-        if let state = try integrationState(from: ProcessInfo.processInfo.environment[
+        let integrationScreenshotState = try integrationState(from: ProcessInfo.processInfo.environment[
             "REMOTE_BUDDY_SETTINGS_SCREENSHOT_INTEGRATION_STATUS"
-        ]) {
+        ])
+        if integrationScreenshotState != nil {
             settings.setApplicationIntegration(.workBuddy, enabled: true)
-            model.recordApplicationIntegrationStatus(state)
         }
         switch ProcessInfo.processInfo.environment["REMOTE_BUDDY_SETTINGS_SCREENSHOT_RUNTIME_PERMISSION_ISSUE"] {
         case "desync":
@@ -287,6 +287,9 @@ enum SettingsScreenshotRenderer {
                 }
             }
             RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+            if section == .applicationIntegration, let state = integrationScreenshotState {
+                model.recordApplicationIntegrationStatus(state)
+            }
             window.contentView?.layoutSubtreeIfNeeded()
             scrollCanvasToEndIfRequested(in: window.contentView)
             window.contentView?.displayIfNeeded()
@@ -296,6 +299,10 @@ enum SettingsScreenshotRenderer {
             window.contentView?.layoutSubtreeIfNeeded()
             window.contentView?.displayIfNeeded()
 
+            if section == .applicationIntegration, let state = integrationScreenshotState,
+               model.applicationIntegrationStatus != state {
+                throw RenderingError.invalidIntegrationStatus("fixture cleared before capture")
+            }
             guard let contentView = window.contentView,
                   contentView.bounds.size == size,
                   let representation = contentView.bitmapImageRepForCachingDisplay(
