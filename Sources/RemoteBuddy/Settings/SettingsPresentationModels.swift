@@ -31,13 +31,13 @@ enum SettingsSection: String, CaseIterable, Identifiable {
 
     var systemImage: String {
         switch self {
-        case .connection: return "link"
-        case .integration: return "text.bubble"
+        case .connection: return "appletvremote.gen4"
+        case .integration: return "waveform"
         case .mapping: return "keyboard"
         case .commonPhrases: return "text.quote"
         case .permissions: return "shield.lefthalf.filled"
         case .general: return "slider.horizontal.3"
-        case .applicationIntegration: return "app.connected.to.app.below.fill"
+        case .applicationIntegration: return "cursorarrow.click"
         case .about: return "info.circle"
         }
     }
