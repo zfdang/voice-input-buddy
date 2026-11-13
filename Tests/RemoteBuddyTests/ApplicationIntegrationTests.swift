@@ -807,7 +807,7 @@ struct ApplicationIntegrationTests {
             let localization = LocalizationStore(settings: settings)
             for language in [AppLanguage.english, .simplifiedChinese] {
                 localization.select(language)
-                for key in ["application_integration.title", "application_integration.introduction"] +
+                for key in ["application_integration.title", "application_integration.introduction", "application_integration.voice_key_note"] +
                     ApplicationIntegration.allCases.map(\.detailKey) +
                     [ApplicationIntegrationPreparationState.waiting, .ready, .preserved, .unavailable, .focusTimedOut,
                      .voiceTriggered, .voiceTriggeredPreserved, .voiceTriggeredWithoutFocus, .cancelled(.timedOut), .cancelled(.actionFailed)]
@@ -817,4 +817,11 @@ struct ApplicationIntegrationTests {
             }
         }
     }
+    @Test func screenshotHarnessInjectsPreparationAndPreservation() throws {
+        #expect(try SettingsScreenshotRenderer.integrationState(from: "preparing") == .waiting)
+        #expect(try SettingsScreenshotRenderer.integrationState(from: "preserved") == .preserved)
+        #expect(try SettingsScreenshotRenderer.integrationState(from: nil) == nil)
+        #expect(throws: (any Error).self) { try SettingsScreenshotRenderer.integrationState(from: "unknown") }
+    }
+
 }
