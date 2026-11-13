@@ -31,7 +31,7 @@ struct SettingsOverviewState: Equatable {
     @MainActor func permissionsSummary(using localization: LocalizationStore) -> String {
         guard !permissionsReady else { return localization.text("settings.overview.ready") }
         return LocalizedMessage("settings.overview.missing_requirements", arguments: [
-            localizedList(missingRequirementKeys.map { localization.text($0) }, locale: localization.locale)
+            Self.localizedList(missingRequirementKeys.map { localization.text($0) }, locale: localization.locale)
         ]).text(using: localization)
     }
 
@@ -41,7 +41,4 @@ struct SettingsOverviewState: Equatable {
         return formatter.string(from: values) ?? values.joined(separator: ", ")
     }
 
-    private func localizedList(_ values: [String], locale: Locale) -> String {
-        Self.localizedList(values, locale: locale)
-    }
 }

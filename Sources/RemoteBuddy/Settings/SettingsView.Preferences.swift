@@ -16,8 +16,8 @@ extension SettingsView {
                 HStack(spacing: 10) {
                     overviewCard(number: 1, titleKey: "settings.section.permissions", status: overview.permissionsSummary(using: localization), ready: overview.permissionsReady, section: .permissions)
                     overviewCard(number: 2, titleKey: "settings.overview.remote", status: remoteSummary, ready: overview.remoteReady, section: .connection)
-                    overviewCard(number: 3, titleKey: "settings.overview.mapping", status: localization.text(settings.customMappingEnabled ? "common.status.enabled" : "settings.overview.optional"), ready: settings.customMappingEnabled, optional: true, section: .mapping)
-                    overviewCard(number: 4, titleKey: "settings.overview.integration", status: localization.text(settings.onboardingVoiceTool == .unselected ? "settings.overview.not_configured" : settings.onboardingVoiceTool.titleKey), ready: settings.onboardingVoiceTool != .unselected, section: .integration)
+                    overviewCard(number: 3, titleKey: "settings.overview.mapping", status: localization.text(overview.mappingEnabled ? "common.status.enabled" : "settings.overview.optional"), ready: overview.mappingEnabled, optional: true, section: .mapping)
+                    overviewCard(number: 4, titleKey: "settings.overview.integration", status: localization.text(overview.integrationReady ? overview.integrationTool.titleKey : "settings.overview.not_configured"), ready: overview.integrationReady, optional: true, section: .integration)
                 }
             }
             .padding(.bottom, 16)
@@ -99,7 +99,7 @@ extension SettingsView {
                                 .padding(.bottom, 10)
                         }
                         Divider()
-                        preferenceRow(symbol: "macwindow", titleKey: "about.preferences.open_main_window_at_launch", detailKey: "settings.general.open_window_help") {
+                        preferenceRow(symbol: "macwindow", titleKey: "about.preferences.open_main_window_at_launch", detailKey: "about.preferences.open_main_window_help") {
                             Toggle("", isOn: $settings.openMainWindowAtLaunch)
                                 .labelsHidden()
                                 .accessibilityLabel(localization.text("about.preferences.open_main_window_at_launch"))
@@ -199,6 +199,10 @@ extension SettingsView {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(localization.text(titleKey))
+        .accessibilityValue(status)
+        .help(LocalizedMessage("settings.overview.open_section", arguments: [localization.text(section.titleKey)]).text(using: localization))
     }
 
     var aboutPage: some View {
@@ -265,21 +269,7 @@ extension SettingsView {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
 
-                HStack(spacing: 6) {
-                    Text(localization.text("about.version.current"))
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                    Text(currentVersion)
-                        .font(.system(size: 13, weight: .medium).monospacedDigit())
-                        .foregroundStyle(.primary)
-                    if case .available = updateInformation.state {
-                        StatusPill(
-                            text: localization.text("about.version.available"),
-                            tint: .green
-                        )
-                    }
-                }
-                .padding(.top, 2)
+
             }
         }
         .frame(maxWidth: .infinity)
@@ -303,70 +293,60 @@ extension SettingsView {
         .padding(.vertical, 8)
     }
 
-    @ViewBuilder
     private var softwareUpdateSection: some View {
-        if Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") != nil {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 12) {
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 21, weight: .medium))
-                        .foregroundStyle(Color.accentColor)
-                        .frame(width: 34)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.system(size: 21, weight: .medium))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 34)
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(localization.text("about.version.title"))
-                            .font(.subheadline.weight(.semibold))
-                        Text(localization.text("about.version.check_prerelease_help_short"))
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer(minLength: 16)
-
-                    Toggle(
-                        localization.text("about.version.check_prerelease"),
-                        isOn: $settings.checksForPreReleaseUpdates
-                    )
-                    .toggleStyle(.switch)
-                    .font(.system(size: 12))
-
-                    Button(action: checkForUpdates) {
-                        Label(
-                            localization.text("menu.check_for_updates"),
-                            systemImage: "arrow.triangle.2.circlepath"
-                        )
-                    }
-                    .compatibilityButtonStyle(.standard)
-                    .fixedSize(horizontal: true, vertical: false)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(localization.text("about.version.check_prerelease_help_short"))
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
                 }
 
-                updateInformationContent
+                Spacer(minLength: 16)
 
-                if case let .available(update) = updateInformation.state {
-                    HStack {
-                        Spacer()
-                        Button(action: checkForUpdates) {
-                            Text(String(
-                                format: localization.text("about.version.update_to"),
-                                locale: localization.locale,
-                                arguments: [update.displayVersion]
-                            ))
-                        }
-                        .compatibilityButtonStyle(.prominent)
+                Toggle(
+                    localization.text("about.version.check_prerelease"),
+                    isOn: $settings.checksForPreReleaseUpdates
+                )
+                .toggleStyle(.switch)
+                .font(.system(size: 12))
+
+                Button(action: checkForUpdates) {
+                    Label(
+                        localization.text("menu.check_for_updates"),
+                        systemImage: "arrow.triangle.2.circlepath"
+                    )
+                }
+                .compatibilityButtonStyle(.standard)
+                .fixedSize(horizontal: true, vertical: false)
+            }
+
+            updateInformationContent
+
+            if case let .available(update) = updateInformation.state {
+                HStack {
+                    Spacer()
+                    Button(action: checkForUpdates) {
+                        Text(String(
+                            format: localization.text("about.version.update_to"),
+                            locale: localization.locale,
+                            arguments: [update.displayVersion]
+                        ))
                     }
+                    .compatibilityButtonStyle(.prominent)
                 }
             }
-            .padding(.vertical, 2)
         }
+        .padding(.vertical, 2)
     }
 
     private var settingsSupportSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(localization.text("about.page.hero_description"))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.bottom, 12)
-            Divider()
             aboutLinkRow(titleKey: "about.support.website", symbol: "globe", label: "remote.zfdang.com", destination: localization.localizedWebsiteURL)
             Divider()
             aboutLinkRow(titleKey: "about.info.releases", symbol: "shippingbox", label: localization.text("about.info.open_releases"), destination: AppLinks.githubReleases)

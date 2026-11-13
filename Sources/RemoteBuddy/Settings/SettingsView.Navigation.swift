@@ -66,6 +66,9 @@ extension SettingsView {
                 }
                 Text(localization.text(section.titleKey))
                     .font(.system(size: 13, weight: .semibold))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .frame(height: 34)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)

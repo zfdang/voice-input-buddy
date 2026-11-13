@@ -50,6 +50,21 @@ struct SettingsOverviewTests {
         #expect(!state(accessibility: false).permissionsReady)
     }
 
+    @Test @MainActor func summariesNameMissingRequirementsAndReflectRepairs() throws {
+        let suite = "overview.tests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let localization = LocalizationStore(settings: AppSettings(defaults: defaults))
+        for language in [AppLanguage.english, .simplifiedChinese] {
+            localization.select(language)
+            let summary = state(input: false, driver: false).permissionsSummary(using: localization)
+            #expect(summary.contains(localization.text("permission.input_monitoring.title")))
+            #expect(summary.contains(localization.text("settings.driver.title")))
+            #expect(!summary.contains("%@"))
+            #expect(state().permissionsSummary(using: localization) == localization.text("settings.overview.ready"))
+        }
+    }
+
     @Test func listsUseLocale() {
         let chinese = SettingsOverviewState.localizedList(["蓝牙", "辅助功能"], locale: Locale(identifier: "zh_CN"))
         #expect(!chinese.contains(", "))

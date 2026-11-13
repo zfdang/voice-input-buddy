@@ -466,13 +466,32 @@
 "common.status.copied" = "已复制";
 "settings.section.about" = "关于";
 "settings.section.general" = "通用";
+
+"settings.overview.title" = "当前状态检查";
+"settings.overview.remote" = "遥控器连接";
+"settings.overview.mapping" = "按键映射";
+"settings.overview.integration" = "输入法集成";
+"settings.overview.disconnected" = "未连接";
+"settings.overview.optional" = "可选 · 未启用";
+"settings.overview.not_configured" = "未设置";
+"about.info.title" = "版本信息";
+"about.info.build" = "构建号";
+"about.info.architecture" = "芯片架构";
+"about.info.updates" = "软件更新";
+"about.info.project" = "项目介绍与链接";
+"about.info.releases" = "最新发布与下载";
+"about.info.open_releases" = "查看发布";
+"settings.general.display_group" = "应用显示";
+"settings.general.language_group" = "语言";
+"settings.overview.ready" = "权限与麦克风均已就绪";
+"settings.overview.missing_requirements" = "待设置：%@";
+"settings.overview.open_section" = "打开%@设置";
+
 "settings.section.settings" = "设置";
 "settings.update_badge.accessibility_value" = "有新版本可用";
 "settings.page.title" = "设置";
 "settings.permissions.title" = "系统权限";
-"settings.general.title" = "通用";
 "settings.general.launch_behavior" = "启动行为";
-"settings.general.launch_behavior_help" = "设置登录后自动启动和应用启动时是否打开主窗口。";
 "settings.diagnostics.title" = "诊断与日志";
 "settings.application_updates.title" = "应用与更新";
 "settings.application.tagline" = "让语音触手可及";
@@ -492,11 +511,9 @@
 "about.preferences.language" = "应用语言";
 "about.preferences.rc003_voice_extension_test" = "测试长时间语音功能";
 "about.page.hero_subtitle" = "集中查看无线语音工作台的版本、偏好与支持信息";
-"about.page.hero_description" = "让遥控器成为随手可用的 Mac 语音与快捷操作入口。";
 "about.privacy.local_only" = "数据仅存本机";
 "about.preferences.title" = "应用偏好";
 "about.support.title" = "更新与支持";
-"about.version.title" = "版本与更新";
 "about.version.current" = "当前版本";
 "about.version.latest" = "最新版本";
 "about.version.available" = "可更新";
@@ -520,7 +537,6 @@
 "about.support.website" = "官网";
 "about.support.feedback" = "问题反馈";
 "about.support.feedback_action" = "提交反馈";
-"about.support.feedback_description" = "反馈遥控搭子 Remote Buddy.app 的问题，或提出改进建议。";
 "share.action" = "分享";
 "share.sidebar.accessibility_label" = "分享遥控搭子 Remote Buddy.app";
 "share.title" = "分享遥控搭子 Remote Buddy.app";
@@ -908,8 +924,6 @@
 
 "button_mapping.manage_macros" = "管理组合动作";
 
-
-
 "button_mapping.macro_step_count" = "%d 个步骤";
 
 /* Common phrases */
@@ -979,7 +993,7 @@
 "settings.permissions.page_title" = "权限与麦克风";
 "settings.permissions.introduction" = "先确认权限和麦克风驱动，再连接设备、配置输入工具。";
 "settings.permissions.privacy_title" = "隐私与数据处理";
-"settings.permissions.privacy_detail" = "Remote Buddy 不采集使用统计，不保存回眸文本和录音，不上传日志。蓝牙用于接收遥控器音频，输入监控用于读取遥控器按键，辅助功能用于触发所配置的动作。语音识别由所选输入工具提供，请同时检查该工具的隐私设置。";
+"settings.permissions.privacy_detail" = "Remote Buddy 不采集使用统计，不保存回眸文本和录音，不上传日志。蓝牙用于接收遥控器音频，输入监控用于读取遥控器按键，辅助功能用于触发所配置的动作。虚拟麦克风驱动将遥控器音频传递给输入工具。语音识别由所选输入工具提供，请同时检查该工具的隐私设置。";
 "settings.driver.title" = "虚拟麦克风驱动";
 "settings.driver.detail" = "回环设备将遥控器音频传递给输入工具。";
 "settings.driver.installed" = "已检测到兼容麦克风";
@@ -1024,9 +1038,6 @@
 "onboarding.step.controls" = "按键测试";
 "onboarding.step.complete" = "完成";
 
-
-
-
 "onboarding.voice_tool.guide.open_voice_buddy" = "打开 Voice Buddy";
 "onboarding.voice_tool.guide.open_voice_buddy.detail" = "打开 Voice Buddy（语音搭子）主窗口并切换到“通用”，配置触发按键、与当前遥控器一致的录音触发模式及麦克风输入源。";
 "onboarding.voice_tool.guide.configure_voice_buddy" = "将触发按键设为 Fn / 🌐 并匹配按住说话";
@@ -1061,13 +1072,11 @@
 "update.dialog.retry_quit" = "退出应用并继续";
 "update.dialog.history" = "更新说明";
 
-
 "update.dialog.install_later" = "稍后安装";
 
 "common_phrases.key.ok" = "确认键";
 
 "button_mapping.unsupported_device" = "此遥控器目前尚未支持。请选择小米、T1-Remote 或 G9N9N 遥控器进行按键设置。";
-
 
 "onboarding.voice_tool.guide.screenshot.doubao_input_microphone" = "豆包输入法：选择遥控搭子的麦克风";
 "onboarding.voice_tool.guide.screenshot.weixin_input_microphone" = "微信输入法：选择遥控搭子的麦克风";
@@ -1095,7 +1104,6 @@
 
 "update.dialog.waiting_for_quit.detail" = "应用仍在运行。退出应用后即可继续安装。";
 
-
 "update.dialog.close" = "关闭";
 
 "update.dialog.done" = "完成";
@@ -1105,7 +1113,6 @@
 "update.dialog.available_version" = "更新版本";
 
 "update.dialog.latest_version" = "此渠道最新版本";
-
 
 // Five-device product scope. Upcoming adapters show an inline notice on Continue.
 "remote.catalog.xiaomi.title" = "小米蓝牙遥控器 2 / 2 Pro";
@@ -1199,29 +1206,3 @@
 
 "action.repeat_single_click" = "持续连发";
 "button_mapping.hold_repeat.help" = "长按选择“持续连发”时，按住约 0.35 秒后重复执行单击动作，松开即停止。也可以选择下方其他动作，长按时只执行一次；双击设置不受影响。";
-
-"settings.overview.title" = "当前状态检查";
-"settings.overview.permissions" = "权限设置";
-"settings.overview.remote" = "遥控器连接";
-"settings.overview.mapping" = "按键映射";
-"settings.overview.integration" = "输入法集成";
-"settings.overview.granted" = "已授权";
-"settings.overview.disconnected" = "未连接";
-"settings.overview.optional" = "可选 · 未启用";
-"settings.overview.not_configured" = "未设置";
-"settings.overview.missing_permissions" = "待授权：%@";
-
-"about.info.title" = "版本信息";
-"about.info.build" = "构建号";
-"about.info.architecture" = "芯片架构";
-"about.info.updates" = "软件更新";
-"about.info.project" = "项目介绍与链接";
-"about.info.releases" = "最新发布与下载";
-"about.info.open_releases" = "查看发布";
-
-"settings.general.display_group" = "应用显示";
-"settings.general.language_group" = "语言";
-"settings.general.open_window_help" = "启动遥控搭子时显示主面板。";
-
-"settings.overview.ready" = "权限与麦克风均已就绪";
-"settings.overview.missing_requirements" = "待设置：%@";

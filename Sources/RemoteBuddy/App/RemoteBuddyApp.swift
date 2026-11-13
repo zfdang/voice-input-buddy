@@ -1,6 +1,5 @@
 import AppKit
 import Combine
-import CoreBluetooth
 import Darwin
 import Sparkle
 import SwiftUI
