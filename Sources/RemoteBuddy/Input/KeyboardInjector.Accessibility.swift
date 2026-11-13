@@ -208,7 +208,7 @@ extension KeyboardInjector {
                         kAXIdentifierAttribute, kAXTitleAttribute, kAXDescriptionAttribute, kAXHelpAttribute, kAXPlaceholderValueAttribute]
             let attributes = AccessibilityMessaging.attributes(input, keys: keys)
             let destination = integratedPreservationSnapshot(bundleIdentifier: integration.bundleIdentifier,
-                read: { attributes[$0] }, valueIsSettable: {
+                secureInputEnabled: SecureInputMonitor.isEnabled(), read: { attributes[$0] }, valueIsSettable: {
                     var settable = DarwinBoolean(false)
                     return AXUIElementIsAttributeSettable(input, kAXValueAttribute as CFString, &settable) == .success && settable.boolValue
                 })
@@ -379,7 +379,7 @@ extension KeyboardInjector {
             .contains { $0.lowercased() == "message input" }
     }
 
-    static func integratedPreservationSnapshot(bundleIdentifier: String?, read: (String) -> Any?,
+    static func integratedPreservationSnapshot(bundleIdentifier: String?, secureInputEnabled: Bool = false, read: (String) -> Any?,
                                                valueIsSettable: () -> Bool) -> VoiceInputDestinationSnapshot {
         let role = read(kAXRoleAttribute) as? String ?? ""
         let inputRole = ["AXTextArea", "AXTextField", "AXComboBox"].contains(role)
@@ -389,7 +389,7 @@ extension KeyboardInjector {
         return .init(bundleIdentifier: bundleIdentifier, role: role,
             subrole: read(kAXSubroleAttribute) as? String ?? "", enabled: read(kAXEnabledAttribute) as? Bool ?? true,
             editable: editable, protectedContent: read("AXProtectedContent") as? Bool ?? false,
-            semanticText: semantic, secureInputEnabled: SecureInputMonitor.isEnabled())
+            semanticText: semantic, secureInputEnabled: secureInputEnabled)
     }
 
     static func shouldPreserveIntegratedInput(_ destination: VoiceInputDestinationSnapshot,
