@@ -296,7 +296,6 @@ extension BridgeAppModel {
             return
         }
         voiceSession.end()
-        releaseVoiceKeyIfNeeded(owner: .bluetooth, forceSoftware: true)
         voiceSession.commandAudio.cancel()
         if longRecordingBridge === bridge {
             if longRecordingRequested {
@@ -347,8 +346,43 @@ extension BridgeAppModel {
         voiceSession.activeBluetoothVoiceTraceID = nil
         voiceSession.bluetoothVoiceTraceStartedAt = nil
         voiceSession.bluetoothVoiceTailDiagnostics.reset()
-        endVoiceSessionIfNeeded(flushAudio: shouldFlushAudio)
-        releaseVirtualAudioOutputIfUnused(reason: "bluetooth_voice_finished")
+        finishBluetoothVoicePlayback(deviceIdentifier: identifier, handledByFnTapMode: handledByFnTapMode)
+    }
+
+    /// Capture has ended, but a held dictation key must outlive all queued PCM.
+    /// Fn-tap mode already owns its own drain and stop pulse.
+    func finishBluetoothVoicePlayback(
+        deviceIdentifier: UUID,
+        handledByFnTapMode: Bool,
+        drainAudio: ((TimeInterval, @escaping (VirtualAudioDrainOutcome) -> Void) -> Void)? = nil,
+        releaseKey: (() -> Void)? = nil
+    ) {
+        let release = releaseKey ?? { [weak self] in
+            self?.releaseVoiceKeyIfNeeded(owner: .bluetooth, forceSoftware: true)
+        }
+        guard !handledByFnTapMode, voiceKeyLatch.isHeld, heldVoiceKeyMode != nil else {
+            release()
+            endVoiceSessionIfNeeded(flushAudio: false)
+            releaseVirtualAudioOutputIfUnused(reason: "bluetooth_voice_finished")
+            return
+        }
+        let id = UUID()
+        voiceSession.pendingKeyRelease = (id, deviceIdentifier)
+        let maximumDelay = audio.output.pendingPlaybackDuration + 0.75
+        AppLogger.shared.write("VOICE HOLD playback_stop id=\(id) phase=requested timeout_ms=\(Int(maximumDelay * 1_000))")
+        let drain = drainAudio ?? { [weak self] delay, completion in
+            self?.audio.output.endSessionAfterDraining(
+                source: "voice_hold", maximumDelay: delay, completion: completion
+            )
+        }
+        drain(maximumDelay) { [weak self] outcome in
+            guard let self, self.voiceSession.pendingKeyRelease?.id == id else { return }
+            self.voiceSession.pendingKeyRelease = nil
+            AppLogger.shared.write("VOICE HOLD playback_stop id=\(id) phase=completed result=\(outcome.rawValue)")
+            release()
+            self.endVoiceSessionIfNeeded(flushAudio: false)
+            self.releaseVirtualAudioOutputIfUnused(reason: "bluetooth_voice_finished")
+        }
     }
 
     func bluetoothBridge(_ bridge: BluetoothRemoteBridge, didDecode samples: [Int16]) {
@@ -577,7 +611,8 @@ extension BridgeAppModel {
                     remotePowerStates.removeValue(forKey: profileID)
                 }
             }
-            let voiceWasActive = BluetoothVoiceDeviceOwnershipPolicy.matches(identifier, active: voiceSession.activeDeviceIdentifier)
+            let voiceWasActive = BluetoothVoiceDeviceOwnershipPolicy.matches(identifier, active: voiceSession.activeDeviceIdentifier) ||
+                BluetoothVoiceDeviceOwnershipPolicy.matches(identifier, active: voiceSession.pendingKeyRelease?.deviceIdentifier)
             if voiceWasActive {
                 if rc003VoiceExtensionTestEnabled,
                    rc003VoiceExtensionActive,

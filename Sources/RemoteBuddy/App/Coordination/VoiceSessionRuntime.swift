@@ -11,6 +11,7 @@ final class VoiceSessionRuntime {
     var loggedBluetoothVoiceAudioDeviceIdentifier: UUID?
     let pendingStart = BluetoothPendingAudioStart()
     var stopRequested = false
+    var pendingKeyRelease: (id: UUID, deviceIdentifier: UUID)?
     var activeDeviceIdentifier: UUID?
     var bluetoothVoiceTraceCounter: UInt64 = 0
     var activeBluetoothVoiceTraceID: UInt64?

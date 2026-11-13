@@ -3,6 +3,9 @@ import Foundation
 enum VoicePlaybackQueueCapacity {
     static let maximumSamples = 8_000
     static let maximumPreRollSamples = 80_000
+    // Return playback capacity every 20 ms rather than waiting for a whole
+    // half-second pre-roll block plus output/callback latency to finish.
+    static let maximumChunkSamples = 320
 
     static func admits(pending: Int, incoming: Int, pendingPreRoll: Int = 0, isPreRoll: Bool = false,
         preRollBudget: Int = 0) -> Bool {
@@ -20,8 +23,8 @@ enum VoicePlaybackQueueCapacity {
     }
 
     static func chunks(_ samples: [Int16]) -> [[Int16]] {
-        stride(from: 0, to: samples.count, by: maximumSamples).map {
-            Array(samples[$0..<min(samples.count, $0 + maximumSamples)])
+        stride(from: 0, to: samples.count, by: maximumChunkSamples).map {
+            Array(samples[$0..<min(samples.count, $0 + maximumChunkSamples)])
         }
     }
 }

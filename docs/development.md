@@ -40,7 +40,7 @@ SwiftPM 主执行目标为 RemoteBuddy。采用公开源码的默认构建，不
 
 更新源使用独立的临时 URLSession，空闲和总请求超时均为 30 秒。响应头和流式读取均检查 1 MiB 上限，超限时取消该请求。不会修改共享 URLSession 的配置，不增加常驻轮询或逐输入事件的权限查询。
 
-启动前预录音与实时 PCM 使用独立的队列额度：预录音最多 80,000 个采样（5 秒），实时待播放音频最多 8,000 个采样（半秒）。预录音分成不超过半秒的播放块，按原顺序送入播放器，不通过放大实时额度消化积压。Fn 点按停止的排空期限按待播放时长加余量计算，保留取消、输出中断和过期回调隔离。
+启动前预录音与实时 PCM 使用独立的队列额度：预录音最多 80,000 个采样（5 秒），实时待播放音频最多 8,000 个采样（半秒）。预录音分成不超过 20 毫秒的播放块，避免整块播放完成回调的延迟暂时耗尽实时额度，按原顺序送入播放器，不通过放大实时额度消化积压。Fn 点按停止的排空期限按待播放时长加余量计算，保留取消、输出中断和过期回调隔离。
 
 ## 本地开发
 
@@ -283,6 +283,13 @@ new session starts. `SessionInputIntegrationTests` exercises input-source
 activation completing across session and screen suspension. Both replace keyboard
 injection and audio hardware scheduling; real remote reconnect, HAL routing and
 external dictation still require hardware acceptance.
+
+Bluetooth hold-to-talk keeps its software dictation key pressed after capture
+stops until queued virtual-microphone audio drains. The deadline is the remaining
+playback duration plus 750 ms; forced drain completion also releases the key.
+New voice starts are rejected during this tail. Disconnect, suspension and forced
+key cleanup invalidate the pending completion so it cannot release a later
+session's key. Fn-tap retains its separate drain and stop-pulse sequence.
 
 Compact window checks: the settings window fits the current screen's visible
 frame on opening and screen changes. Settings keep a readable

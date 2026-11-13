@@ -27,7 +27,6 @@ extension SettingsView {
         case .upToDate:
             Label(localization.text("about.version.up_to_date"), systemImage: "checkmark.circle.fill")
                 .font(.headline)
-                .foregroundStyle(.green)
             Text(localization.text("about.version.up_to_date_description"))
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
