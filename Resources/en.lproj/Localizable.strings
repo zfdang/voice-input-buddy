@@ -1218,8 +1218,8 @@
 "application_integration.accessibility_help" = "Requires Accessibility permission. Focusing is optional. If it fails, voice input continues; use Command+V to paste the result if needed. Text recognition and insertion are handled by your voice input tool.";
 
 "application_integration.status.waiting" = "Preparing the input field…";
-"application_integration.status.ready" = "Input focus confirmed. Voice input can start.";
-"application_integration.status.failed" = "Input was not automatically focused. Voice input will continue; use Command+V to paste the result if needed.";
+"application_integration.status.ready" = "Input focus confirmed. Preparing voice input…";
+"application_integration.status.failed" = "Input was not automatically focused. Preparing voice input…";
 "application_integration.status.timed_out" = "Input preparation timed out. Voice input was cancelled; try again.";
 "application_integration.status.cancelled" = "Input preparation was cancelled. No voice trigger was sent.";
 "application_integration.permission.granted" = "Accessibility permission granted";
@@ -1228,4 +1228,7 @@
 
 "application_integration.fn_behavior" = "Enabling any app integration makes Remote Buddy send the Fn hold trigger for all foreground apps so focusing can finish first. This requires Accessibility permission. Only enabled foreground apps have their input focus adjusted. Disable all integrations to return to the original trigger behavior.";
 
-"application_integration.status.focus_timed_out" = "Automatic focus timed out. Voice input will continue; use Command+V to paste the result if needed.";
+"application_integration.status.focus_timed_out" = "Automatic focus timed out. Preparing voice input…";
+
+"application_integration.status.triggered" = "Voice trigger sent.";
+"application_integration.status.triggered_without_focus" = "Voice trigger sent without automatic focus. If text is not filled in, use Command+V to paste the result.";

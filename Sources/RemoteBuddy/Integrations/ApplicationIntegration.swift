@@ -31,7 +31,7 @@ enum ApplicationIntegration: String, CaseIterable, Identifiable {
 }
 
 enum ApplicationIntegrationPreparationState: Equatable {
-    case waiting, ready, unavailable, focusTimedOut
+    case waiting, ready, unavailable, focusTimedOut, voiceTriggered, voiceTriggeredWithoutFocus
     case cancelled(VoiceInputDestinationCancellation)
 }
 
@@ -134,7 +134,8 @@ final class ApplicationIntegrationController {
         case .ready:
             let state = focusStatus ?? .ready
             if state == .unavailable || state == .focusTimedOut {
-                AppLogger.shared.write("APP INTEGRATION continuing bundle=\(bundle) focus=unavailable")
+                let reason = state == .focusTimedOut ? "timed_out" : "unavailable"
+                AppLogger.shared.write("APP INTEGRATION continuing bundle=\(bundle) focus=\(reason)")
             }
             onStateChange(state)
         case let .cancelled(reason):
@@ -172,16 +173,17 @@ extension AppSettings {
     }
 }
 
-/// Shared by the settings status and menu-bar voice status.
+/// Per-attempt feedback shown in App Integrations; separate from shortcut configuration.
 enum ApplicationIntegrationStatus {
     static func messageKey(_ state: ApplicationIntegrationPreparationState) -> String {
         switch state {
         case .waiting: return "application_integration.status.waiting"
         case .ready: return "application_integration.status.ready"
+        case .voiceTriggered: return "application_integration.status.triggered"
+        case .voiceTriggeredWithoutFocus: return "application_integration.status.triggered_without_focus"
         case .unavailable: return "application_integration.status.failed"
         case .focusTimedOut: return "application_integration.status.focus_timed_out"
         case .cancelled(.timedOut): return "application_integration.status.timed_out"
-        case .cancelled(.actionFailed): return "application_integration.status.cancelled"
         case .cancelled: return "application_integration.status.cancelled"
         }
     }

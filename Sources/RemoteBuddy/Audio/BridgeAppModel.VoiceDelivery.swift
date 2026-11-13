@@ -222,6 +222,7 @@ extension BridgeAppModel {
                     self.pendingVoiceKeyMode = nil
                     if owner == .bluetooth { self.voiceSession.commandAudio.cancel() }
                     self.voiceKeyLatch.rollback(transition, owner: owner)
+                    self.completeApplicationIntegrationVoiceTrigger(started: false)
                     immediateResult = false
                     finish?(false)
                     return
@@ -283,6 +284,7 @@ extension BridgeAppModel {
     ) -> Bool {
         guard keySetter(mode, shouldHold) else {
             if shouldHold {
+                completeApplicationIntegrationVoiceTrigger(started: false)
                 pendingVoiceKeyMode = nil
                 if owner == .bluetooth {
                     voiceSession.commandAudio.cancel()
@@ -296,6 +298,7 @@ extension BridgeAppModel {
             return false
         }
         if shouldHold {
+            completeApplicationIntegrationVoiceTrigger(started: true)
             preferredInputSourceMonitor.markVoiceTriggerSubmitted()
         } else {
             preferredInputSourceMonitor.endVoiceSession()

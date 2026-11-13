@@ -98,7 +98,7 @@ struct ApplicationIntegrationTests {
                     events.append("focus_requested")
                     focusDone = done
                     return ScheduledOperation {}
-                })
+                }, onStateChange: { model.recordApplicationIntegrationStatus($0) })
             model.applicationIntegrationController = controller
             var source = "previous"
             model.preferredInputSourceMonitor = PreferredInputSourceMonitor(
@@ -121,6 +121,7 @@ struct ApplicationIntegrationTests {
             finishFocus(true)
             #expect(events == ["focus_requested", "focus_confirmed", "select_source", "source_ready", "voice_down"])
             #expect(model.voiceSession.commandAudio.drain() == [1, 2, 3])
+            #expect(model.applicationIntegrationStatus == .voiceTriggered)
             #expect(model.updateVoiceKeyState(streaming: false, forceSoftware: true, owner: .bluetooth,
                 keySetter: { _, down in events.append(down ? "voice_down" : "voice_up"); return true }))
             #expect(events.last == "voice_up")
@@ -339,6 +340,53 @@ struct ApplicationIntegrationTests {
         if case let .waiting(operation) = wait { operation.cancel() }
         done?(.ready)
         clock.runAll()
+    }
+
+    @Test func focusTimeoutNeverClaimsVoiceStartedBeforeDestinationValidationCompletes() throws {
+        try withSettings { settings, _ in
+            settings.setAllApplicationIntegrations(enabled: true)
+            settings.voiceFnTapModeEnabled = true
+            let model = BridgeAppModel(settings: settings)
+            let clock = ControlledTestScheduler()
+            model.scheduleApplicationIntegrationStatus = clock.voiceSchedule
+            let controller = ApplicationIntegrationController(settings: settings, notifications: NotificationCenter(),
+                frontmost: { (ApplicationIntegration.weChat.bundleIdentifier, 42) },
+                focus: { _, _, _ in ScheduledOperation {} }, schedule: clock.voiceSchedule,
+                onStateChange: { model.recordApplicationIntegrationStatus($0) })
+            model.applicationIntegrationController = controller
+            model.voiceInputDestinationCoordinator = VoiceInputDestinationCoordinator(schedule: clock.voiceSchedule,
+                querySnapshot: { _ in })
+            var edges: [Bool] = []
+            let session = VoiceFnTapSessionController(schedule: clock.voiceSchedule,
+                destinationReadiness: { model.prepareIntegratedVoiceInputDestination(completion: $0, schedule: clock.voiceSchedule) },
+                setFunctionKeyPressed: { edges.append($0); return true }, enqueueAudio: { _ in },
+                drainAudio: { _, done in done() }, onFailure: { _ in })
+            controller.start()
+            defer { session.shutdown(); controller.stop() }
+            session.setEnabled(true)
+            #expect(session.startVoice())
+            clock.advance(to: 3000)
+            #expect(model.applicationIntegrationStatus == .focusTimedOut)
+            #expect(edges.isEmpty)
+            clock.advance(to: 4000)
+            #expect(model.applicationIntegrationStatus == .cancelled(.timedOut))
+            #expect(edges.isEmpty)
+        }
+    }
+
+    @Test func finalIntegrationFeedbackRequiresAnActualSuccessfulVoiceTrigger() throws {
+        try withSettings { settings, _ in
+            let model = BridgeAppModel(settings: settings)
+            for pending in [ApplicationIntegrationPreparationState.unavailable, .focusTimedOut, .ready] {
+                model.recordApplicationIntegrationStatus(pending)
+                model.completeApplicationIntegrationVoiceTrigger(started: false)
+                #expect(model.applicationIntegrationStatus == .cancelled(.actionFailed))
+                model.recordApplicationIntegrationStatus(pending)
+                model.completeApplicationIntegrationVoiceTrigger(started: true)
+                #expect(model.applicationIntegrationStatus == (pending == .ready ? .voiceTriggered : .voiceTriggeredWithoutFocus))
+            }
+            model.clearApplicationIntegrationStatus()
+        }
     }
 
     @Test func integrationWaitUsesBoundedPreRollAndRestoresNormalCapacityNextSession() {

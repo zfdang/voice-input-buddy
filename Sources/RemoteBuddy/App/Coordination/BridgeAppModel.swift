@@ -120,7 +120,11 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
         destinationReadiness: { [weak self] completion in
             self?.prepareIntegratedVoiceInputDestination(completion: completion) ?? .immediate
         },
-        setFunctionKeyPressed: { KeyboardInjector.setFunctionKeyPressed($0) },
+        setFunctionKeyPressed: { [weak self] pressed in
+            let submitted = KeyboardInjector.setFunctionKeyPressed(pressed)
+            if pressed { self?.completeApplicationIntegrationVoiceTrigger(started: submitted) }
+            return submitted
+        },
         enqueueAudio: { [weak self] samples in
             self?.enqueueVoiceFnTapAudio(samples)
         },

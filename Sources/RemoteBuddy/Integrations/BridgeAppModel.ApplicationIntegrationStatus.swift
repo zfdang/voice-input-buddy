@@ -14,6 +14,24 @@ extension BridgeAppModel {
         }
     }
 
+    /// Only the actual key-post result can promote preparing feedback to triggered.
+    func completeApplicationIntegrationVoiceTrigger(started: Bool) {
+        guard let state = applicationIntegrationStatus else { return }
+        switch state {
+        case .voiceTriggered, .voiceTriggeredWithoutFocus, .cancelled: return
+        default: break
+        }
+        if !started {
+            recordApplicationIntegrationStatus(.cancelled(.actionFailed))
+            return
+        }
+        switch state {
+        case .ready: recordApplicationIntegrationStatus(.voiceTriggered)
+        case .unavailable, .focusTimedOut: recordApplicationIntegrationStatus(.voiceTriggeredWithoutFocus)
+        default: break // Stop pulses and repeated callbacks do not start a new attempt.
+        }
+    }
+
     func clearApplicationIntegrationStatus() {
         applicationIntegrationStatusGeneration &+= 1
         applicationIntegrationStatusExpiry?.cancel()
