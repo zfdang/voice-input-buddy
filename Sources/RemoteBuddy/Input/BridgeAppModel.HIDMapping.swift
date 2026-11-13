@@ -335,11 +335,25 @@ extension BridgeAppModel {
         hidAllowedLocationIDs = allowedLocationIDs
         guard desiredConfiguration.customMappingEnabled || backOnlyMode else {
             hidStatus = LocalizedMessage("button_mapping.status.system_managed")
+            hidFilterStartFailed = false
             hidMonitoringInterrupted = false // No monitoring is requested by the current configuration.
             appliedHIDMonitoringConfiguration = desiredConfiguration
+            refreshRuntimePermissionDiagnosis(trigger: "hid_system_managed")
             return
         }
-        if desiredConfiguration.customMappingEnabled { _ = hidEventSuppressor.start() }
+        if desiredConfiguration.customMappingEnabled {
+            let filterStarted = hidEventSuppressor.start()
+            hidFilterStartFailed = !filterStarted
+            if !filterStarted {
+                let permissions = permissionSnapshotProvider()
+                AppLogger.shared.write(
+                    "HID FILTER start_failed input_monitoring=\(permissions.inputMonitoringGranted) " +
+                        "accessibility=\(permissions.accessibilityGranted)"
+                )
+            }
+        } else {
+            hidFilterStartFailed = false
+        }
         for target in targets {
             let monitor = makeHIDMonitor(
                 profileID: target.profileID,
@@ -362,6 +376,7 @@ extension BridgeAppModel {
             hidMonitoringInterrupted = false
             appliedHIDMonitoringConfiguration = desiredConfiguration
         }
+        refreshRuntimePermissionDiagnosis(trigger: "hid_monitors_started")
     }
 
     private func canReuseRunningHIDMonitors(
@@ -409,7 +424,9 @@ extension BridgeAppModel {
         cancelHIDMappingRecovery(reason: reason)
         stopHIDMonitors()
         preferredInputSourceMonitor.stop(preservingExplicitVoiceSession: false)
+        hidFilterStartFailed = false
         hidMonitoringInterrupted = true
+        refreshRuntimePermissionDiagnosis(trigger: "hid_suspended:\(reason)")
     }
 
     func startHIDDiscoveryIfNeeded(allowBackOnly: Bool = false) {
@@ -564,6 +581,7 @@ extension BridgeAppModel {
             if monitor.profileID == self.settings.selectedRemoteProfileID || monitor.profileID == nil {
                 self.hidStatus = value
                 self.refreshVoiceKeyCompatibilityWarning()
+                self.refreshRuntimePermissionDiagnosis(trigger: "hid_status")
             }
         }
         monitor.onActiveButtons = { [weak self] profileID, buttons in

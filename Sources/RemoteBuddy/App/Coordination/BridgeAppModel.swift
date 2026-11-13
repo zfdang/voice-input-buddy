@@ -28,6 +28,9 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     @Published var applicationIntegrationStatus: ApplicationIntegrationPreparationState?
     @Published var connectionStatus = LocalizedMessage("bluetooth.status.initializing")
     @Published var hidStatus = LocalizedMessage("button_mapping.status.disabled")
+    @Published var hidFilterStartFailed = false
+    @Published var runtimePermissionIssue: RuntimePermissionIssue?
+    var lastLoggedRuntimePermissionIssueKey: String?
     @Published var audioStatus = LocalizedMessage("audio.output.none_selected")
     @Published var buddyMicrophoneStatus = LocalizedMessage("audio.compatibility.checking")
     @Published var isStreaming = false
@@ -279,6 +282,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
                     (!permissions.accessibilityGranted ? "button_mapping.permission.accessibility_required" :
                         "button_mapping.status.interrupted")
             )
+            self.refreshRuntimePermissionDiagnosis(trigger: "hid_filter_disabled")
         }
         voiceToolCancellable = settings.$onboardingVoiceTool
             .removeDuplicates()

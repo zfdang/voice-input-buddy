@@ -261,10 +261,19 @@ extension OnboardingView {
                 onboardingActionButton(id: "recovery.\(failure.rawValue)") {
                     performRecovery(for: failure)
                 } label: {
-                    Text(localization.text("onboarding.recovery.\(failure.rawValue).action"))
+                    Text(localization.text(recoveryActionKey(for: failure)))
                         .font(.system(size: 13, weight: .semibold))
                 }
                 .buttonStyle(.borderedProminent)
+
+                if failure == .permissionDesynced, model.canRelaunchApplication {
+                    onboardingActionButton(id: "recovery.\(failure.rawValue).open_settings") {
+                        openPrivacySecuritySettings()
+                    } label: {
+                        Text(localization.text("onboarding.recovery.permission.desynced.open_settings"))
+                    }
+                    .buttonStyle(.bordered)
+                }
 
                 onboardingActionButton(id: "diagnostics.copy") {
                     copyDiagnosticSummary()
@@ -296,6 +305,13 @@ extension OnboardingView {
             return "onboarding.recovery.voice.session_not_ended.t1_title"
         }
         return "onboarding.recovery.\(failure.rawValue).title"
+    }
+
+    private func recoveryActionKey(for failure: FirstUseFailureReason) -> String {
+        if failure == .permissionDesynced, !model.canRelaunchApplication {
+            return "onboarding.recovery.permission.desynced.open_settings"
+        }
+        return "onboarding.recovery.\(failure.rawValue).action"
     }
 
     private func recoveryDetailKey(for failure: FirstUseFailureReason) -> String {

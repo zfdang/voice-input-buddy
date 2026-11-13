@@ -79,23 +79,13 @@ extension OnboardingView {
                     .stroke(Color.accentColor.opacity(0.18), lineWidth: 1)
             }
 
+            let connectionPresentation = physicalRemoteConnectionStatusPresentation
             statusCard(
-                icon: selectedControlConnected
-                    ? "checkmark.circle.fill"
-                    : "dot.radiowaves.left.and.right",
-                title: !selectedControlConnected && !observedRemoteButtons.isEmpty
-                    ? localization.text("onboarding.remote.hid_connected")
-                    : selectedControlConnected
-                        ? localization.text("onboarding.remote.connected")
-                        : localization.text("onboarding.remote.searching"),
-                detail: localization.text(
-                    selectedControlConnected
-                        ? "onboarding.remote.connected_detail"
-                        : !observedRemoteButtons.isEmpty
-                            ? "onboarding.remote.hid_connected_detail"
-                            : "onboarding.remote.searching_detail"
-                ),
+                icon: connectionPresentation.icon,
+                title: connectionPresentation.title,
+                detail: connectionPresentation.detail,
                 isComplete: selectedControlConnected,
+                pendingColor: connectionPresentation.pendingColor,
                 compact: true
             )
 
@@ -138,6 +128,67 @@ extension OnboardingView {
         .onAppear { model.selectOnboardingRemoteIfNeeded() }
         .onChange(of: model.onboardingRemoteProfiles.map(\.id)) { _, _ in
             model.selectOnboardingRemoteIfNeeded()
+        }
+    }
+
+    private var physicalRemoteConnectionStatusPresentation: (
+        icon: String,
+        title: String,
+        detail: String,
+        pendingColor: Color?
+    ) {
+        if selectedControlConnected {
+            return (
+                "checkmark.circle.fill",
+                localization.text("onboarding.remote.connected"),
+                localization.text("onboarding.remote.connected_detail"),
+                nil
+            )
+        }
+        if !observedRemoteButtons.isEmpty {
+            return (
+                "dot.radiowaves.left.and.right",
+                localization.text("onboarding.remote.hid_connected"),
+                localization.text("onboarding.remote.hid_connected_detail"),
+                nil
+            )
+        }
+        switch model.runtimePermissionIssue {
+        case .permissionDesynced:
+            return (
+                "exclamationmark.triangle.fill",
+                localization.text("onboarding.remote.permission_desync.title"),
+                localization.text("onboarding.remote.permission_desync.detail"),
+                .orange
+            )
+        case .bluetoothPermissionDenied:
+            return (
+                "exclamationmark.triangle.fill",
+                localization.text("onboarding.remote.bluetooth_denied.title"),
+                localization.text("onboarding.remote.bluetooth_denied.detail"),
+                .orange
+            )
+        case .inputMonitoringPermissionDenied:
+            return (
+                "exclamationmark.triangle.fill",
+                localization.text("onboarding.remote.input_not_permitted.title"),
+                localization.text("onboarding.remote.input_not_permitted.detail"),
+                .orange
+            )
+        case .bluetoothUnavailable:
+            return (
+                "exclamationmark.triangle.fill",
+                model.connectionStatus.text(using: localization),
+                localization.text("onboarding.remote.bluetooth_unavailable.detail"),
+                .orange
+            )
+        case nil:
+            return (
+                "dot.radiowaves.left.and.right",
+                localization.text("onboarding.remote.searching"),
+                localization.text("onboarding.remote.searching_detail"),
+                nil
+            )
         }
     }
 

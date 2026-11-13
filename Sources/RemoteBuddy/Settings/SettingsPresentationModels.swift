@@ -93,6 +93,9 @@ struct SettingsDiagnosticSnapshot: Equatable {
     let runtimeLogAvailable: Bool
     let runtimeLogPath: String
     let runtimeLogSizeBytes: Int64?
+    let runtimePermissionIssue: String
+    let connectionStatusKey: String
+    let hidStatusKey: String
     let generatedAt: Date
 
     init(
@@ -113,6 +116,9 @@ struct SettingsDiagnosticSnapshot: Equatable {
         runtimeLogAvailable: Bool,
         runtimeLogPath: String = SettingsDiagnosticSnapshot.sanitizePath(AppLogger.shared.logURL.path),
         runtimeLogSizeBytes: Int64? = nil,
+        runtimePermissionIssue: String = "none",
+        connectionStatusKey: String = "unknown",
+        hidStatusKey: String = "unknown",
         generatedAt: Date = Date()
     ) {
         self.appVersion = appVersion
@@ -132,6 +138,9 @@ struct SettingsDiagnosticSnapshot: Equatable {
         self.runtimeLogAvailable = runtimeLogAvailable
         self.runtimeLogPath = Self.sanitizePath(runtimeLogPath)
         self.runtimeLogSizeBytes = runtimeLogSizeBytes
+        self.runtimePermissionIssue = runtimePermissionIssue
+        self.connectionStatusKey = connectionStatusKey
+        self.hidStatusKey = hidStatusKey
         self.generatedAt = generatedAt
     }
 
@@ -170,6 +179,7 @@ struct SettingsDiagnosticSnapshot: Equatable {
             "- 蓝牙 / Bluetooth: \(bluetoothGranted ? "已授权 (Granted)" : "未授权 (Denied)")",
             "- 输入监控 / Input Monitoring: \(inputMonitoringGranted ? "已授权 (Granted)" : "未授权 (Denied)")",
             "- 辅助功能 / Accessibility: \(accessibilityGranted ? "已授权 (Granted)" : "未授权 (Denied)")",
+            "- 运行时权限诊断 / Runtime Issue: \(runtimePermissionIssue)",
             "",
             "#### 设备与驱动 / Devices & Drivers",
             "- 遥控器连接 / Remote Connected: \(remoteConnected ? "已连接 (Yes)" : "未连接 (No)") [\(remoteModel)]",
@@ -195,6 +205,9 @@ struct SettingsDiagnosticSnapshot: Equatable {
             "permission_bluetooth: \(bluetoothGranted)",
             "permission_input_monitoring: \(inputMonitoringGranted)",
             "permission_accessibility: \(accessibilityGranted)",
+            "runtime_permission_issue: \"\(runtimePermissionIssue)\"",
+            "connection_status: \"\(connectionStatusKey)\"",
+            "hid_status: \"\(hidStatusKey)\"",
             "remote_connected: \(remoteConnected)",
             "remote_model: \"\(remoteModel)\"",
             "virtual_microphone: \(virtualMicrophoneReady)",

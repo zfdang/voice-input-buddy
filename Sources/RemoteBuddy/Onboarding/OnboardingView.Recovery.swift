@@ -86,6 +86,14 @@ extension OnboardingView {
             requestInputMonitoringPermission()
         case .accessibilityPermissionDenied:
             requestAccessibilityPermission()
+        case .permissionDesynced:
+            if interactionProbe == nil {
+                if !model.relaunchApplication() {
+                    openPrivacySecuritySettings()
+                }
+            } else {
+                openPrivacySecuritySettings()
+            }
         case .remoteNotFound:
             restartSelectedControlConnection()
         case .remoteButtonNotReady, .controlsNotConfirmed:
