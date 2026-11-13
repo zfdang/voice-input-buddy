@@ -1210,3 +1210,11 @@
 "settings.overview.optional" = "可选 · 未启用";
 "settings.overview.not_configured" = "未设置";
 "settings.overview.missing_permissions" = "待授权：%@";
+
+"about.info.title" = "版本信息";
+"about.info.build" = "构建号";
+"about.info.architecture" = "芯片架构";
+"about.info.updates" = "软件更新";
+"about.info.project" = "项目介绍与链接";
+"about.info.releases" = "最新发布与下载";
+"about.info.open_releases" = "查看发布";

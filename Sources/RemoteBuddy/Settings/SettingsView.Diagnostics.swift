@@ -77,8 +77,6 @@ extension SettingsView {
 
     var inlineDiagnosticsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(localization.text("settings.diagnostics.title"))
-                .font(.title3.weight(.semibold))
             Text(localization.text("diagnostics.logs.privacy"))
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
@@ -104,8 +102,7 @@ extension SettingsView {
                 }
             }
         }
-        .padding(.vertical, 12)
-        .overlay(alignment: .bottom) { Divider() }
+        .padding(.vertical, 2)
     }
 
     var appIconPreferenceRow: some View {

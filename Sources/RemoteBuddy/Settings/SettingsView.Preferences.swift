@@ -267,25 +267,32 @@ extension SettingsView {
         settingsPage(contentPadding: 28) {
             PageHeader(title: localization.text("settings.section.about"))
         } content: {
-            CompatibilityGlassContainer(spacing: 0) {
-                VStack(spacing: 0) {
-                    aboutHeroHeader
+            VStack(alignment: .leading, spacing: 20) {
+                aboutHeroHeader
 
-                    softwareUpdateSection
-
-                    inlineDiagnosticsSection
-
-                    if model.isRC003VoiceExtensionTestEnabled {
-                        Text(localization.text("about.preferences.rc003_voice_extension_test"))
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.vertical, 8)
-                            .overlay(alignment: .bottom) { Divider() }
+                aboutSection(titleKey: "about.info.title") {
+                    VStack(spacing: 0) {
+                        aboutInfoRow(title: localization.text("about.version.current"), value: currentVersion)
+                        Divider()
+                        aboutInfoRow(title: localization.text("about.info.build"), value: (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String) ?? localization.text("common.value.unknown"))
+                        Divider()
+                        aboutInfoRow(title: localization.text("about.info.architecture"), value: FirstUseDiagnosticSnapshot.architecture)
                     }
-
-                    settingsSupportSection
                 }
+
+                if Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") != nil {
+                    aboutSection(titleKey: "about.info.updates") { softwareUpdateSection }
+                }
+
+                aboutSection(titleKey: "settings.diagnostics.title") { inlineDiagnosticsSection }
+
+                if model.isRC003VoiceExtensionTestEnabled {
+                    Text(localization.text("about.preferences.rc003_voice_extension_test"))
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+
+                aboutSection(titleKey: "about.info.project") { settingsSupportSection }
             }
         }
         .onAppear {
@@ -315,6 +322,11 @@ extension SettingsView {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
 
+                Text(localization.text("about.app.description"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+
                 HStack(spacing: 6) {
                     Text(localization.text("about.version.current"))
                         .font(.system(size: 12))
@@ -334,8 +346,23 @@ extension SettingsView {
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 16)
-        .padding(.bottom, 22)
-        .overlay(alignment: .bottom) { Divider() }
+        .padding(.bottom, 4)
+    }
+
+    private func aboutSection<Content: View>(titleKey: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(localization.text(titleKey)).font(.title3.weight(.semibold))
+            GlassPanel { content().frame(maxWidth: .infinity, alignment: .leading) }
+        }
+    }
+
+    private func aboutInfoRow(title: String, value: String) -> some View {
+        HStack {
+            Text(title).foregroundStyle(.secondary)
+            Spacer()
+            Text(value).textSelection(.enabled)
+        }
+        .padding(.vertical, 8)
     }
 
     @ViewBuilder
@@ -391,39 +418,33 @@ extension SettingsView {
                     }
                 }
             }
-            .padding(.vertical, 12)
-            .overlay(alignment: .bottom) { Divider() }
+            .padding(.vertical, 2)
         }
     }
 
     private var settingsSupportSection: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "bubble.left.and.bubble.right")
-                .font(.system(size: 21, weight: .medium))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 34)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(localization.text("about.support.feedback"))
-                    .font(.subheadline.weight(.semibold))
-                Text(localization.text("about.support.feedback_description"))
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 16)
-            Link(destination: localization.localizedWebsiteURL) {
-                Label(localization.text("about.support.website"), systemImage: "globe")
-            }
-            .compatibilityButtonStyle(.standard)
-            Link(destination: AppLinks.githubRepository) {
-                Label(localization.text("about.support.github"), systemImage: "link")
-            }
-            .compatibilityButtonStyle(.standard)
-            Link(destination: AppLinks.feedback) {
-                Label(localization.text("about.support.feedback_action"), systemImage: "arrow.up.right")
-            }
-            .compatibilityButtonStyle(.standard)
+        VStack(alignment: .leading, spacing: 0) {
+            Text(localization.text("about.page.hero_description"))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.bottom, 12)
+            Divider()
+            aboutLinkRow(titleKey: "about.support.website", symbol: "globe", label: "remote.zfdang.com", destination: localization.localizedWebsiteURL)
+            Divider()
+            aboutLinkRow(titleKey: "about.info.releases", symbol: "shippingbox", label: localization.text("about.info.open_releases"), destination: AppLinks.githubReleases)
+            Divider()
+            aboutLinkRow(titleKey: "about.support.github", symbol: "link", label: "github.com/zfdang/remote-buddy", destination: AppLinks.githubRepository)
+            Divider()
+            aboutLinkRow(titleKey: "about.support.feedback", symbol: "bubble.left.and.bubble.right", label: localization.text("about.support.feedback_action"), destination: AppLinks.feedback)
         }
-        .padding(.vertical, 12)
-        .overlay(alignment: .bottom) { Divider() }
+    }
+
+    private func aboutLinkRow(titleKey: String, symbol: String, label: String, destination: URL) -> some View {
+        HStack(spacing: 10) {
+            Label(localization.text(titleKey), systemImage: symbol)
+            Spacer(minLength: 12)
+            Link(label, destination: destination)
+        }
+        .padding(.vertical, 10)
     }
 }

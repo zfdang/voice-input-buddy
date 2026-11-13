@@ -1208,3 +1208,11 @@
 "settings.overview.optional" = "Optional · not enabled";
 "settings.overview.not_configured" = "Not configured";
 "settings.overview.missing_permissions" = "Missing: %@";
+
+"about.info.title" = "Version information";
+"about.info.build" = "Build";
+"about.info.architecture" = "Architecture";
+"about.info.updates" = "Software updates";
+"about.info.project" = "Project and links";
+"about.info.releases" = "Latest releases";
+"about.info.open_releases" = "View releases";
