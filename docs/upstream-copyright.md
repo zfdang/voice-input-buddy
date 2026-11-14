@@ -1,6 +1,6 @@
 # Upstream copyright notice (historical)
 
-The notice below is preserved from remote-mic-app. Its SayAll branding, asset paths and distribution descriptions refer to that upstream project, not Remote Buddy. The proprietary assets listed here are not distributed in this project. Current component and artwork notices are in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
+The notice below is preserved from remote-mic-app. Its SayAll branding, asset paths and distribution descriptions refer to that upstream project, not Remote Buddy. Note that although this repository uses filenames such as `Resources/AppIcon.png` and `Resources/AppIcon.icns`, the current files in this repository are freshly created original assets under `GPL-3.0-only` (via `scripts/generate-icons.py`), not the upstream proprietary assets listed below. Current component and artwork notices are in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 
 ---
 

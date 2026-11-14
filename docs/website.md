@@ -2,7 +2,7 @@
 
 官网源文件位于 `pages/`，为无需构建的静态 HTML、CSS 和 JavaScript。默认首页 `index.html` 使用中文，英文页面位于 `index.en.html`；右上角可通过链接切换语言。仓库默认文档 `README.md` 使用中文，`README.en.md` 使用英文，并提供相互切换的链接。两份网页与 README 中英文版本应一起更新。
 
-`.github/workflows/static.yml` 在 main 中的 `pages/**` 或该 workflow 更新时部署，也支持手动触发，以及 main 的安装包发布 workflow 成功完成后的部署。部署前通过 `scripts/prepare-pages-update-feeds.sh` 获取并校验更新源，依次从当前 workflow_run 产物、仓库已提交/预生成的 pages 源、最新 Release 附件、最近成功的发布工作流产物或线上当前更新源回退检索并校验；全部源无效时停止部署。若线上旧源或构建产物失效，可通过 `scripts/rebuild-pages-update-feeds.py` 从已发布的安装包和签名重新生成更新源。仅上传 `pages/`，不上传 App 源码或构建目录；其中不应放入待提交以外的本地文件。
+`.github/workflows/static.yml` 在 main 中的 `pages/**` 或该 workflow 更新时部署，也支持手动触发，以及 main 的安装包发布 workflow 成功完成后的部署。部署前通过 `scripts/prepare-pages-update-feeds.sh` 获取并校验更新源，依次从当前 `workflow_run` 产物、最新 Release 附件、最近成功的发布工作流产物、仓库 `pages/` 预提交/本地重建源或线上当前更新源回退检索并校验；全部源无效时停止部署。若线上旧源或构建产物失效，可通过 `scripts/rebuild-pages-update-feeds.py` 从已发布的安装包和签名重新生成更新源。仅上传 `pages/`，不上传 App 源码或构建目录；其中不应放入待提交以外的本地文件。
 
 `pages/CNAME` 为 `remote.zfdang.com`，GitHub Pages 仓库设置已选择 Actions 部署与此自定义域名。域名 DNS 应正确指向 GitHub Pages；TLS 证书和域名验证由 GitHub 与域名服务配置决定。部署完成前，本地预览不等于官网已上线。
 
