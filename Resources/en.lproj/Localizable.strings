@@ -130,11 +130,6 @@
 "chromecast.status.disconnected" = "Remote disconnected";
 "chromecast.enabled.title" = "Enable Chromecast remote";
 "chromecast.enabled.detail" = "Find and connect to a Chromecast remote for voice typing. This setting does not affect your Apple Remote.";
-"chromecast.mode.title" = "Voice Button Mode";
-"chromecast.mode.toggle" = "Press to Start/Stop";
-"chromecast.mode.hold" = "Hold to talk";
-"chromecast.mode.toggle.detail" = "Press once to start, then again to stop. Other physical remotes require you to hold the voice button. Choose the matching mode in your voice typing app (Doubao: Hands-Free mode).";
-"chromecast.mode.hold.detail" = "Hold the voice button while speaking, then release it to stop. Choose the matching mode in your voice typing app (Doubao: Hold mode).";
 "chromecast.action.reconnect" = "Reconnect";
 "chromecast.help.plain" = "The remote microphone sends audio to the selected virtual microphone. It does not use the computer microphone.";
 "chromecast.mapping.voice.title" = "Voice Button";

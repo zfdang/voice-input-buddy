@@ -71,7 +71,6 @@ struct OnboardingVoicePairingPlan: Equatable {
     let binding: VoiceToolUserBinding
     let controlSource: OnboardingControlSource
     let fnTapModeEnabled: Bool
-    let chromecastVoiceMode: ChromecastVoiceMode?
     let evidenceState: VoiceToolEvidenceState
 
     static func resolve(
@@ -177,14 +176,10 @@ struct OnboardingVoicePairingPlan: Equatable {
         let fnTap = binding.gestureMode == .toggle &&
             binding.shortcut == .function &&
             !controlSource.supportedGestureModes.contains(.toggle)
-        let chromecastMode: ChromecastVoiceMode? = controlSource == .chromecastRemote
-            ? (binding.gestureMode == .toggle ? .toggle : .hold)
-            : nil
         return Self(
             binding: binding,
             controlSource: controlSource,
             fnTapModeEnabled: fnTap,
-            chromecastVoiceMode: chromecastMode,
             evidenceState: evidenceState
         )
     }

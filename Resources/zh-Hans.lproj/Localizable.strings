@@ -130,11 +130,6 @@
 "chromecast.status.disconnected" = "遥控器已断开";
 "chromecast.enabled.title" = "启用 Chromecast 遥控器";
 "chromecast.enabled.detail" = "打开后会搜索并连接该遥控器，用它的语音键直接说话；与 Siri Remote 互不影响。";
-"chromecast.mode.title" = "语音键模式";
-"chromecast.mode.toggle" = "按一次说话";
-"chromecast.mode.hold" = "按住说话";
-"chromecast.mode.toggle.detail" = "按一下开始收音，再按一下结束。只有这款遥控器支持这种方式，其他遥控器都只能按住说话。语音工具请对应选「按一次」触发（豆包：免按模式）。";
-"chromecast.mode.hold.detail" = "按住语音键时收音，松开结束。与 Siri Remote 的手感一致。语音工具请对应选「按住」触发（豆包：长按模式）。";
 "chromecast.action.reconnect" = "重新连接";
 "chromecast.help.plain" = "声音来自遥控器麦克风，传入所选虚拟麦克风；不使用电脑内置麦克风。";
 "chromecast.mapping.voice.title" = "语音键";
