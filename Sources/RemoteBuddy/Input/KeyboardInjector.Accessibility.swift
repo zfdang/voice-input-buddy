@@ -196,6 +196,12 @@ extension KeyboardInjector {
                                                 clickAttempted: inout Bool,
                                                 canContinue: @escaping () -> Bool) -> ApplicationFocusResult {
         let app = AXUIElementCreateApplication(processIdentifier)
+        // Reading the application's standard role is the public AT handshake.
+        // Electron's accessibilityRole getter enables native AX APIs on demand;
+        // querying only its window can otherwise return the native shell tree.
+        // https://github.com/electron/electron/blob/main/shell/browser/mac/electron_application.mm
+        guard canContinue(), axString(app, attribute: kAXRoleAttribute) == "AXApplication",
+              canContinue() else { return .unavailable }
         var preservedElement: AXUIElement?
         func preserveInput(excluding target: AXUIElement? = nil) -> Bool {
             preservedElement = nil
@@ -228,9 +234,13 @@ extension KeyboardInjector {
               axElements(window, attribute: "AXSheets").isEmpty else { return .unavailable }
         let frame = axFrame(window)
         let scanStarted = ProcessInfo.processInfo.systemUptime
-        let candidates = accessibilityTextCandidates(in: window, integration: integration)
+        var scannedNodes = 0
+        var scanTruncated = false
+        let candidates = accessibilityTextCandidates(in: window, integration: integration,
+            didScan: { scannedNodes = $0; scanTruncated = $1 })
         AppLogger.shared.write("APP INTEGRATION scan bundle=\(integration.bundleIdentifier) candidates=\(candidates.count) " +
             "matches=\(candidates.filter { integratedComposerScore($0.snapshot, integration: integration, windowFrame: frame) != nil }.count) " +
+            "nodes=\(scannedNodes) truncated=\(scanTruncated) " +
             "elapsed_ms=\(Int((ProcessInfo.processInfo.systemUptime - scanStarted) * 1_000))")
         let targetIsCurrent = {
             guard canContinue(), !VoiceInputDestinationSnapshot.system().isSensitiveDestination,
@@ -783,7 +793,8 @@ extension KeyboardInjector {
     }
 
     private static func accessibilityTextCandidates(
-        in window: AXUIElement, integration: ApplicationIntegration? = nil
+        in window: AXUIElement, integration: ApplicationIntegration? = nil,
+        didScan: ((Int, Bool) -> Void)? = nil
     ) -> [(element: AXUIElement, snapshot: AccessibilityTextCandidate)] {
         struct PendingElement {
             let element: AXUIElement
@@ -801,8 +812,13 @@ extension KeyboardInjector {
         var budget = AccessibilityTraversalBudget(maximumNodes: maximumAccessibilityTraversalCount)
         var candidates: [(element: AXUIElement, snapshot: AccessibilityTextCandidate)] = []
 
+        var scannedNodes = 0
+        var truncated = false
+        defer { didScan?(scannedNodes, truncated || !stack.isEmpty) }
         guard budget.admitNode() else { return [] }
-        while let current = stack.popLast(), budget.hasTimeRemaining {
+        while !stack.isEmpty, budget.hasTimeRemaining {
+            let current = stack.removeLast()
+            scannedNodes += 1
             let ownContext = axSemanticText(current.element)
             let combinedContext = [current.context, ownContext]
                 .filter { !$0.isEmpty }
@@ -826,7 +842,7 @@ extension KeyboardInjector {
             let childContext = String(combinedContext.suffix(512))
             var children: [(element: AXUIElement, priority: Int)] = []
             for attribute in accessibilityChildAttributes {
-                guard budget.hasTimeRemaining else { break }
+                guard budget.hasTimeRemaining else { truncated = true; break }
                 for child in axElements(current.element, attribute: attribute) {
                     let hash = CFHash(child)
                     if visitedElements[hash]?.contains(where: { CFEqual($0, child) }) == true {
@@ -834,7 +850,7 @@ extension KeyboardInjector {
                     }
                     guard let priority = accessibilityChildPriority(
                         role: { axString(child, attribute: kAXRoleAttribute) }, frame: { axFrame(child) },
-                        windowFrame: windowFrame, budget: &budget) else { break }
+                        windowFrame: windowFrame, budget: &budget) else { truncated = true; break }
                     visitedElements[hash, default: []].append(child)
                     children.append((child, priority))
                 }

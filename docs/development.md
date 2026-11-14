@@ -360,8 +360,14 @@ compare-and-focus operation across applications; an external focus change betwee
 a check and a system write remains a best-effort boundary, not a focus lock.
 Only when no such field has focus does automatic composer discovery run.
 
-Automatic voice integration reads public accessibility control metadata and requests
-focus. Its focus writer sets only `AXFocused` and `AXFocusedUIElement`; it may use
+Automatic voice integration first reads the application's standard `AXRole`, then
+reads public accessibility control metadata and requests focus. Electron enables
+its native accessibility mode from the application's `accessibilityRole` getter;
+querying only a window can leave discovery at its native shell. See the
+[Electron 37 implementation](https://github.com/electron/electron/blob/v37.10.3/shell/browser/mac/electron_application.mm#L248-L263).
+This is a standard metadata read, not a framework-specific attribute write.
+Scan diagnostics report node counts and truncation as well as candidates/matches,
+so an unexposed tree can be distinguished from an unrecognized composer. Its focus writer sets only `AXFocused` and `AXFocusedUIElement`; it may use
 `AXPress` for Antigravity or one hit-tested click on an explicitly identified
 Antigravity, Claude, or WorkBuddy input. The automatic
 entry point does not call `announceManualAccessibility` or set `AXManualAccessibility`
@@ -445,3 +451,34 @@ localized installations beyond the inspected English Claude and Chinese WorkBudd
 interfaces have not been accepted with physical hardware. Unknown translations or
 changed structures fail visibly and continue optional voice preparation. WorkBuddy
 placeholder content is never used as a selector.
+
+
+### Post-737 desktop focusing investigation
+
+Build 737 logs recorded Claude scans with zero candidates in 9–27 ms, intermittent
+Antigravity zero-candidate scans in 14–59 ms, and WorkBuddy scans with one candidate
+but zero recognized composers in 710–776 ms. WorkBuddy's actual public AX layout
+placed its action bar alongside the editor's parent, rather than inside that parent.
+The refreshed fixture retains this AXChildren structure and demonstrates the former
+selector failure and the bounded ancestor-search fix. Reading the application role
+addresses Electron's documented lazy native-AX initialization; the old zero-candidate
+logs alone do not prove that this was their only cause.
+
+Direct invocation of the revised production focuser returned `focused` for Claude
+and Antigravity in the installed applications. WorkBuddy also returned `focused`
+after a successful focus-only write to its More actions toolbar control, demonstrating
+return from the toolbar to the composer. An initial activation attempt did not bring
+WorkBuddy forward, so its unavailable result was not a selector failure; a subsequent
+attempt with an already selected editor correctly returned `preserved`. These are
+local UI observations, not remote/audio or cold-start acceptance.
+
+The opt-in `LiveApplicationIntegrationTests` reproduces the WorkBuddy toolbar probe
+without reading editor values or sending text. It is disabled in ordinary tests/CI:
+
+```sh
+REMOTE_BUDDY_LIVE_FOCUS_TESTS=1 swift test --disable-keychain --filter LiveApplicationIntegrationTests
+```
+
+It requires the installed WorkBuddy Chinese UI and Accessibility permission, temporarily
+moves its focus, and restores the previously active app. The revised build still needs
+physical-remote checks after toolbar interaction and from newly launched applications.
