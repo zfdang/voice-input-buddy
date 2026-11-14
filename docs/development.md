@@ -550,3 +550,11 @@ acknowledgement, and that monitor does not see events destined for its own app.
 No character keys, editor values or audio are collected by this diagnostic, and
 there is no automatic retry or change to the trigger timing. A further reproduction
 on the revised build is needed to examine duplicate/early-release delivery.
+
+
+Validation after the latency and trigger-observation changes (runtime `1cb1d94`):
+
+- The read-only installed-window scan probe passed; all five applications had a recognized composer in the final measurement run. WorkBuddy's opt-in toolbar-to-composer probe also passed after optimization.
+- Integration/frame/privacy filter reported 70 tests / 4 suites passed (both live probes skipped by default). Voice activation/session/review filter reported 33 tests / 3 suites passed, including scoped modifier delivery and synthetic-owner isolation.
+- Full serial run reported 730 tests / 107 suites, both live probes skipped, with one issue at the same `HIDHotPathIdempotencyTests.swift:1307` service-provider-count assertion (6 versus 5). All other executed tests passed; the full suite remains non-green.
+- Debug app build passed and produced local build 745. Installed build 737 remains running until explicitly replaced; first-press physical-remote acceptance on 745 is pending.
