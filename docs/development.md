@@ -482,3 +482,10 @@ REMOTE_BUDDY_LIVE_FOCUS_TESTS=1 swift test --disable-keychain --filter LiveAppli
 It requires the installed WorkBuddy Chinese UI and Accessibility permission, temporarily
 moves its focus, and restores the previously active app. The revised build still needs
 physical-remote checks after toolbar interaction and from newly launched applications.
+
+Validation on source `8d87730` (Xcode Swift 6.2.4):
+
+- `swift test --disable-keychain --filter 'ApplicationIntegrationTests|AccessibilityFrameScoringTests|ProductBoundaryTests'` reported 68 tests / 4 suites passed; the opt-in live suite was skipped.
+- The explicitly enabled live WorkBuddy probe passed, confirming the toolbar control really held focus before invoking the production focuser.
+- `swift test --disable-keychain --no-parallel` reported 727 tests / 107 suites, with the live test skipped and one failing assertion in `candidateAvailableAndConnectedRefreshCoalescesDefersFlushesAndCancelsStaleWork`, `HIDHotPathIdempotencyTests.swift:1307` (service-provider count 6 versus 5). The full suite is not green. This assertion was observed in earlier reviews as well; this run does not establish its cause.
+- `CONFIGURATION=debug scripts/build-app.sh` passed and produced local build 741 from runtime revision `0109e70`. The later commit changed only tests/documentation. The running installed build 737 was not replaced.
