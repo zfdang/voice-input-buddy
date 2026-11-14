@@ -1,6 +1,6 @@
 "audio.output.none_selected" = "未选择语音输出设备";
 "audio.output.selected_unavailable" = "所选语音输出设备不可用";
-"audio.output.core_audio_open_failed" = "无法打开 CoreAudio 输出单元";
+"audio.output.core_audio_open_failed" = "无法启动虚拟麦克风音频输出（CoreAudio 输出单元打开失败）";
 "audio.output.select_failed" = "无法选择音频设备（错误 %1$@）";
 "audio.output.current_format" = "语音输出：%1$@";
 "audio.output.start_failed" = "启动音频输出失败：%1$@";
@@ -67,7 +67,7 @@
 "connection.status.apple_remote_connected" = "苹果遥控器已连接";
 "connection.status.chromecast_connected" = "Chromecast 遥控器已连接";
 "connection.status.reconnecting" = "连接断开，准备重连";
-"connection.error.voice_service_timeout" = "遥控器语音服务初始化超时";
+"connection.error.voice_service_timeout" = "连接遥控器蓝牙语音服务超时，请按一下遥控器唤醒后重试";
 "connection.error.invalid_voice_response" = "遥控器返回了无效的语音能力响应";
 "connection.error.unsupported_16khz_codec" = "遥控器未提供受支持的 16 kHz 语音编码";
 "connection.error.unsupported_8khz_codec" = "遥控器切换到了不受支持的 8 kHz 语音编码";
@@ -76,12 +76,12 @@
 "bluetooth.status.unsupported" = "此 Mac 不支持低功耗蓝牙";
 "bluetooth.status.resetting" = "蓝牙正在重置";
 "bluetooth.status.unavailable" = "蓝牙状态不可用";
-"connection.error.voice_service_discovery_failed" = "发现语音服务失败：%1$@";
-"connection.error.voice_service_missing" = "遥控器未提供受支持的语音服务";
-"connection.error.voice_channel_discovery_failed" = "发现语音通道失败：%1$@";
-"connection.error.voice_channel_incomplete" = "遥控器语音通道不完整";
-"connection.error.voice_channel_subscription_failed" = "订阅语音通道失败：%1$@";
-"connection.error.voice_channel_subscription_inactive" = "遥控器语音通知订阅未生效";
+"connection.error.voice_service_discovery_failed" = "读取遥控器蓝牙语音服务失败：%1$@";
+"connection.error.voice_service_missing" = "未在此遥控器上找到受支持的蓝牙语音服务";
+"connection.error.voice_channel_discovery_failed" = "读取遥控器语音传输通道失败：%1$@";
+"connection.error.voice_channel_incomplete" = "遥控器蓝牙语音通道不完整，请重新连接后再试";
+"connection.error.voice_channel_subscription_failed" = "开启遥控器语音传输通道失败：%1$@";
+"connection.error.voice_channel_subscription_inactive" = "遥控器语音数据传输未生效，请重新配对或重连遥控器";
 "remote.button.short.power" = "电源";
 "remote.button.short.up" = "上";
 "remote.button.short.left" = "左";
@@ -124,8 +124,8 @@
 "chromecast.status.searching" = "正在搜索遥控器";
 "chromecast.status.connecting" = "正在连接遥控器";
 "chromecast.status.unauthorized" = "缺少蓝牙权限";
-"chromecast.status.unsupported" = "该样机不受支持";
-"chromecast.status.unsupported.detail" = "该遥控器的语音规格与产品要求不符，本版本不接入；具体原因见运行日志。";
+"chromecast.status.unsupported" = "暂不支持此遥控器";
+"chromecast.status.unsupported.detail" = "该遥控器的语音规格与当前版本不兼容，暂无法接入；具体技术原因可查看运行日志。";
 "chromecast.status.connected" = "已连接";
 "chromecast.status.disconnected" = "遥控器已断开";
 "chromecast.enabled.title" = "启用 Chromecast 遥控器";
@@ -225,18 +225,18 @@
 "custom_application.accessibility.not_recorded" = "尚未记录目标输入框";
 "custom_application.accessibility.recorded" = "已记录目标输入框";
 "custom_application.accessibility.learn" = "开始学习输入框";
-"custom_application.accessibility.learn_help" = "点击后会立即打开目标 APP。请在 3 秒内点击需要聚焦的输入框；遥控搭子只记录辅助功能特征，不读取输入内容。";
+"custom_application.accessibility.learn_help" = "点击后会立即打开目标 APP。请在 3 秒内点击需要聚焦的输入框；遥控搭子只记录输入框的辅助功能定位特征，不读取任何输入内容。";
 "custom_application.accessibility.learning" = "正在等待你点击目标输入框……";
 "custom_application.accessibility.learn_succeeded" = "输入框学习成功，可以直接测试打开与聚焦。";
 "custom_application.accessibility.learn_failed" = "没有识别到可用输入框，请确认点击位置和辅助功能权限后重试。";
 "custom_application.test" = "测试打开与聚焦";
 "custom_application.picker.title" = "选择要打开的 APP";
 "custom_application.accessibility.record_title" = "记录目标输入框";
-"custom_application.accessibility.record_instructions" = "继续后将打开目标 APP。请在 3 秒内点击需要聚焦的输入框；遥控搭子只记录控件的辅助功能特征，不读取输入内容。";
+"custom_application.accessibility.record_instructions" = "继续后将打开目标 APP。请在 3 秒内点击需要聚焦的输入框；遥控搭子只记录输入框的辅助功能定位特征，不读取任何输入内容。";
 "custom_application.accessibility.record_succeeded_title" = "输入框记录成功";
 "custom_application.accessibility.record_succeeded" = "已保存目标输入框。请使用“测试打开与聚焦”确认实际效果。";
 "custom_application.accessibility.record_failed_title" = "未能记录输入框";
-"custom_application.accessibility.record_failed" = "没有检测到该 APP 中可用的文本输入控件。请确认已点击输入框，并检查辅助功能权限。";
+"custom_application.accessibility.record_failed" = "没有在该应用中检测到可识别的文本输入框。请确认已点击输入框后再试，并检查辅助功能权限。";
 "custom_application.error.title" = "无法配置 APP";
 "custom_application.error.not_installed" = "目标 APP 已移动或卸载，请重新添加。";
 "custom_application.error.open_failed" = "无法打开目标 APP。";
@@ -288,8 +288,8 @@
 "common.status.ready" = "已就绪";
 "connection.status.voice_trigger" = "语音触发";
 "connection.voice_fn_tap.enabled" = "语音键模拟 Fn 点按";
-"connection.voice_fn_tap.hint" = "目前支持的遥控器需要按住语音键才能持续收音，松开就停止。网易叭哥说、Typeless 等工具需要点按切换识别状态。点按转换会配合收音过程：按住遥控器时发送一次 Fn 按下与抬起开始识别；松开遥控器时等剩余音频送完，再发送一次 Fn 按下与抬起结束识别。长按式工具（如微信输入法、豆包长按模式）请保持关闭。需要辅助功能权限。";
-"connection.voice_fn_tap.hint_short" = "适配网易叭哥说、Typeless 等点按式工具：按住遥控器发一次 Fn 点按开始识别，松开等音频送完再发一次 Fn 点按结束识别。";
+"connection.voice_fn_tap.hint" = "目前支持的遥控器需要按住语音键才能持续收音，松开就停止。网易叭哥说、Typeless 等工具需要单击切换识别状态。点按转换会配合收音过程：按下遥控器语音键时自动单击一次 Fn 开始识别；松开后待尾部音频传输完毕，再自动单击一次 Fn 结束识别。长按式工具（如微信输入法、豆包长按模式）请保持关闭。需要辅助功能权限。";
+"connection.voice_fn_tap.hint_short" = "适配网易叭哥说、Typeless 等单击切换工具：按下语音键自动单击一次 Fn 开始，松开并传完尾部音频后再自动单击一次 Fn 结束。";
 "connection.voice_key_mode.title" = "语音触发键";
 "connection.voice_key.mode.fn" = "Fn/地球键";
 "connection.voice_key.mode.left_command" = "左 Command";
@@ -321,11 +321,11 @@
 "button_mapping.page.title" = "按键映射";
 "button_mapping.page.subtitle" = "点击按键进行设置";
 "button_mapping.google.subtitle" = "G9N9N 仅支持 OK＋方向键发送 Enter，单键映射不可用";
-"button_mapping.t1.subtitle" = "点击返回、主页、菜单、静音、音量或电源键自定义；语音键按一下松开开始说话，再按一下结束（确认、方向键、飞鼠与背面全键盘直通输入）";
-"t1.remote.keyboard_airmouse_note" = "返回、主页、菜单、静音、音量与电源键支持单击、双击与长按映射；确认、方向键、空中飞鼠与背面 QWERTY 全键盘保持系统原生输入。";
+"button_mapping.t1.subtitle" = "点击返回、主页、菜单、静音、音量或电源键自定义；语音键按一下松开开始说话，再按一下结束（确认、方向键、飞鼠与背面全键盘保持系统默认输入）";
+"t1.remote.keyboard_airmouse_note" = "返回、主页、菜单、静音、音量与电源键支持单击、双击与长按映射；确认、方向键、空中飞鼠与背面 QWERTY 全键盘保持系统默认输入（直接打字和移动鼠标）。";
 "button_mapping.google.enter.title" = "OK＋方向键 → Enter（固定）";
-"button_mapping.google.enter.detail" = "开启上方“自定义按键”并由应用独占设备时，短按 OK＋任意方向键可发送 Enter。该组合为固定动作，不受下方单键设置影响。";
-"button_mapping.google.enter.limit" = "因 G9N9N 发送的按键报文不符合 macOS 规范，单键与松开事件会被系统底层丢弃，因此下方的单键配置对该设备无效。仅 OK＋方向键可发送 Enter；长按双键可能重复输入。";
+"button_mapping.google.enter.detail" = "开启上方“自定义按键”且应用已接管按键输入时，短按 OK＋任意方向键可发送 Enter。该组合为固定动作，不受下方单键设置影响。";
+"button_mapping.google.enter.limit" = "由于 G9N9N 发送的蓝牙 HID 按键报文不符合 macOS 标准规范，单键与松开事件会被系统底层忽略，因此下方的单键配置对该设备无效。仅 OK＋方向键可发送 Enter；长按双键可能重复输入。";
 "button_mapping.toggle.enabled" = "自定义按键";
 "button_mapping.permission_prompt.title" = "需要开启按键权限";
 "button_mapping.permission_prompt.message" = "自定义按键需要“输入监控”和“辅助功能”权限，请前往权限页面完成设置。";
@@ -525,14 +525,14 @@
 "about.version.information_idle" = "打开此页面后会自动检查可用更新。";
 "about.version.checking" = "正在检查可用更新…";
 "about.version.up_to_date" = "已是最新版本";
-"about.version.up_to_date_description" = "当前更新通道没有更高版本。";
+"about.version.up_to_date_description" = "当前安装的已是最新版本。";
 "about.version.information_unavailable" = "暂时无法获取更新信息";
 "about.version.information_unavailable_description" = "可以稍后重新检查；已安装版本不受影响。";
 "about.version.release_notes_title" = "%1$@ 更新内容";
 "about.version.release_notes_unavailable" = "此版本暂未提供可展示的更新内容。";
-"about.version.check_prerelease" = "检查预发布版本";
-"about.version.check_prerelease_help" = "默认关闭。开启后，自动检查和手动检查都会包含尚未正式发布的候选版本。";
-"about.version.check_prerelease_help_short" = "包含尚未正式发布的候选版本。";
+"about.version.check_prerelease" = "接收测试版（Preview）更新";
+"about.version.check_prerelease_help" = "默认关闭。开启后，自动检查和手动检查都会包含尚未正式发布的测试版（Preview）。";
+"about.version.check_prerelease_help_short" = "包含尚未正式发布的测试版（Preview）更新。";
 "about.version.history" = "版本历史";
 "help.glossary.open" = "术语表";
 "about.support.github" = "GitHub";
@@ -573,8 +573,8 @@
 "about.preferences.language_description" = "选择应用界面语言。";
 "update.completed.title" = "遥控搭子已更新";
 "update.completed.message" = "已成功更新到版本 %1$@。";
-"update.prerelease.feed_unavailable.title" = "暂时无法检查预发布版本";
-"update.prerelease.feed_unavailable.message" = "无法取得最新候选版本信息，请检查网络后重试。稳定版更新源不受影响。";
+"update.prerelease.feed_unavailable.title" = "暂时无法检查测试版更新";
+"update.prerelease.feed_unavailable.message" = "无法获取最新测试版信息，请检查网络后重试。正式版更新检查不受影响。";
 "onboarding.phase.prepare" = "准备";
 "onboarding.phase.setup" = "设置";
 "onboarding.phase.try_it" = "试一下";
@@ -627,11 +627,11 @@
 "onboarding.voice_tool.guide.open_bageshuo" = "打开网易叭哥说设置";
 "onboarding.voice_tool.guide.open_bageshuo.detail" = "在菜单栏点击网易叭哥说图标，选择“设置”。";
 "onboarding.voice_tool.guide.configure_bageshuo" = "设置语音快捷键为 Fn";
-"onboarding.voice_tool.guide.configure_bageshuo.detail" = "在设置 → 快捷键中，将“语音润色快捷键”设为 Fn。工作模式为按一下开始、再按一下结束。因遥控器需按住才能收音，遥控搭子已自动开启点按转换：按住遥控器时发送一次 Fn 点按开始识别，松开遥控器等剩余音频送完再发一次 Fn 点按结束识别。使用时请按住说话、松手结束。";
+"onboarding.voice_tool.guide.configure_bageshuo.detail" = "在设置 → 快捷键中，将“语音润色快捷键”设为 Fn。工作模式为按一下开始、再按一下结束。因遥控器需按住才能收音，遥控搭子已自动开启点按转换：按住语音键时自动单击一次 Fn 开始识别，松开后待尾部音频传输完毕再自动单击一次 Fn 结束识别。使用时请按住说话、松手结束。";
 "onboarding.voice_tool.guide.open_typeless" = "打开 Typeless";
 "onboarding.voice_tool.guide.open_typeless.detail" = "启动 Typeless，并保持它在后台运行。";
 "onboarding.voice_tool.guide.configure_typeless" = "使用按一次说话";
-"onboarding.voice_tool.guide.configure_typeless.detail" = "在 Typeless 设置中配置快捷键为 Fn。Typeless 采用按一下开始、再按一下结束。因遥控器需按住才能收音，遥控搭子已自动开启点按转换：按住遥控器时发送一次 Fn 点按开始识别，松开遥控器等剩余音频送完再发一次 Fn 点按结束识别。使用时请按住说话、松手结束。";
+"onboarding.voice_tool.guide.configure_typeless.detail" = "在 Typeless 设置中配置快捷键为 Fn。Typeless 采用按一下开始、再按一下结束。因遥控器需按住才能收音，遥控搭子已自动开启点按转换：按住语音键时自动单击一次 Fn 开始识别，松开后待尾部音频传输完毕再自动单击一次 Fn 结束识别。使用时请按住说话、松手结束。";
 "onboarding.voice_tool.guide.open_other" = "打开语音工具";
 "onboarding.voice_tool.guide.open_other.detail" = "启动你准备使用的语音工具，并确认它支持语音输入。";
 "onboarding.voice_tool.guide.configure_other" = "把语音键设为 Fn";
@@ -655,7 +655,7 @@
 "onboarding.voice_tool.bageshuo.detail" = "网易AI语音输入，端到端极速上屏与智能润色。";
 "onboarding.voice_tool.bageshuo.install" = "前往网易叭哥说官网";
 "onboarding.voice_tool.bageshuo.install_detail" = "未检测到已安装的网易叭哥说：";
-"onboarding.voice_tool.fn_tap_banner" = "目前遥控器需按住收音（松手即停）。所选工具使用点按触发，软件已自动开启点按转换：按住发送一次 Fn 点按开始识别，松开等音频送完再发一次 Fn 点按结束识别。使用时依然按住说话、松手结束。";
+"onboarding.voice_tool.fn_tap_banner" = "目前遥控器需按住收音（松手即停）。所选工具使用单击触发，软件已自动开启点按转换：按住时自动单击一次 Fn 开始识别，松开后待尾部音频传输完毕再自动单击一次 Fn 结束识别。使用时依然按住说话、松手结束。";
 "onboarding.voice_tool.status.unknown" = "请打开工具后继续";
 "onboarding.voice_tool.binding.title" = "快捷键配置来源";
 "onboarding.voice_tool.binding.recommended" = "使用推荐配置";
@@ -740,7 +740,7 @@
 "onboarding.remote.searching_detail" = "保持遥控器靠近 Mac；首次连接按上方步骤操作，已配对时按任意键唤醒。";
 "onboarding.remote.button_waiting" = "等待控制按键";
 "onboarding.remote.button_waiting_detail" = "请短按圆盘中间的确定键或任意方向键，不要按麦克风/语音键。";
-"onboarding.remote.g9n9n.button_waiting_detail" = "因单键报文不符合系统规范，G9N9N 请同时按下 OK＋上方向键进行检测，收到输入后松开（请勿按语音键）。";
+"onboarding.remote.g9n9n.button_waiting_detail" = "受限于 G9N9N 单键蓝牙 HID 报文与 macOS 的兼容性，请同时按下 OK＋上方向键进行检测，收到输入后松开（请勿按语音键）。";
 "onboarding.remote.g9n9n.button_detail" = "已检测到按键输入，可继续进行语音设置。";
 "onboarding.remote.g9n9n_pairing.third" = "在 Mac 蓝牙中连接遥控器，然后同时按下 OK＋上方向键完成按键检测。";
 "onboarding.remote.button_received" = "已收到控制按键";
@@ -778,8 +778,8 @@
 "onboarding.voice_test.microphone_confirmation.checkbox" = "我已确认%@的麦克风是“%@”";
 "onboarding.voice_test.placeholder" = "试着说：遥控搭子已经连接成功";
 "onboarding.voice_test.waiting_voice" = "等待你按照上方提示使用语音键…";
-"onboarding.voice_test.fn_tap_explanation" = "遥控器收音与点按转换说明：目前支持的遥控器需按住语音键才能持续收音，松开就停止。点按转换会配合收音过程：按住遥控器时发送一次 Fn 按下与抬起，让工具开始识别；松开遥控器时等剩余音频送完，再发送一次 Fn 按下与抬起结束识别。你只需正常按住说话、说完松开。";
-"onboarding.voice_test.t1_fn_tap_explanation" = "T1 遥控器点按转换说明：T1 按一下语音键松开后就会持续收音，说完后再按一下停止。点按转换会在开麦时发送一次 Fn 按下与抬起，在第二次按下停止收音且剩余音频送完后，再发送一次 Fn 按下与抬起结束识别。";
+"onboarding.voice_test.fn_tap_explanation" = "遥控器收音与点按转换说明：目前支持的遥控器需按住语音键才能持续收音，松开就停止。点按转换会配合收音过程：按住时自动模拟单击一次 Fn 键，让工具开始识别；松开后待尾部音频传输完毕，再自动单击一次 Fn 键结束识别。你只需正常按住说话、说完松开。";
+"onboarding.voice_test.t1_fn_tap_explanation" = "T1 遥控器点按转换说明：T1 按一下语音键松开后就会持续收音，说完后再按一下停止。点按转换会在开麦时自动模拟单击一次 Fn 键，在第二次按下停止收音且尾部音频传输完毕后，再自动单击一次 Fn 键结束识别。";
 "onboarding.voice_test.receiving" = "正在接收声音…";
 "onboarding.voice_test.waiting_text" = "已收到声音，正在等待文字出现…";
 "onboarding.voice_test.tool_not_running" = "请先打开所选语音工具，再开始测试…";
@@ -806,7 +806,7 @@
 "onboarding.complete.detail" = "现在可以用所选控制方式说话输入，也可以在主面板中调整连接、语音和按键设置。";
 "onboarding.complete.runtime_changed" = "当前环境状态发生了变化";
 "onboarding.complete.runtime_changed_detail" = "请返回检查权限、遥控器连接或语音输出设备；恢复后即可继续。";
-"onboarding.complete.voice" = "语音链路已通过真实声音和文字检查";
+"onboarding.complete.voice" = "语音传输与文字输入测试已通过";
 "onboarding.complete.controls" = "控制设备连接和普通按键已经确认";
 "onboarding.complete.settings" = "所有选项仍可在主面板中随时调整";
 "onboarding.illustration.tagline" = "无线说话，也能随手控制";
@@ -844,12 +844,12 @@
 "onboarding.recovery.permission.desynced.detail" = "系统显示权限已授予，但蓝牙或遥控器按键读取仍被 macOS 拒绝。请打开“隐私与安全性”，将蓝牙、输入监控和辅助功能关闭后重新开启，然后重试。";
 "onboarding.recovery.permission.desynced.detail.with_restart" = "系统显示权限已授予，但蓝牙或遥控器按键读取仍被 macOS 拒绝。请先打开“隐私与安全性”，将蓝牙、输入监控和辅助功能关闭后重新开启；若仍无效，可尝试重启遥控搭子。";
 "permission.desync.banner.title" = "系统权限状态可能需要刷新";
-"permission.desync.banner.detail" = "系统显示权限已授予，但实际调用蓝牙或读取遥控器按键仍被 macOS 拒绝（例如应用就地更新、睡眠唤醒或系统信任状态变化后）。请先打开“隐私与安全性”重新开关对应权限，然后点击“重新检测”。";
-"permission.desync.banner.detail.with_restart" = "系统显示权限已授予，但实际调用蓝牙或读取遥控器按键仍被 macOS 拒绝（例如应用就地更新、睡眠唤醒或系统信任状态变化后）。请先打开“隐私与安全性”重新开关对应权限；若仍未生效，可尝试重启遥控搭子。";
+"permission.desync.banner.detail" = "系统显示权限已授予，但实际访问蓝牙或读取遥控器按键仍被 macOS 拒绝（常见于应用覆盖更新、电脑睡眠唤醒或应用签名信任状态刷新后）。请先打开“隐私与安全性”重新开关对应权限，然后点击“重新检测”。";
+"permission.desync.banner.detail.with_restart" = "系统显示权限已授予，但实际访问蓝牙或读取遥控器按键仍被 macOS 拒绝（常见于应用覆盖更新、电脑睡眠唤醒或应用签名信任状态刷新后）。请先打开“隐私与安全性”重新开关对应权限；若仍未生效，可尝试重启遥控搭子。";
 "permission.desync.action.restart" = "重启遥控搭子";
 "permission.desync.action.open_settings" = "打开隐私与安全性设置";
 "permission.desync.restart_confirm.title" = "确认重启遥控搭子？";
-"permission.desync.restart_confirm.message" = "重启会结束当前会话（包括正在进行的语音输入）并重新打开遥控搭子。";
+"permission.desync.restart_confirm.message" = "重启会中断当前正在进行的语音输入，并重新打开遥控搭子。";
 "onboarding.remote.permission_desync.title" = "系统权限状态可能需要刷新";
 "onboarding.remote.permission_desync.detail" = "权限显示已开启，但 macOS 仍在拦截蓝牙或按键读取。请使用下方入口打开“隐私与安全性”，关闭并重新开启对应权限。";
 "onboarding.remote.permission_desync.detail.with_restart" = "权限显示已开启，但 macOS 仍在拦截蓝牙或按键读取。请先在下方打开“隐私与安全性”重新开关对应权限，必要时再重启遥控搭子。";
@@ -902,9 +902,9 @@
 "onboarding.recovery.voice.input_target_focus_lost.detail" = "保持遥控搭子窗口在前台，点击重试后完成一次按下、说话和松开。";
 "onboarding.recovery.voice.input_target_focus_lost.action" = "重新测试语音输入";
 "onboarding.recovery.voice.audio_delivery_failed.title" = "声音没有完整送到所选虚拟设备";
-"onboarding.recovery.voice.audio_delivery_failed.detail" = "遥控搭子已收到遥控器声音，但实际设备绑定、音频入队或播放排空未通过。请重试音频设置后再说一次。";
+"onboarding.recovery.voice.audio_delivery_failed.detail" = "遥控搭子已收到遥控器声音，但未能将音频完整输送到虚拟麦克风（Remote Buddy Mic）。请重试音频设置后再说一次。";
 "onboarding.recovery.voice.audio_delivery_failed.action" = "重试音频输出";
-"onboarding.recovery.voice.external_tool_no_commit.title" = "声音链路正常，但语音工具没有写入文字";
+"onboarding.recovery.voice.external_tool_no_commit.title" = "遥控器声音传输正常，但语音工具没有写入文字";
 "onboarding.recovery.voice.external_tool_no_commit.detail" = "遥控搭子已收到并输出声音，输入框也已准备好。请确认所选工具支持语音输入，并在工具自己的设置中选择当前语音输出设备作为麦克风，然后重试。";
 "onboarding.recovery.voice.external_tool_no_commit.action" = "检查后重新测试";
 "onboarding.recovery.controls.not_confirmed.title" = "请试三个不同的普通按键";
@@ -987,7 +987,7 @@
 "common_phrases.error.edit_failed" = "无法保存。请检查内容或导入文件格式；原有数据未被修改。";
 "common_phrases.error.no_phrase" = "这个按键尚未分配常用语，请在常用语页面设置。";
 "common_phrases.error.accessibility_required" = "请在系统设置中允许遥控搭子使用辅助功能。";
-"common_phrases.error.input_unavailable" = "无法确认当前输入位置。请先点击目标编辑区再试；该应用也可能未提供可用的辅助功能输入信息。";
+"common_phrases.error.input_unavailable" = "无法确认当前输入位置。请先点击目标输入框再试；部分非标准界面应用可能不支持 macOS 辅助功能定位。";
 "common_phrases.error.target_changed" = "输入目标已改变，请重新打开常用语。";
 "common_phrases.error.clipboard_write_failed" = "无法安全暂存或写入剪贴板。如系统询问，请允许剪贴板访问后重试。";
 "common_phrases.error.clipboard_restore_failed" = "粘贴后未能恢复剪贴板，请检查剪贴板内容。";
@@ -1013,9 +1013,9 @@
 "settings.permissions.page_title" = "权限与麦克风";
 "settings.permissions.introduction" = "先确认权限和麦克风驱动，再连接设备、配置输入工具。";
 "settings.permissions.privacy_title" = "隐私与数据处理";
-"settings.permissions.privacy_detail" = "Remote Buddy 不采集使用统计，不保存回眸文本和录音，不上传日志。蓝牙用于接收遥控器音频，输入监控用于读取遥控器按键，辅助功能用于触发所配置的动作。虚拟麦克风驱动将遥控器音频传递给输入工具。语音识别由所选输入工具提供，请同时检查该工具的隐私设置。";
+"settings.permissions.privacy_detail" = "遥控搭子不采集使用统计，不保存语音识别文本和录音，不上传日志。蓝牙用于接收遥控器音频，输入监控用于读取遥控器按键，辅助功能用于触发所配置的动作。虚拟麦克风驱动将遥控器音频传递给输入工具。语音识别由所选输入工具提供，请同时检查该工具的隐私设置。";
 "settings.driver.title" = "虚拟麦克风驱动";
-"settings.driver.detail" = "回环设备将遥控器音频传递给输入工具。";
+"settings.driver.detail" = "通过虚拟麦克风（音频回环驱动）将遥控器的声音传递给语音输入工具。";
 "settings.driver.installed" = "已检测到兼容麦克风";
 "settings.driver.missing" = "未检测到兼容麦克风";
 "settings.driver.reload_help" = "如果安装驱动后仍未检测到 Remote Buddy Mic，请重启 Mac，或查看安装说明。";
@@ -1040,8 +1040,8 @@
 "onboarding.voice_tool.voice_buddy.website" = "访问官网 myvoicebuddy.com ↗";
 "onboarding.voice_tool.macos_dictation.title" = "macOS 听写";
 "onboarding.voice_tool.macos_dictation.detail" = "使用系统自带的听写，无需安装第三方工具。";
-"onboarding.voice_tool.dictation_fn_tap_explanation" = "按住遥控器语音键说话，说完松开。遥控搭子会连按两次 Fn 启动 macOS 听写，松开后等待剩余音频送完，再按一次 Fn 结束。软件已自动开启点按转换。";
-"onboarding.voice_tool.t1_dictation_fn_tap_explanation" = "按一下 T1 语音键并松开开始说话，说完后再按一下结束。遥控搭子会连按两次 Fn 启动 macOS 听写，第二次按下停止并等待剩余音频送完后，再按一次 Fn 结束。软件已自动开启点按转换。";
+"onboarding.voice_tool.dictation_fn_tap_explanation" = "按住遥控器语音键说话，说完松开。遥控搭子会自动连按两次 Fn 启动 macOS 听写，松开后待尾部音频传输完毕，再自动按一次 Fn 结束。软件已自动开启点按转换。";
+"onboarding.voice_tool.t1_dictation_fn_tap_explanation" = "按一下 T1 语音键并松开开始说话，说完后再按一下结束。遥控搭子会自动连按两次 Fn 启动 macOS 听写，第二次按下停止并待尾部音频传输完毕后，再自动按一次 Fn 结束。软件已自动开启点按转换。";
 "onboarding.voice_tool.guide.enable_dictation" = "打开 macOS 听写";
 "onboarding.voice_tool.guide.screenshot.macos_dictation_enable" = "打开“系统设置 → 键盘 → 听写”，打开听写，并确认系统隐私提示。在“语言”中加入你要说的语言；如果系统需要下载语言支持，请等待下载完成。";
 "onboarding.voice_tool.guide.configure_dictation" = "把听写快捷键设为按两下 🌐 键";
@@ -1080,7 +1080,7 @@
 "update.dialog.skip" = "跳过此版本";
 "update.dialog.install" = "升级并重启";
 "update.dialog.not_found" = "暂无可安装的更新";
-"update.dialog.not_found.detail" = "当前更新渠道暂无适用于此设备的新版本。你可以继续使用应用。";
+"update.dialog.not_found.detail" = "目前暂无适用于此设备的新版本更新。你可以继续使用应用。";
 "update.dialog.error" = "更新未能完成";
 "update.dialog.error.detail" = "请稍后重试。如果问题持续，请检查网络连接或查看更新说明。";
 "update.dialog.downloading" = "正在下载更新…";
@@ -1104,13 +1104,13 @@
 
 "voice_button.status.cleanup_failed" = "Fn 键释放失败，请恢复辅助功能权限后重试。";
 
-"button_mapping.error.filter_unavailable" = "按键映射已暂停，无法拦截遥控器原始按键。请重新检查遥控器输入后重试。";
+"button_mapping.error.filter_unavailable" = "按键映射已暂停，暂时无法接管遥控器原始按键。请重新检查遥控器输入权限或重连后再试。";
 
-"update.dialog.checking.detail" = "正在查询当前更新渠道，请稍候。";
+"update.dialog.checking.detail" = "正在从更新服务器检查最新版本，请稍候。";
 
 "update.dialog.up_to_date" = "已是最新版本";
 
-"update.dialog.up_to_date.detail" = "你已安装当前更新渠道的最新版本。";
+"update.dialog.up_to_date.detail" = "你已安装当前最新的版本。";
 
 "update.dialog.error_code" = "错误代码：%1$@（%2$@）";
 
@@ -1132,7 +1132,7 @@
 
 "update.dialog.available_version" = "更新版本";
 
-"update.dialog.latest_version" = "此渠道最新版本";
+"update.dialog.latest_version" = "当前最新可用版本";
 
 // Five-device product scope. Upcoming adapters show an inline notice on Continue.
 "remote.catalog.xiaomi.title" = "小米蓝牙遥控器 2 / 2 Pro";
@@ -1147,8 +1147,8 @@
 "t1.remote.unconfirmed_identity" = "无法确认蓝牙 PnP 标识为兼容的 T1 遥控器。";
 "t1.remote.microphone_refused" = "T1 遥控器拒绝开启麦克风。请在系统蓝牙设置中重新配对后重试。";
 "google.remote.microphone_refused" = "遥控器拒绝开启麦克风。请重新配对后重试。";
-"google.remote.pairing_required" = "蓝牙认证尚未完成。请在 macOS 蓝牙设置中移除并重新配对遥控器，再重新连接。";
-"google.remote.ir_controls" = "电源和信源键收到蓝牙报文时可以映射；如果遥控器将它们配置为红外发射，应用无法收到这些按键。";
+"google.remote.pairing_required" = "蓝牙配对认证尚未完成。请在 macOS 蓝牙设置中移除并重新配对遥控器，再重新连接。";
+"google.remote.ir_controls" = "电源和信源键在发送蓝牙信号时可以自定义映射；如果遥控器将它们设为红外模式（直接控制电视），电脑将无法收到这些按键。";
 
 "connection.action.add_device" = "添加新设备";
 "remote.hid_binding.title" = "关联遥控器按键设备";
@@ -1211,7 +1211,7 @@
 "remote.remove.confirm_title" = "删除此设备？";
 "remote.remove.confirm_detail" = "将删除“%@”及其在遥控搭子中的按键设置和增益，并停止自动连接。不会删除 macOS 蓝牙配对；使用“添加设备”时，之前删除的设备可能再次被发现。";
 "remote.rebind.title" = "重新绑定遥控器";
-"remote.rebind.help" = "请先在 macOS 蓝牙设置中重新配对遥控器，再在下方选择它的新连接条目。原档案的按键映射和增益会保留，选中的替代条目会合并到此档案。";
+"remote.rebind.help" = "请先在 macOS 蓝牙设置中重新配对遥控器，再在下方选择它的新连接条目。原有的按键映射和音量增益会保留，并直接应用到新绑定的遥控器上。";
 "remote.rebind.empty" = "暂无可用的同型号已连接遥控器。";
 "remote.rebind.failed" = "无法重新绑定。请先停止语音输入，并确认替代设备仍然连接。";
 "remote.rebind.confirm" = "重新绑定并保留设置";
