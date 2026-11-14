@@ -693,7 +693,7 @@
 "onboarding.voice_test.configuration.binding_expected" = "%1$@ · %2$@";
 "onboarding.remote_availability.illustration" = "Use a physical remote when available";
 "onboarding.permissions.title" = "Allow Remote Buddy to connect and control your Mac";
-"onboarding.permissions.detail" = "Enable all three permissions before choosing a device. The microphone driver is checked in step 4.";
+"onboarding.permissions.detail" = "Enable all three permissions before choosing a device. The microphone driver is checked in step 5.";
 "onboarding.permissions.bluetooth.detail" = "Discover and connect to your paired Bluetooth remote";
 "onboarding.permissions.input.detail" = "Read physical button events and support voice input";
 "onboarding.permissions.accessibility.detail" = "Run voice shortcuts and custom button actions";

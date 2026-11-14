@@ -692,7 +692,7 @@
 "onboarding.voice_test.configuration.binding_expected" = "%1$@ · %2$@";
 "onboarding.remote_availability.illustration" = "优先使用实体遥控器";
 "onboarding.permissions.title" = "允许遥控搭子连接和控制 Mac";
-"onboarding.permissions.detail" = "先开启三项权限，再选择和连接设备。麦克风驱动将在第 4 步检查。";
+"onboarding.permissions.detail" = "先开启三项权限，再选择和连接设备。麦克风驱动将在第 5 步检查。";
 "onboarding.permissions.bluetooth.detail" = "发现并连接已配对的蓝牙遥控器";
 "onboarding.permissions.input.detail" = "读取实体按键并支持语音输入";
 "onboarding.permissions.accessibility.detail" = "执行语音快捷键和自定义按键";
