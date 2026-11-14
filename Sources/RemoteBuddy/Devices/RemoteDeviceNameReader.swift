@@ -7,7 +7,6 @@ enum RemoteDeviceNameReader {
     struct HIDIdentity {
         let fingerprint: String
         let address: String?
-        var serialNumber: String? = nil
     }
 
     struct PairedDevice {
@@ -15,10 +14,8 @@ enum RemoteDeviceNameReader {
         let name: String?
     }
 
-    /// Transient observation only; serial numbers must never be persisted or logged.
     struct HIDName: Equatable {
         let name: String
-        let serialNumber: String?
     }
 
     static func readHIDNames() -> [String: HIDName] {
@@ -29,8 +26,7 @@ enum RemoteDeviceNameReader {
             guard let fingerprint = HIDRemoteMonitor.fingerprint(for: device) else { return nil }
             return HIDIdentity(
                 fingerprint: fingerprint,
-                address: IOHIDDeviceGetProperty(device, "DeviceAddress" as CFString) as? String,
-                serialNumber: IOHIDDeviceGetProperty(device, kIOHIDSerialNumberKey as CFString) as? String
+                address: IOHIDDeviceGetProperty(device, "DeviceAddress" as CFString) as? String
             )
         }
         // Re-enumerate on every requested refresh: retained objects may keep the old name.
@@ -53,14 +49,7 @@ enum RemoteDeviceNameReader {
             guard addresses.count == 1, let address = addresses.first else { continue }
             let names = Set(paired.filter { normalizedAddress($0.address) == address }.compactMap(\.name))
             guard names.count == 1, let name = names.first else { continue }
-            let serials = Set(interfaces.compactMap(\.serialNumber).filter {
-                !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            })
-            // Multiple HID interfaces may share one identity; conflicting serials are not evidence.
-            result[fingerprint] = HIDName(
-                name: name,
-                serialNumber: serials.count == 1 ? serials.first : nil
-            )
+            result[fingerprint] = HIDName(name: name)
         }
         return result
     }
