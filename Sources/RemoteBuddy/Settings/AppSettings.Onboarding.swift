@@ -13,7 +13,6 @@ private struct OnboardingReturnConfiguration: Codable {
     let verifiedBinding: VoiceToolUserBinding?
     let voiceKeyMode: VoiceKeyMode
     let fnTapModeEnabled: Bool
-    let chromecastVoiceMode: ChromecastVoiceMode
     let customMappingEnabled: Bool
     let selectedRemoteProfileID: UUID?
     let initialRemoteProfileIDs: [UUID]
@@ -47,7 +46,6 @@ extension AppSettings {
             verifiedBinding: verifiedVoiceToolBinding,
             voiceKeyMode: voiceKeyMode,
             fnTapModeEnabled: voiceFnTapModeEnabled,
-            chromecastVoiceMode: chromecastVoiceMode,
             customMappingEnabled: customMappingEnabled,
             selectedRemoteProfileID: selectedRemoteProfileID,
             initialRemoteProfileIDs: remoteDeviceProfiles.map(\.id)
@@ -104,7 +102,6 @@ extension AppSettings {
         verifiedVoiceToolBinding = configuration.verifiedBinding
         voiceKeyMode = configuration.voiceKeyMode
         voiceFnTapModeEnabled = configuration.fnTapModeEnabled
-        chromecastVoiceMode = configuration.chromecastVoiceMode
         customMappingEnabled = configuration.customMappingEnabled
         if let profileID = configuration.selectedRemoteProfileID {
             selectRemoteProfile(profileID)
@@ -240,8 +237,7 @@ extension AppSettings {
         if defaults.data(forKey: Keys.onboardingTrialSnapshot) == nil {
             let snapshot = OnboardingVoiceConfigurationSnapshot(
                 voiceKeyMode: voiceKeyMode,
-                voiceFnTapModeEnabled: voiceFnTapModeEnabled,
-                chromecastVoiceMode: chromecastVoiceMode
+                voiceFnTapModeEnabled: voiceFnTapModeEnabled
             )
             if let data = try? JSONEncoder().encode(snapshot) {
                 defaults.set(data, forKey: Keys.onboardingTrialSnapshot)
@@ -254,9 +250,6 @@ extension AppSettings {
         if applyVoiceSettings {
             voiceKeyMode = plan.binding.shortcut
             voiceFnTapModeEnabled = plan.fnTapModeEnabled && plan.binding.shortcut == .function
-        }
-        if let chromecastVoiceMode = plan.chromecastVoiceMode {
-            self.chromecastVoiceMode = chromecastVoiceMode
         }
         AppLogger.shared.write(
             "ONBOARDING BINDING staged tool=\(plan.binding.tool.rawValue) " +
@@ -319,21 +312,10 @@ extension AppSettings {
         }
         voiceKeyMode = snapshot.voiceKeyMode
         voiceFnTapModeEnabled = snapshot.voiceFnTapModeEnabled && snapshot.voiceKeyMode == .function
-        chromecastVoiceMode = snapshot.chromecastVoiceMode
         stagedVoiceToolBinding = nil
         defaults.removeObject(forKey: Keys.onboardingStagedVoiceBinding)
         defaults.removeObject(forKey: Keys.onboardingTrialSnapshot)
         AppLogger.shared.write("ONBOARDING BINDING discarded reason=trial_not_verified")
-    }
-
-    func setOnboardingControlMethod(_ controlMethod: OnboardingControlMethod) {
-        guard onboardingControlMethod != controlMethod else { return }
-        setOnboardingControlSource(.defaultSource(for: controlMethod))
-    }
-
-    func setOnboardingRemoteAvailability(_ availability: OnboardingRemoteAvailability) {
-        guard onboardingRemoteAvailability != availability else { return }
-        onboardingRemoteAvailability = availability
     }
 
     func completeOnboarding() {
@@ -391,9 +373,6 @@ extension AppSettings {
             // staged trigger must resume too; retain the snapshot for cancellation.
             defaults.set(plan.binding.shortcut.rawValue, forKey: Keys.voiceKeyMode)
             defaults.set(plan.fnTapModeEnabled, forKey: Keys.voiceFnTapModeEnabled)
-            if let mode = plan.chromecastVoiceMode {
-                defaults.set(mode.rawValue, forKey: Keys.chromecastVoiceMode)
-            }
             AppLogger.shared.write("ONBOARDING BINDING restored reason=resuming_voice_test")
             return
         }
@@ -402,7 +381,6 @@ extension AppSettings {
             snapshot.voiceFnTapModeEnabled && snapshot.voiceKeyMode == .function,
             forKey: Keys.voiceFnTapModeEnabled
         )
-        defaults.set(snapshot.chromecastVoiceMode.rawValue, forKey: Keys.chromecastVoiceMode)
         defaults.removeObject(forKey: Keys.onboardingStagedVoiceBinding)
         defaults.removeObject(forKey: Keys.onboardingTrialSnapshot)
         AppLogger.shared.write("ONBOARDING BINDING restored reason=interrupted_trial")

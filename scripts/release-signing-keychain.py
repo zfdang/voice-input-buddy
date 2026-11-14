@@ -77,9 +77,9 @@ def setup(directory):
         search_list = [line.strip().strip('"') for line in
                        run(['security', 'list-keychains', '-d', 'user']).decode().splitlines()]
         keychain_password = secrets.token_hex(32)
-        run(['security', 'create-keychain', '-p', keychain_password, keychain])
         state_file.write_text(json.dumps({'keychain': keychain, 'search_list': search_list}))
         state_file.chmod(0o600)
+        run(['security', 'create-keychain', '-p', keychain_password, keychain])
         run(['security', 'set-keychain-settings', '-lut', '21600', keychain])
         run(['security', 'unlock-keychain', '-p', keychain_password, keychain])
         run(['security', 'import', str(archive_file), '-k', keychain, '-P', password,

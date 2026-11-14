@@ -130,11 +130,6 @@
 "chromecast.status.disconnected" = "遥控器已断开";
 "chromecast.enabled.title" = "启用 Chromecast 遥控器";
 "chromecast.enabled.detail" = "打开后会搜索并连接该遥控器，用它的语音键直接说话；与 Siri Remote 互不影响。";
-"chromecast.mode.title" = "语音键模式";
-"chromecast.mode.toggle" = "按一次说话";
-"chromecast.mode.hold" = "按住说话";
-"chromecast.mode.toggle.detail" = "按一下开始收音，再按一下结束。只有这款遥控器支持这种方式，其他遥控器都只能按住说话。语音工具请对应选「按一次」触发（豆包：免按模式）。";
-"chromecast.mode.hold.detail" = "按住语音键时收音，松开结束。与 Siri Remote 的手感一致。语音工具请对应选「按住」触发（豆包：长按模式）。";
 "chromecast.action.reconnect" = "重新连接";
 "chromecast.help.plain" = "声音来自遥控器麦克风，传入所选虚拟麦克风；不使用电脑内置麦克风。";
 "chromecast.mapping.voice.title" = "语音键";
@@ -482,7 +477,6 @@
 "settings.overview.missing_requirements" = "待设置：%@";
 "settings.overview.open_section" = "打开%@设置";
 
-"settings.section.settings" = "设置";
 "settings.update_badge.accessibility_value" = "有新版本可用";
 "settings.page.title" = "设置";
 "settings.permissions.title" = "系统权限";
@@ -490,8 +484,6 @@
 "settings.diagnostics.title" = "诊断与日志";
 "settings.application_updates.title" = "应用与更新";
 "settings.application.tagline" = "让语音触手可及";
-"settings.section.login" = "我的";
-"settings.section.transcripts" = "回眸";
 "about.page.subtitle" = "查看版本、更新、语言和应用显示选项";
 "about.app.description" = "让遥控器成为你的语音输入助手，轻松说话打字，一键操作常用功能。";
 "about.app_support.title" = "应用与支持";
@@ -502,7 +494,6 @@
 "about.preferences.app_icon" = "应用图标";
 "about.preferences.app_icon_help" = "选择在 Dock、应用切换器和设置窗口中显示的图标。";
 "about.preferences.app_icon_standard" = "Remote Buddy";
-"about.preferences.app_icon_faceted_duck" = "几何鸭";
 "about.preferences.language" = "应用语言";
 "about.preferences.rc003_voice_extension_test" = "测试长时间语音功能";
 "about.page.hero_subtitle" = "集中查看无线语音工作台的版本、偏好与支持信息";
@@ -699,20 +690,9 @@
 "onboarding.shortcut_learning.permission_required" = "需要先授予辅助功能权限。";
 "onboarding.shortcut_learning.unavailable" = "暂时无法监听快捷键，请重新授权后重试。";
 "onboarding.voice_test.configuration.binding_expected" = "%1$@ · %2$@";
-"onboarding.remote_availability.title" = "你现在有实体遥控器吗？";
-"onboarding.remote_availability.detail" = "实体遥控器可以获得完整、稳定的遥控搭子体验。如果当前没有，也可以继续使用手机。";
-"onboarding.remote_availability.has_remote.title" = "有遥控器";
-"onboarding.remote_availability.has_remote.detail" = "连接支持的蓝牙遥控器，使用实体按键和遥控器麦克风。";
-"onboarding.remote_availability.no_remote.title" = "当前没有遥控器";
-"onboarding.remote_availability.no_remote.detail" = "下一步选择 iPhone App 或微信小程序完成体验。";
-"onboarding.remote_availability.recommended" = "优先推荐";
 "onboarding.remote_availability.illustration" = "优先使用实体遥控器";
-"onboarding.control_method.title" = "没有遥控器时，选择手机控制方式";
-"onboarding.control_method.physical_remote.title" = "使用实体遥控器";
-"onboarding.control_method.physical_remote.detail" = "连接支持的蓝牙遥控器，使用实体按键和遥控器麦克风。";
-"onboarding.control_method.illustration" = "选择现在就能使用的控制方式";
 "onboarding.permissions.title" = "允许遥控搭子连接和控制 Mac";
-"onboarding.permissions.detail" = "先开启三项权限，再选择和连接设备。麦克风驱动将在第 4 步检查。";
+"onboarding.permissions.detail" = "先开启三项权限，再选择和连接设备。麦克风驱动将在第 5 步检查。";
 "onboarding.permissions.bluetooth.detail" = "发现并连接已配对的蓝牙遥控器";
 "onboarding.permissions.input.detail" = "读取实体按键并支持语音输入";
 "onboarding.permissions.accessibility.detail" = "执行语音快捷键和自定义按键";
@@ -1034,8 +1014,8 @@
 "remote.device.select_placeholder" = "请选择遥控器";
 
 "onboarding.voice_tool.voice_buddy.title" = "Voice Buddy（语音搭子）";
-"onboarding.voice_tool.voice_buddy.detail" = "100% 本地 AI 语音输入与润色工具，零数据上云（myvoicebuddy.com）。";
-"onboarding.voice_tool.voice_buddy.intro" = "Voice Buddy 是一款 100% 本地离线运行的 Apple Silicon 语音输入搭子：端侧完成语音识别与大模型润色，音频与文字绝不上云，默认配合 Fn 长按说话。";
+"onboarding.voice_tool.voice_buddy.detail" = "宣称本地离线运行的 AI 语音输入与润色工具（myvoicebuddy.com；隐私策略以该工具为准）。";
+"onboarding.voice_tool.voice_buddy.intro" = "Voice Buddy 是一款第三方 Apple Silicon 语音输入工具，宣称端侧离线完成语音识别与大模型润色（具体联网与隐私行为以其自身设置与说明为准），默认配合 Fn 长按说话。";
 "onboarding.voice_tool.voice_buddy.install_detail" = "当前未检测到已安装的 Voice Buddy，可前往官网下载安装：";
 "onboarding.voice_tool.voice_buddy.website" = "访问官网 myvoicebuddy.com ↗";
 "onboarding.voice_tool.macos_dictation.title" = "macOS 听写";

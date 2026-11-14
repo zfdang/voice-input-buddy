@@ -12,7 +12,7 @@
 
 每个发行版必须同时提供对应 App 源码、构建和安装脚本，以及实际分发驱动的 BlackHole v0.7.1 源码、device-usb.patch 和必要许可文本，不能只发布此仓库的链接而遗漏驱动源码。Sparkle 采用 MIT；其打包组件还包括单独许可，需随完整框架保留许可。BlackHole 与其他 GPL 来源按相应要求处理。
 
-程序图标和菜单栏图标基于项目提供的素材，由 scripts/generate-icons.py 生成，未使用原品牌图形。
+程序图标和菜单栏图标基于项目原创素材（与上游同名的 `Resources/AppIcon.png` / `Resources/AppIcon.icns` 为本项目重新创作并随源码按 `GPL-3.0-only` 授权的全新资产），由 `scripts/generate-icons.py` 生成，未使用原品牌图形。
 
 设置向导截图位于 `Resources/Onboarding`，包括从上游继承的图片以及本项目重新截取或生成的微信、豆包、网易叭哥说与 Voice Buddy 浅色图片；保留上游图片的来源归属，不把全部现有截图都归为上游素材。未使用其受限 App Logo 或遥控器产品照片。小米遥控器图是基于本项目按键布局参考生成的无品牌写实渲染；Google 与 Siri Remote 使用原创 SVG 示意图及 PNG 缩略图，均未使用厂商产品照片。`scripts/generate-remote-layout-reference.swift` 仅生成小米布局参考，不覆盖成品；按键位置与映射连线共用归一化坐标。提示词及维护说明见 [artwork.md](artwork.md) 与 [示意图说明](../Resources/RemoteIllustrations/README.md)。构建及安装包检查会验证截图与示意图完整性。
 

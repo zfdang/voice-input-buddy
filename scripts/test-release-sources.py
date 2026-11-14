@@ -17,24 +17,38 @@ class ReleaseSourcesTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         (self.root / 'scripts').mkdir()
-        shutil.copy2(SCRIPT, self.root / 'scripts/build-release-sources.sh')
-        shutil.copy2(SCRIPT.with_name('architecture.sh'), self.root / 'scripts/architecture.sh')
+        (self.root / 'third_party/blackhole').mkdir(parents=True)
+        for name in ['build-release-sources.sh', 'architecture.sh', 'generate-appcast.py', 'verify-dependency-checkout.py']:
+            shutil.copy2(SCRIPT.with_name(name), self.root / 'scripts' / name)
         shutil.copy2(SCRIPT.parent.parent / '.gitignore', self.root / '.gitignore')
-        shutil.copy2(SCRIPT.with_name('generate-appcast.py'), self.root / 'scripts/generate-appcast.py')
+        release_metadata = self.root / 'scripts/release-metadata.sh'
+        release_metadata.write_text("#!/bin/bash\nprintf 'RELEASE_TAG=v26-10-11.001\\n'\n")
+        release_metadata.chmod(0o755)
+        blackhole = self.root / '.build/buddy-driver/BlackHole'
+        sparkle = self.root / '.build/app-arm64/checkouts/Sparkle'
+        for dependency in (blackhole, sparkle):
+            dependency.mkdir(parents=True)
+            subprocess.run(['git', 'init', '-q'], cwd=dependency, check=True)
+            (dependency / 'LICENSE').write_text('dependency license\n')
+        (blackhole / 'device.c').write_text('original driver\n')
+        for dependency in (blackhole, sparkle):
+            subprocess.run(['git', 'add', '.'], cwd=dependency, check=True)
+            subprocess.run(['git', '-c', 'user.name=Test Fixture', '-c', 'user.email=fixture@example.invalid',
+                            'commit', '-qm', 'fixture'], cwd=dependency, check=True)
+        blackhole_revision = subprocess.check_output(['git', '-C', str(blackhole), 'rev-parse', 'HEAD'], text=True).strip()
+        sparkle_revision = subprocess.check_output(['git', '-C', str(sparkle), 'rev-parse', 'HEAD'], text=True).strip()
+        # Driver sources are patched via the checked-in product patch during builds.
+        (blackhole / 'device.c').write_text('patched driver\n')
+        patch = subprocess.check_output(['git', '-C', str(blackhole), 'diff', '--binary', 'HEAD'])
+        (self.root / 'third_party/blackhole/device-usb.patch').write_bytes(patch)
+        (self.root / 'scripts/build-driver.sh').write_text(f'revision={blackhole_revision}\n')
+        (self.root / 'Package.resolved').write_text(
+            '{"pins":[{"identity":"sparkle","state":{"revision":"' + sparkle_revision + '"}}]}\n'
+        )
         (self.root / 'source.swift').write_text('release source\n')
         self.git('init', '-q')
         self.git('add', '.')
         self.git('-c', 'user.name=Test Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'fixture')
-        for directory in ['.build/buddy-driver/BlackHole', '.build/app-arm64/checkouts/Sparkle']:
-            dependency = self.root / directory
-            dependency.mkdir(parents=True)
-            subprocess.run(['git', 'init', '-q'], cwd=dependency, check=True)
-            (dependency / 'LICENSE').write_text('dependency license\n')
-            subprocess.run(['git', 'add', 'LICENSE'], cwd=dependency, check=True)
-            subprocess.run(['git', '-c', 'user.name=Test Fixture', '-c', 'user.email=fixture@example.invalid',
-                            'commit', '-qm', 'fixture'], cwd=dependency, check=True)
-        # Driver sources are patched during the build: archive the actual source.
-        (self.root / '.build/buddy-driver/BlackHole/device.c').write_text('patched driver\n')
 
     def git(self, *args):
         return subprocess.run(['git', *args], cwd=self.root, check=True, capture_output=True)

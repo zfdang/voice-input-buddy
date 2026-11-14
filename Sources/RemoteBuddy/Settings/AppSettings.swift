@@ -24,12 +24,10 @@ final class AppSettings: ObservableObject {
         static let checksForPreReleaseUpdates = "checksForPreReleaseUpdates"
         static let voiceFnTapModeEnabled = "voiceFnTapModeEnabled"
         static let voiceKeyMode = "voiceKeyMode"
-        static let chromecastVoiceMode = "chromecast.voiceMode"
         static let lastLaunchedBuild = "launch.lastLaunchedBuild"
         static let onboardingPurpose = "onboarding.purpose"
         static let onboardingCompletedVersion = "onboarding.completedVersion"
         static let onboardingStep = "onboarding.step"
-        static let onboardingRemoteAvailability = "onboarding.remoteAvailability"
         static let onboardingControlSource = "onboarding.controlSource"
         static let onboardingDevice = "onboarding.device"
         static let onboardingAppleRemoteGeneration = "onboarding.appleRemoteGeneration"
@@ -224,13 +222,6 @@ final class AppSettings: ObservableObject {
         }
     }
 
-    /// Chromecast 语音手势模式。默认 `toggle`（按一下开始、再按一下结束）。
-    @Published var chromecastVoiceMode: ChromecastVoiceMode {
-        didSet {
-            defaults.set(chromecastVoiceMode.rawValue, forKey: Keys.chromecastVoiceMode)
-        }
-    }
-
     private(set) var isLoadingRemoteProfile = false
     private(set) var isResettingBindings = false
 
@@ -260,14 +251,7 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(onboardingStep.rawValue, forKey: Keys.onboardingStep) }
     }
 
-    @Published var onboardingRemoteAvailability: OnboardingRemoteAvailability {
-        didSet {
-            defaults.set(
-                onboardingRemoteAvailability.rawValue,
-                forKey: Keys.onboardingRemoteAvailability
-            )
-        }
-    }
+    @Published var onboardingRemoteAvailability: OnboardingRemoteAvailability
 
     var onboardingControlMethod: OnboardingControlMethod {
         onboardingControlSource.controlMethod
@@ -483,9 +467,6 @@ final class AppSettings: ObservableObject {
         voiceKeyMode = VoiceKeyMode(
             rawValue: defaults.string(forKey: Keys.voiceKeyMode) ?? ""
         ) ?? .function
-        chromecastVoiceMode = ChromecastVoiceMode(
-            rawValue: defaults.string(forKey: Keys.chromecastVoiceMode) ?? ""
-        ) ?? .productDefault
         onboardingPurpose = defaults.string(forKey: Keys.onboardingPurpose)
             .flatMap(OnboardingPurpose.init(rawValue:)) ?? .initialSetup
         onboardingCompletedVersion = defaults.integer(forKey: Keys.onboardingCompletedVersion)

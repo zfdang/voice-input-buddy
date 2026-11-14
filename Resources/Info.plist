@@ -40,7 +40,7 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>连接兼容遥控器，接收按键与语音音频。</string>
+	<string>Connect to supported Bluetooth remotes to receive button presses and microphone audio.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 Remote Buddy contributors; includes GPL-3.0-only upstream code.</string>
 	<key>NSPrincipalClass</key>

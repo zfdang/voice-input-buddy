@@ -547,12 +547,11 @@ extension AppSettings {
     @discardableResult
     func updateRemoteProfileSystemName(
         _ profileID: UUID,
-        name: String?,
-        serialNumber: String? = nil
+        name: String?
     ) -> Bool {
         guard let index = remoteDeviceProfiles.firstIndex(where: { $0.id == profileID }),
               let customName = RemoteDeviceNamePolicy.customName(
-                from: name, model: remoteDeviceProfiles[index].model, serialNumber: serialNumber
+                from: name, model: remoteDeviceProfiles[index].model
               ),
               remoteDeviceProfiles[index].customName != customName
         else { return false }

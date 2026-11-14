@@ -150,16 +150,18 @@ struct SettingsDiagnosticSnapshot: Equatable {
         self.generatedAt = generatedAt
     }
 
-    static func sanitizePath(_ path: String, homeDirectory: String = NSHomeDirectory()) -> String {
-        guard !homeDirectory.isEmpty else { return path }
-        if path == homeDirectory {
+    static func sanitizePath(_ text: String, homeDirectory: String = NSHomeDirectory()) -> String {
+        let normalizedHome = homeDirectory.hasSuffix("/") ? String(homeDirectory.dropLast()) : homeDirectory
+        guard !normalizedHome.isEmpty else { return text }
+        var redacted = text.replacingOccurrences(of: normalizedHome + "/", with: "~/")
+        if redacted == normalizedHome {
             return "~"
         }
-        let prefix = homeDirectory.hasSuffix("/") ? homeDirectory : homeDirectory + "/"
-        if path.hasPrefix(prefix) {
-            return "~/" + path.dropFirst(prefix.count)
+        redacted = redacted.replacingOccurrences(of: "=\(normalizedHome) ", with: "=~ ")
+        if redacted.hasSuffix("=\(normalizedHome)") {
+            redacted = String(redacted.dropLast(normalizedHome.count)) + "~"
         }
-        return path
+        return redacted
     }
 
     var formattedLogSize: String {
@@ -176,7 +178,7 @@ struct SettingsDiagnosticSnapshot: Equatable {
 
     var summary: String {
         let lines: [String] = [
-            "### RemoteBuddy 运行环境与诊断信息",
+            "### Remote Buddy 运行环境与诊断信息 / Runtime Diagnostics",
             "- **应用版本 / App Version:** \(appVersion) (Build \(appBuild))",
             "- **系统版本 / macOS:** \(macosVersion) (\(architecture)\(isRosetta ? ", Rosetta" : ""))",
             "- **生成时间 / Generated At:** \(Self.timestamp(generatedAt))",
@@ -199,7 +201,7 @@ struct SettingsDiagnosticSnapshot: Equatable {
             "#### 诊断日志 / Runtime Logs",
             "- 日志文件状态 / Log Available: \(runtimeLogAvailable ? "存在 (\(formattedLogSize))" : "未找到 (Not Found)")",
             "- 本地路径 / Log Path: \(runtimeLogPath)",
-            "- 隐私承诺: 诊断日志仅保存在本机，永不上传，绝不含语音、转写文本或剪贴板等隐私数据。",
+            "- 隐私承诺 / Privacy Notice: 诊断日志仅保存在本机，永不上传，绝不含语音、转写文本或剪贴板等隐私数据 (Logs stay on this Mac, are never uploaded, and never contain audio, transcripts, or clipboard contents).",
             "",
             "```yaml",
             "# Machine-parseable diagnostics",

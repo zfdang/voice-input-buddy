@@ -28,19 +28,19 @@ verify_module = load_module("verify_pages_update_feeds", "verify-pages-update-fe
 
 
 def get_embedded_public_key():
+    import plistlib
     for plist_path in [
         ROOT / "Resources" / "Info.plist",
         ROOT / "dist" / "Remote Buddy.app" / "Contents" / "Info.plist",
     ]:
         if plist_path.exists():
             try:
-                import plistlib
                 with open(plist_path, "rb") as f:
                     plist = plistlib.load(f)
-                    if "SUPublicEDKey" in plist:
-                        return plist["SUPublicEDKey"]
-            except Exception:
-                pass
+            except Exception as exc:
+                raise ValueError(f"Failed to parse {plist_path}: {exc}") from exc
+            if "SUPublicEDKey" in plist:
+                return plist["SUPublicEDKey"]
     return DEFAULT_PUBLIC_KEY
 
 
@@ -152,7 +152,7 @@ def extract_version_from_pkg(pkg_path):
                             plist = plistlib.load(f)
                             pkg_type = plist.get("CFBundlePackageType")
                             bundle_id = plist.get("CFBundleIdentifier", "")
-                            if pkg_type == "APPL" or bundle_id in ("com.zfdang.remote-buddy", "com.zfdang.voice-input-buddy"):
+                            if pkg_type == "APPL" or bundle_id == "com.zfdang.remote-buddy":
                                 cf_ver = plist.get("CFBundleVersion")
                                 if cf_ver and str(cf_ver).isdigit():
                                     return str(cf_ver)

@@ -122,6 +122,10 @@ Apple Silicon 选择 `*_macOS_arm64.pkg`，Intel 选择 `*_macOS_intel.pkg`。�
 
 历史兼容代码的引用不代表当前支持 Apple 遥控器。系统框架和内部模块详见 [模块清单](docs/modules.md)，各模块版本、版权及许可见 [第三方声明](THIRD_PARTY_NOTICES.md)。
 
+## 商标与免责声明
+
+Remote Buddy（遥控搭子）是一个独立的开源软件项目，与 **IOSPIRIT GmbH**（同名商业软件 Remote Buddy 的商标持有者）、Apple Inc.、Google LLC、Xiaomi Corporation（小米）或 Existential Audio Inc. 无任何关联、授权、赞助或背书关系。文中提及的第三方产品名称、型号、图标与商标均归各自所有者所有，仅用于说明设备与系统兼容性。
+
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=zfdang/remote-buddy&type=Date)](https://star-history.com/#zfdang/remote-buddy&Date)

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # Installer runs as root; personal actions run only as the console account.
 [[ "$(/usr/bin/id -u)" == 0 ]] || { echo 'Administrator authorization required.' >&2; exit 1; }
 [[ "${3:-/}" == / ]] || { echo 'Uninstall only supports the running system volume.' >&2; exit 1; }

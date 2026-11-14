@@ -130,11 +130,6 @@
 "chromecast.status.disconnected" = "Remote disconnected";
 "chromecast.enabled.title" = "Enable Chromecast remote";
 "chromecast.enabled.detail" = "Find and connect to a Chromecast remote for voice typing. This setting does not affect your Apple Remote.";
-"chromecast.mode.title" = "Voice Button Mode";
-"chromecast.mode.toggle" = "Press to Start/Stop";
-"chromecast.mode.hold" = "Hold to talk";
-"chromecast.mode.toggle.detail" = "Press once to start, then again to stop. Other physical remotes require you to hold the voice button. Choose the matching mode in your voice typing app (Doubao: Hands-Free mode).";
-"chromecast.mode.hold.detail" = "Hold the voice button while speaking, then release it to stop. Choose the matching mode in your voice typing app (Doubao: Hold mode).";
 "chromecast.action.reconnect" = "Reconnect";
 "chromecast.help.plain" = "The remote microphone sends audio to the selected virtual microphone. It does not use the computer microphone.";
 "chromecast.mapping.voice.title" = "Voice Button";
@@ -482,7 +477,6 @@
 "settings.overview.missing_requirements" = "Needs setup: %@";
 "settings.overview.open_section" = "Open %@ settings";
 
-"settings.section.settings" = "Settings";
 "settings.update_badge.accessibility_value" = "New version available";
 "settings.page.title" = "Settings";
 "settings.permissions.title" = "System Permissions";
@@ -490,8 +484,6 @@
 "settings.diagnostics.title" = "Diagnostics & Logs";
 "settings.application_updates.title" = "App & Updates";
 "settings.application.tagline" = "Voice within reach";
-"settings.section.login" = "Me";
-"settings.section.transcripts" = "Reflections";
 "about.page.subtitle" = "View version, updates, language, and app display options";
 "about.app.description" = "Turn your remote into a voice typing buddy. Speak instead of typing, and keep everyday actions a button away.";
 "about.app_support.title" = "App & Support";
@@ -502,7 +494,6 @@
 "about.preferences.app_icon" = "App Icon";
 "about.preferences.app_icon_help" = "Choose the icon shown in the Dock, app switcher, and Settings.";
 "about.preferences.app_icon_standard" = "Remote Buddy";
-"about.preferences.app_icon_faceted_duck" = "Faceted Duck";
 "about.preferences.language" = "App Language";
 "about.preferences.rc003_voice_extension_test" = "Test extended voice feature";
 "about.page.hero_subtitle" = "Version, preferences, and support for your wireless voice workspace";
@@ -700,20 +691,9 @@
 "onboarding.shortcut_learning.permission_required" = "Grant Accessibility permission first.";
 "onboarding.shortcut_learning.unavailable" = "Shortcut capture is unavailable. Re-authorize and try again.";
 "onboarding.voice_test.configuration.binding_expected" = "%1$@ · %2$@";
-"onboarding.remote_availability.title" = "Do you have a physical remote right now?";
-"onboarding.remote_availability.detail" = "A physical remote provides the most complete and reliable Remote Buddy experience. You can continue with a phone if one is not available.";
-"onboarding.remote_availability.has_remote.title" = "I Have a Remote";
-"onboarding.remote_availability.has_remote.detail" = "Connect a supported Bluetooth remote and use its physical buttons and microphone.";
-"onboarding.remote_availability.no_remote.title" = "No Remote Right Now";
-"onboarding.remote_availability.no_remote.detail" = "Choose the iPhone app or WeChat mini program next.";
-"onboarding.remote_availability.recommended" = "Preferred";
 "onboarding.remote_availability.illustration" = "Use a physical remote when available";
-"onboarding.control_method.title" = "Choose a phone option without a remote";
-"onboarding.control_method.physical_remote.title" = "Physical Remote";
-"onboarding.control_method.physical_remote.detail" = "Connect a supported Bluetooth remote and use its physical buttons and microphone.";
-"onboarding.control_method.illustration" = "Choose the control method you can use now";
 "onboarding.permissions.title" = "Allow Remote Buddy to connect and control your Mac";
-"onboarding.permissions.detail" = "Enable all three permissions before choosing a device. The microphone driver is checked in step 4.";
+"onboarding.permissions.detail" = "Enable all three permissions before choosing a device. The microphone driver is checked in step 5.";
 "onboarding.permissions.bluetooth.detail" = "Discover and connect to your paired Bluetooth remote";
 "onboarding.permissions.input.detail" = "Read physical button events and support voice input";
 "onboarding.permissions.accessibility.detail" = "Run voice shortcuts and custom button actions";
@@ -1037,8 +1017,8 @@
 "remote.device.select_placeholder" = "Select a remote";
 
 "onboarding.voice_tool.voice_buddy.title" = "Voice Buddy";
-"onboarding.voice_tool.voice_buddy.detail" = "100% local offline AI voice input & polish for Apple Silicon (myvoicebuddy.com).";
-"onboarding.voice_tool.voice_buddy.intro" = "Voice Buddy runs 100% locally on Apple Silicon with on-device speech recognition and LLM text polish — zero audio or text leaves your Mac, using Fn hold-to-talk by default.";
+"onboarding.voice_tool.voice_buddy.detail" = "Third-party Apple Silicon voice input & polish tool advertised as offline/local (myvoicebuddy.com; see its own privacy policy).";
+"onboarding.voice_tool.voice_buddy.intro" = "Voice Buddy is a third-party Apple Silicon voice input tool advertised as running speech recognition and LLM text polish locally on-device (behavior and privacy depend on that tool’s own settings), using Fn hold-to-talk by default.";
 "onboarding.voice_tool.voice_buddy.install_detail" = "Voice Buddy was not found in Applications. Download it from ";
 "onboarding.voice_tool.voice_buddy.website" = "Visit myvoicebuddy.com ↗";
 "onboarding.voice_tool.macos_dictation.title" = "macOS Dictation";

@@ -1,4 +1,4 @@
-> Scope: the following license is retained as an upstream reference. Its listed asset paths belong to remote-mic-app; those alternative logos are not distributed by Remote Buddy. The application uses its own bundled icon.
+> Scope: the following license is retained as an upstream reference. Its listed asset paths belong to `remote-mic-app`; none of those upstream proprietary icons or alternative logos are distributed by Remote Buddy. Although this repository contains identically named paths (`Resources/AppIcon.png` and `Resources/AppIcon.icns`), the files in this repository are freshly created original assets licensed under `GPL-3.0-only` (generated via `scripts/generate-icons.py`).
 
 # 无线麦 App Logo 许可
 

@@ -159,21 +159,6 @@ extension OnboardingView {
         }
     }
 
-    private func controlMethodIcon(_ method: OnboardingControlMethod) -> String {
-        switch method {
-        case .physicalRemote: return "appletvremote.gen4.fill"
-        case .unselected: return "circle"
-        }
-    }
-
-    private func remoteAvailabilityIcon(_ availability: OnboardingRemoteAvailability) -> String {
-        switch availability {
-        case .hasRemote: return "appletvremote.gen4.fill"
-        case .noRemote: return "iphone.and.arrow.forward"
-        case .unselected: return "circle"
-        }
-    }
-
     var systemFunctionKeyAvailable: Bool {
         systemFunctionKeyAvailableOverride ?? (systemFunctionKeyUsage == .available)
     }

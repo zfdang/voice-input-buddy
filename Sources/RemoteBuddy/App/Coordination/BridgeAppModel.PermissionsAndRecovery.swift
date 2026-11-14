@@ -312,12 +312,13 @@ extension BridgeAppModel {
             AppLogger.shared.write("APP RELAUNCH skipped reason=already_terminating")
             return false
         }
+        let sanitizedBundlePath = SettingsDiagnosticSnapshot.sanitizePath(bundleURL.path)
         guard Self.canRelaunchAppBundle(bundleURL) else {
-            AppLogger.shared.write("APP RELAUNCH skipped reason=not_app_bundle path=\(bundleURL.path)")
+            AppLogger.shared.write("APP RELAUNCH skipped reason=not_app_bundle path=\(sanitizedBundlePath)")
             return false
         }
         let issueLabel = runtimePermissionIssue?.diagnosticIdentifier ?? "none"
-        AppLogger.shared.write("APP RELAUNCH requested pid=\(pid) bundle=\(bundleURL.path) issue=\(issueLabel)")
+        AppLogger.shared.write("APP RELAUNCH requested pid=\(pid) bundle=\(sanitizedBundlePath) issue=\(issueLabel)")
         let executablePath = "/bin/sh"
         let arguments = [
             "-c",
@@ -336,7 +337,7 @@ extension BridgeAppModel {
                 try process.run()
             }
         } catch {
-            AppLogger.shared.write("APP RELAUNCH failed reason=\(error.localizedDescription)")
+            AppLogger.shared.write("APP RELAUNCH failed \(AppLogger.errorFields(error))")
             return false
         }
         if let terminateHandler {

@@ -2,7 +2,7 @@
 
 ## Current distribution
 
-Remote Buddy bundles its app and the independently named RemoteBuddyMic driver in one PKG. Driver sources are BlackHole v0.7.1 with third_party/blackhole/device-usb.patch. Matching project source is available at each release Git tag; pinned BlackHole and Sparkle source and reproduction instructions are linked in docs/source-code.md. RC003 product photos, upstream proprietary artwork, libopus binaries and private extensions are not distributed. The historical descriptions below do not imply they are bundled or supported.
+Remote Buddy bundles its app and the independently named RemoteBuddyMic driver in one PKG. Driver sources are BlackHole v0.7.1 with `third_party/blackhole/device-usb.patch`. Matching project source and the `_sources.tar.gz` archive (including pinned `BlackHole` and `Sparkle` sources) are published alongside each release on GitHub (<https://github.com/zfdang/remote-buddy/releases>) and documented in <https://github.com/zfdang/remote-buddy/blob/main/docs/source-code.md>. RC003 product photos, upstream proprietary artwork, libopus binaries and private extensions are not distributed. The historical descriptions below do not imply they are bundled or supported.
 
 ## Sparkle
 
@@ -10,7 +10,7 @@ Remote Buddy bundles its app and the independently named RemoteBuddyMic driver i
 - Version: 2.9.4 / `b6496a74a087257ef5e6da1c5b29a447a60f5bd7`
 - License: MIT, with the external license notices reproduced below
 
-The bundled framework's complete license and external notices follow, copied from the pinned Sparkle 2.9.4 distribution. This notice file is included in the app's Resources directory. Matching source is linked in docs/source-code.md. No upstream feed or signing key is reused.
+The bundled framework's complete license and external notices follow, copied from the pinned Sparkle 2.9.4 distribution. This notice file is included in the app's Resources directory. Matching source is published in each release's `_sources.tar.gz` archive and linked in <https://github.com/zfdang/remote-buddy/blob/main/docs/source-code.md>. No upstream feed or signing key is reused.
 
 ```text
 Copyright (c) 2006-2013 Andy Matuschak.
@@ -162,8 +162,16 @@ POSSIBILITY OF SUCH DAMAGE.
 - Source: <https://github.com/HD838A/remote-mic-app>
 - Imported revision: `cae2a23804506538c31003d14ec3239379da66c1`
 - License: GPL-3.0-only
+- Upstream copyright: `Copyright (C) 2026 SayAll contributors` (SayAll / HD838A)
 
-Remote Buddy is an independent derivative. Original author notices are preserved in `docs/upstream-copyright.md`. The sections below preserve the upstream component inventory and historical descriptions; disabled components are not necessarily included in the macOS app bundle. No upstream proprietary artwork is included. See `docs/provenance.md` for actual build and distribution requirements.
+Remote Buddy is an independent derivative. Original upstream copyright notices are preserved verbatim below and in <https://github.com/zfdang/remote-buddy/blob/main/docs/upstream-copyright.md>. The sections below preserve the upstream component inventory and historical descriptions; disabled components are not necessarily included in the macOS app bundle. No upstream proprietary artwork is included. See <https://github.com/zfdang/remote-buddy/blob/main/docs/provenance.md> for actual build and distribution requirements.
+
+```text
+Copyright (C) 2026 SayAll contributors
+Upstream project: https://github.com/HD838A/remote-mic-app
+Adapted from GPL-3.0-only project xxb26553663-star/remote-bridge-hub (commit 8a93f321ac71a602300c6cd77f7256fa4b63068e).
+Software code licensed under GPL-3.0-only.
+```
 
 ## remote-bridge-hub
 
@@ -314,3 +322,8 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+## Trademarks & Non-Affiliation
+
+Remote Buddy is an independent open-source project licensed under GNU General Public License v3.0 only (`GPL-3.0-only`). It is not affiliated with, endorsed by, or sponsored by IOSPIRIT GmbH, Apple Inc., Google LLC, Xiaomi Corporation, or Existential Audio Inc. All third-party product names, hardware names, and trademarks belong to their respective owners and are used strictly for identification and compatibility descriptions.
