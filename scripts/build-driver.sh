@@ -45,6 +45,8 @@ cp "$source/BlackHole/BlackHole.plist" "$driver/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Set :CFBundleShortVersionString 0.1.2' "$driver/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Set :CFBundleVersion 3' "$driver/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Set :CFBundleIconFile BlackHole.icns' "$driver/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c 'Delete :NSHumanReadableCopyright' "$driver/Contents/Info.plist" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c 'Add :NSHumanReadableCopyright string Copyright (C) 2019 Existential Audio Inc. Modified for Remote Buddy (2026). Licensed under GPL-3.0-only.' "$driver/Contents/Info.plist"
 # Check the effective identity, not only compiler command-line arguments.
 strings "$driver/Contents/MacOS/RemoteBuddyMic" | grep -Fx 'BuddyMic2ch_UID' > /dev/null
 if strings "$driver/Contents/MacOS/RemoteBuddyMic" | grep -F '%ich_UID' > /dev/null; then
@@ -53,6 +55,22 @@ if strings "$driver/Contents/MacOS/RemoteBuddyMic" | grep -F '%ich_UID' > /dev/n
 fi
 cp "$root/Resources/AppIcon.icns" "$driver/Contents/Resources/BlackHole.icns"
 cp "$source/LICENSE" "$driver/Contents/Resources/BlackHole-LICENSE"
+cat > "$driver/Contents/Resources/NOTICE.txt" <<'EOF'
+RemoteBuddyMic.driver
+Copyright (C) 2019 Existential Audio Inc.
+Modified for Remote Buddy by Remote Buddy contributors (2026).
+
+Modification Notice (GNU General Public License v3.0, Section 5(a)):
+This HAL audio driver is a modified version of Existential Audio BlackHole v0.7.1
+(upstream revision e2b22aaaba4e507a097131704bf96dabc004d9cf), patched with
+third_party/blackhole/device-usb.patch and compiled with Remote Buddy's bundle
+identifier (com.zfdang.remote-buddy.mic), fixed UID (BuddyMic2ch_UID), and product
+branding.
+
+License: GNU General Public License v3.0 only (GPL-3.0-only).
+Complete corresponding source code is published alongside releases at:
+https://github.com/zfdang/remote-buddy
+EOF
 
 "$root/scripts/sign-bundle.sh" "$driver"
 # Publish only after the fresh driver passes identity validation and signing.
