@@ -2,6 +2,9 @@ import CryptoKit
 import Foundation
 
 enum DiagnosticRedactor {
+    /// Per-process salt keeps redactions correlated within one session while preventing offline dictionary lookups across logs.
+    private static let sessionSalt = UUID().uuidString
+
     private static let knownFactoryNames: Set<String> = [
         "mi rc", "siri remote", "apple tv remote", "apple remote",
         "chromecast remote", "google tv remote",
@@ -22,7 +25,7 @@ enum DiagnosticRedactor {
             RemoteModel.allCases.contains(where: { RemoteDeviceNamePolicy.isFactoryName(name, model: $0) }) {
             return name
         }
-        let digest = SHA256.hash(data: Data(name.utf8))
+        let digest = SHA256.hash(data: Data("\(sessionSalt):\(name)".utf8))
         let hex = digest.prefix(4).map { String(format: "%02x", $0) }.joined()
         return "device_\(hex)"
     }
