@@ -442,8 +442,8 @@ AXChildren role relationships and control labels, not messages,
 values, accounts, or URLs. The test runs that fixture through the production group
 walker and the bounded parent search. The direct editor parent has no action bar;
 the matching composer is its next layout ancestor. Up to three AXGroup ancestors
-are inspected within a shared 150 ms budget; document/window roots and cycles stop
-the search. It supports nested layout/toolbar groups but rejects multiple editors,
+are considered with a 150 ms admission budget and a separate 150 ms budget per
+subtree; document/window roots and cycles stop the search. It supports nested layout/toolbar groups but rejects multiple editors,
 truncated traversal and unrecognized controls. The bounded scan (96 nodes, five
 layout levels, 150 ms) is still version-dependent and is not hardware acceptance.
 Label tests cover English/Chinese and French/Japanese/Indonesian control aliases;

@@ -15,7 +15,7 @@ struct LiveApplicationIntegrationTests {
             let run = try #require(NSRunningApplication.runningApplications(withBundleIdentifier: integration.bundleIdentifier).first)
             run.activate(options: [.activateAllWindows])
             try await Task.sleep(for: .milliseconds(1500))
-            #require(NSWorkspace.shared.frontmostApplication?.processIdentifier == run.processIdentifier)
+            try #require(NSWorkspace.shared.frontmostApplication?.processIdentifier == run.processIdentifier)
             let app = AXUIElementCreateApplication(run.processIdentifier)
             _ = KeyboardInjector.axAttribute(app, attribute: kAXRoleAttribute)
             var pending = [app]
@@ -35,6 +35,9 @@ struct LiveApplicationIntegrationTests {
             let focusResult = AXUIElementSetAttributeValue(control, kAXFocusedAttribute as CFString, kCFBooleanTrue)
             try #require(focusResult == .success)
             try await Task.sleep(for: .milliseconds(100))
+            let selected = try #require(KeyboardInjector.axAttribute(app, attribute: kAXFocusedUIElementAttribute))
+            try #require(CFGetTypeID(selected) == AXUIElementGetTypeID())
+            try #require(CFEqual(selected, control))
             var operation: ScheduledOperation?
             let result: ApplicationFocusResult = await withCheckedContinuation { continuation in
                 operation = KeyboardInjector.focusIntegratedApplication(integration, processIdentifier: run.processIdentifier) {
