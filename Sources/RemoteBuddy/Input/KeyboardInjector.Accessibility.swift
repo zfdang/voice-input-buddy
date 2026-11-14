@@ -792,26 +792,33 @@ extension KeyboardInjector {
         return windows
     }
 
-    private static func accessibilityTextCandidates(
+    /// Roles whose children only decorate a control or render message content.
+    /// Integrated composers are editing controls, never descendants of these leaves.
+    static func isIntegratedScanLeaf(_ role: String) -> Bool {
+        ["AXStaticText", "AXImage", "AXListMarker", "AXButton", "AXPopUpButton",
+         "AXMenuItem", "AXMenuBarItem", "AXCheckBox", "AXRadioButton", "AXSlider",
+         "AXProgressIndicator"].contains(role)
+    }
+
+    static func accessibilityTextCandidates(
         in window: AXUIElement, integration: ApplicationIntegration? = nil,
         didScan: ((Int, Bool) -> Void)? = nil
     ) -> [(element: AXUIElement, snapshot: AccessibilityTextCandidate)] {
         struct PendingElement {
             let element: AXUIElement
+            let role: String
+            let frame: CGRect?
             let context: String
             let selectedContext: Bool
         }
-
+        let contextKeys = [kAXIdentifierAttribute, kAXTitleAttribute, kAXDescriptionAttribute,
+                           kAXHelpAttribute, kAXPlaceholderValueAttribute]
         let windowFrame = axFrame(window)
-        var stack = [PendingElement(
-            element: window,
-            context: axSemanticText(window),
-            selectedContext: axBool(window, attribute: kAXSelectedAttribute) ?? false
-        )]
+        var stack = [PendingElement(element: window, role: axString(window, attribute: kAXRoleAttribute),
+            frame: windowFrame, context: "", selectedContext: false)]
         var visitedElements: [CFHashCode: [AXUIElement]] = [CFHash(window): [window]]
         var budget = AccessibilityTraversalBudget(maximumNodes: maximumAccessibilityTraversalCount)
         var candidates: [(element: AXUIElement, snapshot: AccessibilityTextCandidate)] = []
-
         var scannedNodes = 0
         var truncated = false
         defer { didScan?(scannedNodes, truncated || !stack.isEmpty) }
@@ -819,49 +826,63 @@ extension KeyboardInjector {
         while !stack.isEmpty, budget.hasTimeRemaining {
             let current = stack.removeLast()
             scannedNodes += 1
-            let ownContext = axSemanticText(current.element)
-            let combinedContext = [current.context, ownContext]
-                .filter { !$0.isEmpty }
-                .joined(separator: " ")
-            let role = axString(current.element, attribute: kAXRoleAttribute)
-            let frame = axFrame(current.element)
-            let selectedContext = current.selectedContext ||
-                (axBool(current.element, attribute: kAXSelectedAttribute) ?? false)
-
-            if role == "AXTextArea" || role == "AXTextField" {
-                candidates.append((
-                    current.element,
-                    accessibilityTextMetadata(role: role, frame: frame, context: combinedContext,
+            let isEditor = current.role == "AXTextArea" || current.role == "AXTextField"
+            let keys = contextKeys + [kAXSelectedAttribute] + (isEditor
+                ? [kAXSubroleAttribute, "AXProtectedContent", kAXEnabledAttribute, kAXFocusedAttribute] : []) +
+                (isEditor && integration != nil ? [] : accessibilityChildAttributes)
+            let attributes = accessibilityScanAttributes(current.element, keys: keys)
+            let ownContext = contextKeys.compactMap { attributes[$0] as? String }
+                .filter { !$0.isEmpty }.joined(separator: " ")
+            let combinedContext = [current.context, ownContext].filter { !$0.isEmpty }.joined(separator: " ")
+            let selectedContext = current.selectedContext || (attributes[kAXSelectedAttribute] as? Bool ?? false)
+            if isEditor {
+                candidates.append((current.element,
+                    accessibilityTextMetadata(role: current.role, frame: current.frame, context: combinedContext,
                         selectedContext: selectedContext,
-                        hasWorkBuddyComposerControls: integration == .workBuddy && role == "AXTextArea" &&
+                        hasWorkBuddyComposerControls: integration == .workBuddy && current.role == "AXTextArea" &&
                             workBuddyComposerControlsSurround(current.element),
-                        read: { axAttribute(current.element, attribute: $0) })
-                ))
+                        read: { attributes[$0] })))
+                // Rich editors expose their document contents as children. Other
+                // candidate editors remain reachable through their layout parents.
+                if integration != nil { continue }
             }
-
             let childContext = String(combinedContext.suffix(512))
-            var children: [(element: AXUIElement, priority: Int)] = []
+            var children: [(node: PendingElement, priority: Int)] = []
             for attribute in accessibilityChildAttributes {
                 guard budget.hasTimeRemaining else { truncated = true; break }
-                for child in axElements(current.element, attribute: attribute) {
+                for child in attributes[attribute] as? [AXUIElement] ?? [] {
                     let hash = CFHash(child)
-                    if visitedElements[hash]?.contains(where: { CFEqual($0, child) }) == true {
-                        continue
-                    }
-                    guard let priority = accessibilityChildPriority(
-                        role: { axString(child, attribute: kAXRoleAttribute) }, frame: { axFrame(child) },
-                        windowFrame: windowFrame, budget: &budget) else { truncated = true; break }
+                    if visitedElements[hash]?.contains(where: { CFEqual($0, child) }) == true { continue }
+                    var role = ""
+                    var frame: CGRect?
+                    guard let priority = accessibilityChildPriority(role: {
+                        let metadata = accessibilityScanAttributes(child,
+                            keys: [kAXRoleAttribute, kAXPositionAttribute, kAXSizeAttribute])
+                        role = metadata[kAXRoleAttribute] as? String ?? ""
+                        frame = accessibilityFrame(read: { metadata[$0] })
+                        return role
+                    }, frame: { frame }, windowFrame: windowFrame, budget: &budget)
+                    else { truncated = true; break }
                     visitedElements[hash, default: []].append(child)
-                    children.append((child, priority))
+                    if integration != nil, isIntegratedScanLeaf(role) { continue }
+                    children.append((PendingElement(element: child, role: role, frame: frame,
+                        context: childContext, selectedContext: selectedContext), priority))
                 }
             }
-            // Sorting is local; every child query was admitted under the same budget.
             children.sort { $0.priority < $1.priority }
-            stack.append(contentsOf: children.map {
-                PendingElement(element: $0.element, context: childContext, selectedContext: selectedContext)
-            })
+            stack.append(contentsOf: children.map(\.node))
         }
         return candidates
+    }
+
+    private static func accessibilityScanAttributes(_ element: AXUIElement, keys: [String]) -> [String: Any] {
+        let attributes = AccessibilityMessaging.attributes(element, keys: keys)
+        if !attributes.isEmpty { return attributes }
+        // Some native controls do not implement the batch API. Preserve coverage
+        // through the same public metadata keys, without querying editing values.
+        return Dictionary(uniqueKeysWithValues: keys.compactMap { key in
+            axAttribute(element, attribute: key).map { (key, $0 as Any) }
+        })
     }
 
     /// Metadata-only reader shared by automatic and explicit focus scans. There
@@ -1353,10 +1374,14 @@ extension KeyboardInjector {
     }
 
     static func axFrame(_ element: AXUIElement) -> CGRect? {
-        guard let positionValue = axAttribute(element, attribute: kAXPositionAttribute),
-              let sizeValue = axAttribute(element, attribute: kAXSizeAttribute),
-              CFGetTypeID(positionValue) == AXValueGetTypeID(),
-              CFGetTypeID(sizeValue) == AXValueGetTypeID()
+        accessibilityFrame(read: { axAttribute(element, attribute: $0) })
+    }
+
+    static func accessibilityFrame(read: (String) -> Any?) -> CGRect? {
+        guard let positionValue = read(kAXPositionAttribute),
+              let sizeValue = read(kAXSizeAttribute),
+              CFGetTypeID(positionValue as CFTypeRef) == AXValueGetTypeID(),
+              CFGetTypeID(sizeValue as CFTypeRef) == AXValueGetTypeID()
         else { return nil }
 
         var position = CGPoint.zero

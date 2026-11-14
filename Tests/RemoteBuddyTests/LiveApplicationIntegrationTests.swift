@@ -7,6 +7,30 @@ import Testing
 // Never runs in the normal suite or CI, and never inserts/submits text.
 @Suite("Live application focus", .enabled(if: ProcessInfo.processInfo.environment["REMOTE_BUDDY_LIVE_FOCUS_TESTS"] == "1"))
 struct LiveApplicationIntegrationTests {
+    @Test @MainActor func measureInstalledComposerScans() throws {
+        try #require(KeyboardInjector.isAccessibilityTrusted)
+        for integration in ApplicationIntegration.allCases {
+            guard let run = NSRunningApplication.runningApplications(withBundleIdentifier: integration.bundleIdentifier).first else { continue }
+            let app = AXUIElementCreateApplication(run.processIdentifier)
+            _ = KeyboardInjector.axAttribute(app, attribute: kAXRoleAttribute)
+            guard let reference = KeyboardInjector.axAttribute(app, attribute: kAXFocusedWindowAttribute),
+                  CFGetTypeID(reference) == AXUIElementGetTypeID() else { continue }
+            let window = reference as! AXUIElement
+            for iteration in 1...3 {
+                let started = ProcessInfo.processInfo.systemUptime
+                var nodes = 0
+                var truncated = false
+                let candidates = KeyboardInjector.accessibilityTextCandidates(in: window, integration: integration,
+                    didScan: { nodes = $0; truncated = $1 })
+                let matches = candidates.filter {
+                    KeyboardInjector.integratedComposerScore($0.snapshot, integration: integration,
+                        windowFrame: KeyboardInjector.axFrame(window)) != nil
+                }.count
+                print("LIVE SCAN app=\(integration.rawValue) iteration=\(iteration) ms=\(Int((ProcessInfo.processInfo.systemUptime - started) * 1000)) nodes=\(nodes) candidates=\(candidates.count) matches=\(matches) truncated=\(truncated)")
+            }
+        }
+    }
+
     @Test @MainActor func workBuddyReturnsFromToolbarToComposer() async throws {
         try #require(KeyboardInjector.isAccessibilityTrusted)
         let previous = NSWorkspace.shared.frontmostApplication

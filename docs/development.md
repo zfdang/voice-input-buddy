@@ -489,3 +489,38 @@ Validation on source `8d87730` (Xcode Swift 6.2.4):
 - The explicitly enabled live WorkBuddy probe passed, confirming the toolbar control really held focus before invoking the production focuser.
 - `swift test --disable-keychain --no-parallel` reported 727 tests / 107 suites, with the live test skipped and one failing assertion in `candidateAvailableAndConnectedRefreshCoalescesDefersFlushesAndCancelsStaleWork`, `HIDHotPathIdempotencyTests.swift:1307` (service-provider count 6 versus 5). The full suite is not green. This assertion was observed in earlier reviews as well; this run does not establish its cause.
 - `CONFIGURATION=debug scripts/build-app.sh` passed and produced local build 741 from runtime revision `0109e70`. The later commit changed only tests/documentation. The running installed build 737 was not replaced.
+
+
+### Composer scan latency
+
+The build 737 reproduction at 09:11:40 Singapore time spent 868 ms scanning the
+ChatGPT desktop window and about 1.07 seconds preparing focus in total. It did not
+reapply HID mappings, unlike the separate 09:06:23 reproduction. Both submitted Fn
+and completed audio drain; those records alone do not explain the input method's
+brief/no-listening UI. The two symptoms must not be assigned a common cause without
+additional evidence.
+
+Integrated scans now omit non-editing leaves (static text, images and action controls),
+stop at rich editors rather than walking their document contents, batch metadata and
+child-list reads, and reuse role/frame metadata within one scan. Container branches
+and all four public child-list attributes remain covered, with unique-target ranking
+and write-time focus checks unchanged. No persistent element cache is introduced.
+Non-integrated custom discovery retains full traversal. Scalar metadata reads remain
+a fallback for clients without the batch API; editing values are never requested.
+
+Local read-only scans, three samples per installed application, measured:
+
+| App | Before (ms) | After (ms) | Recognition after |
+| --- | --- | --- | --- |
+| ChatGPT desktop (`com.openai.codex`) | 900–937 | 142–165 | 1 candidate, 1 match |
+| Antigravity | 1000–1005, truncated | 208–215 | 1 candidate, 1 match; complete |
+| Claude | 199–221 | 58–61 | 1 candidate, 1 match |
+| WorkBuddy | 675–694 | 143–150 | 1 candidate, 1 match |
+
+WeChat's visible window changed between samples (before: one candidate/no match;
+after: two candidates/one match, 4–9 ms), so it is not a like-for-like timing claim.
+These are current-window scan observations, not general latency guarantees or
+end-to-end voice-start measurements. The opt-in `measureInstalledComposerScans`
+test reproduces the measurements without activating applications or moving focus.
+The filtered integration/frame/privacy run reported 70 tests / 4 suites passed,
+with the two live probes skipped in the ordinary run.
