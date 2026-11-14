@@ -39,6 +39,10 @@ class AppcastTests(unittest.TestCase):
                                       ('v26-10-11.021', '22', signature), ('v26-10-11.021', '21', 'bad'), ('v26-10-11.022', '22', signature)]:
                 with self.assertRaises(ValueError):
                     appcast.generate(package, tag, version, sig, output)
+            legacy_named = Path(directory) / 'Voice_Input_Buddy_v26-10-11.021_macOS_arm64.pkg'
+            legacy_named.write_bytes(b'package')
+            with self.assertRaises(ValueError):
+                appcast.generate(legacy_named, 'v26-10-11.021', '21', signature, output)
 
     def test_display_suffix_wraps_without_wrapping_update_version(self):
         with tempfile.TemporaryDirectory() as directory:

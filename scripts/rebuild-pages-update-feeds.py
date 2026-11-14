@@ -152,7 +152,7 @@ def extract_version_from_pkg(pkg_path):
                             plist = plistlib.load(f)
                             pkg_type = plist.get("CFBundlePackageType")
                             bundle_id = plist.get("CFBundleIdentifier", "")
-                            if pkg_type == "APPL" or bundle_id in ("com.zfdang.remote-buddy", "com.zfdang.voice-input-buddy"):
+                            if pkg_type == "APPL" or bundle_id == "com.zfdang.remote-buddy":
                                 cf_ver = plist.get("CFBundleVersion")
                                 if cf_ver and str(cf_ver).isdigit():
                                     return str(cf_ver)
