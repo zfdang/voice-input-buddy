@@ -430,11 +430,14 @@ These fixes have not been accepted on physical hardware. Previously reported
 WeChat, Antigravity, and ChatGPT success applies to the previously tested revision,
 not automatically to the revised public-AX-only path or feedback lifecycle.
 
-The normalized WorkBuddy 5.11.3 composer inspection fixture is stored in
+The WorkBuddy 5.11.3 public-AX composer inspection fixture is stored in
 `docs/testing-fixtures/workbuddy-composer-5.11.3.json`. It records only the observed
-composer controls and role relationships, not raw AX attribute keys, messages,
+AXChildren role relationships and control labels, not messages,
 values, accounts, or URLs. The test runs that fixture through the production group
-walker. It supports nested layout/toolbar groups but rejects multiple editors,
+walker and the bounded parent search. The direct editor parent has no action bar;
+the matching composer is its next layout ancestor. Up to three AXGroup ancestors
+are inspected within a shared 150 ms budget; document/window roots and cycles stop
+the search. It supports nested layout/toolbar groups but rejects multiple editors,
 truncated traversal and unrecognized controls. The bounded scan (96 nodes, five
 layout levels, 150 ms) is still version-dependent and is not hardware acceptance.
 Label tests cover English/Chinese and French/Japanese/Indonesian control aliases;

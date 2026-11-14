@@ -687,6 +687,29 @@ struct ApplicationIntegrationTests {
             role: { nodes[$0]?["role"] as? String ?? "" },
             children: { nodes[$0]?["children"] as? [Int] ?? [] },
             controlLabels: { nodes[$0]?["labels"] as? [String] ?? [] }))
+        let editor = try #require(rows.first { $0["role"] as? String == "AXTextArea" }?["id"] as? Int)
+        let parents = Dictionary(uniqueKeysWithValues: rows.flatMap { row -> [(Int, Int)] in
+            (row["children"] as? [Int] ?? []).map { ($0, row["id"] as! Int) }
+        })
+        let matches: (Int) -> Bool = { group in
+            KeyboardInjector.workBuddyComposerGroupMatches(group,
+                role: { nodes[$0]?["role"] as? String ?? "" },
+                children: { nodes[$0]?["children"] as? [Int] ?? [] },
+                controlLabels: { nodes[$0]?["labels"] as? [String] ?? [] })
+        }
+        #expect(!matches(try #require(parents[editor])))
+        #expect(KeyboardInjector.workBuddyComposerAncestorsMatch(editor,
+            parent: { parents[$0] }, role: { nodes[$0]?["role"] as? String ?? "" },
+            equal: ==, matches: matches))
+        // Do not climb out of a local composer into a document/window or loop.
+        #expect(!KeyboardInjector.workBuddyComposerAncestorsMatch(1, parent: { _ in 2 },
+            role: { _ in "AXWebArea" }, equal: ==, matches: { _ in true }))
+        #expect(!KeyboardInjector.workBuddyComposerAncestorsMatch(1, parent: { $0 == 1 ? 2 : 1 },
+            role: { _ in "AXGroup" }, equal: ==, matches: { _ in false }))
+        var inspected = 0
+        #expect(!KeyboardInjector.workBuddyComposerAncestorsMatch(0, parent: { $0 + 1 },
+            role: { _ in "AXGroup" }, equal: ==, matches: { _ in inspected += 1; return false }))
+        #expect(inspected == 3)
     }
 
     @Test func composerLabelsHandleReplyAndLocalizedControlVariants() {
