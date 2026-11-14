@@ -16,3 +16,9 @@ __pycache__/
 
 # Local review reports and working notes.
 /.workbuddy/
+
+# Secret signing materials; never commit private keys or passwords.
+*.p12
+*.pfx
+private-key.pem
+password.txt
