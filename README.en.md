@@ -53,13 +53,15 @@ Driver installation requires administrator authorization and briefly interrupts 
 
 ## Which devices are supported?
 
-| Device | Status |
-| --- | --- |
-| Xiaomi Bluetooth Remote 2 / 2 Pro | RC001 = 2; RC003 = 2 Pro. Both have ATVV and button adapters. 2 Pro buttons tested locally and audio confirmed by the user (~60s single hold limit); complete Remote 2 audio acceptance is pending |
-| T1 Air-Mouse & Keyboard Voice Remote (and compatible clones) | Verified on author's sample over Bluetooth: custom mapping for 7 non-colliding front buttons, press-and-release to start / second-press to stop voice input (with 10s keepalive and ~5 min cap), plus native OK/arrows, air mouse, and rear QWERTY keyboard passthrough; clones require individual setup verification. See [T1 hardware debugging notes](docs/t1-remote-hardware-debugging.md) (Chinese) |
-| Google Chromecast Voice Remote (G9N9N) | **Partial support: voice input works normally; single-button mapping is unsupported.** Single-key reports are dropped by macOS due to non-compliant lengths; OK + direction sends Enter. See the [standalone test report](docs/g9n9n-compatibility.md) (Chinese) |
-| Google TV Streamer Voice Remote (GY3LE) | Planned; adapter implementation and hardware validation pending |
-| Apple Siri Remote | Planned; adapter implementation and hardware validation pending |
+| Device | Must the physical voice button stay held? | Status |
+| --- | --- | --- |
+| Xiaomi Bluetooth Remote 2 / 2 Pro | **Yes**; ~60s single-hold limit on 2 Pro | RC001 = 2; RC003 = 2 Pro. Protocol/button adapters present; 2 Pro buttons tested locally and audio confirmed by user. Full Remote 2 audio acceptance pending |
+| T1 Air-Mouse & Keyboard Voice Remote (and compatible clones) | **No** on the tested sample; press and release to start, press again to stop | Bluetooth sample verified: 7 remappable front buttons; OK/arrows, rear keyboard and air mouse pass through. Clones require individual verification. [Hardware notes](docs/t1-remote-hardware-debugging.md) (Chinese) |
+| Google Chromecast Voice Remote (G9N9N) | **Yes**; hold to talk, release to stop capture | **Partial support**: voice works; tested sample lacks single-button mapping. OK + direction sends Enter. [Test report](docs/g9n9n-compatibility.md) (Chinese) |
+| Google TV Streamer Voice Remote (GY3LE) | Not supported yet; Mac voice interaction unverified | Planned; adapter implementation and hardware validation pending |
+| Apple Siri Remote | Not supported yet; Mac voice interaction unverified | Planned; adapter implementation and hardware validation pending |
+
+See the **[Remote device guide](devices/supported-devices.md)** (Chinese) for models, appearance, buttons, features, reference prices and purchase links, including the approximately CNY 15 G9N9N-compatible sample reported in issue #170. Changing the input tool to start/stop taps does not keep a push-to-talk remote recording after its physical button is released.
 
 Choosing between **Xiaomi 2 Pro** and **T1**? See our comparison guide with real photos, pricing, dimensions, and voice-input differences: [Xiaomi 2 Pro vs T1 Remote Comparison](devices/xiaomi-2pro-vs-t1-remote.md) (Chinese).
 
