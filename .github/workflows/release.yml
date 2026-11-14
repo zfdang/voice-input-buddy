@@ -21,9 +21,10 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Generate shared release changes
         run: |
           gh api --paginate --slurp "repos/$GH_REPO/releases?per_page=100" > "$RUNNER_TEMP/published-releases.json"
@@ -31,7 +32,7 @@ jobs:
           python3 scripts/generate-release-notes.py --commit "$GITHUB_SHA" --repository "$GH_REPO" \
             --releases-file "$RUNNER_TEMP/published-releases.json" \
             --output release-notes.md --summary-output release-changes.txt
-      - uses: actions/upload-artifact@v7.0.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-changelog
           path: |
@@ -52,9 +53,10 @@ jobs:
     outputs:
       tag: ${{ steps.version.outputs.RELEASE_TAG }}
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Compute deterministic release version
         id: version
         run: |
@@ -62,7 +64,7 @@ jobs:
           cat "$RUNNER_TEMP/release-version" >> "$GITHUB_ENV"
           cat "$RUNNER_TEMP/release-version" >> "$GITHUB_OUTPUT"
       - name: Cache Sparkle artifact and BlackHole driver source
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             ~/Library/Caches/org.swift.swiftpm/artifacts
@@ -87,7 +89,7 @@ jobs:
           fi
       - name: Restore incremental SwiftPM build cache
         id: build-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             .build/${{ matrix.arch }}-apple-macosx
@@ -182,8 +184,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          CHANGELOG_DIR: ${{ runner.temp }}/release-changelog
         run: |
-          dest="${{ runner.temp }}/release-changelog"
+          dest="$CHANGELOG_DIR"
           mkdir -p "$dest"
           for attempt in $(seq 1 40); do
             if gh run download "$GITHUB_RUN_ID" --repo "$GH_REPO" --name release-changelog --dir "$dest" >/dev/null 2>&1; then
@@ -201,7 +204,7 @@ jobs:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
           SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
         run: scripts/sign-release-update.sh
-      - uses: actions/upload-artifact@v7.0.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           name: macOS-release-${{ matrix.arch }}
@@ -215,7 +218,7 @@ jobs:
         run: python3 scripts/restore-git-mtimes.py --write-marker --marker-file .build/.cached-git-sha
       - name: Save incremental SwiftPM build cache
         if: success() && steps.build-cache.outputs.cache-hit != 'true' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || steps.build-cache.outputs.cache-matched-key == '')
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             .build/${{ matrix.arch }}-apple-macosx
@@ -245,15 +248,16 @@ jobs:
       RELEASE_TAG: ${{ needs.build.outputs.tag }}
       RELEASE_COMMIT: ${{ github.sha }}
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: actions/download-artifact@v8.0.2
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: macOS-release-*
           merge-multiple: true
           path: release
-      - uses: actions/download-artifact@v8.0.2
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-changelog
           path: .
@@ -280,7 +284,7 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Upload website update feeds
-        uses: actions/upload-artifact@v7.0.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: website-update-feeds
           overwrite: true
@@ -289,8 +293,10 @@ jobs:
           retention-days: 90
       - name: Publish release
         shell: bash
+        env:
+          RELEASE_EXISTS: ${{ steps.release_state.outputs.exists }}
         run: |
-          if [[ "${{ steps.release_state.outputs.exists }}" == 'true' ]]; then
+          if [[ "$RELEASE_EXISTS" == 'true' ]]; then
             echo "Release $RELEASE_TAG already exists; packages and feeds are immutable."
           else
             gh release create "$RELEASE_TAG" \
