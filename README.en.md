@@ -121,3 +121,7 @@ To uninstall, download `Remote_Buddy_Uninstaller_*_macOS_universal.pkg` (works o
 | [Opus](https://www.opus-codec.org/) | Codec referenced by historical Apple remote compatibility code; its dynamic library is not included in the current installer |
 
 Historical references do not imply current Apple remote support. See the [module inventory](docs/modules.md) for internal modules and macOS frameworks, and [third-party notices](THIRD_PARTY_NOTICES.md) for versions, copyrights, and licenses.
+
+## Trademarks and non-affiliation
+
+Remote Buddy is an independent open-source project and is not affiliated with, endorsed by, or sponsored by **IOSPIRIT GmbH**, Apple Inc., Google LLC, Xiaomi Corporation, or Existential Audio Inc. All third-party product names, hardware models, and trademarks belong to their respective owners and are mentioned solely to describe compatibility.

@@ -322,3 +322,8 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+## Trademarks & Non-Affiliation
+
+Remote Buddy is an independent open-source project licensed under GNU General Public License v3.0 only (`GPL-3.0-only`). It is not affiliated with, endorsed by, or sponsored by IOSPIRIT GmbH, Apple Inc., Google LLC, Xiaomi Corporation, or Existential Audio Inc. All third-party product names, hardware names, and trademarks belong to their respective owners and are used strictly for identification and compatibility descriptions.
