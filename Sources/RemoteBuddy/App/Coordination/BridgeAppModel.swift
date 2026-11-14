@@ -249,7 +249,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
 
     init(
         settings: AppSettings? = nil,
-        commonPhraseStore: CommonPhraseStore = CommonPhraseStore(),
+        commonPhraseStore: CommonPhraseStore? = nil,
         initialAudioDevices: [AudioDeviceInfo] = [],
         loginItemService: LoginItemService = LoginItemService(),
         voiceFunctionMapper: RemoteHIDKeyMapper? = nil,
@@ -262,7 +262,7 @@ final class BridgeAppModel: ObservableObject, BluetoothRemoteBridgeDelegate {
     ) {
         let settings = settings ?? AppSettings()
         self.settings = settings
-        self.commonPhraseStore = commonPhraseStore
+        self.commonPhraseStore = commonPhraseStore ?? CommonPhraseStore()
         self.voiceFunctionMapper = voiceFunctionMapper ?? RemoteHIDKeyMapper()
         self.hidEventSuppressor = hidEventSuppressor ?? KeyboardEventSuppressor()
         self.permissionSnapshotProvider = permissionSnapshotProvider

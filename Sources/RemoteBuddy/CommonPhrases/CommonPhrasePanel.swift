@@ -112,6 +112,7 @@ final class CommonPhraseController: ObservableObject {
         routing.reset(source: source)
     }
 
+    @MainActor
     func handle(_ button: RemoteButton, phase: RemoteButtonPhase, source: String) -> Bool {
         switch routing.handle(button, phase: phase, source: source) {
         case .unhandled: return false
@@ -124,6 +125,7 @@ final class CommonPhraseController: ObservableObject {
 
     func claims(_ button: RemoteButton, source: String) -> Bool { routing.claims(button, source: source) }
 
+    @MainActor
     func insert(_ button: RemoteButton) {
         guard isVisible, let targetPID else { return }
         let phrase = store.phrase(for: button)
