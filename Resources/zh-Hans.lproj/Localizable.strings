@@ -1014,8 +1014,8 @@
 "remote.device.select_placeholder" = "请选择遥控器";
 
 "onboarding.voice_tool.voice_buddy.title" = "Voice Buddy（语音搭子）";
-"onboarding.voice_tool.voice_buddy.detail" = "100% 本地 AI 语音输入与润色工具，零数据上云（myvoicebuddy.com）。";
-"onboarding.voice_tool.voice_buddy.intro" = "Voice Buddy 是一款 100% 本地离线运行的 Apple Silicon 语音输入搭子：端侧完成语音识别与大模型润色，音频与文字绝不上云，默认配合 Fn 长按说话。";
+"onboarding.voice_tool.voice_buddy.detail" = "宣称本地离线运行的 AI 语音输入与润色工具（myvoicebuddy.com；隐私策略以该工具为准）。";
+"onboarding.voice_tool.voice_buddy.intro" = "Voice Buddy 是一款第三方 Apple Silicon 语音输入工具，宣称端侧离线完成语音识别与大模型润色（具体联网与隐私行为以其自身设置与说明为准），默认配合 Fn 长按说话。";
 "onboarding.voice_tool.voice_buddy.install_detail" = "当前未检测到已安装的 Voice Buddy，可前往官网下载安装：";
 "onboarding.voice_tool.voice_buddy.website" = "访问官网 myvoicebuddy.com ↗";
 "onboarding.voice_tool.macos_dictation.title" = "macOS 听写";

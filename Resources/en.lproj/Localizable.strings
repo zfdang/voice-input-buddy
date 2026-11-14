@@ -1017,8 +1017,8 @@
 "remote.device.select_placeholder" = "Select a remote";
 
 "onboarding.voice_tool.voice_buddy.title" = "Voice Buddy";
-"onboarding.voice_tool.voice_buddy.detail" = "100% local offline AI voice input & polish for Apple Silicon (myvoicebuddy.com).";
-"onboarding.voice_tool.voice_buddy.intro" = "Voice Buddy runs 100% locally on Apple Silicon with on-device speech recognition and LLM text polish — zero audio or text leaves your Mac, using Fn hold-to-talk by default.";
+"onboarding.voice_tool.voice_buddy.detail" = "Third-party Apple Silicon voice input & polish tool advertised as offline/local (myvoicebuddy.com; see its own privacy policy).";
+"onboarding.voice_tool.voice_buddy.intro" = "Voice Buddy is a third-party Apple Silicon voice input tool advertised as running speech recognition and LLM text polish locally on-device (behavior and privacy depend on that tool’s own settings), using Fn hold-to-talk by default.";
 "onboarding.voice_tool.voice_buddy.install_detail" = "Voice Buddy was not found in Applications. Download it from ";
 "onboarding.voice_tool.voice_buddy.website" = "Visit myvoicebuddy.com ↗";
 "onboarding.voice_tool.macos_dictation.title" = "macOS Dictation";
