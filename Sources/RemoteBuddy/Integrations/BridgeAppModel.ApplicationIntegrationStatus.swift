@@ -4,7 +4,9 @@ extension BridgeAppModel {
     /// Per-attempt feedback is independent of the persistent voice shortcut status.
     /// Results expire so reopening settings never presents an old attempt as current.
     func recordApplicationIntegrationStatus(_ state: ApplicationIntegrationPreparationState) {
-        clearApplicationIntegrationStatus()
+        applicationIntegrationStatusGeneration &+= 1
+        applicationIntegrationStatusExpiry?.cancel()
+        applicationIntegrationStatusExpiry = nil
         applicationIntegrationStatus = state
         guard state != .waiting else { return }
         let generation = applicationIntegrationStatusGeneration
@@ -18,7 +20,7 @@ extension BridgeAppModel {
     func completeApplicationIntegrationVoiceTrigger(started: Bool) {
         guard let state = applicationIntegrationStatus else { return }
         switch state {
-        case .voiceTriggered, .voiceTriggeredWithoutFocus, .cancelled: return
+        case .voiceTriggered, .voiceTriggeredPreserved, .voiceTriggeredWithoutFocus, .cancelled: return
         default: break
         }
         if !started {
@@ -27,6 +29,7 @@ extension BridgeAppModel {
         }
         switch state {
         case .ready: recordApplicationIntegrationStatus(.voiceTriggered)
+        case .preserved: recordApplicationIntegrationStatus(.voiceTriggeredPreserved)
         case .unavailable, .focusTimedOut: recordApplicationIntegrationStatus(.voiceTriggeredWithoutFocus)
         default: break // Stop pulses and repeated callbacks do not start a new attempt.
         }

@@ -1,0 +1,83 @@
+{
+  "application": "WorkBuddy",
+  "version": "5.11.3",
+  "observed": "2026-11-13",
+  "source": "User-visible accessibility inspection; normalized roles, not a raw AX attribute dump",
+  "scope": "Composer group only. Editor values, conversation text, URLs and account data are omitted.",
+  "nodes": [
+    {
+      "id": 0,
+      "role": "AXGroup",
+      "children": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "id": 1,
+      "role": "AXTextArea",
+      "settable": true
+    },
+    {
+      "id": 2,
+      "role": "AXPopUpButton",
+      "labels": [
+        "更多操作"
+      ]
+    },
+    {
+      "id": 3,
+      "role": "AXButton",
+      "labels": [
+        "复制分支名"
+      ]
+    },
+    {
+      "id": 4,
+      "role": "AXPopUpButton",
+      "labels": [
+        "允许完全访问"
+      ]
+    },
+    {
+      "id": 5,
+      "role": "AXGroup",
+      "children": [
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "id": 6,
+      "role": "AXButton",
+      "labels": []
+    },
+    {
+      "id": 7,
+      "role": "AXPopUpButton",
+      "labels": [
+        "Select model: Hy4"
+      ]
+    },
+    {
+      "id": 8,
+      "role": "AXButton",
+      "labels": [
+        "语音输入 ⌘D 或长按 ⌥"
+      ]
+    },
+    {
+      "id": 9,
+      "role": "AXButton",
+      "labels": [
+        "发送"
+      ],
+      "enabled": false
+    }
+  ]
+}

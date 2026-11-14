@@ -272,6 +272,9 @@ extension BridgeAppModel {
     }
 
     private func cancelPendingVoiceKeyActivation() {
+        if applicationIntegrationStatus?.isPreparingVoiceInput == true {
+            completeApplicationIntegrationVoiceTrigger(started: false)
+        }
         voiceKeyActivationGeneration &+= 1
         voiceKeyActivationInProgress = false
         pendingVoiceKeyActivationOwner = nil

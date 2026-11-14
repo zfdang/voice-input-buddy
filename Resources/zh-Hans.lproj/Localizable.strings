@@ -459,6 +459,7 @@
 "status_item.accessibility_label" = "小米蓝牙遥控器 2 / 2 Pro";
 "status_item.state.disconnected" = "%@：未连接设备";
 "status_item.state.connected" = "%@：设备已连接";
+"status_item.state.preparing" = "%@：正在准备语音输入";
 "status_item.state.streaming" = "%@：正在传输语音";
 "status_item.accessibility.show_menu" = "显示菜单";
 "about.alert.description_with_version" = "版本 %1$@\n让遥控器成为你的语音输入助手，轻松说话打字，一键操作常用功能。";
@@ -1228,27 +1229,32 @@
 
 // Foreground application integration at voice start
 "application_integration.title" = "应用集成";
-"application_integration.introduction" = "按下语音键开始语音输入时，如果前台应用已开启集成，会自动聚焦到对应输入框。平时切换应用不会调整焦点。默认全部关闭。";
+"application_integration.introduction" = "开始语音输入时，优先使用你选中的输入框；如果还没选中，就帮你定位到当前应用的对话输入框。";
 "application_integration.supported" = "支持的应用";
 "application_integration.enable_all" = "全部开启";
 "application_integration.disable_all" = "全部关闭";
-"application_integration.chatGPT.detail" = "开启后，开始语音输入时，如果前台应用是 ChatGPT，会自动聚焦到当前对话的消息输入框。";
-"application_integration.antigravity.detail" = "开启后，开始语音输入时，如果前台应用是 Antigravity，会自动聚焦到当前窗口的 Agent 聊天输入框。";
-"application_integration.weChat.detail" = "开启后，开始语音输入时，如果前台应用是微信，会自动聚焦到当前会话的消息输入框。请先打开一个会话。";
-"application_integration.accessibility_help" = "自动聚焦使用辅助功能权限。聚焦是可选环节，失败时语音仍会继续，必要时可用 Command+V 粘贴结果；语音识别和文字输入仍由所选语音工具完成。";
+"application_integration.chatGPT.detail" = "当前对话的消息输入框。";
+"application_integration.antigravity.detail" = "当前窗口的 Agent 对话输入框。";
+"application_integration.weChat.detail" = "当前会话的消息输入框。请先打开一个会话。";
+"application_integration.claude.detail" = "当前聊天或项目的输入框。请先打开对应页面。";
+"application_integration.workBuddy.detail" = "当前会话或新任务的输入框。";
+"application_integration.accessibility_help" = "如果未能定位输入框，语音输入仍可继续。文字没有自动填入时，可按 Command+V 粘贴。";
 
 "application_integration.status.waiting" = "正在准备输入框…";
-"application_integration.status.ready" = "已确认输入焦点，正在准备语音输入…";
-"application_integration.status.failed" = "未自动聚焦，正在准备语音输入…";
+"application_integration.status.ready" = "输入框已就绪，正在准备语音输入…";
+"application_integration.status.failed" = "未能定位输入框，正在准备语音输入…";
 "application_integration.status.timed_out" = "输入准备超时，已取消语音输入，请重试。";
-"application_integration.status.cancelled" = "输入准备已取消，未发送语音触发键。";
-"application_integration.permission.granted" = "已获得辅助功能权限";
-"application_integration.permission.missing" = "自动聚焦需要辅助功能权限。未授权时跳过聚焦并继续尝试语音；当前语音快捷键若依赖模拟按键，也需要此权限。";
+"application_integration.status.cancelled" = "已取消本次语音输入。";
+"application_integration.permission.missing" = "允许“辅助功能”权限后，即可自动定位输入框。";
 "application_integration.permission.open" = "打开辅助功能设置";
 
-"application_integration.fn_behavior" = "开启任一应用集成后，Fn 按住模式会在所有前台应用中改由遥控搭子发送触发键，以保证先聚焦再触发，因此需要辅助功能权限。只有已开启集成且位于前台的应用会调整焦点；全部关闭后恢复原有触发方式。";
 
-"application_integration.status.focus_timed_out" = "自动聚焦超时，正在准备语音输入…";
+"application_integration.status.focus_timed_out" = "定位输入框用时过长，正在准备语音输入…";
 
-"application_integration.status.triggered" = "语音触发已发送。";
-"application_integration.status.triggered_without_focus" = "未自动聚焦，语音触发已发送。如未自动回填，可用 Command+V 粘贴识别结果。";
+"application_integration.status.triggered" = "已请求开始语音输入。";
+"application_integration.status.triggered_without_focus" = "未能定位输入框，已请求语音输入。文字没有自动填入时，可按 Command+V 粘贴。";
+
+"application_integration.status.preserved" = "继续使用你选中的输入框，正在准备语音输入…";
+"application_integration.status.triggered_preserved" = "已沿用当前输入框，并请求开始语音输入。";
+
+"application_integration.voice_key_note" = "开启任一应用后，在所有应用里按住 Fn 说话，都会由遥控搭子处理。";

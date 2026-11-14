@@ -701,10 +701,7 @@ private final class RemoteBuddyAppDelegate: NSObject, NSApplicationDelegate, NSM
     }
 
     private func observeModel() {
-        StatusItemPresentation.publisher(
-            physicalConnected: model.$isConnected.eraseToAnyPublisher(),
-            isStreaming: model.$isStreaming.eraseToAnyPublisher()
-        )
+        StatusItemPresentation.publisher(model: model)
         .receive(on: RunLoop.main)
         .sink { [weak self] presentation in
             // Consume the published snapshot, not properties that @Published has yet to set.

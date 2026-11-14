@@ -23,7 +23,7 @@ struct ApplicationIntegrationTests {
             settings.setAllApplicationIntegrations(enabled: true)
             settings.setApplicationIntegration(.weChat, enabled: false)
             let restored = AppSettings(defaults: defaults)
-            #expect(restored.enabledApplicationIntegrations.count == 2)
+            #expect(restored.enabledApplicationIntegrations.count == ApplicationIntegration.allCases.count - 1)
             #expect(!restored.isApplicationIntegrationEnabled(.weChat))
             settings.setAllApplicationIntegrations(enabled: false)
             #expect(AppSettings(defaults: defaults).enabledApplicationIntegrations.isEmpty)
@@ -91,7 +91,7 @@ struct ApplicationIntegrationTests {
             settings.setAllApplicationIntegrations(enabled: true)
             settings.voiceKeyMode = mode
             let model = BridgeAppModel(settings: settings)
-            var focusDone: ((Bool) -> Void)?
+            var focusDone: ((ApplicationFocusResult) -> Void)?
             var events: [String] = []
             let controller = ApplicationIntegrationController(settings: settings, notifications: NotificationCenter(),
                 frontmost: { (ApplicationIntegration.weChat.bundleIdentifier, 42) }, focus: { _, _, done in
@@ -118,7 +118,7 @@ struct ApplicationIntegrationTests {
             #expect(buffered)
             events.append("focus_confirmed")
             let finishFocus = try #require(focusDone)
-            finishFocus(true)
+            finishFocus(.focused)
             #expect(events == ["focus_requested", "focus_confirmed", "select_source", "source_ready", "voice_down"])
             #expect(model.voiceSession.commandAudio.drain() == [1, 2, 3])
             #expect(model.applicationIntegrationStatus == .voiceTriggered)
@@ -135,7 +135,7 @@ struct ApplicationIntegrationTests {
             settings.voiceKeyMode = .leftCommand
             let model = BridgeAppModel(settings: settings)
             let notifications = NotificationCenter()
-            var focusDone: ((Bool) -> Void)?
+            var focusDone: ((ApplicationFocusResult) -> Void)?
             var edges: [Bool] = []
             var completed: [Bool] = []
             let controller = ApplicationIntegrationController(settings: settings, notifications: notifications,
@@ -154,7 +154,7 @@ struct ApplicationIntegrationTests {
                     keySetter: { _, down in edges.append(down); return true }))
             }
             let finishFocus = try #require(focusDone)
-            finishFocus(true)
+            finishFocus(.focused)
             #expect(edges.isEmpty)
             #expect(completed == [false])
             #expect(!model.voiceKeyLatch.isHeld)
@@ -170,7 +170,7 @@ struct ApplicationIntegrationTests {
             settings.voiceKeyMode = .function
             settings.voiceFnTapModeEnabled = tapMode
             let model = BridgeAppModel(settings: settings)
-            var done: ((Bool) -> Void)?
+            var done: ((ApplicationFocusResult) -> Void)?
             var edges: [Bool] = []
             var results: [Bool] = []
             var states: [ApplicationIntegrationPreparationState] = []
@@ -200,8 +200,8 @@ struct ApplicationIntegrationTests {
                     keySetter: { _, down in edges.append(down); return true }, completion: { results.append($0) }))
             }
             let finish = try #require(done)
-            finish(false)
-            finish(true) // A late success must not undo a failure.
+            finish(.unavailable)
+            finish(.focused) // A late success must not undo a failure.
             clock.runAll()
             #expect(states == [.waiting, .unavailable])
             if tapMode { #expect(edges == [true, false]) }
@@ -251,7 +251,7 @@ struct ApplicationIntegrationTests {
         try withSettings { settings, _ in
             settings.setAllApplicationIntegrations(enabled: true)
             let clock = ControlledTestScheduler()
-            var focusDone: ((Bool) -> Void)?
+            var focusDone: ((ApplicationFocusResult) -> Void)?
             var results: [VoiceInputDestinationWaitResult] = []
             let controller = ApplicationIntegrationController(settings: settings, notifications: NotificationCenter(),
                 frontmost: { (ApplicationIntegration.weChat.bundleIdentifier, 42) }, focus: { _, _, done in
@@ -263,7 +263,7 @@ struct ApplicationIntegrationTests {
             _ = controller.prepareForVoiceInput { results.append($0) }
             clock.advance(to: 3000)
             let finishFocus = try #require(focusDone)
-            finishFocus(true)
+            finishFocus(.focused)
             #expect(results == [.ready])
         }
     }
@@ -275,7 +275,7 @@ struct ApplicationIntegrationTests {
             settings.voiceFnTapModeEnabled = true
             let model = BridgeAppModel(settings: settings)
             let clock = ControlledTestScheduler()
-            var focusDone: ((Bool) -> Void)?
+            var focusDone: ((ApplicationFocusResult) -> Void)?
             var edges: [Bool] = []
             var audio: [[Int16]] = []
             let controller = ApplicationIntegrationController(settings: settings, notifications: NotificationCenter(),
@@ -301,7 +301,7 @@ struct ApplicationIntegrationTests {
             #expect(edges.isEmpty && audio.isEmpty)
             if released { #expect(session.stopVoice()) }
             let finishFocus = try #require(focusDone)
-            finishFocus(true)
+            finishFocus(.focused)
             clock.advance(to: 120)
             #expect(edges == (released ? [] : [true, false]))
             #expect(audio == (released ? [] : [[1, 2, 3]]))
@@ -403,10 +403,11 @@ struct ApplicationIntegrationTests {
 
     private let window = CGRect(x: 0, y: 0, width: 1000, height: 800)
     private func candidate(_ label: String = "", role: String = "AXTextArea", identifier: String = "", context: String = "",
-                           protected: Bool = false, enabled: Bool = true,
+                           protected: Bool = false, enabled: Bool = true, workBuddyControls: Bool = false,
                            frame: CGRect = CGRect(x: 350, y: 620, width: 600, height: 140)) -> KeyboardInjector.AccessibilityTextCandidate {
         .init(role: role, protectedContent: protected, identifier: identifier, title: "", description: "",
-              help: "", placeholder: label, context: context, frame: frame, enabled: enabled)
+              help: "", placeholder: label, context: context, frame: frame, enabled: enabled,
+              hasWorkBuddyComposerControls: workBuddyControls)
     }
 
     @Test func antigravityClickFallbackOnlyTargetsTheVerifiedVisibleMessageInput() {
@@ -489,6 +490,86 @@ struct ApplicationIntegrationTests {
         #expect(actions == (pressFallback ? ["AXPress"] : []))
     }
 
+    @Test(arguments: [0, 1, 2])
+    func realFocusWriterStopsAtEveryWriteBoundaryWhenUserMovesFocus(afterWrites: Int) {
+        let input = AXUIElementCreateApplication(1234)
+        var writes: [String] = []
+        let result = KeyboardInjector.focusAccessibilityElement(input, applicationElement: input,
+            canWriteFocus: { writes.count < afterWrites }, isFocused: { false },
+            setAttribute: { _, key, _ in writes.append(key as String); return .success },
+            performAction: { _, _ in Issue.record("A moved focus must not receive AXPress"); return .success })
+        #expect(!result)
+        #expect(writes == Array(["AXFocused", "AXFocusedUIElement"].prefix(afterWrites)))
+    }
+
+    @Test func realWriterCannotPreserveItsOwnUnconfirmedFocusChange() {
+        let input = AXUIElementCreateApplication(1234)
+        for confirmed in [false, true] {
+            var current = "document"
+            var writes: [String] = []
+            var preserved = 0
+            let writable: Set<String> = ["composer", "question"]
+            let result = KeyboardInjector.focusAccessibilityElement(input, applicationElement: input,
+                allowPress: false, canWriteFocus: {
+                    let shouldKeep = writable.contains(current) && KeyboardInjector.mayPreserveFocusedElement(
+                        current, excluding: "composer", equal: ==)
+                    if shouldKeep { preserved += 1 }
+                    return !shouldKeep
+                }, isFocused: { confirmed && writes.count == 2 }, setAttribute: { _, key, _ in
+                    writes.append(key as String)
+                    current = "composer" // AXFocused changed, but application focus is not yet confirmed.
+                    return .success
+                })
+            #expect(result == confirmed)
+            #expect(writes == ["AXFocused", "AXFocusedUIElement"])
+            #expect(preserved == 0)
+        }
+    }
+
+    @Test func writerOnlySucceedsAfterActualTargetConfirmation() {
+        let input = AXUIElementCreateApplication(1234)
+        for confirmed in [false, true] {
+            var writes = 0
+            let result = KeyboardInjector.focusAccessibilityElement(input, applicationElement: input,
+                allowPress: false, isFocused: { confirmed && writes > 0 },
+                setAttribute: { _, _, _ in writes += 1; return .success })
+            #expect(result == confirmed)
+            #expect(writes == (confirmed ? 1 : 2))
+        }
+    }
+
+    @Test func preservingInputRequiresWritableEvidenceWithoutReadingValues() {
+        for explicit in [Bool?.none, false, true] {
+            for settable in [false, true] {
+                let snapshot = KeyboardInjector.integratedPreservationSnapshot(bundleIdentifier: "com.openai.codex",
+                    read: { key in
+                        #expect(key != "AXValue" && key != "AXSelectedText")
+                        if key == "AXRole" { return "AXTextArea" }
+                        if key == "AXEditable" { return explicit }
+                        return nil
+                    }, valueIsSettable: { settable })
+                #expect(KeyboardInjector.shouldPreserveIntegratedInput(snapshot, integration: .chatGPT) == (explicit ?? settable))
+            }
+        }
+    }
+
+    @Test func preservedResultHasSeparatePreparingAndTriggeredFeedback() throws {
+        try withSettings { settings, _ in
+            settings.setApplicationIntegration(.chatGPT, enabled: true)
+            let model = BridgeAppModel(settings: settings)
+            let controller = ApplicationIntegrationController(settings: settings,
+                frontmost: { ("com.openai.codex", 42) }, focus: { _, _, done in
+                    done(.preserved); return ScheduledOperation {}
+                }, onStateChange: { model.recordApplicationIntegrationStatus($0) })
+            controller.start()
+            defer { controller.stop() }
+            _ = controller.prepareForVoiceInput { #expect($0 == .ready) }
+            #expect(model.applicationIntegrationStatus == .preserved)
+            model.completeApplicationIntegrationVoiceTrigger(started: true)
+            #expect(model.applicationIntegrationStatus == .voiceTriggeredPreserved)
+        }
+    }
+
     @Test func composerDiscoveryOnlyReadsControlMetadata() {
         var reads: [String] = []
         let field = KeyboardInjector.accessibilityTextMetadata(role: "AXTextArea", frame: window,
@@ -548,6 +629,154 @@ struct ApplicationIntegrationTests {
         #expect(ApplicationIntegration.matching("com.openai.chat") == .chatGPT)
     }
 
+    @Test(arguments: ApplicationIntegration.allCases)
+    func existingEditableFocusWinsOverTheComposer(app: ApplicationIntegration) {
+        func destination(role: String = "AXTextArea", enabled: Bool = true, editable: Bool = true,
+                         protected: Bool = false, bundle: String? = nil) -> VoiceInputDestinationSnapshot {
+            .init(bundleIdentifier: bundle ?? app.bundleIdentifier, role: role, subrole: "", enabled: enabled,
+                editable: editable, protectedContent: protected, semanticText: "question response")
+        }
+        for role in ["AXTextArea", "AXTextField", "AXComboBox"] {
+            let current = destination(role: role)
+            #expect(KeyboardInjector.shouldPreserveIntegratedInput(current, integration: app))
+            #expect(KeyboardInjector.focusIntegratedCandidates([(element: "composer", snapshot: candidate("Message input"))],
+                integration: app, windowFrame: window, canContinue: { true },
+                preserveFocus: { KeyboardInjector.shouldPreserveIntegratedInput(current, integration: app) },
+                focus: { _ in Issue.record("Existing input must not lose focus"); return false },
+                click: { _, _ in Issue.record("Existing input must not be replaced by a click"); return false }))
+        }
+        for invalid in [destination(role: "AXButton"), destination(enabled: false), destination(editable: false),
+                        destination(protected: true), destination(role: "AXSecureTextField"),
+                        destination(bundle: "com.apple.TextEdit")] {
+            #expect(!KeyboardInjector.shouldPreserveIntegratedInput(invalid, integration: app))
+        }
+    }
+
+    @Test func inputSelectedWhileScanningOrBeforeClickIsPreserved() {
+        let nodes = [(element: "composer", snapshot: candidate("Message input"))]
+        var checks = 0
+        var editing = false
+        #expect(KeyboardInjector.focusIntegratedCandidates(nodes, integration: .antigravity, windowFrame: window,
+            canContinue: { checks += 1; if checks == 2 { editing = true }; return true },
+            preserveFocus: { editing }, focus: { _ in Issue.record("Scan must recheck current input"); return false },
+            click: { _, _ in Issue.record("Scan must not click"); return false }))
+        editing = false
+        #expect(KeyboardInjector.focusIntegratedCandidates(nodes, integration: .antigravity, windowFrame: window,
+            canContinue: { true }, preserveFocus: { editing }, focus: { _ in editing = true; return false },
+            click: { _, _ in Issue.record("Do not click after the user selects an input"); return false }))
+        #expect(KeyboardInjector.clickIntegratedComposer(candidate("Message input"), integration: .antigravity,
+            windowFrame: window, canContinue: { true }, preserveFocus: { editing },
+            hitTest: { _ in Issue.record("Existing focus needs no hit test"); return false },
+            postClick: { _ in Issue.record("Existing focus needs no click"); return false }, isFocused: { false }, pause: {}))
+        let input = AXUIElementCreateApplication(1234)
+        #expect(!KeyboardInjector.focusAccessibilityElement(input, applicationElement: input,
+            canWriteFocus: { false }, isFocused: { false },
+            setAttribute: { _, _, _ in Issue.record("Preserved focus must not write AX attributes"); return .failure },
+            performAction: { _, _ in Issue.record("Preserved focus must not press a control"); return .failure }))
+    }
+
+    @Test func workBuddyComposerInspectionFixtureMatchesTheProductionWalker() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let data = try Data(contentsOf: root.appendingPathComponent("docs/testing-fixtures/workbuddy-composer-5.11.3.json"))
+        let fixture = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let rows = try #require(fixture["nodes"] as? [[String: Any]])
+        let nodes = Dictionary(uniqueKeysWithValues: rows.compactMap { row -> (Int, [String: Any])? in
+            guard let id = row["id"] as? Int else { return nil }; return (id, row)
+        })
+        #expect(KeyboardInjector.workBuddyComposerGroupMatches(0,
+            role: { nodes[$0]?["role"] as? String ?? "" },
+            children: { nodes[$0]?["children"] as? [Int] ?? [] },
+            controlLabels: { nodes[$0]?["labels"] as? [String] ?? [] }))
+    }
+
+    @Test func composerLabelsHandleReplyAndLocalizedControlVariants() {
+        for label in ["Write your prompt to Claude", "Write your reply to Claude", "Write your draft…", "Write your message...", "向 Claude 发送消息"] {
+            #expect(KeyboardInjector.isVerifiedIntegratedComposer(candidate(label), integration: .claude))
+        }
+        for labels in [["Send", "More actions", "Voice input ⌘D"],
+                       ["发送", "更多操作", "语音输入"],
+                       ["Envoyer", "Plus d’actions", "Saisie vocale"],
+                       ["送信", "その他の操作", "音声入力"],
+                       ["Kirim", "Tindakan lainnya", "Input suara"]] {
+            #expect(KeyboardInjector.workBuddyComposerControlsMatch(labels))
+        }
+        #expect(!KeyboardInjector.isVerifiedIntegratedComposer(candidate("今天帮你做些什么？"), integration: .workBuddy))
+        #expect(!KeyboardInjector.workBuddyComposerGroupMatches(0,
+            role: { $0 == 0 ? "AXGroup" : "AXTextArea" }, children: { $0 == 0 ? [1, 2] : [] },
+            controlLabels: { _ in ["Send", "More actions", "Voice input"] }))
+    }
+
+    @Test func workBuddyUnlabeledComposerUsesOnlyItsSurroundingControls() {
+        let roles = [0: "AXGroup", 1: "AXTextArea", 2: "AXPopUpButton", 3: "AXGroup", 4: "AXButton", 5: "AXButton", 6: "AXStaticText"]
+        let tree = [0: [1, 2, 3, 6], 1: [99], 3: [4, 5]]
+        for hasSend in [false, true] {
+            var inspected: [Int] = []
+            let verified = KeyboardInjector.workBuddyComposerGroupMatches(0,
+                role: { roles[$0] ?? "AXGroup" }, children: { node in
+                    #expect(node != 1 && node != 6)
+                    return tree[node] ?? []
+                }, controlLabels: { node in
+                    inspected.append(node)
+                    return [2: ["更多操作"], 4: ["语音输入 ⌘D 或长按 ⌥"], 5: hasSend ? ["发送"] : []][node] ?? []
+                })
+            #expect(verified == hasSend)
+            #expect(Set(inspected) == [2, 4, 5])
+            let field = KeyboardInjector.accessibilityTextMetadata(role: "AXTextArea", frame: window,
+                context: "", selectedContext: false, hasWorkBuddyComposerControls: verified,
+                read: { key in
+                    #expect(key != "AXValue" && key != "AXSelectedText")
+                    return nil
+                })
+            #expect((KeyboardInjector.integratedComposerScore(field, integration: .workBuddy, windowFrame: window) != nil) == hasSend)
+            #expect((KeyboardInjector.integratedComposerClickPoint(field, integration: .workBuddy, windowFrame: window) != nil) == hasSend)
+            #expect(KeyboardInjector.integratedComposerScore(field, integration: .claude, windowFrame: window) == nil)
+        }
+        #expect(!KeyboardInjector.workBuddyComposerControlsMatch(["发送", "更多操作"]))
+        #expect(!KeyboardInjector.workBuddyComposerControlsMatch(["发送", "语音输入"]))
+    }
+
+    @Test(arguments: [ApplicationIntegration.claude, .workBuddy])
+    func newDesktopIntegrationsSelectOnlyTheirVerifiedComposer(app: ApplicationIntegration) {
+        let label = "Write your prompt to Claude"
+        let field = app == .workBuddy ? candidate(workBuddyControls: true) : candidate(label)
+        #expect(ApplicationIntegration.matching(app.bundleIdentifier) == app)
+        #expect(KeyboardInjector.integratedComposerScore(field, integration: app, windowFrame: window) == 400)
+        #expect(KeyboardInjector.integratedComposerScore(field,
+            integration: app == .claude ? .workBuddy : .claude, windowFrame: window) == nil)
+        for invalid in [candidate(), candidate("composer"), candidate("Search " + label),
+                        candidate(label, protected: true), candidate(label, enabled: false),
+                        candidate(label, context: "monaco code editor")] {
+            #expect(KeyboardInjector.integratedComposerScore(invalid, integration: app, windowFrame: window) == nil)
+        }
+        var focused: [String] = []
+        #expect(KeyboardInjector.focusIntegratedCandidates(
+            [(element: "search", snapshot: candidate("Search")), (element: "composer", snapshot: field)],
+            integration: app, windowFrame: window, canContinue: { true },
+            focus: { focused.append($0); return true },
+            click: { _, _ in Issue.record("Direct focus must not click"); return false }))
+        #expect(focused == ["composer"])
+        #expect(!KeyboardInjector.focusIntegratedCandidates(
+            [(element: "one", snapshot: field), (element: "two", snapshot: field)],
+            integration: app, windowFrame: window, canContinue: { true },
+            focus: { _ in Issue.record("Ambiguous composers must not focus"); return true },
+            click: { _, _ in Issue.record("Ambiguous composers must not click"); return true }))
+    }
+
+    @Test(arguments: [ApplicationIntegration.claude, .workBuddy])
+    func newDesktopComposerClicksRequireHitTestAndConfirmedFocus(app: ApplicationIntegration) {
+        let field = app == .claude ? candidate("Write your prompt to Claude") : candidate(workBuddyControls: true)
+        for hit in [false, true] {
+            for focused in [false, true] {
+                var clicks = 0
+                let result = KeyboardInjector.clickIntegratedComposer(field, integration: app,
+                    windowFrame: window, canContinue: { true }, hitTest: { _ in hit },
+                    postClick: { _ in clicks += 1; return true }, isFocused: { focused }, pause: {})
+                #expect(result == (hit && focused))
+                #expect(clicks == (hit ? 1 : 0))
+            }
+        }
+    }
+
     @Test func searchCodeSecureAndUnlabeledGenericEditorsAreNotComposers() {
         for app in ApplicationIntegration.allCases {
             for field in [candidate("Search messages"), candidate("API key composer"),
@@ -578,14 +807,21 @@ struct ApplicationIntegrationTests {
             let localization = LocalizationStore(settings: settings)
             for language in [AppLanguage.english, .simplifiedChinese] {
                 localization.select(language)
-                for key in ["application_integration.title", "application_integration.introduction"] +
+                for key in ["application_integration.title", "application_integration.introduction", "application_integration.voice_key_note"] +
                     ApplicationIntegration.allCases.map(\.detailKey) +
-                    [ApplicationIntegrationPreparationState.waiting, .ready, .unavailable, .focusTimedOut,
-                     .voiceTriggered, .voiceTriggeredWithoutFocus, .cancelled(.timedOut), .cancelled(.actionFailed)]
+                    [ApplicationIntegrationPreparationState.waiting, .ready, .preserved, .unavailable, .focusTimedOut,
+                     .voiceTriggered, .voiceTriggeredPreserved, .voiceTriggeredWithoutFocus, .cancelled(.timedOut), .cancelled(.actionFailed)]
                         .map(ApplicationIntegrationStatus.messageKey) + ["application_integration.permission.missing"] {
                     #expect(localization.text(key) != key)
                 }
             }
         }
     }
+    @Test func screenshotHarnessInjectsPreparationAndPreservation() throws {
+        #expect(try SettingsScreenshotRenderer.integrationState(from: "preparing") == .waiting)
+        #expect(try SettingsScreenshotRenderer.integrationState(from: "preserved") == .preserved)
+        #expect(try SettingsScreenshotRenderer.integrationState(from: nil) == nil)
+        #expect(throws: (any Error).self) { try SettingsScreenshotRenderer.integrationState(from: "unknown") }
+    }
+
 }

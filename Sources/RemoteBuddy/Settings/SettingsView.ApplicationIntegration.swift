@@ -9,25 +9,23 @@ extension SettingsView {
                 Text(localization.text("application_integration.introduction"))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(localization.text("application_integration.fn_behavior"))
+                Text(localization.text("application_integration.voice_key_note"))
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                GlassPanel {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label(localization.text(accessibilityGranted
-                            ? "application_integration.permission.granted" : "application_integration.permission.missing"),
-                              systemImage: accessibilityGranted ? "checkmark.shield" : "exclamationmark.shield")
-                        if !accessibilityGranted {
+                if !accessibilityGranted {
+                    GlassPanel {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label(localization.text("application_integration.permission.missing"),
+                                  systemImage: "exclamationmark.shield")
                             Button(localization.text("application_integration.permission.open")) {
                                 model.openPrivacyPane("Privacy_Accessibility")
                             }
                         }
-                        if let status = model.applicationIntegrationStatus {
-                            Text(localization.text(ApplicationIntegrationStatus.messageKey(status)))
-                                .font(.callout).fixedSize(horizontal: false, vertical: true)
-                        }
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                if let status = model.applicationIntegrationStatus {
+                    Text(localization.text(ApplicationIntegrationStatus.messageKey(status)))
+                        .font(.callout).fixedSize(horizontal: false, vertical: true)
                 }
                 HStack(spacing: 12) {
                     Text(localization.text("application_integration.supported")).font(.headline)

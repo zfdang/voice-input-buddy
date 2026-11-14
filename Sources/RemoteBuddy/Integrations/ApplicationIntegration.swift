@@ -4,7 +4,7 @@ import Foundation
 
 /// Foreground integrations are opt-in and independent of application-launch button mappings.
 enum ApplicationIntegration: String, CaseIterable, Identifiable {
-    case weChat, antigravity, chatGPT
+    case weChat, antigravity, chatGPT, claude, workBuddy
 
     var id: String { rawValue }
     var bundleIdentifier: String {
@@ -12,6 +12,8 @@ enum ApplicationIntegration: String, CaseIterable, Identifiable {
         case .chatGPT: return "com.openai.codex"
         case .antigravity: return "com.google.antigravity"
         case .weChat: return "com.tencent.xinWeChat"
+        case .claude: return "com.anthropic.claudefordesktop"
+        case .workBuddy: return "com.tencent.workbuddy.mac"
         }
     }
     var title: String {
@@ -19,6 +21,8 @@ enum ApplicationIntegration: String, CaseIterable, Identifiable {
         case .chatGPT: return "ChatGPT"
         case .antigravity: return "Antigravity"
         case .weChat: return "WeChat"
+        case .claude: return "Claude"
+        case .workBuddy: return "WorkBuddy"
         }
     }
     var detailKey: String {
@@ -26,6 +30,8 @@ enum ApplicationIntegration: String, CaseIterable, Identifiable {
         case .weChat: return "application_integration.weChat.detail"
         case .antigravity: return "application_integration.antigravity.detail"
         case .chatGPT: return "application_integration.chatGPT.detail"
+        case .claude: return "application_integration.claude.detail"
+        case .workBuddy: return "application_integration.workBuddy.detail"
         }
     }
 
@@ -36,14 +42,25 @@ enum ApplicationIntegration: String, CaseIterable, Identifiable {
     }
 }
 
+enum ApplicationFocusResult: Equatable {
+    case focused, preserved, unavailable
+}
+
 enum ApplicationIntegrationPreparationState: Equatable {
-    case waiting, ready, unavailable, focusTimedOut, voiceTriggered, voiceTriggeredWithoutFocus
+    case waiting, ready, preserved, unavailable, focusTimedOut, voiceTriggered, voiceTriggeredPreserved, voiceTriggeredWithoutFocus
     case cancelled(VoiceInputDestinationCancellation)
+
+    var isPreparingVoiceInput: Bool {
+        switch self {
+        case .waiting, .ready, .preserved, .unavailable, .focusTimedOut: return true
+        default: return false
+        }
+    }
 }
 
 @MainActor
 final class ApplicationIntegrationController {
-    typealias Focuser = (ApplicationIntegration, pid_t, @escaping (Bool) -> Void) -> ScheduledOperation
+    typealias Focuser = (ApplicationIntegration, pid_t, @escaping (ApplicationFocusResult) -> Void) -> ScheduledOperation
     private let settings: AppSettings
     private let notifications: NotificationCenter
     private let frontmost: () -> (bundleIdentifier: String?, pid: pid_t)?
@@ -102,17 +119,17 @@ final class ApplicationIntegrationController {
         pendingCompletion = completion
         pendingBundleIdentifier = application.bundleIdentifier
         onStateChange(.waiting)
-        let finishFocus: (Bool, Bool) -> Void = { [weak self] focused, timedOut in
+        let finishFocus: (ApplicationFocusResult, Bool) -> Void = { [weak self] focusResult, timedOut in
             guard let self, self.generation == requestID, self.pendingCompletion != nil else { return }
             let current = self.frontmost()
             if current?.pid != application.pid || current?.bundleIdentifier != application.bundleIdentifier {
                 self.finish(requestID: requestID, result: .cancelled(.targetChanged))
             } else {
                 self.finish(requestID: requestID, result: .ready,
-                    focusStatus: focused ? .ready : (timedOut ? .focusTimedOut : .unavailable))
+                    focusStatus: focusResult == .focused ? .ready : (focusResult == .preserved ? .preserved : (timedOut ? .focusTimedOut : .unavailable)))
             }
         }
-        deadline = schedule(VoiceInputPreparationSequence.maximumFocusWait) { finishFocus(false, true) }
+        deadline = schedule(VoiceInputPreparationSequence.maximumFocusWait) { finishFocus(.unavailable, true) }
         let task = focus(integration, application.pid) { finishFocus($0, false) }
         if generation == requestID, pendingCompletion != nil { pendingFocus = task }
         else { task.cancel() }
@@ -185,6 +202,8 @@ enum ApplicationIntegrationStatus {
         switch state {
         case .waiting: return "application_integration.status.waiting"
         case .ready: return "application_integration.status.ready"
+        case .preserved: return "application_integration.status.preserved"
+        case .voiceTriggeredPreserved: return "application_integration.status.triggered_preserved"
         case .voiceTriggered: return "application_integration.status.triggered"
         case .voiceTriggeredWithoutFocus: return "application_integration.status.triggered_without_focus"
         case .unavailable: return "application_integration.status.failed"

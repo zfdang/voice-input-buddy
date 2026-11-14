@@ -40,13 +40,14 @@ def ensure_binary() -> Path:
     subprocess.run(["scripts/build-app.sh"], cwd=ROOT, env=env, check=True)
     return APP_PATH
 
-def render_settings(bin_path: Path, language: str, output_tmp: Path):
+def render_settings(bin_path: Path, language: str, output_tmp: Path, extra_env=None):
     env = os.environ.copy()
     env["REMOTE_BUDDY_SETTINGS_SCREENSHOT_DIR"] = str(output_tmp)
     env["REMOTE_BUDDY_SETTINGS_SCREENSHOT_REMOTE_CARDS"] = "1"
     env["REMOTE_BUDDY_SETTINGS_SCREENSHOT_UP_TO_DATE"] = "1"
     env["REMOTE_BUDDY_SETTINGS_SCREENSHOT_LANGUAGE"] = language
     env["REMOTE_BUDDY_SETTINGS_SCREENSHOT_APPEARANCE"] = "light"
+    env.update(extra_env or {})
     subprocess.run([str(bin_path)], cwd=ROOT, env=env, check=True)
 
 def render_onboarding(bin_path: Path, language: str, output_tmp: Path):
@@ -59,6 +60,14 @@ def render_onboarding(bin_path: Path, language: str, output_tmp: Path):
 def optimize_png(src: Path, dst: Path):
     with Image.open(src) as img:
         img.save(dst, format="PNG", optimize=True)
+
+def integration_variants():
+    section = {"REMOTE_BUDDY_SETTINGS_SCREENSHOT_SECTION": "applicationIntegration"}
+    return [
+        ("permission-missing", dict(section, REMOTE_BUDDY_SETTINGS_SCREENSHOT_PERMISSIONS="missing")),
+        ("preparing", dict(section, REMOTE_BUDDY_SETTINGS_SCREENSHOT_INTEGRATION_STATUS="preparing")),
+        ("preserved", dict(section, REMOTE_BUDDY_SETTINGS_SCREENSHOT_INTEGRATION_STATUS="preserved")),
+    ]
 
 def main():
     bin_path = ensure_binary()
@@ -74,6 +83,11 @@ def main():
                 target_file = OUTPUT_DIR / f"{target_id}-{lang_suffix}.png"
                 print(f"Optimizing {target_file.name}...")
                 optimize_png(source_file, target_file)
+
+            for variant, overrides in integration_variants():
+                render_settings(bin_path, lang_code, Path(tmp_settings_dir), overrides)
+                optimize_png(Path(tmp_settings_dir) / "applicationIntegration-1020x772.png",
+                             OUTPUT_DIR / f"application-integration-{variant}-{lang_suffix}.png")
 
             print(f"Rendering {lang_code} onboarding screenshots...")
             render_onboarding(bin_path, lang_code, Path(tmp_onboarding_dir))

@@ -337,9 +337,33 @@ test attempts, evidence limits, signing checks, and next acceptance steps.
 
 ## App integration accessibility and preparation boundaries
 
+Claude (`com.anthropic.claudefordesktop`) recognizes prompt/reply/draft/message
+label variants, normalized ellipses, and explicit composer identifiers. WorkBuddy (`com.tencent.workbuddy.mac`) matches its
+composer by its surrounding More actions, Voice input, and Send controls when
+the placeholder is not exposed as stable field metadata. Both are opt-in and use control metadata,
+not editable values. Automatic composer discovery excludes search, code editors, modal dialogs,
+ambiguous targets, and sensitive fields. Preservation is a separate user-intent
+path: an already selected writable search, code, question, or approval field
+(including a non-sensitive modal input) is deliberately retained. UI inspection identified both controls and
+confirmed WorkBuddy focus; physical remote acceptance remains required.
+
+All enabled integrations preserve an already focused, enabled, non-sensitive
+editable field in the same application, with explicit AXEditable or settable-value
+metadata as writable evidence (the value itself is never read), including question/approval response
+fields. This check runs before scanning and again before focus/click actions.
+A typed preserved result, diagnostic, and separate user feedback distinguish this
+path from verified composer focus. The focus writer rechecks its write gate before
+each public AX write/action and reports success only after target confirmation.
+Preservation checks during writes exclude the composer being targeted, so the
+writer cannot classify its own focus change as preserved. AX provides no atomic
+compare-and-focus operation across applications; an external focus change between
+a check and a system write remains a best-effort boundary, not a focus lock.
+Only when no such field has focus does automatic composer discovery run.
+
 Automatic voice integration reads public accessibility control metadata and requests
 focus. Its focus writer sets only `AXFocused` and `AXFocusedUIElement`; it may use
-`AXPress` or one hit-tested click on Antigravity's identified input. The automatic
+`AXPress` for Antigravity or one hit-tested click on an explicitly identified
+Antigravity, Claude, or WorkBuddy input. The automatic
 entry point does not call `announceManualAccessibility` or set `AXManualAccessibility`
 or `AXEnhancedUserInterface`. Tests guard that entry point and inject the real focus
 writer's attribute/action backend to check the complete write list. Metadata reads
@@ -368,34 +392,53 @@ and completed attempt feedback expires after 15 seconds.
 
 ### Integration validation samples
 
-These are individual observations against runtime revision `0d7bee6`, not a claim
-that the full suite passes or that only the listed assertions can fail. Commands
-used `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` with Apple Swift
-6.2.4 (`swiftlang-6.2.4.1.4`), targeting arm64 macOS.
+The following observations cover runtime revision `e3291eb`, using
+`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`, Apple Swift 6.2.4
+(`swiftlang-6.2.4.1.4`), targeting arm64 macOS. Individual green runs do not
+establish that intermittent failures have been eliminated.
 
 | Run | Command | Observed result |
 | --- | --- | --- |
-| Build | `swift build --disable-keychain` | Passed |
-| Focused | `swift test --disable-keychain --filter 'ApplicationIntegrationTests\|ProductBoundaryTests\|VoiceInputActivationTests\|VoiceFnQuickReleaseTests'` | 68 tests, 4 suites, passed |
-| Serial branch | `swift test --disable-keychain --no-parallel` | 694 tests, 104 suites; 1 issue in 1 failing HID test |
-| Parallel branch | `swift test --disable-keychain` | 694 tests, 104 suites; 2 issues in 2 failing HID tests |
-| Serial base `a7dd980` | `swift test --disable-keychain --skip-update --no-parallel --package-path /tmp/remote-buddy-review2-baseline` | 668 tests, 103 suites; 1 issue in 1 failing HID test |
+| Build | `scripts/build-app.sh` (`swift build --disable-keychain`) | Passed |
+| Focused | `swift test --disable-keychain --filter 'ApplicationIntegrationTests\|ProductBoundaryTests\|RuntimePermissionDiagnosticsTests\|StatusItemPresentationTests'` | 75 tests, 4 suites, passed |
+| First serial branch | `swift test --disable-keychain --no-parallel` | 726 tests, 106 suites; 3 issues in 2 failing HID tests |
+| Filtered HID retry | `swift test --disable-keychain --filter 'voiceStartReappliesSettingsWhenServiceWasNotYetNeutralized\|hardwareRemoteRejectsBluetoothVoiceBeforeReconnectedHIDServiceAppearsWhilePreservingPreference'` | Both tests passed |
+| Serial main `8d008ed` | `swift test --disable-keychain --skip-update --no-parallel` in an independent checkout | 709 tests, 106 suites, passed |
+| Final serial branch | `swift test --disable-keychain --no-parallel` | 726 tests, 106 suites, passed |
 
-The serial failures were `candidateAvailableAndConnectedRefreshCoalescesDefersFlushesAndCancelsStaleWork`
-at its service-provider-count assertion. In the parallel run that test failed its
-pending-refresh assertion instead, and
-`dualPendingFlagsCoalesceAndEmptyServiceRefreshSchedulesRecovery` also failed its
-pending-refresh assertion. Baseline dependencies were taken from existing local
-SwiftPM caches with `--skip-update` after a dependency-fetch failure; its source was
-an independent unchanged checkout.
+The first branch run failed the inactive-session assertion in the HID start helper
+at `HIDHotPathIdempotencyTests.swift:54`: once in
+`voiceStartReappliesSettingsWhenServiceWasNotYetNeutralized`, twice in
+`hardwareRemoteRejectsBluetoothVoiceBeforeReconnectedHIDServiceAppearsWhilePreservingPreference`.
+Neither failure reproduced in the filtered retry or final full run. The clean main
+run does not establish that these particular failures are pre-existing or explain
+their cause. Earlier review observations of T1 and other HID failures on older
+revisions remain valid observations; they were not reproduced in these latest runs.
+The baseline used a separate scratch directory and a package `.build` symlink so
+clipboard helper tests could locate the built executable; an earlier run without
+that symlink had setup failures and is not counted as product validation.
 
-Review also supplied valid independent observations on the earlier revision:
-serial branch and main runs had 4 issues in 2 failing tests, including the three
-assertions in `T1RemoteProtocolTests.swift:840-842`; a parallel branch run had
-5 issues in 3 failing tests. T1 and HID failures remain known baseline instability.
-The counts and failing assertions vary between runs; the latest samples do not
-invalidate those review observations. None of the full-suite runs is a green gate.
+English/Chinese screenshots now include default, missing-permission, preparing,
+and preserved-input states. The harness injects feedback after startup and asserts
+that it remains present at capture. Example delivered assets:
+[missing permission](../pages/assets/screenshots/application-integration-permission-missing-zh.png),
+[preparing](../pages/assets/screenshots/application-integration-preparing-zh.png), and
+[preserved input](../pages/assets/screenshots/application-integration-preserved-en.png).
+These verify settings feedback, not physical menu-bar or remote behavior.
 
 These fixes have not been accepted on physical hardware. Previously reported
 WeChat, Antigravity, and ChatGPT success applies to the previously tested revision,
 not automatically to the revised public-AX-only path or feedback lifecycle.
+
+The normalized WorkBuddy 5.11.3 composer inspection fixture is stored in
+`docs/testing-fixtures/workbuddy-composer-5.11.3.json`. It records only the observed
+composer controls and role relationships, not raw AX attribute keys, messages,
+values, accounts, or URLs. The test runs that fixture through the production group
+walker. It supports nested layout/toolbar groups but rejects multiple editors,
+truncated traversal and unrecognized controls. The bounded scan (96 nodes, five
+layout levels, 150 ms) is still version-dependent and is not hardware acceptance.
+Label tests cover English/Chinese and French/Japanese/Indonesian control aliases;
+localized installations beyond the inspected English Claude and Chinese WorkBuddy
+interfaces have not been accepted with physical hardware. Unknown translations or
+changed structures fail visibly and continue optional voice preparation. WorkBuddy
+placeholder content is never used as a selector.

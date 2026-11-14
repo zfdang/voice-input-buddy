@@ -35,7 +35,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .integration: return "waveform"
         case .mapping: return "keyboard"
         case .commonPhrases: return "text.quote"
-        case .permissions: return "shield.lefthalf.filled"
+        case .permissions: return "lock.shield"
         case .general: return "slider.horizontal.3"
         case .applicationIntegration: return "cursorarrow.click"
         case .about: return "info.circle"
