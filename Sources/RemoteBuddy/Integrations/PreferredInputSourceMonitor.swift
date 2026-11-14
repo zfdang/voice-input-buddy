@@ -11,7 +11,13 @@ final class PreferredInputSourceMonitor {
         @escaping () -> Bool,
         @escaping (Bool) -> Void
     ) -> Void
-    typealias MonitorInstaller = (@escaping (Bool) -> Void) -> Any?
+    struct FunctionKeyEvent {
+        let keyCode: CGKeyCode
+        let flags: CGEventFlags
+        let marker: Int64
+        var pressed: Bool { flags.contains(.maskSecondaryFn) }
+    }
+    typealias MonitorInstaller = (@escaping (FunctionKeyEvent) -> Void) -> Any?
     typealias MonitorRemover = (Any) -> Void
     typealias Logger = (String) -> Void
 
@@ -27,6 +33,7 @@ final class PreferredInputSourceMonitor {
     private var monitor: Any?
     private var functionKeyIsPressed = false
     private var explicitVoiceSessionActivationPending = false
+    private var explicitVoiceObservationActive = false
     private var explicitActivationGeneration: UInt64 = 0
     private var managedInputSourceSession: ManagedInputSourceSession?
     private static let activationTimeout: TimeInterval = 0.5
@@ -63,10 +70,9 @@ final class PreferredInputSourceMonitor {
         },
         installMonitor: @escaping MonitorInstaller = { handler in
             NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { event in
-                // Ordered software voice sessions own their source lifecycle.
-                // A delayed global event must not create a second Fn owner.
-                guard shouldObserveFunctionEvent(marker: event.cgEvent?.getIntegerValueField(.eventSourceUserData) ?? 0) else { return }
-                handler(event.modifierFlags.contains(.function))
+                handler(FunctionKeyEvent(keyCode: event.keyCode,
+                    flags: event.cgEvent?.flags ?? CGEventFlags(rawValue: UInt64(event.modifierFlags.rawValue)),
+                    marker: event.cgEvent?.getIntegerValueField(.eventSourceUserData) ?? 0))
             }
         },
         removeMonitor: @escaping MonitorRemover = NSEvent.removeMonitor,
@@ -118,14 +124,15 @@ final class PreferredInputSourceMonitor {
 
     func start() {
         guard monitor == nil else { return }
-        monitor = installMonitor { [weak self] pressed in
-            self?.handleFunctionKeyPressed(pressed)
+        monitor = installMonitor { [weak self] event in
+            self?.handleFunctionKeyEvent(event)
         }
     }
 
     func stop(preservingExplicitVoiceSession: Bool = false) {
         if !preservingExplicitVoiceSession {
             explicitVoiceSessionActivationPending = false
+            explicitVoiceObservationActive = false
             explicitActivationGeneration &+= 1
         }
         finishManagedInputSourceSession(
@@ -137,6 +144,24 @@ final class PreferredInputSourceMonitor {
             self.monitor = nil
         }
         functionKeyIsPressed = false
+    }
+
+    /// Observe only modifier delivery belonging to our voice attempt. This says
+    /// the global monitor saw an event, not that an input method started listening.
+    /// No character key events, editing text or observations outside voice attempts
+    /// are added to diagnostics.
+    func handleFunctionKeyEvent(_ event: FunctionKeyEvent) {
+        let ordered = event.marker == KeyboardInjector.orderedVoiceEventMarker
+        let external = Self.shouldObserveFunctionEvent(marker: event.marker)
+        if ordered || (explicitVoiceObservationActive && external && (54...63).contains(event.keyCode)) {
+            logger("VOICE KEY OBSERVED key_code=\(event.keyCode) fn_down=\(event.pressed) " +
+                "modifier_flags=\(event.flags.rawValue) origin=\(ordered ? "ordered_voice" : "external") " +
+                "result=global_monitor_observed target_response=unknown")
+        }
+        // Ordered events keep their explicit lifecycle; logging them must never
+        // acquire a second physical-Fn source owner.
+        guard external else { return }
+        handleFunctionKeyPressed(event.pressed)
     }
 
     func handleFunctionKeyPressed(_ pressed: Bool) {
@@ -177,6 +202,8 @@ final class PreferredInputSourceMonitor {
     /// monitor observes, so their lifecycle is driven explicitly by the voice
     /// session instead of by every ordinary Command press on the Mac keyboard.
     func beginVoiceSession(completion: @escaping (Bool) -> Void) {
+        logger("VOICE KEY OBSERVER installed=\(monitor != nil) scope=explicit_voice target_response=unknown")
+        explicitVoiceObservationActive = true
         explicitActivationGeneration &+= 1
         let generation = explicitActivationGeneration
         explicitVoiceSessionActivationPending = true
@@ -185,6 +212,7 @@ final class PreferredInputSourceMonitor {
         }
         guard beginVoiceSession(reason: "voice_session_start", owner: .explicitVoice) else {
             explicitVoiceSessionActivationPending = false
+            explicitVoiceObservationActive = false
             completion(false)
             return
         }
@@ -199,7 +227,10 @@ final class PreferredInputSourceMonitor {
             let result = self.completeExplicitActivation(
                 activated: activated, targetInputSourceID: session.targetInputSourceID,
                 activationShouldContinue: continuing, selectedVoiceTool: tool)
-            if self.explicitActivationGeneration == generation { self.explicitVoiceSessionActivationPending = false }
+            if self.explicitActivationGeneration == generation {
+                self.explicitVoiceSessionActivationPending = false
+                if !result { self.explicitVoiceObservationActive = false }
+            }
             completion(result)
         }
     }
@@ -213,6 +244,7 @@ final class PreferredInputSourceMonitor {
     /// Release source ownership, retaining the selected input method after an
     /// actual trigger. Key-up ends recording, not asynchronous text composition.
     func endVoiceSession() {
+        explicitVoiceObservationActive = false
         explicitVoiceSessionActivationPending = false
         explicitActivationGeneration &+= 1
         finishManagedInputSourceSession(

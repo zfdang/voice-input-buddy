@@ -360,8 +360,14 @@ compare-and-focus operation across applications; an external focus change betwee
 a check and a system write remains a best-effort boundary, not a focus lock.
 Only when no such field has focus does automatic composer discovery run.
 
-Automatic voice integration reads public accessibility control metadata and requests
-focus. Its focus writer sets only `AXFocused` and `AXFocusedUIElement`; it may use
+Automatic voice integration first reads the application's standard `AXRole`, then
+reads public accessibility control metadata and requests focus. Electron enables
+its native accessibility mode from the application's `accessibilityRole` getter;
+querying only a window can leave discovery at its native shell. See the
+[Electron 37 implementation](https://github.com/electron/electron/blob/v37.10.3/shell/browser/mac/electron_application.mm#L248-L263).
+This is a standard metadata read, not a framework-specific attribute write.
+Scan diagnostics report node counts and truncation as well as candidates/matches,
+so an unexposed tree can be distinguished from an unrecognized composer. Its focus writer sets only `AXFocused` and `AXFocusedUIElement`; it may use
 `AXPress` for Antigravity or one hit-tested click on an explicitly identified
 Antigravity, Claude, or WorkBuddy input. The automatic
 entry point does not call `announceManualAccessibility` or set `AXManualAccessibility`
@@ -430,11 +436,14 @@ These fixes have not been accepted on physical hardware. Previously reported
 WeChat, Antigravity, and ChatGPT success applies to the previously tested revision,
 not automatically to the revised public-AX-only path or feedback lifecycle.
 
-The normalized WorkBuddy 5.11.3 composer inspection fixture is stored in
+The WorkBuddy 5.11.3 public-AX composer inspection fixture is stored in
 `docs/testing-fixtures/workbuddy-composer-5.11.3.json`. It records only the observed
-composer controls and role relationships, not raw AX attribute keys, messages,
+AXChildren role relationships and control labels, not messages,
 values, accounts, or URLs. The test runs that fixture through the production group
-walker. It supports nested layout/toolbar groups but rejects multiple editors,
+walker and the bounded parent search. The direct editor parent has no action bar;
+the matching composer is its next layout ancestor. Up to three AXGroup ancestors
+are considered with a 150 ms admission budget and a separate 150 ms budget per
+subtree; document/window roots and cycles stop the search. It supports nested layout/toolbar groups but rejects multiple editors,
 truncated traversal and unrecognized controls. The bounded scan (96 nodes, five
 layout levels, 150 ms) is still version-dependent and is not hardware acceptance.
 Label tests cover English/Chinese and French/Japanese/Indonesian control aliases;
@@ -442,3 +451,110 @@ localized installations beyond the inspected English Claude and Chinese WorkBudd
 interfaces have not been accepted with physical hardware. Unknown translations or
 changed structures fail visibly and continue optional voice preparation. WorkBuddy
 placeholder content is never used as a selector.
+
+
+### Post-737 desktop focusing investigation
+
+Build 737 logs recorded Claude scans with zero candidates in 9–27 ms, intermittent
+Antigravity zero-candidate scans in 14–59 ms, and WorkBuddy scans with one candidate
+but zero recognized composers in 710–776 ms. WorkBuddy's actual public AX layout
+placed its action bar alongside the editor's parent, rather than inside that parent.
+The refreshed fixture retains this AXChildren structure and demonstrates the former
+selector failure and the bounded ancestor-search fix. Reading the application role
+addresses Electron's documented lazy native-AX initialization; the old zero-candidate
+logs alone do not prove that this was their only cause.
+
+Direct invocation of the revised production focuser returned `focused` for Claude
+and Antigravity in the installed applications. WorkBuddy also returned `focused`
+after a successful focus-only write to its More actions toolbar control, demonstrating
+return from the toolbar to the composer. An initial activation attempt did not bring
+WorkBuddy forward, so its unavailable result was not a selector failure; a subsequent
+attempt with an already selected editor correctly returned `preserved`. These are
+local UI observations, not remote/audio or cold-start acceptance.
+
+The opt-in `LiveApplicationIntegrationTests` reproduces the WorkBuddy toolbar probe
+without reading editor values or sending text. It is disabled in ordinary tests/CI:
+
+```sh
+REMOTE_BUDDY_LIVE_FOCUS_TESTS=1 swift test --disable-keychain --filter LiveApplicationIntegrationTests
+```
+
+It requires the installed WorkBuddy Chinese UI and Accessibility permission, temporarily
+moves its focus, and restores the previously active app. The revised build still needs
+physical-remote checks after toolbar interaction and from newly launched applications.
+
+Validation on source `8d87730` (Xcode Swift 6.2.4):
+
+- `swift test --disable-keychain --filter 'ApplicationIntegrationTests|AccessibilityFrameScoringTests|ProductBoundaryTests'` reported 68 tests / 4 suites passed; the opt-in live suite was skipped.
+- The explicitly enabled live WorkBuddy probe passed, confirming the toolbar control really held focus before invoking the production focuser.
+- `swift test --disable-keychain --no-parallel` reported 727 tests / 107 suites, with the live test skipped and one failing assertion in `candidateAvailableAndConnectedRefreshCoalescesDefersFlushesAndCancelsStaleWork`, `HIDHotPathIdempotencyTests.swift:1307` (service-provider count 6 versus 5). The full suite is not green. This assertion was observed in earlier reviews as well; this run does not establish its cause.
+- `CONFIGURATION=debug scripts/build-app.sh` passed and produced local build 741 from runtime revision `0109e70`. The later commit changed only tests/documentation. The running installed build 737 was not replaced.
+
+
+### Composer scan latency
+
+The build 737 reproduction at 09:11:40 Singapore time spent 868 ms scanning the
+ChatGPT desktop window and about 1.07 seconds preparing focus in total. It did not
+reapply HID mappings, unlike the separate 09:06:23 reproduction. Both submitted Fn
+and completed audio drain; those records alone do not explain the input method's
+brief/no-listening UI. The two symptoms must not be assigned a common cause without
+additional evidence.
+
+Integrated scans now omit non-editing leaves (static text, images and action controls),
+stop at rich editors rather than walking their document contents, batch metadata and
+child-list reads, and reuse role/frame metadata within one scan. Container branches
+and all four public child-list attributes remain covered, with unique-target ranking
+and write-time focus checks unchanged. No persistent element cache is introduced.
+Non-integrated custom discovery retains full traversal. Scalar metadata reads remain
+a fallback for clients without the batch API; editing values are never requested.
+
+Local read-only scans, three samples per installed application, measured:
+
+| App | Before (ms) | After (ms) | Recognition after |
+| --- | --- | --- | --- |
+| ChatGPT desktop (`com.openai.codex`) | 900–937 | 142–165 | 1 candidate, 1 match |
+| Antigravity | 1000–1005, truncated | 208–215 | 1 candidate, 1 match; complete |
+| Claude | 199–221 | 58–61 | 1 candidate, 1 match |
+| WorkBuddy | 675–694 | 143–150 | 1 candidate, 1 match |
+
+WeChat's visible window changed between samples (before: one candidate/no match;
+after: two candidates/one match, 4–9 ms), so it is not a like-for-like timing claim.
+These are current-window scan observations, not general latency guarantees or
+end-to-end voice-start measurements. The opt-in `measureInstalledComposerScans`
+test reproduces the measurements without activating applications or moving focus.
+The filtered integration/frame/privacy run reported 70 tests / 4 suites passed,
+with the two live probes skipped in the ordinary run.
+
+
+### First-press trigger observations
+
+The user confirmed the 09:06:23/09:06:25 Singapore-time pair as a brief first UI
+appearance without listening followed by a normal second attempt, and reported
+another, not identical, symptom around 09:11. In the confirmed pair the first attempt
+reapplied mappings, submitted Fn after 82 ms, held it until audio drain completed,
+and did not switch input methods (WeType was already selected). The 09:11:40 attempt
+instead waited about 1.07 seconds for focus preparation without reapplying mappings;
+the remote was released 74 ms after Fn submission, with Fn-up deferred until the
+buffered audio drained about a second later. Neither attempt logged an enqueue
+failure or a software Fn-up preceding drain. These observations do not establish
+that either symptom shares a cause or that the input method entered listening mode.
+
+Voice-start logs now include the mapping-validity/reapply decision without another
+HID enumeration. The existing global flagsChanged monitor separately reports delivery
+of this app's ordered voice modifier events, plus external modifier changes only
+while an explicit voice attempt is active. Late delivery of this app's own cleanup
+is still reported. Other synthetic events never acquire a physical-Fn input-source
+owner. Installation availability is logged, and every observation retains
+`target_response=unknown`: seeing an event in the global monitor is not an input-method
+acknowledgement, and that monitor does not see events destined for its own app.
+No character keys, editor values or audio are collected by this diagnostic, and
+there is no automatic retry or change to the trigger timing. A further reproduction
+on the revised build is needed to examine duplicate/early-release delivery.
+
+
+Validation after the latency and trigger-observation changes (runtime `1cb1d94`):
+
+- The read-only installed-window scan probe passed; all five applications had a recognized composer in the final measurement run. WorkBuddy's opt-in toolbar-to-composer probe also passed after optimization.
+- Integration/frame/privacy filter reported 70 tests / 4 suites passed (both live probes skipped by default). Voice activation/session/review filter reported 33 tests / 3 suites passed, including scoped modifier delivery and synthetic-owner isolation.
+- Full serial run reported 730 tests / 107 suites, both live probes skipped, with one issue at the same `HIDHotPathIdempotencyTests.swift:1307` service-provider-count assertion (6 versus 5). All other executed tests passed; the full suite remains non-green.
+- Debug app build passed and produced local build 745. Installed build 737 remains running until explicitly replaced; first-press physical-remote acceptance on 745 is pending.

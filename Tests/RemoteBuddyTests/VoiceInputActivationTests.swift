@@ -266,6 +266,44 @@ struct VoiceInputActivationTests {
         }
     }
 
+    @Test func modifierDeliveryDiagnosticsStayWithinVoiceAttemptsWithoutAcquiringSyntheticOwners() throws {
+        let target = try #require(OnboardingVoiceTool.weixin.preferredInputSourceID)
+        var callback: ((PreferredInputSourceMonitor.FunctionKeyEvent) -> Void)?
+        var messages: [String] = []
+        let monitor = PreferredInputSourceMonitor(voiceTool: { .weixin },
+            currentInputSourceID: { target },
+            installMonitor: { callback = $0; return NSObject() }, removeMonitor: { _ in },
+            logger: { messages.append($0) })
+        monitor.start()
+        defer { monitor.stop() }
+        let observe = try #require(callback)
+        let nativeUp = PreferredInputSourceMonitor.FunctionKeyEvent(keyCode: 63, flags: [], marker: 0)
+        observe(nativeUp)
+        #expect(messages.isEmpty)
+        monitor.beginVoiceSession { #expect($0) }
+        monitor.markVoiceTriggerSubmitted()
+        messages = []
+        observe(.init(keyCode: 63, flags: .maskSecondaryFn, marker: KeyboardInjector.orderedVoiceEventMarker))
+        #expect(!monitor.functionKeyIsPressedForDiagnostics)
+        observe(nativeUp) // Repeated native up used to be invisible to lifecycle logs.
+        #expect(messages.count == 2)
+        #expect(messages[0].contains("origin=ordered_voice"))
+        #expect(messages[1].contains("origin=external"))
+        #expect(messages[1].contains("fn_down=false"))
+        #expect(messages.allSatisfy { $0.contains("target_response=unknown") })
+        observe(.init(keyCode: 0, flags: [], marker: 0))
+        observe(.init(keyCode: 63, flags: .maskSecondaryFn, marker: KeyboardInjector.syntheticEventMarker))
+        #expect(messages.count == 2)
+        monitor.endVoiceSession()
+        messages = []
+        observe(nativeUp)
+        #expect(messages.isEmpty)
+        // Key-up observation can arrive after the explicit owner was released.
+        observe(.init(keyCode: 63, flags: [], marker: KeyboardInjector.orderedVoiceEventMarker))
+        #expect(messages.count == 1)
+        #expect(messages[0].contains("origin=ordered_voice"))
+    }
+
     @Test func orderedEventsCannotAcquireAnExtraGlobalFnOwnerAndRemainSynthetic() throws {
         #expect(!PreferredInputSourceMonitor.shouldObserveFunctionEvent(marker: KeyboardInjector.orderedVoiceEventMarker))
         #expect(PreferredInputSourceMonitor.shouldObserveFunctionEvent(marker: 0))

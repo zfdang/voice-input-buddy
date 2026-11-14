@@ -1,83 +1,135 @@
 {
   "application": "WorkBuddy",
-  "version": "5.11.3",
-  "observed": "2026-11-13",
-  "source": "User-visible accessibility inspection; normalized roles, not a raw AX attribute dump",
-  "scope": "Composer group only. Editor values, conversation text, URLs and account data are omitted.",
+  "editorParent": 2,
   "nodes": [
     {
-      "id": 0,
-      "role": "AXGroup",
       "children": [
         1,
         2,
-        3,
-        4,
         5
-      ]
+      ],
+      "id": 0,
+      "role": "AXGroup"
     },
     {
+      "children": [],
       "id": 1,
-      "role": "AXTextArea",
-      "settable": true
+      "role": "AXGroup"
     },
     {
+      "children": [
+        3,
+        4
+      ],
       "id": 2,
-      "role": "AXPopUpButton",
-      "labels": [
-        "更多操作"
-      ]
+      "role": "AXGroup"
     },
     {
       "id": 3,
-      "role": "AXButton",
-      "labels": [
-        "复制分支名"
-      ]
+      "role": "AXTextArea"
     },
     {
+      "children": [],
       "id": 4,
-      "role": "AXPopUpButton",
-      "labels": [
-        "允许完全访问"
-      ]
+      "role": "AXGroup"
     },
     {
-      "id": 5,
-      "role": "AXGroup",
       "children": [
         6,
-        7,
         8,
-        9
-      ]
+        9,
+        10,
+        11
+      ],
+      "id": 5,
+      "role": "AXGroup"
     },
     {
+      "children": [
+        7
+      ],
       "id": 6,
-      "role": "AXButton",
-      "labels": []
+      "role": "AXGroup"
     },
     {
       "id": 7,
-      "role": "AXPopUpButton",
       "labels": [
-        "Select model: Hy4"
-      ]
+        "更多操作"
+      ],
+      "role": "AXPopUpButton"
     },
     {
       "id": 8,
-      "role": "AXButton",
       "labels": [
-        "语音输入 ⌘D 或长按 ⌥"
-      ]
+        "复制分支名"
+      ],
+      "role": "AXButton"
     },
     {
       "id": 9,
-      "role": "AXButton",
+      "role": "AXStaticText"
+    },
+    {
+      "id": 10,
+      "labels": [
+        "允许完全访问"
+      ],
+      "role": "AXPopUpButton"
+    },
+    {
+      "children": [
+        12,
+        13,
+        14,
+        16,
+        17
+      ],
+      "id": 11,
+      "role": "AXGroup"
+    },
+    {
+      "id": 12,
+      "labels": [],
+      "role": "AXButton"
+    },
+    {
+      "id": 13,
+      "labels": [
+        "增强提示词"
+      ],
+      "role": "AXButton"
+    },
+    {
+      "children": [
+        15
+      ],
+      "id": 14,
+      "role": "AXGroup"
+    },
+    {
+      "id": 15,
+      "labels": [
+        "Select model: Hy4"
+      ],
+      "role": "AXPopUpButton"
+    },
+    {
+      "id": 16,
+      "labels": [
+        "语音输入 ⌘D 或长按 ⌥"
+      ],
+      "role": "AXButton"
+    },
+    {
+      "id": 17,
       "labels": [
         "发送"
       ],
-      "enabled": false
+      "role": "AXButton"
     }
-  ]
+  ],
+  "observed": "2026-11-14",
+  "scope": "Composer layout subtree; no editor values, static text, URLs or account data",
+  "source": "Public AXChildren/AXParent traversal; only roles and control metadata retained",
+  "version": "5.11.3"
 }

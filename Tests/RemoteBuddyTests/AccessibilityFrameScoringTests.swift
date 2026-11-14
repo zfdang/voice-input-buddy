@@ -1,3 +1,4 @@
+import ApplicationServices
 import Foundation
 import Testing
 @testable import RemoteBuddy
@@ -14,6 +15,25 @@ struct AccessibilityFrameScoringTests {
     private func target(_ frame: NormalizedAccessibilityFrame?) -> AccessibilityFocusTarget {
         .init(role: "AXTextArea", identifier: "composer", title: "", description: "",
             help: "", placeholder: "", context: "", windowTitle: "", normalizedFrame: frame)
+    }
+
+    @Test func bulkFrameMetadataRejectsMalformedTypesWithoutReadingEditingValues() throws {
+        var point = CGPoint(x: 100, y: 200)
+        var size = CGSize(width: 300, height: 80)
+        let position = try #require(AXValueCreate(.cgPoint, &point))
+        let dimensions = try #require(AXValueCreate(.cgSize, &size))
+        let attributes: [String: Any] = [kAXPositionAttribute: position, kAXSizeAttribute: dimensions]
+        var keys: [String] = []
+        #expect(KeyboardInjector.accessibilityFrame(read: { key in
+            keys.append(key); return attributes[key]
+        }) == CGRect(origin: point, size: size))
+        #expect(Set(keys) == [kAXPositionAttribute, kAXSizeAttribute])
+        for malformed: Any in ["not a frame", NSNumber(value: 42), NSNull(), dimensions] {
+            #expect(KeyboardInjector.accessibilityFrame(read: {
+                $0 == kAXPositionAttribute ? malformed : dimensions
+            }) == nil)
+        }
+        #expect(KeyboardInjector.accessibilityFrame(read: { _ in nil }) == nil)
     }
 
     @Test func secureFieldsAreRejectedWithoutRelyingOnTheirNames() {

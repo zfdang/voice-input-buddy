@@ -68,7 +68,7 @@ extension BridgeAppModel {
                 expectedPowerKeySuppression: settings.customMappingEnabled,
                 expectedVoiceKeyNeutralization: neutralizeVoiceKey
             )
-        if Self.shouldReapplyHIDSettingsBeforeVoiceStart(
+        let reapplyMappings = Self.shouldReapplyHIDSettingsBeforeVoiceStart(
             customMappingEnabled: settings.customMappingEnabled,
             mode: settings.voiceKeyMode,
             fnTapModeEnabled: settings.voiceFnTapModeEnabled,
@@ -82,7 +82,11 @@ extension BridgeAppModel {
             monitoringConfigurationApplied: appliedHIDMonitoringConfiguration != nil,
             appliedPermissionSnapshot: appliedHIDPermissionSnapshot,
             currentPermissionSnapshot: currentPermissionSnapshot
-        ) {
+        )
+        AppLogger.shared.write("VOICE START mapping_check current_matches=\(currentServicesMatchDesiredMapping) " +
+            "matching_services_present=\(voiceFunctionMapper.hasMatchingServices) neutralized=\(voiceFunctionMapper.isVoiceKeyNeutralized) " +
+            "reapply=\(reapplyMappings)")
+        if reapplyMappings {
             applyHIDSettings(allowVoiceKeyModeFallback: false)
         } else if !voiceFunctionMapper.hasMatchingServices,
                   settings.customMappingEnabled || neutralizeVoiceKey {
