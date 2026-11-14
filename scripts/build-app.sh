@@ -14,13 +14,22 @@ done <<< "$release_metadata"
 configuration="${CONFIGURATION:-release}"
 source scripts/architecture.sh
 scratch="${APP_BUILD_SCRATCH_PATH:-$root/.build/app-$BUILD_ARCH}"
-if [[ -d "$scratch/checkouts/Sparkle/.git" ]]; then
-    python3 scripts/verify-dependency-checkout.py "$scratch/checkouts/Sparkle"
-fi
+verify_sparkle_checkout() {
+    if [[ ! -d "$scratch/checkouts/Sparkle/.git" ]]; then
+        return 0
+    fi
+    local sparkle_revision
+    sparkle_revision="$(python3 -c '
+import json
+with open("Package.resolved") as f:
+    pins = json.load(f)["pins"]
+print(next(p["state"]["revision"] for p in pins if p["identity"].lower() == "sparkle"))
+')"
+    python3 scripts/verify-dependency-checkout.py "$scratch/checkouts/Sparkle" --expected-revision "$sparkle_revision"
+}
+verify_sparkle_checkout
 swift build --disable-keychain --scratch-path "$scratch" -c "$configuration" --arch "$BUILD_ARCH" --product RemoteBuddy
-if [[ -d "$scratch/checkouts/Sparkle/.git" ]]; then
-    python3 scripts/verify-dependency-checkout.py "$scratch/checkouts/Sparkle"
-fi
+verify_sparkle_checkout
 bin="$(swift build --disable-keychain --scratch-path "$scratch" -c "$configuration" --arch "$BUILD_ARCH" --show-bin-path)"
 destination="$root/dist/Remote Buddy.app"
 mkdir -p "$root/dist"
