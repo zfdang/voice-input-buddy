@@ -150,16 +150,18 @@ struct SettingsDiagnosticSnapshot: Equatable {
         self.generatedAt = generatedAt
     }
 
-    static func sanitizePath(_ path: String, homeDirectory: String = NSHomeDirectory()) -> String {
-        guard !homeDirectory.isEmpty else { return path }
-        if path == homeDirectory {
+    static func sanitizePath(_ text: String, homeDirectory: String = NSHomeDirectory()) -> String {
+        let normalizedHome = homeDirectory.hasSuffix("/") ? String(homeDirectory.dropLast()) : homeDirectory
+        guard !normalizedHome.isEmpty else { return text }
+        var redacted = text.replacingOccurrences(of: normalizedHome + "/", with: "~/")
+        if redacted == normalizedHome {
             return "~"
         }
-        let prefix = homeDirectory.hasSuffix("/") ? homeDirectory : homeDirectory + "/"
-        if path.hasPrefix(prefix) {
-            return "~/" + path.dropFirst(prefix.count)
+        redacted = redacted.replacingOccurrences(of: "=\(normalizedHome) ", with: "=~ ")
+        if redacted.hasSuffix("=\(normalizedHome)") {
+            redacted = String(redacted.dropLast(normalizedHome.count)) + "~"
         }
-        return path
+        return redacted
     }
 
     var formattedLogSize: String {

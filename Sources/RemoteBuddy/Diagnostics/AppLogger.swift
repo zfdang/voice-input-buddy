@@ -391,7 +391,7 @@ final class AppLogger: PublicDiagnosticEventSink {
     }
 
     private static func singleLine(_ message: String) -> String {
-        String(message.unicodeScalars.map { scalar in
+        let collapsed = String(message.unicodeScalars.map { scalar in
             if CharacterSet.controlCharacters.contains(scalar) ||
                 CharacterSet.newlines.contains(scalar)
             {
@@ -399,6 +399,7 @@ final class AppLogger: PublicDiagnosticEventSink {
             }
             return Character(String(scalar))
         })
+        return SettingsDiagnosticSnapshot.sanitizePath(collapsed)
     }
 
     private static func dayIdentifier(_ date: Date) -> String {
