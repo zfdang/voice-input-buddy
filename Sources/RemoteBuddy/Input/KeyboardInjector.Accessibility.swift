@@ -886,16 +886,36 @@ extension KeyboardInjector {
     /// it can be exposed only as editor content. Verify the same composer's surrounding controls instead;
     /// never read the text area's value or the conversation's static text.
     private static func workBuddyComposerControlsSurround(_ input: AXUIElement) -> Bool {
-        guard let parent = axElement(input, attribute: kAXParentAttribute) else { return false }
-        return workBuddyComposerGroupMatches(parent,
+        workBuddyComposerAncestorsMatch(input,
+            parent: { axElement($0, attribute: kAXParentAttribute) },
             role: { axString($0, attribute: kAXRoleAttribute) },
-            children: { axElements($0, attribute: kAXChildrenAttribute) },
-            controlLabels: { element in
-                [axString(element, attribute: kAXIdentifierAttribute),
-                 axString(element, attribute: kAXTitleAttribute),
-                 axString(element, attribute: kAXDescriptionAttribute),
-                 axString(element, attribute: kAXHelpAttribute)]
-            })
+            equal: { CFEqual($0, $1) },
+            matches: { group in workBuddyComposerGroupMatches(group,
+                role: { axString($0, attribute: kAXRoleAttribute) },
+                children: { axElements($0, attribute: kAXChildrenAttribute) },
+                controlLabels: { element in
+                    [axString(element, attribute: kAXIdentifierAttribute),
+                     axString(element, attribute: kAXTitleAttribute),
+                     axString(element, attribute: kAXDescriptionAttribute),
+                     axString(element, attribute: kAXHelpAttribute)]
+                }) })
+    }
+
+    /// The editor is nested inside an inner layout group; its action bar is a
+    /// sibling of that group. Stay within a small chain of layout ancestors.
+    static func workBuddyComposerAncestorsMatch<Element>(_ input: Element,
+        parent: (Element) -> Element?, role: (Element) -> String,
+        equal: (Element, Element) -> Bool, matches: (Element) -> Bool) -> Bool {
+        var current = input
+        var visited = [input]
+        var budget = AccessibilityTraversalBudget(maximumNodes: 3, maximumDuration: 0.15)
+        while budget.admitNode(), let ancestor = parent(current) {
+            guard role(ancestor) == "AXGroup", !visited.contains(where: { equal($0, ancestor) }) else { return false }
+            if matches(ancestor) { return true }
+            visited.append(ancestor)
+            current = ancestor
+        }
+        return false
     }
 
     static func workBuddyComposerGroupMatches<Element>(_ root: Element,
