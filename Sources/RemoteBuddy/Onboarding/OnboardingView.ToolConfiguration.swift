@@ -84,30 +84,6 @@ extension OnboardingView {
         }
     }
 
-    private func selectRemoteAvailability(_ availability: OnboardingRemoteAvailability) {
-        guard settings.onboardingRemoteAvailability != availability else { return }
-        settings.setOnboardingRemoteAvailability(availability)
-        switch availability {
-        case .hasRemote:
-            selectControlMethod(.physicalRemote)
-        case .noRemote:
-            selectControlMethod(.unselected)
-        case .unselected:
-            break
-        }
-    }
-
-    private func selectControlMethod(_ method: OnboardingControlMethod) {
-        guard settings.onboardingControlMethod != method else { return }
-        settings.setOnboardingControlMethod(method)
-        observedRemoteButtons.removeAll()
-        remoteInputDiagnostic = FirstUseRemoteInputDiagnostic()
-        testedControlButtons.removeAll()
-        secureInputActive = nil
-        secureInputWaitStartedAtUptime = nil
-        lastLoggedSecureInputState = nil
-    }
-
     func refreshSelectedInputMethodStatus() {
         guard settings.onboardingStep == .voiceTool else { return }
         let tool = settings.onboardingVoiceTool

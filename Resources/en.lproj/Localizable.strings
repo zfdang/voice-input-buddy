@@ -477,7 +477,6 @@
 "settings.overview.missing_requirements" = "Needs setup: %@";
 "settings.overview.open_section" = "Open %@ settings";
 
-"settings.section.settings" = "Settings";
 "settings.update_badge.accessibility_value" = "New version available";
 "settings.page.title" = "Settings";
 "settings.permissions.title" = "System Permissions";
@@ -485,8 +484,6 @@
 "settings.diagnostics.title" = "Diagnostics & Logs";
 "settings.application_updates.title" = "App & Updates";
 "settings.application.tagline" = "Voice within reach";
-"settings.section.login" = "Me";
-"settings.section.transcripts" = "Reflections";
 "about.page.subtitle" = "View version, updates, language, and app display options";
 "about.app.description" = "Turn your remote into a voice typing buddy. Speak instead of typing, and keep everyday actions a button away.";
 "about.app_support.title" = "App & Support";
@@ -497,7 +494,6 @@
 "about.preferences.app_icon" = "App Icon";
 "about.preferences.app_icon_help" = "Choose the icon shown in the Dock, app switcher, and Settings.";
 "about.preferences.app_icon_standard" = "Remote Buddy";
-"about.preferences.app_icon_faceted_duck" = "Faceted Duck";
 "about.preferences.language" = "App Language";
 "about.preferences.rc003_voice_extension_test" = "Test extended voice feature";
 "about.page.hero_subtitle" = "Version, preferences, and support for your wireless voice workspace";
@@ -695,18 +691,7 @@
 "onboarding.shortcut_learning.permission_required" = "Grant Accessibility permission first.";
 "onboarding.shortcut_learning.unavailable" = "Shortcut capture is unavailable. Re-authorize and try again.";
 "onboarding.voice_test.configuration.binding_expected" = "%1$@ · %2$@";
-"onboarding.remote_availability.title" = "Do you have a physical remote right now?";
-"onboarding.remote_availability.detail" = "A physical remote provides the most complete and reliable Remote Buddy experience. You can continue with a phone if one is not available.";
-"onboarding.remote_availability.has_remote.title" = "I Have a Remote";
-"onboarding.remote_availability.has_remote.detail" = "Connect a supported Bluetooth remote and use its physical buttons and microphone.";
-"onboarding.remote_availability.no_remote.title" = "No Remote Right Now";
-"onboarding.remote_availability.no_remote.detail" = "Choose the iPhone app or WeChat mini program next.";
-"onboarding.remote_availability.recommended" = "Preferred";
 "onboarding.remote_availability.illustration" = "Use a physical remote when available";
-"onboarding.control_method.title" = "Choose a phone option without a remote";
-"onboarding.control_method.physical_remote.title" = "Physical Remote";
-"onboarding.control_method.physical_remote.detail" = "Connect a supported Bluetooth remote and use its physical buttons and microphone.";
-"onboarding.control_method.illustration" = "Choose the control method you can use now";
 "onboarding.permissions.title" = "Allow Remote Buddy to connect and control your Mac";
 "onboarding.permissions.detail" = "Enable all three permissions before choosing a device. The microphone driver is checked in step 4.";
 "onboarding.permissions.bluetooth.detail" = "Discover and connect to your paired Bluetooth remote";

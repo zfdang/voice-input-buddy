@@ -133,20 +133,6 @@ extension OnboardingView {
             .foregroundStyle(.secondary)
     }
 
-    private var controlMethodIllustration: some View {
-        VStack(spacing: 26) {
-            HStack(spacing: 38) {
-                Image(systemName: "iphone")
-                Image(systemName: "safari.fill")
-            }
-            .font(.system(size: 58, weight: .medium))
-            .foregroundStyle(Color.accentColor)
-                Text(verbatim: localization.text("onboarding.control_method.illustration"))
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(.secondary)
-        }
-    }
-
     private var remoteAvailabilityIllustration: some View {
         VStack(spacing: 24) {
             Image(systemName: "appletvremote.gen4.fill")

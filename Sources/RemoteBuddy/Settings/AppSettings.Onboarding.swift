@@ -318,16 +318,6 @@ extension AppSettings {
         AppLogger.shared.write("ONBOARDING BINDING discarded reason=trial_not_verified")
     }
 
-    func setOnboardingControlMethod(_ controlMethod: OnboardingControlMethod) {
-        guard onboardingControlMethod != controlMethod else { return }
-        setOnboardingControlSource(.defaultSource(for: controlMethod))
-    }
-
-    func setOnboardingRemoteAvailability(_ availability: OnboardingRemoteAvailability) {
-        guard onboardingRemoteAvailability != availability else { return }
-        onboardingRemoteAvailability = availability
-    }
-
     func completeOnboarding() {
         let confirmedProfiles = confirmedTransientOnboardingProfile().map { [$0] } ?? []
         for profileID in unconfirmedTransientRemoteProfileIDs() {

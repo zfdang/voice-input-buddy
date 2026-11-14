@@ -28,7 +28,6 @@ final class AppSettings: ObservableObject {
         static let onboardingPurpose = "onboarding.purpose"
         static let onboardingCompletedVersion = "onboarding.completedVersion"
         static let onboardingStep = "onboarding.step"
-        static let onboardingRemoteAvailability = "onboarding.remoteAvailability"
         static let onboardingControlSource = "onboarding.controlSource"
         static let onboardingDevice = "onboarding.device"
         static let onboardingAppleRemoteGeneration = "onboarding.appleRemoteGeneration"
@@ -252,14 +251,7 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(onboardingStep.rawValue, forKey: Keys.onboardingStep) }
     }
 
-    @Published var onboardingRemoteAvailability: OnboardingRemoteAvailability {
-        didSet {
-            defaults.set(
-                onboardingRemoteAvailability.rawValue,
-                forKey: Keys.onboardingRemoteAvailability
-            )
-        }
-    }
+    @Published var onboardingRemoteAvailability: OnboardingRemoteAvailability
 
     var onboardingControlMethod: OnboardingControlMethod {
         onboardingControlSource.controlMethod
