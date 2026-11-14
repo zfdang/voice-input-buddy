@@ -524,3 +524,29 @@ end-to-end voice-start measurements. The opt-in `measureInstalledComposerScans`
 test reproduces the measurements without activating applications or moving focus.
 The filtered integration/frame/privacy run reported 70 tests / 4 suites passed,
 with the two live probes skipped in the ordinary run.
+
+
+### First-press trigger observations
+
+The user confirmed the 09:06:23/09:06:25 Singapore-time pair as a brief first UI
+appearance without listening followed by a normal second attempt, and reported
+another, not identical, symptom around 09:11. In the confirmed pair the first attempt
+reapplied mappings, submitted Fn after 82 ms, held it until audio drain completed,
+and did not switch input methods (WeType was already selected). The 09:11:40 attempt
+instead waited about 1.07 seconds for focus preparation without reapplying mappings;
+the remote was released 74 ms after Fn submission, with Fn-up deferred until the
+buffered audio drained about a second later. Neither attempt logged an enqueue
+failure or a software Fn-up preceding drain. These observations do not establish
+that either symptom shares a cause or that the input method entered listening mode.
+
+Voice-start logs now include the mapping-validity/reapply decision without another
+HID enumeration. The existing global flagsChanged monitor separately reports delivery
+of this app's ordered voice modifier events, plus external modifier changes only
+while an explicit voice attempt is active. Late delivery of this app's own cleanup
+is still reported. Other synthetic events never acquire a physical-Fn input-source
+owner. Installation availability is logged, and every observation retains
+`target_response=unknown`: seeing an event in the global monitor is not an input-method
+acknowledgement, and that monitor does not see events destined for its own app.
+No character keys, editor values or audio are collected by this diagnostic, and
+there is no automatic retry or change to the trigger timing. A further reproduction
+on the revised build is needed to examine duplicate/early-release delivery.
